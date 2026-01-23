@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Home,
   ChevronLeft,
+  ChevronRight,
   CheckCircle2,
   Info,
   Plus,
@@ -30,6 +31,7 @@ export default function TeamSelectionPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [language, setLanguage] = useState("pt-BR");
   const [showSuccess, setShowSuccess] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     // TODO: Get userId from session/auth
@@ -135,18 +137,32 @@ export default function TeamSelectionPage() {
 
       <div className="flex flex-col lg:flex-row">
         {/* Sidebar */}
-        <aside className="hidden lg:block w-64 bg-white min-h-[calc(100vh-73px)] border-r border-gray-200 p-6 relative">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#6B21A8] to-[#7C3AED] rounded-xl flex items-center justify-center shadow-md">
-              <Home className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900 text-lg">Select Team</h2>
-              <p className="text-xs text-gray-500 font-medium">Choose a team</p>
+        <aside className={`hidden lg:block bg-white min-h-[calc(100vh-73px)] border-r border-gray-200 relative transition-all duration-300 ${
+          isSidebarCollapsed ? "w-20" : "w-64"
+        }`}>
+          <div className={`p-6 transition-all duration-300 ${isSidebarCollapsed ? "px-4" : ""}`}>
+            <div className={`flex items-center gap-3 mb-8 ${isSidebarCollapsed ? "justify-center" : ""}`}>
+              <div className="w-10 h-10 bg-gradient-to-br from-[#6B21A8] to-[#7C3AED] rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
+                <Home className="h-5 w-5 text-white" />
+              </div>
+              {!isSidebarCollapsed && (
+                <div className="min-w-0">
+                  <h2 className="font-bold text-gray-900 text-lg">Select Team</h2>
+                  <p className="text-xs text-gray-500 font-medium">Choose a team</p>
+                </div>
+              )}
             </div>
           </div>
-          <button className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-8 h-8 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center shadow-md hover:shadow-lg hover:border-[#6B21A8] transition-all">
-            <ChevronLeft className="h-4 w-4 text-gray-600" />
+          <button 
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-8 h-8 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center shadow-md hover:shadow-lg hover:border-[#6B21A8] transition-all z-10 touch-manipulation"
+            aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isSidebarCollapsed ? (
+              <ChevronRight className="h-4 w-4 text-gray-600" />
+            ) : (
+              <ChevronLeft className="h-4 w-4 text-gray-600" />
+            )}
           </button>
         </aside>
 

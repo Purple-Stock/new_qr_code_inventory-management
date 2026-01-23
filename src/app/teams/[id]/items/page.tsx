@@ -16,6 +16,8 @@ import {
   Settings,
   LogOut,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Search,
   Info,
   Download,
@@ -58,6 +60,7 @@ export default function ItemsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [language, setLanguage] = useState("pt-BR");
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     if (teamId) {
@@ -195,60 +198,87 @@ export default function ItemsPage() {
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 bg-white min-h-[calc(100vh-73px)] border-r border-gray-200 p-6 shadow-sm">
-          {/* Team Selection */}
-          <div className="mb-6 pb-6 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-bold text-gray-900 text-lg">
-                {team?.name || "Loading..."}
-              </h3>
-              <Link href="/team_selection">
-                <button className="text-xs text-[#6B21A8] hover:text-[#7C3AED] hover:underline font-medium transition-colors">
-                  Change Team
-                </button>
-              </Link>
+        <aside className={`bg-white min-h-[calc(100vh-73px)] border-r border-gray-200 shadow-sm relative transition-all duration-300 ${
+          isSidebarCollapsed ? "w-20" : "w-64"
+        }`}>
+          <div className={`p-6 transition-all duration-300 ${isSidebarCollapsed ? "px-4" : ""}`}>
+            {/* Team Selection */}
+            <div className={`mb-6 pb-6 border-b border-gray-200 ${isSidebarCollapsed ? "mb-4 pb-4" : ""}`}>
+              <div className={`flex items-center ${isSidebarCollapsed ? "justify-center" : "justify-between"} mb-2`}>
+                {!isSidebarCollapsed ? (
+                  <>
+                    <h3 className="font-bold text-gray-900 text-lg truncate">
+                      {team?.name || "Loading..."}
+                    </h3>
+                    <Link href="/team_selection">
+                      <button className="text-xs text-[#6B21A8] hover:text-[#7C3AED] hover:underline font-medium transition-colors flex-shrink-0">
+                        Change Team
+                      </button>
+                    </Link>
+                  </>
+                ) : (
+                  <div className="w-10 h-10 bg-gradient-to-br from-[#6B21A8] to-[#7C3AED] rounded-xl flex items-center justify-center shadow-md">
+                    <span className="text-white font-bold text-sm">
+                      {team?.name?.charAt(0).toUpperCase() || "T"}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Navigation Menu */}
-          <nav className="space-y-1">
-            {menuItems.map((item, index) => {
-              const Icon = item.icon;
-              const isActive = item.active || false;
-              const href = item.href || "#";
+            {/* Navigation Menu */}
+            <nav className="space-y-1">
+              {menuItems.map((item, index) => {
+                const Icon = item.icon;
+                const isActive = item.active || false;
+                const href = item.href || "#";
 
-              if (href !== "#") {
+                if (href !== "#") {
+                  return (
+                    <Link key={index} href={href}>
+                      <button
+                        className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center" : "gap-3"} px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                          isActive
+                            ? "bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] text-white shadow-md"
+                            : "text-gray-700 hover:bg-purple-50 hover:text-[#6B21A8]"
+                        }`}
+                        title={isSidebarCollapsed ? item.label : undefined}
+                      >
+                        <Icon className="h-5 w-5 flex-shrink-0" />
+                        {!isSidebarCollapsed && <span>{item.label}</span>}
+                      </button>
+                    </Link>
+                  );
+                }
+
                 return (
-                  <Link key={index} href={href}>
-                    <button
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                        isActive
-                          ? "bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] text-white shadow-md"
-                          : "text-gray-700 hover:bg-purple-50 hover:text-[#6B21A8]"
-                      }`}
-                    >
-                      <Icon className="h-5 w-5" />
-                      <span>{item.label}</span>
-                    </button>
-                  </Link>
+                  <button
+                    key={index}
+                    className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center" : "gap-3"} px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      isActive
+                        ? "bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] text-white shadow-md"
+                        : "text-gray-700 hover:bg-purple-50 hover:text-[#6B21A8]"
+                    }`}
+                    title={isSidebarCollapsed ? item.label : undefined}
+                  >
+                    <Icon className="h-5 w-5 flex-shrink-0" />
+                    {!isSidebarCollapsed && <span>{item.label}</span>}
+                  </button>
                 );
-              }
-
-              return (
-                <button
-                  key={index}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                    isActive
-                      ? "bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] text-white shadow-md"
-                      : "text-gray-700 hover:bg-purple-50 hover:text-[#6B21A8]"
-                  }`}
-                >
-                  <Icon className="h-5 w-5" />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
+              })}
+            </nav>
+          </div>
+          <button 
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-8 h-8 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center shadow-md hover:shadow-lg hover:border-[#6B21A8] transition-all z-10 touch-manipulation"
+            aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isSidebarCollapsed ? (
+              <ChevronRight className="h-4 w-4 text-gray-600" />
+            ) : (
+              <ChevronLeft className="h-4 w-4 text-gray-600" />
+            )}
+          </button>
         </aside>
 
         {/* Main Content */}
