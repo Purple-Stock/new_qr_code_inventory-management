@@ -81,19 +81,19 @@ export default function TeamSelectionPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-[#6B21A8] to-[#7C3AED] rounded-xl flex items-center justify-center shadow-lg">
-            <span className="text-white font-bold text-xl">4</span>
+      <header className="bg-white border-b border-gray-200 shadow-sm px-3 sm:px-4 md:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#6B21A8] to-[#7C3AED] rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+            <span className="text-white font-bold text-lg sm:text-xl">4</span>
           </div>
-          <span className="font-bold text-xl text-gray-900 tracking-tight">PURPLE STOCK</span>
+          <span className="font-bold text-base sm:text-lg md:text-xl text-gray-900 tracking-tight truncate">PURPLE STOCK</span>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0">
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-gray-100 rounded-lg p-0.5 sm:p-1">
             <button
               onClick={() => setLanguage("en")}
-              className={`px-3 py-1.5 text-sm rounded-md transition-all ${
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-all touch-manipulation min-h-[36px] sm:min-h-0 ${
                 language === "en"
                   ? "bg-white text-[#6B21A8] font-semibold shadow-sm"
                   : "text-gray-600 hover:text-gray-900"
@@ -103,7 +103,7 @@ export default function TeamSelectionPage() {
             </button>
             <button
               onClick={() => setLanguage("pt-BR")}
-              className={`px-3 py-1.5 text-sm rounded-md transition-all ${
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-all touch-manipulation min-h-[36px] sm:min-h-0 ${
                 language === "pt-BR"
                   ? "bg-white text-[#6B21A8] font-semibold shadow-sm"
                   : "text-gray-600 hover:text-gray-900"
@@ -113,7 +113,7 @@ export default function TeamSelectionPage() {
             </button>
             <button
               onClick={() => setLanguage("fr")}
-              className={`px-3 py-1.5 text-sm rounded-md transition-all ${
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-all touch-manipulation min-h-[36px] sm:min-h-0 ${
                 language === "fr"
                   ? "bg-white text-[#6B21A8] font-semibold shadow-sm"
                   : "text-gray-600 hover:text-gray-900"
@@ -124,17 +124,18 @@ export default function TeamSelectionPage() {
           </div>
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all font-medium text-sm"
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-gray-700 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all font-medium text-xs sm:text-sm touch-manipulation min-h-[36px] sm:min-h-0"
           >
-            <span>Sign Out</span>
+            <span className="hidden sm:inline">Sign Out</span>
+            <span className="sm:hidden">Out</span>
             <LogOut className="h-4 w-4" />
           </button>
         </div>
       </header>
 
-      <div className="flex">
+      <div className="flex flex-col lg:flex-row">
         {/* Sidebar */}
-        <aside className="w-64 bg-white min-h-[calc(100vh-73px)] border-r border-gray-200 p-6 relative">
+        <aside className="hidden lg:block w-64 bg-white min-h-[calc(100vh-73px)] border-r border-gray-200 p-6 relative">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 bg-gradient-to-br from-[#6B21A8] to-[#7C3AED] rounded-xl flex items-center justify-center shadow-md">
               <Home className="h-5 w-5 text-white" />
@@ -150,17 +151,18 @@ export default function TeamSelectionPage() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-4 sm:p-6 md:p-8">
           {/* Success Message */}
           {showSuccess && (
-            <div className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 p-4 rounded-lg flex items-center gap-3 shadow-sm">
-              <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
-              <span className="text-green-800 text-sm font-medium">
+            <div className="mb-4 sm:mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 p-3 sm:p-4 rounded-lg flex items-center gap-2 sm:gap-3 shadow-sm">
+              <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
+              <span className="text-green-800 text-xs sm:text-sm font-medium flex-1">
                 Signed in successfully.
               </span>
               <button
                 onClick={() => setShowSuccess(false)}
-                className="ml-auto text-green-600 hover:text-green-800 font-bold text-lg leading-none"
+                className="text-green-600 hover:text-green-800 font-bold text-lg sm:text-xl leading-none touch-manipulation min-w-[24px] min-h-[24px] flex items-center justify-center"
+                aria-label="Close"
               >
                 ×
               </button>
@@ -168,29 +170,30 @@ export default function TeamSelectionPage() {
           )}
 
           {/* Header Section */}
-          <div className="flex items-start justify-between mb-8">
-            <div className="flex-1">
-              <div className="flex items-center gap-4 mb-3">
-                <h1 className="text-4xl font-bold text-gray-900">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-2 sm:mb-3">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
                   Select a Team
                 </h1>
-                <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm">
+                <button className="flex items-center justify-center sm:justify-start gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm touch-manipulation min-h-[40px] sm:min-h-0 w-full sm:w-auto">
                   <Info className="h-4 w-4" />
                   Tutorial
                 </button>
               </div>
-              <p className="text-gray-600 text-lg">
+              <p className="text-gray-600 text-sm sm:text-base md:text-lg">
                 Manage your teams or create a new one to get started
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Link href="/teams/new">
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <Link href="/teams/new" className="w-full sm:w-auto">
                 <Button
-                  className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white border-0 shadow-lg hover:shadow-xl transition-all"
+                  className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white border-0 shadow-lg hover:shadow-xl transition-all w-full sm:w-auto touch-manipulation min-h-[48px] sm:min-h-0"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Create Team
+                  <span className="hidden sm:inline">Create Team</span>
+                  <span className="sm:hidden">Create</span>
                 </Button>
               </Link>
             </div>
@@ -198,26 +201,26 @@ export default function TeamSelectionPage() {
 
           {/* Teams Grid */}
           {isLoading ? (
-            <div className="text-center py-20">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#6B21A8] border-t-transparent mb-4"></div>
-              <p className="text-gray-600 text-lg font-medium">Loading teams...</p>
+            <div className="text-center py-12 sm:py-20">
+              <div className="inline-block animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-4 border-[#6B21A8] border-t-transparent mb-4"></div>
+              <p className="text-gray-600 text-base sm:text-lg font-medium">Loading teams...</p>
             </div>
           ) : teams.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-2xl shadow-lg border border-gray-100">
-              <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Users className="h-10 w-10 text-purple-600" />
+            <div className="text-center py-12 sm:py-20 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 px-4 sm:px-6">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                <Users className="h-8 w-8 sm:h-10 sm:w-10 text-purple-600" />
               </div>
-              <p className="text-gray-700 text-xl font-semibold mb-2">No teams found</p>
-              <p className="text-gray-500 mb-6">Get started by creating your first team</p>
+              <p className="text-gray-700 text-lg sm:text-xl font-semibold mb-2">No teams found</p>
+              <p className="text-gray-500 text-sm sm:text-base mb-4 sm:mb-6">Get started by creating your first team</p>
               <Link href="/teams/new">
-                <Button className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white shadow-lg hover:shadow-xl transition-all">
+                <Button className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white shadow-lg hover:shadow-xl transition-all touch-manipulation min-h-[48px]">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Your First Team
                 </Button>
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {teams.map((team) => (
                 <TeamCard
                   key={team.id}
