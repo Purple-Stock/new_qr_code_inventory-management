@@ -143,12 +143,12 @@ export default function TeamSelectionPage() {
           <div className={`p-6 transition-all duration-300 ${isSidebarCollapsed ? "px-4" : ""}`}>
             <div className={`flex items-center gap-3 mb-8 ${isSidebarCollapsed ? "justify-center" : ""}`}>
               <div className="w-10 h-10 bg-gradient-to-br from-[#6B21A8] to-[#7C3AED] rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
-                <Home className="h-5 w-5 text-white" />
-              </div>
+              <Home className="h-5 w-5 text-white" />
+            </div>
               {!isSidebarCollapsed && (
                 <div className="min-w-0">
-                  <h2 className="font-bold text-gray-900 text-lg">Select Team</h2>
-                  <p className="text-xs text-gray-500 font-medium">Choose a team</p>
+              <h2 className="font-bold text-gray-900 text-lg">Select Team</h2>
+              <p className="text-xs text-gray-500 font-medium">Choose a team</p>
                 </div>
               )}
             </div>
@@ -161,7 +161,7 @@ export default function TeamSelectionPage() {
             {isSidebarCollapsed ? (
               <ChevronRight className="h-4 w-4 text-gray-600" />
             ) : (
-              <ChevronLeft className="h-4 w-4 text-gray-600" />
+            <ChevronLeft className="h-4 w-4 text-gray-600" />
             )}
           </button>
         </aside>

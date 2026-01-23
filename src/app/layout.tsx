@@ -71,7 +71,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <I18nProvider>
-          {children}
+        {children}
         </I18nProvider>
         <Toaster />
         <Script id="sw-register" strategy="afterInteractive">
