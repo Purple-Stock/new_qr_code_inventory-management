@@ -149,7 +149,7 @@ export default function LocationsPage() {
   const menuItems = [
     { icon: Home, label: t.menu.itemList, href: `/teams/${teamId}/items` },
     { icon: MapPin, label: t.menu.locations, href: `/teams/${teamId}/locations`, active: true },
-    { icon: ArrowUp, label: t.menu.stockIn },
+    { icon: ArrowUp, label: t.menu.stockIn, href: `/teams/${teamId}/stock-in` },
     { icon: ArrowDown, label: t.menu.stockOut },
     { icon: RotateCcw, label: t.menu.adjust },
     { icon: Move, label: t.menu.move },
