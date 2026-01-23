@@ -1,0 +1,52 @@
+{
+  "name": "Purple Stock - Your Inventory Simplified",
+  "short_name": "Purple Stock",
+  "description": "Inventory management system with QR code support",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#6B21A8",
+  "theme_color": "#6B21A8",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Items",
+      "short_name": "Items",
+      "description": "View all items",
+      "url": "/teams/1/items",
+      "icons": [{ "src": "/icon.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Locations",
+      "short_name": "Locations",
+      "description": "Manage locations",
+      "url": "/teams/1/locations",
+      "icons": [{ "src": "/icon.png", "sizes": "192x192" }]
+    }
+  ]
+}
