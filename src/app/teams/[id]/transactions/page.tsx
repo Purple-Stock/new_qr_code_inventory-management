@@ -196,7 +196,7 @@ export default function TransactionsPage() {
     { icon: ArrowUp, label: t.menu.stockIn, href: `/teams/${teamId}/stock-in` },
     { icon: ArrowDown, label: t.menu.stockOut, href: `/teams/${teamId}/stock-out` },
     { icon: RotateCcw, label: t.menu.adjust, href: `/teams/${teamId}/adjust` },
-    { icon: Move, label: t.menu.move },
+    { icon: Move, label: t.menu.move, href: `/teams/${teamId}/move` },
     { icon: FileText, label: t.menu.transactions, href: `/teams/${teamId}/transactions`, active: true },
     { icon: BarChart3, label: t.menu.stockByLocation },
     { icon: Tag, label: t.menu.labels },

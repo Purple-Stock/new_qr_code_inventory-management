@@ -26,7 +26,7 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { itemId, transactionType, quantity, notes, userId, locationId } = body;
+    const { itemId, transactionType, quantity, notes, userId, locationId, sourceLocationId, destinationLocationId } = body;
 
     // Validation
     if (!itemId || !transactionType || !quantity || !userId) {
@@ -51,7 +51,8 @@ export async function POST(
       quantity: parseFloat(quantity),
       notes: notes || null,
       userId: parseInt(userId, 10),
-      destinationLocationId: locationId ? parseInt(locationId, 10) : null,
+      sourceLocationId: sourceLocationId ? parseInt(sourceLocationId, 10) : (transactionType === "move" ? null : null),
+      destinationLocationId: destinationLocationId ? parseInt(destinationLocationId, 10) : (locationId ? parseInt(locationId, 10) : null),
     });
 
     return NextResponse.json(

@@ -63,10 +63,10 @@ interface Team {
 
 interface SelectedItem {
   item: Item;
-  newStock: number;
+  quantity: number;
 }
 
-export default function AdjustPage() {
+export default function MovePage() {
   const router = useRouter();
   const params = useParams();
   const teamId = params?.id as string;
@@ -74,7 +74,8 @@ export default function AdjustPage() {
   const [team, setTeam] = useState<Team | null>(null);
   const [locations, setLocations] = useState<Location[]>([]);
   const [items, setItems] = useState<Item[]>([]);
-  const [selectedLocation, setSelectedLocation] = useState<string>("");
+  const [sourceLocation, setSourceLocation] = useState<string>("");
+  const [destinationLocation, setDestinationLocation] = useState<string>("");
   const [itemSearch, setItemSearch] = useState("");
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [notes, setNotes] = useState("");
@@ -107,7 +108,12 @@ export default function AdjustPage() {
       if (locationsResponse.ok) {
         setLocations(locationsData.locations || []);
         if (locationsData.locations && locationsData.locations.length > 0) {
-          setSelectedLocation(locationsData.locations[0].id.toString());
+          setSourceLocation(locationsData.locations[0].id.toString());
+          if (locationsData.locations.length > 1) {
+            setDestinationLocation(locationsData.locations[1].id.toString());
+          } else {
+            setDestinationLocation(locationsData.locations[0].id.toString());
+          }
         }
       }
 
@@ -142,11 +148,15 @@ export default function AdjustPage() {
   const handleAddItem = (item: Item) => {
     const exists = selectedItems.find((si) => si.item.id === item.id);
     if (exists) {
-      // If item already exists, just update it
-      return;
+      const currentStock = item.currentStock ?? 0;
+      const newQuantity = Math.min(exists.quantity + 1, currentStock);
+      setSelectedItems(
+        selectedItems.map((si) =>
+          si.item.id === item.id ? { ...si, quantity: newQuantity } : si
+        )
+      );
     } else {
-      // Add item with current stock as default new stock
-      setSelectedItems([...selectedItems, { item, newStock: item.currentStock || 0 }]);
+      setSelectedItems([...selectedItems, { item, quantity: 1 }]);
     }
     setItemSearch("");
   };
@@ -159,37 +169,53 @@ export default function AdjustPage() {
       handleAddItem(foundItem);
       toast({
         variant: "success",
-        title: t.adjust.itemFound,
-        description: `${foundItem.name || t.items.unnamedItem} ${t.adjust.itemAddedToList}`,
+        title: t.move.itemFound,
+        description: `${foundItem.name || t.items.unnamedItem} ${t.move.itemAddedToList}`,
       });
     } else {
       toast({
         variant: "destructive",
-        title: t.adjust.itemNotFound,
-        description: `${t.adjust.noItemWithBarcode} ${barcode}`,
+        title: t.move.itemNotFound,
+        description: `${t.move.noItemWithBarcode} ${barcode}`,
       });
     }
   };
 
-  const handleNewStockChange = (itemId: number, newStock: number) => {
-    if (newStock < 0) return;
-    setSelectedItems(
-      selectedItems.map((si) =>
-        si.item.id === itemId ? { ...si, newStock } : si
-      )
-    );
+  const handleQuantityChange = (itemId: number, quantity: number) => {
+    if (quantity < 0) return;
+    const selectedItem = selectedItems.find((si) => si.item.id === itemId);
+    if (selectedItem) {
+      const currentStock = selectedItem.item.currentStock ?? 0;
+      const newQuantity = Math.min(Math.max(0, quantity), currentStock);
+      setSelectedItems(
+        selectedItems.map((si) =>
+          si.item.id === itemId ? { ...si, quantity: newQuantity } : si
+        )
+      );
+    }
   };
 
   const handleRemoveItem = (itemId: number) => {
     setSelectedItems(selectedItems.filter((si) => si.item.id !== itemId));
   };
 
+  const totalItems = selectedItems.reduce((sum, si) => sum + si.quantity, 0);
+
   const handleSubmit = async () => {
-    if (!selectedLocation) {
+    if (!sourceLocation || !destinationLocation) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: t.adjust.selectLocationFirst,
+        description: t.move.selectLocationsFirst,
+      });
+      return;
+    }
+
+    if (sourceLocation === destinationLocation) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: t.move.sameLocationError,
       });
       return;
     }
@@ -198,17 +224,32 @@ export default function AdjustPage() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: t.adjust.noItemsSelected,
+        description: t.move.noItemsSelected,
       });
       return;
     }
 
-    const invalidItem = selectedItems.find((si) => si.newStock < 0);
+    const invalidItem = selectedItems.find((si) => !si.quantity || si.quantity <= 0);
     if (invalidItem) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: t.adjust.quantityRequired,
+        description: t.move.quantityRequired,
+      });
+      return;
+    }
+
+    // Check if any item exceeds stock
+    const exceedsStock = selectedItems.find((si) => {
+      const currentStock = si.item.currentStock ?? 0;
+      return si.quantity > currentStock;
+    });
+
+    if (exceedsStock) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: t.move.quantityExceedsStock,
       });
       return;
     }
@@ -228,9 +269,10 @@ export default function AdjustPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             itemId: si.item.id,
-            transactionType: "adjust",
-            quantity: si.newStock,
-            locationId: selectedLocation ? parseInt(selectedLocation) : null,
+            transactionType: "move",
+            quantity: si.quantity,
+            sourceLocationId: sourceLocation ? parseInt(sourceLocation) : null,
+            destinationLocationId: destinationLocation ? parseInt(destinationLocation) : null,
             notes: notes || null,
             userId: parseInt(userId),
           }),
@@ -242,7 +284,7 @@ export default function AdjustPage() {
       toast({
         variant: "success",
         title: "Success",
-        description: t.adjust.stockAdjustedSuccess,
+        description: t.move.stockMovedSuccess,
       });
 
       // Reset form and refresh data
@@ -251,11 +293,11 @@ export default function AdjustPage() {
       setItemSearch("");
       await fetchData();
     } catch (error) {
-      console.error("Error adjusting stock:", error);
+      console.error("Error moving stock:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "An error occurred while adjusting stock",
+        description: "An error occurred while moving stock",
       });
     } finally {
       setIsSubmitting(false);
@@ -267,8 +309,8 @@ export default function AdjustPage() {
     { icon: MapPin, label: t.menu.locations, href: `/teams/${teamId}/locations` },
     { icon: ArrowUp, label: t.menu.stockIn, href: `/teams/${teamId}/stock-in` },
     { icon: ArrowDown, label: t.menu.stockOut, href: `/teams/${teamId}/stock-out` },
-    { icon: RotateCcw, label: t.menu.adjust, href: `/teams/${teamId}/adjust`, active: true },
-    { icon: Move, label: t.menu.move, href: `/teams/${teamId}/move` },
+    { icon: RotateCcw, label: t.menu.adjust, href: `/teams/${teamId}/adjust` },
+    { icon: Move, label: t.menu.move, href: `/teams/${teamId}/move`, active: true },
     { icon: FileText, label: t.menu.transactions, href: `/teams/${teamId}/transactions` },
     { icon: BarChart3, label: t.menu.stockByLocation },
     { icon: Tag, label: t.menu.labels },
@@ -527,11 +569,11 @@ export default function AdjustPage() {
           {/* Page Header */}
           <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
             <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-orange-600 mb-1 sm:mb-2">
-                {t.adjust.title}
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-blue-600 mb-1 sm:mb-2">
+                {t.move.title}
               </h1>
               <p className="text-sm sm:text-base md:text-lg text-gray-600">
-                {t.adjust.subtitle}
+                {t.move.subtitle}
               </p>
             </div>
             <Button
@@ -543,32 +585,54 @@ export default function AdjustPage() {
             </Button>
           </div>
 
-          {/* Location Section */}
-          <div className="mb-4 sm:mb-6">
-            <Label htmlFor="location" className="text-sm font-semibold text-gray-700 mb-2 block">
-              {t.adjust.locationRequired}
-            </Label>
-            <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-              <SelectTrigger
-                id="location"
-                className="w-full h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
-              >
-                <SelectValue placeholder={t.adjust.defaultLocation} />
-              </SelectTrigger>
-              <SelectContent>
-                {locations.map((location) => (
-                  <SelectItem key={location.id} value={location.id.toString()}>
-                    {location.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Locations Section */}
+          <div className="mb-4 sm:mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="sourceLocation" className="text-sm font-semibold text-gray-700 mb-2 block">
+                {t.move.sourceLocationRequired}
+              </Label>
+              <Select value={sourceLocation} onValueChange={setSourceLocation}>
+                <SelectTrigger
+                  id="sourceLocation"
+                  className="w-full h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+                >
+                  <SelectValue placeholder={t.move.defaultLocation} />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map((location) => (
+                    <SelectItem key={location.id} value={location.id.toString()}>
+                      {location.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="destinationLocation" className="text-sm font-semibold text-gray-700 mb-2 block">
+                {t.move.destinationLocationRequired}
+              </Label>
+              <Select value={destinationLocation} onValueChange={setDestinationLocation}>
+                <SelectTrigger
+                  id="destinationLocation"
+                  className="w-full h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+                >
+                  <SelectValue placeholder={t.move.defaultLocation} />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map((location) => (
+                    <SelectItem key={location.id} value={location.id.toString()}>
+                      {location.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Items Section */}
           <div className="mb-4 sm:mb-6">
             <Label htmlFor="items" className="text-sm font-semibold text-gray-700 mb-2 block">
-              {t.adjust.items}
+              {t.move.items}
             </Label>
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <div className="relative flex-1">
@@ -576,7 +640,7 @@ export default function AdjustPage() {
                 <Input
                   id="items"
                   type="text"
-                  placeholder={t.adjust.searchItem}
+                  placeholder={t.move.searchItem}
                   value={itemSearch}
                   onChange={(e) => setItemSearch(e.target.value)}
                   className="pl-9 sm:pl-10 h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
@@ -595,7 +659,7 @@ export default function AdjustPage() {
                         )}
                         {item.currentStock !== null && (
                           <div className="text-xs text-gray-500">
-                            {t.adjust.currentStockLabel}: {item.currentStock}
+                            {t.move.currentStockLabel}: {item.currentStock}
                           </div>
                         )}
                       </button>
@@ -609,7 +673,7 @@ export default function AdjustPage() {
                 className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 text-xs sm:text-sm touch-manipulation min-h-[44px] sm:min-h-0"
               >
                 <ScanLine className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">{t.adjust.scanBarcode}</span>
+                <span className="hidden sm:inline">{t.move.scanBarcode}</span>
                 <span className="sm:hidden">Scan</span>
               </Button>
             </div>
@@ -622,13 +686,13 @@ export default function AdjustPage() {
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
                   <tr>
                     <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      {t.adjust.item}
+                      {t.move.item}
                     </th>
                     <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden sm:table-cell">
-                      {t.adjust.currentStock}
+                      {t.move.currentStock}
                     </th>
                     <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      {t.adjust.newStock}
+                      {t.move.quantityToMove}
                     </th>
                     <th className="px-4 sm:px-6 py-3 sm:py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
                       {t.common.actions}
@@ -639,67 +703,73 @@ export default function AdjustPage() {
                   {selectedItems.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
-                        {t.adjust.noItemsSelected}
+                        {t.move.noItemsSelected}
                       </td>
                     </tr>
                   ) : (
-                    selectedItems.map((selectedItem) => (
-                      <tr key={selectedItem.item.id} className="hover:bg-purple-50/50 transition-colors">
-                        <td className="px-4 sm:px-6 py-4 sm:py-5">
-                          <div>
-                            <div className="text-sm font-bold text-gray-900">
-                              {selectedItem.item.name || t.items.unnamedItem}
+                    selectedItems.map((selectedItem) => {
+                      const currentStock = selectedItem.item.currentStock ?? 0;
+                      const maxQuantity = currentStock;
+                      return (
+                        <tr key={selectedItem.item.id} className="hover:bg-purple-50/50 transition-colors">
+                          <td className="px-4 sm:px-6 py-4 sm:py-5">
+                            <div>
+                              <div className="text-sm font-bold text-gray-900">
+                                {selectedItem.item.name || t.items.unnamedItem}
+                              </div>
+                              <div className="text-xs text-gray-500 sm:hidden mt-1">
+                                {t.move.currentStockLabel}: {currentStock}
+                              </div>
                             </div>
-                            <div className="text-xs text-gray-500 sm:hidden mt-1">
-                              {t.adjust.currentStockLabel}: {selectedItem.item.currentStock ?? 0}
+                          </td>
+                          <td className="px-4 sm:px-6 py-4 sm:py-5 hidden sm:table-cell">
+                            <span className="text-sm font-medium text-gray-900">
+                              {currentStock}
+                            </span>
+                          </td>
+                          <td className="px-4 sm:px-6 py-4 sm:py-5">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleQuantityChange(selectedItem.item.id, selectedItem.quantity - 1)}
+                                className="p-1.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
+                                disabled={selectedItem.quantity <= 1}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </button>
+                              <Input
+                                type="number"
+                                min="1"
+                                max={maxQuantity}
+                                value={selectedItem.quantity}
+                                onChange={(e) =>
+                                  handleQuantityChange(
+                                    selectedItem.item.id,
+                                    parseFloat(e.target.value) || 0
+                                  )
+                                }
+                                className="w-20 sm:w-24 h-9 sm:h-10 text-center text-sm font-semibold border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+                              />
+                              <button
+                                onClick={() => handleQuantityChange(selectedItem.item.id, selectedItem.quantity + 1)}
+                                className="p-1.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
+                                disabled={selectedItem.quantity >= maxQuantity}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </button>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-4 sm:px-6 py-4 sm:py-5 hidden sm:table-cell">
-                          <span className="text-sm font-medium text-gray-900">
-                            {selectedItem.item.currentStock ?? 0}
-                          </span>
-                        </td>
-                        <td className="px-4 sm:px-6 py-4 sm:py-5">
-                          <div className="flex items-center gap-2">
+                          </td>
+                          <td className="px-4 sm:px-6 py-4 sm:py-5 text-right">
                             <button
-                              onClick={() => handleNewStockChange(selectedItem.item.id, selectedItem.newStock - 1)}
-                              className="p-1.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
-                              disabled={selectedItem.newStock <= 0}
+                              onClick={() => handleRemoveItem(selectedItem.item.id)}
+                              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
+                              aria-label="Remove item"
                             >
-                              <Minus className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4" />
                             </button>
-                            <Input
-                              type="number"
-                              min="0"
-                              value={selectedItem.newStock}
-                              onChange={(e) =>
-                                handleNewStockChange(
-                                  selectedItem.item.id,
-                                  parseFloat(e.target.value) || 0
-                                )
-                              }
-                              className="w-20 sm:w-24 h-9 sm:h-10 text-center text-sm font-semibold border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
-                            />
-                            <button
-                              onClick={() => handleNewStockChange(selectedItem.item.id, selectedItem.newStock + 1)}
-                              className="p-1.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
-                            >
-                              <Plus className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </td>
-                        <td className="px-4 sm:px-6 py-4 sm:py-5 text-right">
-                          <button
-                            onClick={() => handleRemoveItem(selectedItem.item.id)}
-                            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
-                            aria-label="Remove item"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -709,11 +779,11 @@ export default function AdjustPage() {
           {/* Notes Section */}
           <div className="mb-4 sm:mb-6">
             <Label htmlFor="notes" className="text-sm font-semibold text-gray-700 mb-2 block">
-              {t.adjust.notes}
+              {t.move.notes}
             </Label>
             <Textarea
               id="notes"
-              placeholder={t.adjust.notesPlaceholder}
+              placeholder={t.move.notesPlaceholder}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="min-h-[100px] text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8] resize-y"
@@ -724,14 +794,14 @@ export default function AdjustPage() {
           {/* Summary and Submit */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-gray-200">
             <div className="text-sm sm:text-base font-semibold text-gray-700">
-              Items: <span className="text-[#6B21A8]">{selectedItems.length}</span>
+              Total Items: <span className="text-[#6B21A8]">{totalItems}</span>
             </div>
             <Button
               onClick={handleSubmit}
-              disabled={isSubmitting || selectedItems.length === 0 || !selectedLocation}
-              className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white shadow-lg hover:shadow-xl transition-all w-full sm:w-auto touch-manipulation min-h-[48px] sm:min-h-0 px-6 sm:px-8"
+              disabled={isSubmitting || selectedItems.length === 0 || !sourceLocation || !destinationLocation || sourceLocation === destinationLocation}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all w-full sm:w-auto touch-manipulation min-h-[48px] sm:min-h-0 px-6 sm:px-8"
             >
-              {isSubmitting ? t.common.loading : t.adjust.adjustStock}
+              {isSubmitting ? t.common.loading : t.move.moveStock}
             </Button>
           </div>
         </main>

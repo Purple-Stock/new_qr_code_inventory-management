@@ -41,20 +41,32 @@ export async function createStockTransaction(data: {
   if (item.length > 0) {
     const currentItem = item[0];
     let newStock = currentItem.currentStock || 0;
+    let newLocationId = currentItem.locationId;
 
     if (data.transactionType === "stock_in") {
       newStock += data.quantity;
+      // Update location if provided
+      if (data.destinationLocationId) {
+        newLocationId = data.destinationLocationId;
+      }
     } else if (data.transactionType === "stock_out") {
       newStock -= data.quantity;
     } else if (data.transactionType === "adjust") {
       newStock = data.quantity;
+    } else if (data.transactionType === "move") {
+      // For move, stock doesn't change, only location changes
+      // Update location to destination
+      if (data.destinationLocationId) {
+        newLocationId = data.destinationLocationId;
+      }
     }
 
-    // Update item stock
+    // Update item stock and location
     await sqlite
       .update(items)
       .set({
         currentStock: Math.max(0, newStock),
+        locationId: newLocationId,
         updatedAt: new Date(),
       })
       .where(eq(items.id, data.itemId));
