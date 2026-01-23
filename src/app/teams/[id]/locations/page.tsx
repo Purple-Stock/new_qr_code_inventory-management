@@ -29,6 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast-simple";
+import { useTranslation } from "@/lib/i18n";
 import Link from "next/link";
 
 interface Location {
@@ -55,7 +56,7 @@ export default function LocationsPage() {
   const [team, setTeam] = useState<Team | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [language, setLanguage] = useState("pt-BR");
+  const { language, setLanguage, t } = useTranslation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const { toast } = useToast();
@@ -146,17 +147,17 @@ export default function LocationsPage() {
   });
 
   const menuItems = [
-    { icon: Home, label: "Item List", href: `/teams/${teamId}/items` },
-    { icon: MapPin, label: "Locations", href: `/teams/${teamId}/locations`, active: true },
-    { icon: ArrowUp, label: "Stock In" },
-    { icon: ArrowDown, label: "Stock Out" },
-    { icon: RotateCcw, label: "Adjust" },
-    { icon: Move, label: "Move" },
-    { icon: FileText, label: "Transactions" },
-    { icon: BarChart3, label: "Stock by Location" },
-    { icon: Tag, label: "Labels" },
-    { icon: FileBarChart, label: "Reports" },
-    { icon: Settings, label: "Settings" },
+    { icon: Home, label: t.menu.itemList, href: `/teams/${teamId}/items` },
+    { icon: MapPin, label: t.menu.locations, href: `/teams/${teamId}/locations`, active: true },
+    { icon: ArrowUp, label: t.menu.stockIn },
+    { icon: ArrowDown, label: t.menu.stockOut },
+    { icon: RotateCcw, label: t.menu.adjust },
+    { icon: Move, label: t.menu.move },
+    { icon: FileText, label: t.menu.transactions },
+    { icon: BarChart3, label: t.menu.stockByLocation },
+    { icon: Tag, label: t.menu.labels },
+    { icon: FileBarChart, label: t.menu.reports },
+    { icon: Settings, label: t.menu.settings },
   ];
 
   return (
@@ -192,7 +193,7 @@ export default function LocationsPage() {
 
         <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0">
           <button className="hidden md:block text-sm text-gray-700 hover:text-[#6B21A8] transition-colors font-medium">
-            Subscribe
+            {t.common.subscribe}
           </button>
           <div className="flex items-center gap-0.5 sm:gap-1 bg-gray-100 rounded-lg p-0.5 sm:p-1">
             <button
@@ -230,8 +231,8 @@ export default function LocationsPage() {
             onClick={handleSignOut}
             className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-gray-700 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all font-medium text-xs sm:text-sm touch-manipulation min-h-[36px] sm:min-h-0"
           >
-            <span className="hidden sm:inline">Sign Out</span>
-            <span className="sm:hidden">Out</span>
+            <span className="hidden sm:inline">{t.common.signOut}</span>
+            <span className="sm:hidden">{t.common.signOutShort}</span>
             <LogOut className="h-4 w-4" />
           </button>
         </div>
@@ -275,7 +276,7 @@ export default function LocationsPage() {
           <div className="mb-6">
             <Link href="/team_selection" onClick={() => setIsMobileSidebarOpen(false)}>
               <button className="text-sm text-[#6B21A8] hover:text-[#7C3AED] hover:underline font-medium transition-colors w-full text-left">
-                Change Team
+                {t.common.changeTeam}
               </button>
             </Link>
           </div>
@@ -344,7 +345,7 @@ export default function LocationsPage() {
                     </div>
                     <Link href="/team_selection">
                       <button className="text-xs text-[#6B21A8] hover:text-[#7C3AED] hover:underline font-medium transition-colors flex-shrink-0">
-                        Change Team
+                        {t.common.changeTeam}
                       </button>
                     </Link>
                   </>
@@ -417,10 +418,10 @@ export default function LocationsPage() {
           <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
             <div className="flex-1">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
-                Locations
+                {t.locations.title}
               </h1>
               <p className="text-sm sm:text-base md:text-lg text-gray-600">
-                Manage where your inventory items are stored.
+                {t.locations.subtitle}
               </p>
             </div>
             <Button
@@ -428,7 +429,7 @@ export default function LocationsPage() {
               className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
             >
               <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              Tutorial
+              {t.common.tutorial}
             </Button>
           </div>
 
@@ -438,7 +439,7 @@ export default function LocationsPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Search locations..."
+                placeholder={t.locations.searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 sm:pl-10 h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
@@ -447,8 +448,8 @@ export default function LocationsPage() {
             <Link href={`/teams/${teamId}/locations/new`} className="w-full sm:w-auto block">
               <Button className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white shadow-lg hover:shadow-xl transition-all h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0">
                 <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">New Location</span>
-                <span className="sm:hidden">New</span>
+                <span className="hidden sm:inline">{t.locations.newLocation}</span>
+                <span className="sm:hidden">{t.locations.newLocationShort}</span>
               </Button>
             </Link>
           </div>
@@ -457,7 +458,7 @@ export default function LocationsPage() {
           {isLoading ? (
             <div className="text-center py-12 sm:py-20">
               <div className="inline-block animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-4 border-[#6B21A8] border-t-transparent mb-4"></div>
-              <p className="text-gray-600 text-base sm:text-lg font-medium">Loading locations...</p>
+              <p className="text-gray-600 text-base sm:text-lg font-medium">{t.locations.loadingLocations}</p>
             </div>
           ) : filteredLocations.length === 0 ? (
             <div className="text-center py-12 sm:py-20 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 px-4 sm:px-6">
@@ -466,18 +467,18 @@ export default function LocationsPage() {
               </div>
               <p className="text-gray-700 text-lg sm:text-xl font-semibold mb-2">
                 {searchQuery
-                  ? "No locations found matching your search"
-                  : "No locations found"}
+                  ? t.locations.noLocationsSearch
+                  : t.locations.noLocations}
               </p>
               <p className="text-gray-500 text-sm sm:text-base mb-4 sm:mb-6">
                 {searchQuery
-                  ? "Try adjusting your search terms"
-                  : "Get started by creating your first location"}
+                  ? t.locations.noLocationsSearchMessage
+                  : t.locations.noLocationsMessage}
               </p>
               <Link href={`/teams/${teamId}/locations/new`}>
                 <Button className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white shadow-lg hover:shadow-xl transition-all touch-manipulation min-h-[48px]">
                   <Plus className="h-4 w-4 mr-2" />
-                  Create Your First Location
+                  {t.locations.createFirstLocation}
                 </Button>
               </Link>
             </div>
@@ -500,7 +501,7 @@ export default function LocationsPage() {
                             {location.description}
                           </p>
                         ) : (
-                          <p className="text-sm text-gray-400 italic">No description</p>
+                          <p className="text-sm text-gray-400 italic">{t.common.noDescription}</p>
                         )}
                       </div>
                     </div>
@@ -538,13 +539,13 @@ export default function LocationsPage() {
                     <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                          NAME
+                          {t.locations.name}
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                          DESCRIPTION
+                          {t.locations.description}
                         </th>
                         <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
-                          ACTIONS
+                          {t.common.actions}
                         </th>
                       </tr>
                     </thead>
@@ -566,7 +567,7 @@ export default function LocationsPage() {
                               {location.description ? (
                                 <span className="line-clamp-2">{location.description}</span>
                               ) : (
-                                <span className="text-gray-400 italic">No description</span>
+                                <span className="text-gray-400 italic">{t.common.noDescription}</span>
                               )}
                             </div>
                           </td>

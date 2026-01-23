@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "@/lib/i18n";
 import Link from "next/link";
 
 interface Item {
@@ -61,7 +62,7 @@ export default function ItemsPage() {
   const [team, setTeam] = useState<Team | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [language, setLanguage] = useState("pt-BR");
+  const { language, setLanguage, t } = useTranslation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
@@ -110,24 +111,26 @@ export default function ItemsPage() {
 
   const formatPrice = (price: number | null) => {
     if (!price) return "-";
-    return new Intl.NumberFormat("pt-BR", {
+    const locale = language === "en" ? "en-US" : language === "fr" ? "fr-FR" : "pt-BR";
+    const currency = language === "en" ? "USD" : language === "fr" ? "EUR" : "BRL";
+    return new Intl.NumberFormat(locale, {
       style: "currency",
-      currency: "BRL",
+      currency: currency,
     }).format(price);
   };
 
   const menuItems = [
-    { icon: Home, label: "Item List", href: `/teams/${teamId}/items`, active: true },
-    { icon: MapPin, label: "Locations", href: `/teams/${teamId}/locations` },
-    { icon: ArrowUp, label: "Stock In" },
-    { icon: ArrowDown, label: "Stock Out" },
-    { icon: RotateCcw, label: "Adjust" },
-    { icon: Move, label: "Move" },
-    { icon: FileText, label: "Transactions" },
-    { icon: BarChart3, label: "Stock by Location" },
-    { icon: Tag, label: "Labels" },
-    { icon: FileBarChart, label: "Reports" },
-    { icon: Settings, label: "Settings" },
+    { icon: Home, label: t.menu.itemList, href: `/teams/${teamId}/items`, active: true },
+    { icon: MapPin, label: t.menu.locations, href: `/teams/${teamId}/locations` },
+    { icon: ArrowUp, label: t.menu.stockIn },
+    { icon: ArrowDown, label: t.menu.stockOut },
+    { icon: RotateCcw, label: t.menu.adjust },
+    { icon: Move, label: t.menu.move },
+    { icon: FileText, label: t.menu.transactions },
+    { icon: BarChart3, label: t.menu.stockByLocation },
+    { icon: Tag, label: t.menu.labels },
+    { icon: FileBarChart, label: t.menu.reports },
+    { icon: Settings, label: t.menu.settings },
   ];
 
   return (
@@ -163,7 +166,7 @@ export default function ItemsPage() {
 
         <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0">
           <button className="hidden md:block text-sm text-gray-700 hover:text-[#6B21A8] transition-colors font-medium">
-            Subscribe
+            {t.common.subscribe}
           </button>
           <div className="flex items-center gap-0.5 sm:gap-1 bg-gray-100 rounded-lg p-0.5 sm:p-1">
             <button
@@ -201,8 +204,8 @@ export default function ItemsPage() {
             onClick={handleSignOut}
             className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-gray-700 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all font-medium text-xs sm:text-sm touch-manipulation min-h-[36px] sm:min-h-0"
           >
-            <span className="hidden sm:inline">Sign Out</span>
-            <span className="sm:hidden">Out</span>
+            <span className="hidden sm:inline">{t.common.signOut}</span>
+            <span className="sm:hidden">{t.common.signOutShort}</span>
             <LogOut className="h-4 w-4" />
           </button>
         </div>
@@ -239,11 +242,11 @@ export default function ItemsPage() {
 
           {/* Change Team Link */}
           <div className="mb-6">
-            <Link href="/team_selection" onClick={() => setIsMobileSidebarOpen(false)}>
-              <button className="text-sm text-[#6B21A8] hover:text-[#7C3AED] hover:underline font-medium transition-colors w-full text-left">
-                Change Team
-              </button>
-            </Link>
+                    <Link href="/team_selection" onClick={() => setIsMobileSidebarOpen(false)}>
+                      <button className="text-sm text-[#6B21A8] hover:text-[#7C3AED] hover:underline font-medium transition-colors w-full text-left">
+                        {t.common.changeTeam}
+                      </button>
+                    </Link>
           </div>
 
           {/* Navigation Menu */}
@@ -305,7 +308,7 @@ export default function ItemsPage() {
                     </h3>
                     <Link href="/team_selection">
                       <button className="text-xs text-[#6B21A8] hover:text-[#7C3AED] hover:underline font-medium transition-colors flex-shrink-0">
-                        Change Team
+                        {t.common.changeTeam}
                       </button>
                     </Link>
                   </>
@@ -378,8 +381,8 @@ export default function ItemsPage() {
         <main className="flex-1 p-4 sm:p-6 md:p-8">
           {/* Header Section */}
           <div className="mb-4 sm:mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Items</h1>
-            <p className="text-sm sm:text-base text-gray-600">Manage your inventory items</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">{t.items.title}</h1>
+            <p className="text-sm sm:text-base text-gray-600">{t.items.subtitle}</p>
           </div>
 
           {/* Search and Filter Bar */}
@@ -388,7 +391,7 @@ export default function ItemsPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Search items..."
+                placeholder={t.items.searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 sm:pl-10 h-11 sm:h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
@@ -400,27 +403,27 @@ export default function ItemsPage() {
                 className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm flex-1 sm:flex-initial touch-manipulation min-h-[40px] sm:min-h-0"
               >
                 <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Tutorial</span>
-                <span className="sm:hidden">Help</span>
+                <span className="hidden sm:inline">{t.common.tutorial}</span>
+                <span className="sm:hidden">{t.common.tutorial}</span>
               </Button>
               <Button
                 variant="outline"
                 className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm flex-1 sm:flex-initial touch-manipulation min-h-[40px] sm:min-h-0"
               >
-                <span className="hidden sm:inline">All Categories</span>
-                <span className="sm:hidden">Categories</span>
+                <span className="hidden sm:inline">{t.items.allCategories}</span>
+                <span className="sm:hidden">{t.items.categories}</span>
                 <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
               </Button>
               <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all h-10 sm:h-11 text-xs sm:text-sm flex-1 sm:flex-initial touch-manipulation min-h-[40px] sm:min-h-0">
                 <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Export CSV</span>
-                <span className="sm:hidden">Export</span>
+                <span className="hidden sm:inline">{t.items.exportCsv}</span>
+                <span className="sm:hidden">{t.items.exportCsvShort}</span>
               </Button>
               <Link href={`/teams/${teamId}/items/new`} className="flex-1 sm:flex-initial w-full sm:w-auto">
                 <Button className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white shadow-lg hover:shadow-xl transition-all h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0">
                   <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Add Item</span>
-                  <span className="sm:hidden">Add</span>
+                  <span className="hidden sm:inline">{t.items.addItem}</span>
+                  <span className="sm:hidden">{t.items.addItemShort}</span>
                 </Button>
               </Link>
             </div>
@@ -430,7 +433,7 @@ export default function ItemsPage() {
           {isLoading ? (
             <div className="text-center py-12 sm:py-20">
               <div className="inline-block animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-4 border-[#6B21A8] border-t-transparent mb-4"></div>
-              <p className="text-gray-600 text-base sm:text-lg font-medium">Loading items...</p>
+              <p className="text-gray-600 text-base sm:text-lg font-medium">{t.items.loadingItems}</p>
             </div>
           ) : filteredItems.length === 0 ? (
             <div className="text-center py-12 sm:py-20 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 px-4 sm:px-6">
@@ -439,18 +442,18 @@ export default function ItemsPage() {
               </div>
               <p className="text-gray-700 text-lg sm:text-xl font-semibold mb-2">
                 {searchQuery
-                  ? "No items found matching your search"
-                  : "No items found"}
+                  ? t.items.noItemsSearch
+                  : t.items.noItems}
               </p>
               <p className="text-gray-500 text-sm sm:text-base mb-4 sm:mb-6">
                 {searchQuery
-                  ? "Try adjusting your search terms"
-                  : "Get started by adding your first item"}
+                  ? t.items.noItemsSearchMessage
+                  : t.items.noItemsMessage}
               </p>
               <Link href={`/teams/${teamId}/items/new`}>
                 <Button className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white shadow-lg hover:shadow-xl transition-all touch-manipulation min-h-[48px]">
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Your First Item
+                  {t.items.addFirstItem}
                 </Button>
               </Link>
             </div>
@@ -466,7 +469,7 @@ export default function ItemsPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-base font-bold text-gray-900 mb-1 truncate">
-                          {item.name || "Unnamed Item"}
+                          {item.name || t.items.unnamedItem}
                         </h3>
                         {item.sku && (
                           <p className="text-xs text-gray-500 mb-1">SKU: {item.sku}</p>
@@ -539,27 +542,27 @@ export default function ItemsPage() {
                   <table className="w-full">
                     <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
                       <tr>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                          QR CODE
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                          ITEM
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                          SKU
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                          TYPE
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                          STOCK
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                          PRICE
-                        </th>
-                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
-                          ACTIONS
-                        </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                        {t.items.qrCode}
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                        {t.items.item}
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                        {t.items.sku}
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                        {t.items.type}
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                        {t.items.stock}
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                        {t.items.price}
+                      </th>
+                      <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
+                        {t.common.actions}
+                      </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
@@ -571,10 +574,10 @@ export default function ItemsPage() {
                             </div>
                           </td>
                           <td className="px-6 py-5">
-                            <div>
-                              <div className="text-sm font-bold text-gray-900 mb-1">
-                                {item.name || "Unnamed Item"}
-                              </div>
+                          <div>
+                            <div className="text-sm font-bold text-gray-900 mb-1">
+                              {item.name || t.items.unnamedItem}
+                            </div>
                               {item.barcode && (
                                 <div className="text-xs text-gray-500 font-mono bg-gray-50 px-2 py-1 rounded inline-block">
                                   {item.barcode}

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster-simple"
+import { I18nProvider } from "@/components/I18nProvider"
 import Script from "next/script"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -69,7 +70,9 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" />
       </head>
       <body className={inter.className}>
-        {children}
+        <I18nProvider>
+          {children}
+        </I18nProvider>
         <Toaster />
         <Script id="sw-register" strategy="afterInteractive">
           {`
