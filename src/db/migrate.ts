@@ -3,9 +3,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 import Database from "better-sqlite3";
 
-const databaseUrl = process.env.DATABASE_URL || "./db.sqlite";
 const currentFile = fileURLToPath(import.meta.url);
 const currentDir = path.dirname(currentFile);
+const databaseUrl = process.env.DATABASE_URL || path.resolve(currentDir, "../db.sqlite");
 const migrationsDir = path.resolve(currentDir, "migrations");
 
 const db = new Database(databaseUrl);

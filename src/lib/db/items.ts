@@ -1,0 +1,74 @@
+import { sqlite } from "@/db/client";
+import { items, locations } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import type { Item } from "@/db/schema";
+
+/**
+ * Get all items for a team
+ */
+export async function getTeamItems(teamId: number): Promise<(Item & { locationName?: string | null })[]> {
+  const teamItems = await sqlite
+    .select({
+      item: items,
+      locationName: locations.name,
+    })
+    .from(items)
+    .leftJoin(locations, eq(items.locationId, locations.id))
+    .where(eq(items.teamId, teamId));
+
+  return teamItems.map((row) => ({
+    ...row.item,
+    locationName: row.locationName || null,
+  }));
+}
+
+/**
+ * Get item by ID
+ */
+export async function getItemById(itemId: number): Promise<Item | null> {
+  const [item] = await sqlite
+    .select()
+    .from(items)
+    .where(eq(items.id, itemId))
+    .limit(1);
+
+  return item || null;
+}
+
+/**
+ * Create a new item
+ */
+export async function createItem(data: {
+  name: string;
+  sku?: string | null;
+  barcode: string;
+  cost?: number | null;
+  price?: number | null;
+  itemType?: string | null;
+  brand?: string | null;
+  teamId: number;
+  locationId?: number | null;
+  initialQuantity?: number;
+  currentStock?: number;
+  minimumStock?: number;
+}): Promise<Item> {
+  const [item] = await sqlite
+    .insert(items)
+    .values({
+      name: data.name,
+      sku: data.sku || null,
+      barcode: data.barcode,
+      cost: data.cost || null,
+      price: data.price || null,
+      itemType: data.itemType || null,
+      brand: data.brand || null,
+      teamId: data.teamId,
+      locationId: data.locationId || null,
+      initialQuantity: data.initialQuantity || 0,
+      currentStock: data.currentStock ?? data.initialQuantity ?? 0,
+      minimumStock: data.minimumStock || 0,
+    })
+    .returning();
+
+  return item;
+}

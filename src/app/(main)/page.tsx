@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { AlertTriangle, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,16 +17,47 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 
 export default function LoginPage() {
+  const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [language, setLanguage] = useState("en")
   const [error, setError] = useState("You need to sign in or sign up before continuing.")
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Implement login logic
-    console.log("Login attempt:", { email, password })
+    setError("")
+    setIsLoading(true)
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || "Invalid email or password")
+        setIsLoading(false)
+        return
+      }
+
+      // Save user ID to localStorage
+      if (data.user?.id) {
+        localStorage.setItem("userId", data.user.id.toString())
+      }
+
+      // Redirect to team selection
+      router.push("/team_selection")
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again.")
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -189,9 +221,10 @@ export default function LoginPage() {
             {/* Sign In Button */}
             <Button
               type="submit"
-              className="w-full bg-[#6B21A8] hover:bg-[#6B21A8]/90 text-white font-bold uppercase py-6 rounded-md"
+              disabled={isLoading}
+              className="w-full bg-[#6B21A8] hover:bg-[#6B21A8]/90 text-white font-bold uppercase py-6 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign In
+              {isLoading ? "Signing In..." : "Sign In"}
             </Button>
           </form>
 
