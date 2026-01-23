@@ -296,7 +296,7 @@ export default function StockOutPage() {
     { icon: RotateCcw, label: t.menu.adjust, href: `/teams/${teamId}/adjust` },
     { icon: Move, label: t.menu.move, href: `/teams/${teamId}/move` },
     { icon: FileText, label: t.menu.transactions, href: `/teams/${teamId}/transactions` },
-    { icon: BarChart3, label: t.menu.stockByLocation },
+    { icon: BarChart3, label: t.menu.stockByLocation, href: `/teams/${teamId}/stock-by-location` },
     { icon: Tag, label: t.menu.labels },
     { icon: FileBarChart, label: t.menu.reports },
     { icon: Settings, label: t.menu.settings },
