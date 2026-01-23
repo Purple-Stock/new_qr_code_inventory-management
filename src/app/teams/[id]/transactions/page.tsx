@@ -17,45 +17,37 @@ import {
   LogOut,
   Search,
   Info,
-  Plus,
-  Pencil,
-  Trash2,
-  Building2,
   Menu,
   X,
   ChevronLeft,
   ChevronRight,
+  Trash2,
+  Download,
+  RefreshCw,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast-simple";
 import { useTranslation } from "@/lib/i18n";
+import { useToast } from "@/components/ui/use-toast-simple";
 import Link from "next/link";
-
-interface Location {
-  id: number;
-  name: string;
-  description: string | null;
-  createdAt: Date | number;
-  updatedAt: Date | number;
-}
+import type { TransactionWithDetails } from "@/lib/db/stock-transactions";
 
 interface Team {
   id: number;
   name: string;
-  itemCount: number;
-  transactionCount: number;
 }
 
-export default function LocationsPage() {
+export default function TransactionsPage() {
   const router = useRouter();
   const params = useParams();
   const teamId = params?.id as string;
 
-  const [locations, setLocations] = useState<Location[]>([]);
   const [team, setTeam] = useState<Team | null>(null);
+  const [transactions, setTransactions] = useState<TransactionWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isDeleting, setIsDeleting] = useState<number | null>(null);
   const { language, setLanguage, t } = useTranslation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -63,24 +55,34 @@ export default function LocationsPage() {
 
   useEffect(() => {
     if (teamId) {
-      fetchTeamAndLocations();
+      fetchData();
     }
   }, [teamId]);
 
-  const fetchTeamAndLocations = async () => {
+  useEffect(() => {
+    if (teamId) {
+      const timeoutId = setTimeout(() => {
+        fetchData();
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [searchQuery, teamId]);
+
+  const fetchData = async () => {
     try {
-      // Fetch team info
+      // Fetch team
       const teamResponse = await fetch(`/api/teams/${teamId}`);
       const teamData = await teamResponse.json();
       if (teamResponse.ok) {
         setTeam(teamData.team);
       }
 
-      // Fetch locations
-      const locationsResponse = await fetch(`/api/teams/${teamId}/locations`);
-      const locationsData = await locationsResponse.json();
-      if (locationsResponse.ok) {
-        setLocations(locationsData.locations || []);
+      // Fetch transactions
+      const searchParam = searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : "";
+      const transactionsResponse = await fetch(`/api/teams/${teamId}/transactions${searchParam}`);
+      const transactionsData = await transactionsResponse.json();
+      if (transactionsResponse.ok) {
+        setTransactions(transactionsData.transactions || []);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -94,66 +96,108 @@ export default function LocationsPage() {
     router.push("/");
   };
 
-  const handleEdit = (id: number) => {
-    router.push(`/teams/${teamId}/locations/${id}/edit`);
-  };
+  const handleDelete = async (transactionId: number) => {
+    if (!confirm(t.transactions.deleteConfirm)) {
+      return;
+    }
 
-  const handleDelete = async (id: number, locationName: string) => {
+    setIsDeleting(transactionId);
     try {
-      const response = await fetch(
-        `/api/teams/${teamId}/locations/${id}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const response = await fetch(`/api/teams/${teamId}/transactions/${transactionId}`, {
+        method: "DELETE",
+      });
 
-      const data = await response.json();
-
-      if (!response.ok) {
+      if (response.ok) {
+        toast({
+          variant: "success",
+          title: "Success",
+          description: t.transactions.transactionDeleted,
+        });
+        await fetchData();
+      } else {
+        const errorData = await response.json();
         toast({
           variant: "destructive",
           title: "Error",
-          description: data.error || "An error occurred while deleting the location",
+          description: errorData.error || "Failed to delete transaction",
         });
-        return;
       }
-
-      // Show success toast
-      toast({
-        variant: "success",
-        title: "Location deleted",
-        description: `${locationName} has been deleted successfully.`,
-      });
-
-      // Refresh locations list
-      fetchTeamAndLocations();
     } catch (error) {
-      console.error("Error deleting location:", error);
+      console.error("Error deleting transaction:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        description: "An error occurred while deleting transaction",
       });
+    } finally {
+      setIsDeleting(null);
     }
   };
 
-  const filteredLocations = locations.filter((location) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      location.name.toLowerCase().includes(query) ||
-      location.description?.toLowerCase().includes(query)
-    );
-  });
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat(language === "en" ? "en-US" : language === "fr" ? "fr-FR" : "pt-BR", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(date));
+  };
+
+  const getTransactionTypeLabel = (type: string) => {
+    switch (type) {
+      case "stock_in":
+        return t.transactions.stockIn;
+      case "stock_out":
+        return t.transactions.stockOut;
+      case "adjust":
+        return t.transactions.adjust;
+      case "move":
+        return t.transactions.move;
+      case "count":
+        return t.transactions.count;
+      default:
+        return type;
+    }
+  };
+
+  const getTransactionTypeColor = (type: string) => {
+    switch (type) {
+      case "stock_in":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "stock_out":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "adjust":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "move":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  const formatQuantity = (quantity: number, type: string) => {
+    const sign = type === "stock_out" ? "-" : "+";
+    return `${sign}${quantity.toFixed(1)}`;
+  };
+
+  const formatLocation = (transaction: TransactionWithDetails) => {
+    if (transaction.transactionType === "move") {
+      const source = transaction.sourceLocation?.name || t.transactions.defaultLocation;
+      const dest = transaction.destinationLocation?.name || t.transactions.defaultLocation;
+      return `${source} → ${dest}`;
+    }
+    return transaction.destinationLocation?.name || transaction.sourceLocation?.name || t.transactions.defaultLocation;
+  };
 
   const menuItems = [
     { icon: Home, label: t.menu.itemList, href: `/teams/${teamId}/items` },
-    { icon: MapPin, label: t.menu.locations, href: `/teams/${teamId}/locations`, active: true },
+    { icon: MapPin, label: t.menu.locations, href: `/teams/${teamId}/locations` },
     { icon: ArrowUp, label: t.menu.stockIn, href: `/teams/${teamId}/stock-in` },
     { icon: ArrowDown, label: t.menu.stockOut, href: `/teams/${teamId}/stock-out` },
     { icon: RotateCcw, label: t.menu.adjust },
     { icon: Move, label: t.menu.move },
-    { icon: FileText, label: t.menu.transactions, href: `/teams/${teamId}/transactions` },
+    { icon: FileText, label: t.menu.transactions, href: `/teams/${teamId}/transactions`, active: true },
     { icon: BarChart3, label: t.menu.stockByLocation },
     { icon: Tag, label: t.menu.labels },
     { icon: FileBarChart, label: t.menu.reports },
@@ -165,7 +209,6 @@ export default function LocationsPage() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm px-3 sm:px-4 md:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-4">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-          {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMobileSidebarOpen(true)}
             className="lg:hidden p-2 text-gray-700 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all touch-manipulation"
@@ -188,7 +231,9 @@ export default function LocationsPage() {
               />
             </svg>
           </div>
-          <span className="font-bold text-base sm:text-lg md:text-xl text-gray-900 tracking-tight truncate">PURPLE STOCK</span>
+          <span className="font-bold text-base sm:text-lg md:text-xl text-gray-900 tracking-tight truncate">
+            PURPLE STOCK
+          </span>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0">
@@ -253,16 +298,10 @@ export default function LocationsPage() {
         }`}
       >
         <div className="p-6 h-full overflow-y-auto">
-          {/* Mobile Sidebar Header */}
           <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-200">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#6B21A8] to-[#7C3AED] rounded-xl flex items-center justify-center shadow-md">
-                <Building2 className="h-5 w-5 text-white" />
-              </div>
-              <h3 className="font-bold text-gray-900 text-lg">
-                {team?.name || "Loading..."}
-              </h3>
-            </div>
+            <h3 className="font-bold text-gray-900 text-lg">
+              {team?.name || "Loading..."}
+            </h3>
             <button
               onClick={() => setIsMobileSidebarOpen(false)}
               className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all touch-manipulation"
@@ -272,7 +311,6 @@ export default function LocationsPage() {
             </button>
           </div>
 
-          {/* Change Team Link */}
           <div className="mb-6">
             <Link
               href="/team_selection"
@@ -283,7 +321,6 @@ export default function LocationsPage() {
             </Link>
           </div>
 
-          {/* Navigation Menu */}
           <nav className="space-y-1">
             {menuItems.map((item, index) => {
               const Icon = item.icon;
@@ -329,23 +366,19 @@ export default function LocationsPage() {
 
       <div className="flex flex-col lg:flex-row">
         {/* Desktop Sidebar */}
-        <aside className={`hidden lg:block bg-white min-h-[calc(100vh-73px)] border-r border-gray-200 shadow-sm relative transition-all duration-300 ${
-          isSidebarCollapsed ? "w-20" : "w-64"
-        }`}>
+        <aside
+          className={`hidden lg:block bg-white min-h-[calc(100vh-73px)] border-r border-gray-200 shadow-sm relative transition-all duration-300 ${
+            isSidebarCollapsed ? "w-20" : "w-64"
+          }`}
+        >
           <div className={`p-6 transition-all duration-300 ${isSidebarCollapsed ? "px-4" : ""}`}>
-            {/* Team Selection */}
             <div className={`mb-6 pb-6 border-b border-gray-200 ${isSidebarCollapsed ? "mb-4 pb-4" : ""}`}>
               <div className={`flex items-center ${isSidebarCollapsed ? "justify-center" : "justify-between"} mb-2`}>
                 {!isSidebarCollapsed ? (
                   <>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-[#6B21A8] to-[#7C3AED] rounded-xl flex items-center justify-center shadow-md">
-                        <Building2 className="h-5 w-5 text-white" />
-                      </div>
-                      <h3 className="font-bold text-gray-900 text-lg truncate">
-                        {team?.name || "Loading..."}
-                      </h3>
-                    </div>
+                    <h3 className="font-bold text-gray-900 text-lg truncate">
+                      {team?.name || "Loading..."}
+                    </h3>
                     <Link
                       href="/team_selection"
                       className="text-xs text-[#6B21A8] hover:text-[#7C3AED] hover:underline font-medium transition-colors flex-shrink-0"
@@ -355,13 +388,14 @@ export default function LocationsPage() {
                   </>
                 ) : (
                   <div className="w-10 h-10 bg-gradient-to-br from-[#6B21A8] to-[#7C3AED] rounded-xl flex items-center justify-center shadow-md">
-                    <Building2 className="h-5 w-5 text-white" />
+                    <span className="text-white font-bold text-sm">
+                      {team?.name?.charAt(0).toUpperCase() || "T"}
+                    </span>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Navigation Menu */}
             <nav className="space-y-1">
               {menuItems.map((item, index) => {
                 const Icon = item.icon;
@@ -403,7 +437,7 @@ export default function LocationsPage() {
               })}
             </nav>
           </div>
-          <button 
+          <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-8 h-8 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center shadow-md hover:shadow-lg hover:border-[#6B21A8] transition-all z-10 touch-manipulation"
             aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -421,192 +455,174 @@ export default function LocationsPage() {
           {/* Page Header */}
           <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
             <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
-                {t.locations.title}
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#6B21A8] mb-1 sm:mb-2">
+                {t.transactions.title}
               </h1>
               <p className="text-sm sm:text-base md:text-lg text-gray-600">
-                {t.locations.subtitle}
+                {t.transactions.subtitle}
               </p>
             </div>
             <Button
               variant="outline"
               className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
             >
-              <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               {t.common.tutorial}
             </Button>
           </div>
 
-          {/* Search and Add Location */}
-          <div className="mb-4 sm:mb-6 space-y-3">
-            <div className="relative w-full">
+          {/* Search Bar */}
+          <div className="mb-4 sm:mb-6">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
               <Input
                 type="text"
-                placeholder={t.locations.searchPlaceholder}
+                placeholder={t.transactions.searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 sm:pl-10 h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
               />
             </div>
-            <Link href={`/teams/${teamId}/locations/new`} className="w-full sm:w-auto block">
-              <Button className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white shadow-lg hover:shadow-xl transition-all h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0">
-                <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">{t.locations.newLocation}</span>
-                <span className="sm:hidden">{t.locations.newLocationShort}</span>
-              </Button>
-            </Link>
           </div>
 
-          {/* Locations Table */}
-          {isLoading ? (
-            <div className="text-center py-12 sm:py-20">
-              <div className="inline-block animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-4 border-[#6B21A8] border-t-transparent mb-4"></div>
-              <p className="text-gray-600 text-base sm:text-lg font-medium">{t.locations.loadingLocations}</p>
-            </div>
-          ) : filteredLocations.length === 0 ? (
-            <div className="text-center py-12 sm:py-20 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 px-4 sm:px-6">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                <MapPin className="h-8 w-8 sm:h-10 sm:w-10 text-purple-600" />
-              </div>
-              <p className="text-gray-700 text-lg sm:text-xl font-semibold mb-2">
-                {searchQuery
-                  ? t.locations.noLocationsSearch
-                  : t.locations.noLocations}
-              </p>
-              <p className="text-gray-500 text-sm sm:text-base mb-4 sm:mb-6">
-                {searchQuery
-                  ? t.locations.noLocationsSearchMessage
-                  : t.locations.noLocationsMessage}
-              </p>
-              <Link href={`/teams/${teamId}/locations/new`}>
-                <Button className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white shadow-lg hover:shadow-xl transition-all touch-manipulation min-h-[48px]">
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t.locations.createFirstLocation}
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <>
-              {/* Mobile Card View */}
-              <div className="lg:hidden space-y-3">
-                {filteredLocations.map((location) => (
-                  <div key={location.id} className="bg-white rounded-xl shadow-md border border-gray-100 p-4">
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
-                        <MapPin className="h-6 w-6 text-purple-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-base font-bold text-gray-900 mb-1 truncate">
-                          {location.name}
-                        </h3>
-                        {location.description ? (
-                          <p className="text-sm text-gray-600 line-clamp-2">
-                            {location.description}
-                          </p>
-                        ) : (
-                          <p className="text-sm text-gray-400 italic">{t.common.noDescription}</p>
-                        )}
-                      </div>
-                    </div>
+          {/* Action Buttons */}
+          <div className="mb-4 sm:mb-6 flex flex-wrap gap-2 sm:gap-3">
+            <Link href={`/teams/${teamId}/stock-in`}>
+              <Button className="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0">
+                <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                {t.transactions.stockIn}
+              </Button>
+            </Link>
+            <Link href={`/teams/${teamId}/stock-out`}>
+              <Button className="bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0">
+                <ArrowDown className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                {t.transactions.stockOut}
+              </Button>
+            </Link>
+            <Button variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-50 text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0">
+              <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              {t.transactions.adjust}
+            </Button>
+            <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50 text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0">
+              <Move className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              {t.transactions.move}
+            </Button>
+            <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0">
+              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              {t.transactions.stockByLocation}
+            </Button>
+            <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0">
+              <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              {t.transactions.exportCsv}
+            </Button>
+          </div>
 
-                    <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
-                      <button
-                        onClick={() => handleEdit(location.id)}
-                        className="p-2.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
-                        aria-label="Edit location"
-                        title="Edit location"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm(`Are you sure you want to delete "${location.name}"?`)) {
-                            handleDelete(location.id, location.name);
-                          }
-                        }}
-                        className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
-                        aria-label="Delete location"
-                        title="Delete location"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Desktop Table View */}
-              <div className="hidden lg:block bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden border border-gray-100">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                          {t.locations.name}
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                          {t.locations.description}
-                        </th>
-                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
-                          {t.common.actions}
-                        </th>
+          {/* Transactions Table */}
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+                  <tr>
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      {t.transactions.date}
+                    </th>
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      {t.transactions.type}
+                    </th>
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      {t.transactions.item}
+                    </th>
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      {t.transactions.quantity}
+                    </th>
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      {t.transactions.location}
+                    </th>
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      {t.transactions.user}
+                    </th>
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      {t.transactions.actions}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={7} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
+                        {t.common.loading}
+                      </td>
+                    </tr>
+                  ) : transactions.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
+                        {searchQuery ? t.transactions.noTransactionsSearch : t.transactions.noTransactions}
+                      </td>
+                    </tr>
+                  ) : (
+                    transactions.map((transaction) => (
+                      <tr key={transaction.id} className="hover:bg-purple-50/50 transition-colors">
+                        <td className="px-4 sm:px-6 py-4 sm:py-5 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {formatDate(transaction.createdAt)}
+                          </div>
+                        </td>
+                        <td className="px-4 sm:px-6 py-4 sm:py-5">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getTransactionTypeColor(
+                              transaction.transactionType
+                            )}`}
+                          >
+                            {getTransactionTypeLabel(transaction.transactionType)}
+                          </span>
+                        </td>
+                        <td className="px-4 sm:px-6 py-4 sm:py-5">
+                          <div className="text-sm font-medium text-gray-900">
+                            {transaction.item?.name || t.items.unnamedItem}
+                          </div>
+                        </td>
+                        <td className="px-4 sm:px-6 py-4 sm:py-5">
+                          <span
+                            className={`text-sm font-semibold ${
+                              transaction.transactionType === "stock_out"
+                                ? "text-red-600"
+                                : "text-green-600"
+                            }`}
+                          >
+                            {formatQuantity(transaction.quantity, transaction.transactionType)}
+                          </span>
+                        </td>
+                        <td className="px-4 sm:px-6 py-4 sm:py-5">
+                          <div className="text-sm text-gray-900">
+                            {formatLocation(transaction)}
+                          </div>
+                        </td>
+                        <td className="px-4 sm:px-6 py-4 sm:py-5">
+                          <div className="text-sm text-gray-900">
+                            {transaction.user?.email || "-"}
+                          </div>
+                        </td>
+                        <td className="px-4 sm:px-6 py-4 sm:py-5 text-right">
+                          <button
+                            onClick={() => handleDelete(transaction.id)}
+                            disabled={isDeleting === transaction.id}
+                            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center ml-auto"
+                            aria-label={t.transactions.deleteTransaction}
+                          >
+                            {isDeleting === transaction.id ? (
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-100">
-                      {filteredLocations.map((location) => (
-                        <tr key={location.id} className="hover:bg-purple-50/50 transition-colors">
-                          <td className="px-6 py-5 whitespace-nowrap">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl flex items-center justify-center shadow-md">
-                                <MapPin className="h-5 w-5 text-purple-600" />
-                              </div>
-                              <div className="text-sm font-bold text-gray-900">
-                                {location.name}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-5">
-                            <div className="text-sm text-gray-600 max-w-md">
-                              {location.description ? (
-                                <span className="line-clamp-2">{location.description}</span>
-                              ) : (
-                                <span className="text-gray-400 italic">{t.common.noDescription}</span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-5 whitespace-nowrap text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <button
-                                onClick={() => handleEdit(location.id)}
-                                className="p-2.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all"
-                                aria-label="Edit location"
-                                title="Edit location"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  if (confirm(`Are you sure you want to delete "${location.name}"?`)) {
-                                    handleDelete(location.id, location.name);
-                                  }
-                                }}
-                                className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                                aria-label="Delete location"
-                                title="Delete location"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </>
-          )}
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </main>
       </div>
     </div>

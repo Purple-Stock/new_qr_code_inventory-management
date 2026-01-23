@@ -126,7 +126,7 @@ export default function ItemsPage() {
     { icon: ArrowDown, label: t.menu.stockOut, href: `/teams/${teamId}/stock-out` },
     { icon: RotateCcw, label: t.menu.adjust },
     { icon: Move, label: t.menu.move },
-    { icon: FileText, label: t.menu.transactions },
+    { icon: FileText, label: t.menu.transactions, href: `/teams/${teamId}/transactions` },
     { icon: BarChart3, label: t.menu.stockByLocation },
     { icon: Tag, label: t.menu.labels },
     { icon: FileBarChart, label: t.menu.reports },
