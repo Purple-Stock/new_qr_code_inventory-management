@@ -26,19 +26,70 @@ export function BarcodeScannerModal({
   const [manualBarcode, setManualBarcode] = useState("");
   const [error, setError] = useState("");
   const scannerRef = useRef<Html5Qrcode | null>(null);
-  const scannerElementId = "qr-reader";
+  const scannerElementId = useRef(`qr-reader-${Math.random().toString(36).substring(7)}`).current;
 
+  // Cleanup when modal closes or unmounts
   useEffect(() => {
     if (!isOpen) {
-      stopScanning();
+      stopScanner();
       setManualBarcode("");
       setError("");
     }
+    
+    return () => {
+      stopScanner();
+    };
   }, [isOpen]);
 
+  const stopScanner = async () => {
+    if (!scannerRef.current) {
+      setIsScanning(false);
+      return;
+    }
+
+    const scanner = scannerRef.current;
+    scannerRef.current = null;
+
+    try {
+      await scanner.stop();
+    } catch (err) {
+      // Ignore stop errors (e.g. already stopped or DOM changed)
+      console.warn("Stop error (ignored):", err);
+    } finally {
+      try {
+        const element = document.getElementById(scannerElementId);
+        if (element && element.isConnected) {
+          scanner.clear();
+        }
+      } catch (e) {
+        // Ignore clear errors
+      }
+
+      setIsScanning(false);
+    }
+  };
+
   const startScanning = async () => {
+    if (isScanning) {
+      await stopScanner();
+      return;
+    }
+
+    // Stop any existing scanner
+    await stopScanner();
+
     try {
       setError("");
+      
+      const element = document.getElementById(scannerElementId);
+      if (!element) {
+        setError("Scanner element not found");
+        return;
+      }
+
+      // Ensure clean container; React doesn't own children inside this node.
+      element.replaceChildren();
+      
       setIsScanning(true);
 
       const html5QrCode = new Html5Qrcode(scannerElementId);
@@ -51,34 +102,18 @@ export function BarcodeScannerModal({
           qrbox: { width: 250, height: 250 },
         },
         (decodedText) => {
-          stopScanning();
+          stopScanner();
           onScan(decodedText);
-          onClose();
+          setTimeout(() => onClose(), 100);
         },
-        (errorMessage) => {
-          // Ignore errors, just keep scanning
+        () => {
+          // Ignore scanning errors
         }
       );
     } catch (err: any) {
       console.error("Error starting camera:", err);
       setError(t.stockIn.cameraError);
-      setIsScanning(false);
-    }
-  };
-
-  const stopScanning = () => {
-    if (scannerRef.current) {
-      scannerRef.current
-        .stop()
-        .then(() => {
-          scannerRef.current = null;
-          setIsScanning(false);
-        })
-        .catch((err) => {
-          console.error("Error stopping scanner:", err);
-          scannerRef.current = null;
-          setIsScanning(false);
-        });
+      stopScanner();
     }
   };
 
@@ -86,12 +121,16 @@ export function BarcodeScannerModal({
     const file = event.target.files?.[0];
     if (!file) return;
 
+    stopScanner();
+    await new Promise(resolve => setTimeout(resolve, 200));
+
     try {
       setError("");
       const html5QrCode = new Html5Qrcode(scannerElementId);
       
       const decodedText = await html5QrCode.scanFile(file, false);
       if (decodedText) {
+        html5QrCode.clear();
         onScan(decodedText);
         onClose();
       }
@@ -135,7 +174,7 @@ export function BarcodeScannerModal({
               variant="ghost"
               size="sm"
               onClick={() => {
-                stopScanning();
+                stopScanner();
                 onClose();
               }}
               className="text-white hover:bg-white/20 h-8 w-8 p-0"
@@ -151,7 +190,7 @@ export function BarcodeScannerModal({
             {t.stockIn.scannerDescription}
           </p>
 
-          {/* Scanner Area */}
+          {/* Scanner Area - Element always exists */}
           <div className="relative">
             <div
               id={scannerElementId}
@@ -160,17 +199,20 @@ export function BarcodeScannerModal({
                   ? "border-blue-500 bg-gray-50"
                   : "border-gray-300 bg-gray-50"
               }`}
-              style={{ minHeight: "300px", maxHeight: "400px" }}
-            >
-              {!isScanning && (
-                <div className="flex flex-col items-center justify-center h-full min-h-[300px] p-4">
-                  <ScanLine className="h-16 w-16 sm:h-20 sm:w-20 text-gray-400 mb-4" />
-                  <p className="text-sm sm:text-base text-gray-500 text-center">
-                    {t.stockIn.scannerDescription}
-                  </p>
-                </div>
-              )}
-            </div>
+              style={{
+                minHeight: "300px",
+                maxHeight: "400px",
+                position: "relative",
+              }}
+            />
+            {!isScanning && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-4 pointer-events-none z-10">
+                <ScanLine className="h-16 w-16 sm:h-20 sm:w-20 text-gray-400 mb-4" />
+                <p className="text-sm sm:text-base text-gray-500 text-center">
+                  {t.stockIn.scannerDescription}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Error Message */}
@@ -183,9 +225,8 @@ export function BarcodeScannerModal({
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <Button
-              onClick={isScanning ? stopScanning : startScanning}
+              onClick={startScanning}
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white touch-manipulation min-h-[44px] sm:min-h-0"
-              disabled={isScanning && !scannerRef.current}
             >
               <Camera className="h-4 w-4 mr-2" />
               {isScanning ? t.stockIn.stopCamera : t.stockIn.startCamera}
@@ -252,7 +293,7 @@ export function BarcodeScannerModal({
           <Button
             variant="outline"
             onClick={() => {
-              stopScanning();
+              stopScanner();
               onClose();
             }}
             className="border-gray-300 text-gray-700 hover:bg-gray-50 touch-manipulation min-h-[40px] sm:min-h-0"
