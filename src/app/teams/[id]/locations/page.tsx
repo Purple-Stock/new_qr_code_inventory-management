@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/use-toast-simple";
 import Link from "next/link";
 
 interface Location {
@@ -51,6 +52,7 @@ export default function LocationsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [language, setLanguage] = useState("pt-BR");
+  const { toast } = useToast();
 
   useEffect(() => {
     if (teamId) {
@@ -89,11 +91,7 @@ export default function LocationsPage() {
     router.push(`/teams/${teamId}/locations/${id}/edit`);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this location?")) {
-      return;
-    }
-
+  const handleDelete = async (id: number, locationName: string) => {
     try {
       const response = await fetch(
         `/api/teams/${teamId}/locations/${id}`,
@@ -105,15 +103,30 @@ export default function LocationsPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.error || "An error occurred while deleting the location");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: data.error || "An error occurred while deleting the location",
+        });
         return;
       }
+
+      // Show success toast
+      toast({
+        variant: "success",
+        title: "Location deleted",
+        description: `${locationName} has been deleted successfully.`,
+      });
 
       // Refresh locations list
       fetchTeamAndLocations();
     } catch (error) {
       console.error("Error deleting location:", error);
-      alert("An unexpected error occurred. Please try again.");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+      });
     }
   };
 
@@ -371,7 +384,11 @@ export default function LocationsPage() {
                               <Pencil className="h-4 w-4" />
                             </button>
                             <button
-                              onClick={() => handleDelete(location.id)}
+                              onClick={() => {
+                                if (confirm(`Are you sure you want to delete "${location.name}"?`)) {
+                                  handleDelete(location.id, location.name);
+                                }
+                              }}
                               className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                               aria-label="Delete location"
                             >

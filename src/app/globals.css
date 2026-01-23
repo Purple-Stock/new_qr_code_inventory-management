@@ -35,3 +35,39 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  @keyframes slide-in-from-bottom-full {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-out-to-right-full {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
+
+  .animate-in {
+    animation: slide-in-from-bottom-full 0.3s ease-out;
+  }
+
+  .slide-in-from-bottom-full {
+    animation: slide-in-from-bottom-full 0.3s ease-out;
+  }
+
+  .slide-out-to-right-full {
+    animation: slide-out-to-right-full 0.3s ease-in;
+  }
+}
