@@ -130,11 +130,11 @@ export default function ItemsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-[#6B21A8] to-[#7C3AED] rounded-xl flex items-center justify-center shadow-lg">
+      <header className="bg-white border-b border-gray-200 shadow-sm px-3 sm:px-4 md:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#6B21A8] to-[#7C3AED] rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
             <svg
-              className="w-7 h-7 text-white"
+              className="w-6 h-6 sm:w-7 sm:h-7 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -147,17 +147,17 @@ export default function ItemsPage() {
               />
             </svg>
           </div>
-          <span className="font-bold text-xl text-gray-900 tracking-tight">PURPLE STOCK</span>
+          <span className="font-bold text-base sm:text-lg md:text-xl text-gray-900 tracking-tight truncate">PURPLE STOCK</span>
         </div>
 
-        <div className="flex items-center gap-4">
-          <button className="text-sm text-gray-700 hover:text-[#6B21A8] transition-colors font-medium">
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0">
+          <button className="hidden md:block text-sm text-gray-700 hover:text-[#6B21A8] transition-colors font-medium">
             Subscribe
           </button>
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-gray-100 rounded-lg p-0.5 sm:p-1">
             <button
               onClick={() => setLanguage("en")}
-              className={`px-3 py-1.5 text-sm rounded-md transition-all ${
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-all touch-manipulation min-h-[36px] sm:min-h-0 ${
                 language === "en"
                   ? "bg-white text-[#6B21A8] font-semibold shadow-sm"
                   : "text-gray-600 hover:text-gray-900"
@@ -167,7 +167,7 @@ export default function ItemsPage() {
             </button>
             <button
               onClick={() => setLanguage("pt-BR")}
-              className={`px-3 py-1.5 text-sm rounded-md transition-all ${
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-all touch-manipulation min-h-[36px] sm:min-h-0 ${
                 language === "pt-BR"
                   ? "bg-white text-[#6B21A8] font-semibold shadow-sm"
                   : "text-gray-600 hover:text-gray-900"
@@ -177,7 +177,7 @@ export default function ItemsPage() {
             </button>
             <button
               onClick={() => setLanguage("fr")}
-              className={`px-3 py-1.5 text-sm rounded-md transition-all ${
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-all touch-manipulation min-h-[36px] sm:min-h-0 ${
                 language === "fr"
                   ? "bg-white text-[#6B21A8] font-semibold shadow-sm"
                   : "text-gray-600 hover:text-gray-900"
@@ -188,17 +188,18 @@ export default function ItemsPage() {
           </div>
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all font-medium text-sm"
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-gray-700 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all font-medium text-xs sm:text-sm touch-manipulation min-h-[36px] sm:min-h-0"
           >
-            <span>Sign Out</span>
+            <span className="hidden sm:inline">Sign Out</span>
+            <span className="sm:hidden">Out</span>
             <LogOut className="h-4 w-4" />
           </button>
         </div>
       </header>
 
-      <div className="flex">
+      <div className="flex flex-col lg:flex-row">
         {/* Sidebar */}
-        <aside className={`bg-white min-h-[calc(100vh-73px)] border-r border-gray-200 shadow-sm relative transition-all duration-300 ${
+        <aside className={`hidden lg:block bg-white min-h-[calc(100vh-73px)] border-r border-gray-200 shadow-sm relative transition-all duration-300 ${
           isSidebarCollapsed ? "w-20" : "w-64"
         }`}>
           <div className={`p-6 transition-all duration-300 ${isSidebarCollapsed ? "px-4" : ""}`}>
@@ -282,195 +283,281 @@ export default function ItemsPage() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-4 sm:p-6 md:p-8">
           {/* Header Section */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Items</h1>
-            <p className="text-gray-600">Manage your inventory items</p>
+          <div className="mb-4 sm:mb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Items</h1>
+            <p className="text-sm sm:text-base text-gray-600">Manage your inventory items</p>
           </div>
 
           {/* Search and Filter Bar */}
-          <div className="mb-6 flex items-center gap-3 flex-wrap">
-            <div className="flex-1 relative min-w-[300px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <div className="mb-4 sm:mb-6 space-y-3">
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Search items by name, SKU, or barcode..."
+                placeholder="Search items..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-11 border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+                className="pl-9 sm:pl-10 h-11 sm:h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
               />
             </div>
-            <Button
-              variant="outline"
-              className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11"
-            >
-              <Info className="h-4 w-4 mr-2" />
-              Tutorial
-            </Button>
-            <Button
-              variant="outline"
-              className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11"
-            >
-              All Categories
-              <ChevronDown className="h-4 w-4 ml-2" />
-            </Button>
-            <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all h-11">
-              <Download className="h-4 w-4 mr-2" />
-              Export CSV
-            </Button>
-            <Link href={`/teams/${teamId}/items/new`}>
-              <Button className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white shadow-lg hover:shadow-xl transition-all h-11">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Item
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <Button
+                variant="outline"
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm flex-1 sm:flex-initial touch-manipulation min-h-[40px] sm:min-h-0"
+              >
+                <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Tutorial</span>
+                <span className="sm:hidden">Help</span>
               </Button>
-            </Link>
+              <Button
+                variant="outline"
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm flex-1 sm:flex-initial touch-manipulation min-h-[40px] sm:min-h-0"
+              >
+                <span className="hidden sm:inline">All Categories</span>
+                <span className="sm:hidden">Categories</span>
+                <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
+              </Button>
+              <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all h-10 sm:h-11 text-xs sm:text-sm flex-1 sm:flex-initial touch-manipulation min-h-[40px] sm:min-h-0">
+                <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Export CSV</span>
+                <span className="sm:hidden">Export</span>
+              </Button>
+              <Link href={`/teams/${teamId}/items/new`} className="flex-1 sm:flex-initial w-full sm:w-auto">
+                <Button className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white shadow-lg hover:shadow-xl transition-all h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0">
+                  <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Add Item</span>
+                  <span className="sm:hidden">Add</span>
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {/* Items Table */}
           {isLoading ? (
-            <div className="text-center py-20">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#6B21A8] border-t-transparent mb-4"></div>
-              <p className="text-gray-600 text-lg font-medium">Loading items...</p>
+            <div className="text-center py-12 sm:py-20">
+              <div className="inline-block animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-4 border-[#6B21A8] border-t-transparent mb-4"></div>
+              <p className="text-gray-600 text-base sm:text-lg font-medium">Loading items...</p>
             </div>
           ) : filteredItems.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-2xl shadow-lg border border-gray-100">
-              <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Package className="h-10 w-10 text-purple-600" />
+            <div className="text-center py-12 sm:py-20 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 px-4 sm:px-6">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                <Package className="h-8 w-8 sm:h-10 sm:w-10 text-purple-600" />
               </div>
-              <p className="text-gray-700 text-xl font-semibold mb-2">
+              <p className="text-gray-700 text-lg sm:text-xl font-semibold mb-2">
                 {searchQuery
                   ? "No items found matching your search"
                   : "No items found"}
               </p>
-              <p className="text-gray-500 mb-6">
+              <p className="text-gray-500 text-sm sm:text-base mb-4 sm:mb-6">
                 {searchQuery
                   ? "Try adjusting your search terms"
                   : "Get started by adding your first item"}
               </p>
               <Link href={`/teams/${teamId}/items/new`}>
-                <Button className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white shadow-lg hover:shadow-xl transition-all">
+                <Button className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white shadow-lg hover:shadow-xl transition-all touch-manipulation min-h-[48px]">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Your First Item
                 </Button>
               </Link>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                        QR CODE
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                        ITEM
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                        SKU
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                        TYPE
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                        STOCK
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                        PRICE
-                      </th>
-                      <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
-                        ACTIONS
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-100">
-                    {filteredItems.map((item) => (
-                      <tr key={item.id} className="hover:bg-purple-50/50 transition-colors">
-                        <td className="px-6 py-5 whitespace-nowrap">
-                          <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl flex items-center justify-center shadow-md">
-                            <QrCode className="h-8 w-8 text-purple-600" />
-                          </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <div>
-                            <div className="text-sm font-bold text-gray-900 mb-1">
-                              {item.name || "Unnamed Item"}
-                            </div>
-                            {item.barcode && (
-                              <div className="text-xs text-gray-500 font-mono bg-gray-50 px-2 py-1 rounded inline-block">
-                                {item.barcode}
-                              </div>
-                            )}
-                            {item.locationName && (
-                              <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />
-                                {item.locationName}
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-5 whitespace-nowrap">
-                          <span className="text-sm font-medium text-gray-900">
-                            {item.sku || (
-                              <span className="text-gray-400 italic">-</span>
-                            )}
-                          </span>
-                        </td>
-                        <td className="px-6 py-5 whitespace-nowrap">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
-                            {item.itemType || "Type"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-5 whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${
-                              (item.currentStock || 0) === 0
-                                ? "bg-red-100 text-red-700"
-                                : (item.currentStock || 0) < 10
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-green-100 text-green-700"
-                            }`}
-                          >
-                            {item.currentStock ?? 0}
-                          </span>
-                        </td>
-                        <td className="px-6 py-5 whitespace-nowrap">
-                          <span className="text-sm font-bold text-gray-900">
-                            {formatPrice(item.price)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-5 whitespace-nowrap text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              className="p-2.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all"
-                              aria-label="Edit item"
-                              title="Edit item"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button
-                              className="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                              aria-label="Copy item"
-                              title="Copy item"
-                            >
-                              <Copy className="h-4 w-4" />
-                            </button>
-                            <button
-                              className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                              aria-label="Delete item"
-                              title="Delete item"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <>
+              {/* Mobile Card View */}
+              <div className="lg:hidden space-y-3">
+                {filteredItems.map((item) => (
+                  <div key={item.id} className="bg-white rounded-xl shadow-md border border-gray-100 p-4">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-14 h-14 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
+                        <QrCode className="h-7 w-7 text-purple-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base font-bold text-gray-900 mb-1 truncate">
+                          {item.name || "Unnamed Item"}
+                        </h3>
+                        {item.sku && (
+                          <p className="text-xs text-gray-500 mb-1">SKU: {item.sku}</p>
+                        )}
+                        {item.barcode && (
+                          <p className="text-xs text-gray-500 font-mono bg-gray-50 px-2 py-1 rounded inline-block">
+                            {item.barcode}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                        {item.itemType || "Type"}
+                      </span>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
+                          (item.currentStock || 0) === 0
+                            ? "bg-red-100 text-red-700"
+                            : (item.currentStock || 0) < 10
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-green-100 text-green-700"
+                        }`}
+                      >
+                        Stock: {item.currentStock ?? 0}
+                      </span>
+                      <span className="text-sm font-bold text-gray-900">
+                        {formatPrice(item.price)}
+                      </span>
+                    </div>
+
+                    {item.locationName && (
+                      <div className="text-xs text-gray-500 mb-3 flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {item.locationName}
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+                      <button
+                        className="p-2.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
+                        aria-label="Edit item"
+                        title="Edit item"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        className="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
+                        aria-label="Copy item"
+                        title="Copy item"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </button>
+                      <button
+                        className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
+                        aria-label="Delete item"
+                        title="Delete item"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden lg:block bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                          QR CODE
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                          ITEM
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                          SKU
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                          TYPE
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                          STOCK
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                          PRICE
+                        </th>
+                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
+                          ACTIONS
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-100">
+                      {filteredItems.map((item) => (
+                        <tr key={item.id} className="hover:bg-purple-50/50 transition-colors">
+                          <td className="px-6 py-5 whitespace-nowrap">
+                            <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl flex items-center justify-center shadow-md">
+                              <QrCode className="h-8 w-8 text-purple-600" />
+                            </div>
+                          </td>
+                          <td className="px-6 py-5">
+                            <div>
+                              <div className="text-sm font-bold text-gray-900 mb-1">
+                                {item.name || "Unnamed Item"}
+                              </div>
+                              {item.barcode && (
+                                <div className="text-xs text-gray-500 font-mono bg-gray-50 px-2 py-1 rounded inline-block">
+                                  {item.barcode}
+                                </div>
+                              )}
+                              {item.locationName && (
+                                <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />
+                                  {item.locationName}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-5 whitespace-nowrap">
+                            <span className="text-sm font-medium text-gray-900">
+                              {item.sku || (
+                                <span className="text-gray-400 italic">-</span>
+                              )}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5 whitespace-nowrap">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                              {item.itemType || "Type"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5 whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${
+                                (item.currentStock || 0) === 0
+                                  ? "bg-red-100 text-red-700"
+                                  : (item.currentStock || 0) < 10
+                                  ? "bg-yellow-100 text-yellow-700"
+                                  : "bg-green-100 text-green-700"
+                              }`}
+                            >
+                              {item.currentStock ?? 0}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5 whitespace-nowrap">
+                            <span className="text-sm font-bold text-gray-900">
+                              {formatPrice(item.price)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5 whitespace-nowrap text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                className="p-2.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all"
+                                aria-label="Edit item"
+                                title="Edit item"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </button>
+                              <button
+                                className="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                aria-label="Copy item"
+                                title="Copy item"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </button>
+                              <button
+                                className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                aria-label="Delete item"
+                                title="Delete item"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
           )}
         </main>
       </div>
