@@ -25,7 +25,6 @@ import {
   Edit,
   Copy,
   Trash2,
-  QrCode,
   Package,
   Menu,
   X,
@@ -33,6 +32,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/lib/i18n";
+import { QRCodeDisplay } from "@/components/QRCodeDisplay";
 import Link from "next/link";
 
 interface Item {
@@ -468,8 +468,12 @@ export default function ItemsPage() {
                 {filteredItems.map((item) => (
                   <div key={item.id} className="bg-white rounded-xl shadow-md border border-gray-100 p-4">
                     <div className="flex items-start gap-3 mb-3">
-                      <div className="w-14 h-14 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
-                        <QrCode className="h-7 w-7 text-purple-600" />
+                      <div className="flex-shrink-0">
+                        <QRCodeDisplay
+                          value={item.barcode || ""}
+                          size={56}
+                          className="rounded-xl shadow-md"
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-base font-bold text-gray-900 mb-1 truncate">
@@ -573,9 +577,11 @@ export default function ItemsPage() {
                       {filteredItems.map((item) => (
                         <tr key={item.id} className="hover:bg-purple-50/50 transition-colors">
                           <td className="px-6 py-5 whitespace-nowrap">
-                            <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl flex items-center justify-center shadow-md">
-                              <QrCode className="h-8 w-8 text-purple-600" />
-                            </div>
+                            <QRCodeDisplay
+                              value={item.barcode || ""}
+                              size={64}
+                              className="rounded-xl shadow-md"
+                            />
                           </td>
                           <td className="px-6 py-5">
                           <div>
