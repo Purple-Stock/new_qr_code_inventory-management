@@ -90,3 +90,29 @@ export async function getUserTeamsWithStats(userId: number) {
 
   return teamsWithStats;
 }
+
+/**
+ * Update a team
+ */
+export async function updateTeam(
+  teamId: number,
+  data: {
+    name?: string;
+    notes?: string | null;
+  }
+): Promise<Team> {
+  const [updatedTeam] = await sqlite
+    .update(teams)
+    .set({
+      ...data,
+      updatedAt: new Date(),
+    })
+    .where(eq(teams.id, teamId))
+    .returning();
+
+  if (!updatedTeam) {
+    throw new Error("Team not found");
+  }
+
+  return updatedTeam;
+}
