@@ -27,6 +27,8 @@ import {
   Trash2,
   QrCode,
   Package,
+  Menu,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,6 +63,7 @@ export default function ItemsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [language, setLanguage] = useState("pt-BR");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (teamId) {
@@ -132,6 +135,14 @@ export default function ItemsPage() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm px-3 sm:px-4 md:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-4">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="lg:hidden p-2 text-gray-700 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all touch-manipulation"
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
           <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#6B21A8] to-[#7C3AED] rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
             <svg
               className="w-6 h-6 sm:w-7 sm:h-7 text-white"
@@ -197,8 +208,89 @@ export default function ItemsPage() {
         </div>
       </header>
 
+      {/* Mobile Sidebar Overlay */}
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
+      {/* Mobile Sidebar */}
+      <aside
+        className={`fixed top-0 left-0 h-full w-64 bg-white shadow-2xl z-50 lg:hidden transform transition-transform duration-300 ease-in-out ${
+          isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="p-6 h-full overflow-y-auto">
+          {/* Mobile Sidebar Header */}
+          <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-200">
+            <h3 className="font-bold text-gray-900 text-lg">
+              {team?.name || "Loading..."}
+            </h3>
+            <button
+              onClick={() => setIsMobileSidebarOpen(false)}
+              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all touch-manipulation"
+              aria-label="Close menu"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Change Team Link */}
+          <div className="mb-6">
+            <Link href="/team_selection" onClick={() => setIsMobileSidebarOpen(false)}>
+              <button className="text-sm text-[#6B21A8] hover:text-[#7C3AED] hover:underline font-medium transition-colors w-full text-left">
+                Change Team
+              </button>
+            </Link>
+          </div>
+
+          {/* Navigation Menu */}
+          <nav className="space-y-1">
+            {menuItems.map((item, index) => {
+              const Icon = item.icon;
+              const isActive = item.active || false;
+              const href = item.href || "#";
+
+              if (href !== "#") {
+                return (
+                  <Link key={index} href={href} onClick={() => setIsMobileSidebarOpen(false)}>
+                    <button
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                        isActive
+                          ? "bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] text-white shadow-md"
+                          : "text-gray-700 hover:bg-purple-50 hover:text-[#6B21A8]"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5 flex-shrink-0" />
+                      <span>{item.label}</span>
+                    </button>
+                  </Link>
+                );
+              }
+
+              return (
+                <button
+                  key={index}
+                  onClick={() => setIsMobileSidebarOpen(false)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    isActive
+                      ? "bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] text-white shadow-md"
+                      : "text-gray-700 hover:bg-purple-50 hover:text-[#6B21A8]"
+                  }`}
+                >
+                  <Icon className="h-5 w-5 flex-shrink-0" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+      </aside>
+
       <div className="flex flex-col lg:flex-row">
-        {/* Sidebar */}
+        {/* Desktop Sidebar */}
         <aside className={`hidden lg:block bg-white min-h-[calc(100vh-73px)] border-r border-gray-200 shadow-sm relative transition-all duration-300 ${
           isSidebarCollapsed ? "w-20" : "w-64"
         }`}>
