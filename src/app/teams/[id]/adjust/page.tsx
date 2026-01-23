@@ -21,33 +21,66 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Trash2,
-  Download,
-  RefreshCw,
+  ScanLine,
   Plus,
+  Minus,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/ui/use-toast-simple";
+import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import Link from "next/link";
-import type { TransactionWithDetails } from "@/lib/db/stock-transactions";
+
+interface Item {
+  id: number;
+  name: string | null;
+  sku: string | null;
+  barcode: string | null;
+  currentStock: number | null;
+  locationName?: string | null;
+}
+
+interface Location {
+  id: number;
+  name: string;
+}
 
 interface Team {
   id: number;
   name: string;
 }
 
-export default function TransactionsPage() {
+interface SelectedItem {
+  item: Item;
+  newStock: number;
+}
+
+export default function AdjustPage() {
   const router = useRouter();
   const params = useParams();
   const teamId = params?.id as string;
 
   const [team, setTeam] = useState<Team | null>(null);
-  const [transactions, setTransactions] = useState<TransactionWithDetails[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
+  const [selectedLocation, setSelectedLocation] = useState<string>("");
+  const [itemSearch, setItemSearch] = useState("");
+  const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
+  const [notes, setNotes] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isDeleting, setIsDeleting] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const { language, setLanguage, t } = useTranslation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -59,15 +92,6 @@ export default function TransactionsPage() {
     }
   }, [teamId]);
 
-  useEffect(() => {
-    if (teamId) {
-      const timeoutId = setTimeout(() => {
-        fetchData();
-      }, 300);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [searchQuery, teamId]);
-
   const fetchData = async () => {
     try {
       // Fetch team
@@ -77,12 +101,21 @@ export default function TransactionsPage() {
         setTeam(teamData.team);
       }
 
-      // Fetch transactions
-      const searchParam = searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : "";
-      const transactionsResponse = await fetch(`/api/teams/${teamId}/transactions${searchParam}`);
-      const transactionsData = await transactionsResponse.json();
-      if (transactionsResponse.ok) {
-        setTransactions(transactionsData.transactions || []);
+      // Fetch locations
+      const locationsResponse = await fetch(`/api/teams/${teamId}/locations`);
+      const locationsData = await locationsResponse.json();
+      if (locationsResponse.ok) {
+        setLocations(locationsData.locations || []);
+        if (locationsData.locations && locationsData.locations.length > 0) {
+          setSelectedLocation(locationsData.locations[0].id.toString());
+        }
+      }
+
+      // Fetch items
+      const itemsResponse = await fetch(`/api/teams/${teamId}/items`);
+      const itemsData = await itemsResponse.json();
+      if (itemsResponse.ok) {
+        setItems(itemsData.items || []);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -96,98 +129,137 @@ export default function TransactionsPage() {
     router.push("/");
   };
 
-  const handleDelete = async (transactionId: number) => {
-    if (!confirm(t.transactions.deleteConfirm)) {
+  const filteredItems = items.filter((item) => {
+    if (!itemSearch) return false;
+    const query = itemSearch.toLowerCase();
+    return (
+      item.name?.toLowerCase().includes(query) ||
+      item.sku?.toLowerCase().includes(query) ||
+      item.barcode?.toLowerCase().includes(query)
+    );
+  });
+
+  const handleAddItem = (item: Item) => {
+    const exists = selectedItems.find((si) => si.item.id === item.id);
+    if (exists) {
+      // If item already exists, just update it
       return;
+    } else {
+      // Add item with current stock as default new stock
+      setSelectedItems([...selectedItems, { item, newStock: item.currentStock || 0 }]);
     }
+    setItemSearch("");
+  };
 
-    setIsDeleting(transactionId);
-    try {
-      const response = await fetch(`/api/teams/${teamId}/transactions/${transactionId}`, {
-        method: "DELETE",
+  const handleBarcodeScan = async (barcode: string) => {
+    // Find item by barcode
+    const foundItem = items.find((item) => item.barcode === barcode);
+    
+    if (foundItem) {
+      handleAddItem(foundItem);
+      toast({
+        variant: "success",
+        title: t.adjust.itemFound,
+        description: `${foundItem.name || t.items.unnamedItem} ${t.adjust.itemAddedToList}`,
       });
+    } else {
+      toast({
+        variant: "destructive",
+        title: t.adjust.itemNotFound,
+        description: `${t.adjust.noItemWithBarcode} ${barcode}`,
+      });
+    }
+  };
 
-      if (response.ok) {
-        toast({
-          variant: "success",
-          title: "Success",
-          description: t.transactions.transactionDeleted,
-        });
-        await fetchData();
-      } else {
-        const errorData = await response.json();
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: errorData.error || "Failed to delete transaction",
-        });
-      }
-    } catch (error) {
-      console.error("Error deleting transaction:", error);
+  const handleNewStockChange = (itemId: number, newStock: number) => {
+    if (newStock < 0) return;
+    setSelectedItems(
+      selectedItems.map((si) =>
+        si.item.id === itemId ? { ...si, newStock } : si
+      )
+    );
+  };
+
+  const handleRemoveItem = (itemId: number) => {
+    setSelectedItems(selectedItems.filter((si) => si.item.id !== itemId));
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedLocation) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "An error occurred while deleting transaction",
+        description: t.adjust.selectLocationFirst,
+      });
+      return;
+    }
+
+    if (selectedItems.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: t.adjust.noItemsSelected,
+      });
+      return;
+    }
+
+    const invalidItem = selectedItems.find((si) => si.newStock < 0);
+    if (invalidItem) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: t.adjust.quantityRequired,
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const userId = localStorage.getItem("userId");
+      if (!userId) {
+        router.push("/");
+        return;
+      }
+
+      // Create transactions for each item
+      const promises = selectedItems.map((si) =>
+        fetch(`/api/teams/${teamId}/stock-transactions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            itemId: si.item.id,
+            transactionType: "adjust",
+            quantity: si.newStock,
+            locationId: selectedLocation ? parseInt(selectedLocation) : null,
+            notes: notes || null,
+            userId: parseInt(userId),
+          }),
+        })
+      );
+
+      await Promise.all(promises);
+
+      toast({
+        variant: "success",
+        title: "Success",
+        description: t.adjust.stockAdjustedSuccess,
+      });
+
+      // Reset form and refresh data
+      setSelectedItems([]);
+      setNotes("");
+      setItemSearch("");
+      await fetchData();
+    } catch (error) {
+      console.error("Error adjusting stock:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An error occurred while adjusting stock",
       });
     } finally {
-      setIsDeleting(null);
+      setIsSubmitting(false);
     }
-  };
-
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat(language === "en" ? "en-US" : language === "fr" ? "fr-FR" : "pt-BR", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(date));
-  };
-
-  const getTransactionTypeLabel = (type: string) => {
-    switch (type) {
-      case "stock_in":
-        return t.transactions.stockIn;
-      case "stock_out":
-        return t.transactions.stockOut;
-      case "adjust":
-        return t.transactions.adjust;
-      case "move":
-        return t.transactions.move;
-      case "count":
-        return t.transactions.count;
-      default:
-        return type;
-    }
-  };
-
-  const getTransactionTypeColor = (type: string) => {
-    switch (type) {
-      case "stock_in":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "stock_out":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "adjust":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "move":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
-
-  const formatQuantity = (quantity: number, type: string) => {
-    const sign = type === "stock_out" ? "-" : "+";
-    return `${sign}${quantity.toFixed(1)}`;
-  };
-
-  const formatLocation = (transaction: TransactionWithDetails) => {
-    if (transaction.transactionType === "move") {
-      const source = transaction.sourceLocation?.name || t.transactions.defaultLocation;
-      const dest = transaction.destinationLocation?.name || t.transactions.defaultLocation;
-      return `${source} → ${dest}`;
-    }
-    return transaction.destinationLocation?.name || transaction.sourceLocation?.name || t.transactions.defaultLocation;
   };
 
   const menuItems = [
@@ -195,9 +267,9 @@ export default function TransactionsPage() {
     { icon: MapPin, label: t.menu.locations, href: `/teams/${teamId}/locations` },
     { icon: ArrowUp, label: t.menu.stockIn, href: `/teams/${teamId}/stock-in` },
     { icon: ArrowDown, label: t.menu.stockOut, href: `/teams/${teamId}/stock-out` },
-    { icon: RotateCcw, label: t.menu.adjust, href: `/teams/${teamId}/adjust` },
+    { icon: RotateCcw, label: t.menu.adjust, href: `/teams/${teamId}/adjust`, active: true },
     { icon: Move, label: t.menu.move },
-    { icon: FileText, label: t.menu.transactions, href: `/teams/${teamId}/transactions`, active: true },
+    { icon: FileText, label: t.menu.transactions, href: `/teams/${teamId}/transactions` },
     { icon: BarChart3, label: t.menu.stockByLocation },
     { icon: Tag, label: t.menu.labels },
     { icon: FileBarChart, label: t.menu.reports },
@@ -455,165 +527,175 @@ export default function TransactionsPage() {
           {/* Page Header */}
           <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
             <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#6B21A8] mb-1 sm:mb-2">
-                {t.transactions.title}
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-orange-600 mb-1 sm:mb-2">
+                {t.adjust.title}
               </h1>
               <p className="text-sm sm:text-base md:text-lg text-gray-600">
-                {t.transactions.subtitle}
+                {t.adjust.subtitle}
               </p>
             </div>
             <Button
               variant="outline"
               className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
             >
-              <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               {t.common.tutorial}
             </Button>
           </div>
 
-          {/* Search Bar */}
+          {/* Location Section */}
           <div className="mb-4 sm:mb-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-              <Input
-                type="text"
-                placeholder={t.transactions.searchPlaceholder}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 sm:pl-10 h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
-              />
+            <Label htmlFor="location" className="text-sm font-semibold text-gray-700 mb-2 block">
+              {t.adjust.locationRequired}
+            </Label>
+            <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+              <SelectTrigger
+                id="location"
+                className="w-full h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+              >
+                <SelectValue placeholder={t.adjust.defaultLocation} />
+              </SelectTrigger>
+              <SelectContent>
+                {locations.map((location) => (
+                  <SelectItem key={location.id} value={location.id.toString()}>
+                    {location.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Items Section */}
+          <div className="mb-4 sm:mb-6">
+            <Label htmlFor="items" className="text-sm font-semibold text-gray-700 mb-2 block">
+              {t.adjust.items}
+            </Label>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                <Input
+                  id="items"
+                  type="text"
+                  placeholder={t.adjust.searchItem}
+                  value={itemSearch}
+                  onChange={(e) => setItemSearch(e.target.value)}
+                  className="pl-9 sm:pl-10 h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+                />
+                {itemSearch && filteredItems.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {filteredItems.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => handleAddItem(item)}
+                        className="w-full text-left px-4 py-3 hover:bg-purple-50 transition-colors border-b border-gray-100 last:border-b-0"
+                      >
+                        <div className="font-medium text-gray-900">{item.name || t.items.unnamedItem}</div>
+                        {item.sku && (
+                          <div className="text-xs text-gray-500">SKU: {item.sku}</div>
+                        )}
+                        {item.currentStock !== null && (
+                          <div className="text-xs text-gray-500">
+                            {t.adjust.currentStockLabel}: {item.currentStock}
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setIsScannerOpen(true)}
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 text-xs sm:text-sm touch-manipulation min-h-[44px] sm:min-h-0"
+              >
+                <ScanLine className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">{t.adjust.scanBarcode}</span>
+                <span className="sm:hidden">Scan</span>
+              </Button>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="mb-4 sm:mb-6 flex flex-wrap gap-2 sm:gap-3">
-            <Link href={`/teams/${teamId}/stock-in`}>
-              <Button className="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0">
-                <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                {t.transactions.stockIn}
-              </Button>
-            </Link>
-            <Link href={`/teams/${teamId}/stock-out`}>
-              <Button className="bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0">
-                <ArrowDown className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                {t.transactions.stockOut}
-              </Button>
-            </Link>
-            <Button variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-50 text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0">
-              <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              {t.transactions.adjust}
-            </Button>
-            <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50 text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0">
-              <Move className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              {t.transactions.move}
-            </Button>
-            <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0">
-              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              {t.transactions.stockByLocation}
-            </Button>
-            <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0">
-              <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              {t.transactions.exportCsv}
-            </Button>
-          </div>
-
-          {/* Transactions Table */}
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          {/* Items Table */}
+          <div className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
                   <tr>
                     <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      {t.transactions.date}
+                      {t.adjust.item}
+                    </th>
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden sm:table-cell">
+                      {t.adjust.currentStock}
                     </th>
                     <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      {t.transactions.type}
-                    </th>
-                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      {t.transactions.item}
-                    </th>
-                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      {t.transactions.quantity}
-                    </th>
-                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      {t.transactions.location}
-                    </th>
-                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      {t.transactions.user}
+                      {t.adjust.newStock}
                     </th>
                     <th className="px-4 sm:px-6 py-3 sm:py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      {t.transactions.actions}
+                      {t.common.actions}
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
-                  {isLoading ? (
+                  {selectedItems.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
-                        {t.common.loading}
-                      </td>
-                    </tr>
-                  ) : transactions.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
-                        {searchQuery ? t.transactions.noTransactionsSearch : t.transactions.noTransactions}
+                      <td colSpan={4} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
+                        {t.adjust.noItemsSelected}
                       </td>
                     </tr>
                   ) : (
-                    transactions.map((transaction) => (
-                      <tr key={transaction.id} className="hover:bg-purple-50/50 transition-colors">
-                        <td className="px-4 sm:px-6 py-4 sm:py-5 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {formatDate(transaction.createdAt)}
+                    selectedItems.map((selectedItem) => (
+                      <tr key={selectedItem.item.id} className="hover:bg-purple-50/50 transition-colors">
+                        <td className="px-4 sm:px-6 py-4 sm:py-5">
+                          <div>
+                            <div className="text-sm font-bold text-gray-900">
+                              {selectedItem.item.name || t.items.unnamedItem}
+                            </div>
+                            <div className="text-xs text-gray-500 sm:hidden mt-1">
+                              {t.adjust.currentStockLabel}: {selectedItem.item.currentStock ?? 0}
+                            </div>
                           </div>
                         </td>
-                        <td className="px-4 sm:px-6 py-4 sm:py-5">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getTransactionTypeColor(
-                              transaction.transactionType
-                            )}`}
-                          >
-                            {getTransactionTypeLabel(transaction.transactionType)}
+                        <td className="px-4 sm:px-6 py-4 sm:py-5 hidden sm:table-cell">
+                          <span className="text-sm font-medium text-gray-900">
+                            {selectedItem.item.currentStock ?? 0}
                           </span>
                         </td>
                         <td className="px-4 sm:px-6 py-4 sm:py-5">
-                          <div className="text-sm font-medium text-gray-900">
-                            {transaction.item?.name || t.items.unnamedItem}
-                          </div>
-                        </td>
-                        <td className="px-4 sm:px-6 py-4 sm:py-5">
-                          <span
-                            className={`text-sm font-semibold ${
-                              transaction.transactionType === "stock_out"
-                                ? "text-red-600"
-                                : "text-green-600"
-                            }`}
-                          >
-                            {formatQuantity(transaction.quantity, transaction.transactionType)}
-                          </span>
-                        </td>
-                        <td className="px-4 sm:px-6 py-4 sm:py-5">
-                          <div className="text-sm text-gray-900">
-                            {formatLocation(transaction)}
-                          </div>
-                        </td>
-                        <td className="px-4 sm:px-6 py-4 sm:py-5">
-                          <div className="text-sm text-gray-900">
-                            {transaction.user?.email || "-"}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleNewStockChange(selectedItem.item.id, selectedItem.newStock - 1)}
+                              className="p-1.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
+                              disabled={selectedItem.newStock <= 0}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </button>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={selectedItem.newStock}
+                              onChange={(e) =>
+                                handleNewStockChange(
+                                  selectedItem.item.id,
+                                  parseFloat(e.target.value) || 0
+                                )
+                              }
+                              className="w-20 sm:w-24 h-9 sm:h-10 text-center text-sm font-semibold border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+                            />
+                            <button
+                              onClick={() => handleNewStockChange(selectedItem.item.id, selectedItem.newStock + 1)}
+                              className="p-1.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </button>
                           </div>
                         </td>
                         <td className="px-4 sm:px-6 py-4 sm:py-5 text-right">
                           <button
-                            onClick={() => handleDelete(transaction.id)}
-                            disabled={isDeleting === transaction.id}
-                            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center ml-auto"
-                            aria-label={t.transactions.deleteTransaction}
+                            onClick={() => handleRemoveItem(selectedItem.item.id)}
+                            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
+                            aria-label="Remove item"
                           >
-                            {isDeleting === transaction.id ? (
-                              <RefreshCw className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-4 w-4" />
-                            )}
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </td>
                       </tr>
@@ -623,8 +705,45 @@ export default function TransactionsPage() {
               </table>
             </div>
           </div>
+
+          {/* Notes Section */}
+          <div className="mb-4 sm:mb-6">
+            <Label htmlFor="notes" className="text-sm font-semibold text-gray-700 mb-2 block">
+              {t.adjust.notes}
+            </Label>
+            <Textarea
+              id="notes"
+              placeholder={t.adjust.notesPlaceholder}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="min-h-[100px] text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8] resize-y"
+              rows={4}
+            />
+          </div>
+
+          {/* Summary and Submit */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-gray-200">
+            <div className="text-sm sm:text-base font-semibold text-gray-700">
+              Items: <span className="text-[#6B21A8]">{selectedItems.length}</span>
+            </div>
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting || selectedItems.length === 0 || !selectedLocation}
+              className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white shadow-lg hover:shadow-xl transition-all w-full sm:w-auto touch-manipulation min-h-[48px] sm:min-h-0 px-6 sm:px-8"
+            >
+              {isSubmitting ? t.common.loading : t.adjust.adjustStock}
+            </Button>
+          </div>
         </main>
       </div>
+
+      {/* Barcode Scanner Modal */}
+      <BarcodeScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScan={handleBarcodeScan}
+        onManualEnter={handleBarcodeScan}
+      />
     </div>
   );
 }

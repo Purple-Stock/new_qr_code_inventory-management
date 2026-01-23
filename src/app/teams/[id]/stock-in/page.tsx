@@ -272,7 +272,7 @@ export default function StockInPage() {
     { icon: MapPin, label: t.menu.locations, href: `/teams/${teamId}/locations` },
     { icon: ArrowUp, label: t.menu.stockIn, href: `/teams/${teamId}/stock-in`, active: true },
     { icon: ArrowDown, label: t.menu.stockOut, href: `/teams/${teamId}/stock-out` },
-    { icon: RotateCcw, label: t.menu.adjust },
+    { icon: RotateCcw, label: t.menu.adjust, href: `/teams/${teamId}/adjust` },
     { icon: Move, label: t.menu.move },
     { icon: FileText, label: t.menu.transactions, href: `/teams/${teamId}/transactions` },
     { icon: BarChart3, label: t.menu.stockByLocation },

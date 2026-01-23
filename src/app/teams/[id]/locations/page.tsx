@@ -151,7 +151,7 @@ export default function LocationsPage() {
     { icon: MapPin, label: t.menu.locations, href: `/teams/${teamId}/locations`, active: true },
     { icon: ArrowUp, label: t.menu.stockIn, href: `/teams/${teamId}/stock-in` },
     { icon: ArrowDown, label: t.menu.stockOut, href: `/teams/${teamId}/stock-out` },
-    { icon: RotateCcw, label: t.menu.adjust },
+    { icon: RotateCcw, label: t.menu.adjust, href: `/teams/${teamId}/adjust` },
     { icon: Move, label: t.menu.move },
     { icon: FileText, label: t.menu.transactions, href: `/teams/${teamId}/transactions` },
     { icon: BarChart3, label: t.menu.stockByLocation },
