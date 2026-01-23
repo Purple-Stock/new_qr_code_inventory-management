@@ -367,10 +367,12 @@ export default function StockInPage() {
           </div>
 
           <div className="mb-6">
-            <Link href="/team_selection" onClick={() => setIsMobileSidebarOpen(false)}>
-              <button className="text-sm text-[#6B21A8] hover:text-[#7C3AED] hover:underline font-medium transition-colors w-full text-left">
-                {t.common.changeTeam}
-              </button>
+            <Link
+              href="/team_selection"
+              onClick={() => setIsMobileSidebarOpen(false)}
+              className="text-sm text-[#6B21A8] hover:text-[#7C3AED] hover:underline font-medium transition-colors w-full text-left block"
+            >
+              {t.common.changeTeam}
             </Link>
           </div>
 
@@ -382,17 +384,18 @@ export default function StockInPage() {
 
               if (href !== "#") {
                 return (
-                  <Link key={index} href={href} onClick={() => setIsMobileSidebarOpen(false)}>
-                    <button
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                        isActive
-                          ? "bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] text-white shadow-md"
-                          : "text-gray-700 hover:bg-purple-50 hover:text-[#6B21A8]"
-                      }`}
-                    >
-                      <Icon className="h-5 w-5 flex-shrink-0" />
-                      <span>{item.label}</span>
-                    </button>
+                  <Link
+                    key={index}
+                    href={href}
+                    onClick={() => setIsMobileSidebarOpen(false)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      isActive
+                        ? "bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] text-white shadow-md"
+                        : "text-gray-700 hover:bg-purple-50 hover:text-[#6B21A8]"
+                    }`}
+                  >
+                    <Icon className="h-5 w-5 flex-shrink-0" />
+                    <span>{item.label}</span>
                   </Link>
                 );
               }
@@ -431,10 +434,11 @@ export default function StockInPage() {
                     <h3 className="font-bold text-gray-900 text-lg truncate">
                       {team?.name || "Loading..."}
                     </h3>
-                    <Link href="/team_selection">
-                      <button className="text-xs text-[#6B21A8] hover:text-[#7C3AED] hover:underline font-medium transition-colors flex-shrink-0">
-                        {t.common.changeTeam}
-                      </button>
+                    <Link
+                      href="/team_selection"
+                      className="text-xs text-[#6B21A8] hover:text-[#7C3AED] hover:underline font-medium transition-colors flex-shrink-0"
+                    >
+                      {t.common.changeTeam}
                     </Link>
                   </>
                 ) : (
@@ -455,18 +459,18 @@ export default function StockInPage() {
 
                 if (href !== "#") {
                   return (
-                    <Link key={index} href={href}>
-                      <button
-                        className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center" : "gap-3"} px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                          isActive
-                            ? "bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] text-white shadow-md"
-                            : "text-gray-700 hover:bg-purple-50 hover:text-[#6B21A8]"
-                        }`}
-                        title={isSidebarCollapsed ? item.label : undefined}
-                      >
-                        <Icon className="h-5 w-5 flex-shrink-0" />
-                        {!isSidebarCollapsed && <span>{item.label}</span>}
-                      </button>
+                    <Link
+                      key={index}
+                      href={href}
+                      className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center" : "gap-3"} px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                        isActive
+                          ? "bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] text-white shadow-md"
+                          : "text-gray-700 hover:bg-purple-50 hover:text-[#6B21A8]"
+                      }`}
+                      title={isSidebarCollapsed ? item.label : undefined}
+                    >
+                      <Icon className="h-5 w-5 flex-shrink-0" />
+                      {!isSidebarCollapsed && <span>{item.label}</span>}
                     </Link>
                   );
                 }
