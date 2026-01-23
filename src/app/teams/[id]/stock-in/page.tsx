@@ -39,6 +39,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/ui/use-toast-simple";
+import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import Link from "next/link";
 
 interface Item {
@@ -79,6 +80,7 @@ export default function StockInPage() {
   const [notes, setNotes] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const { language, setLanguage, t } = useTranslation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -151,6 +153,26 @@ export default function StockInPage() {
       setSelectedItems([...selectedItems, { item, quantity: 1 }]);
     }
     setItemSearch("");
+  };
+
+  const handleBarcodeScan = async (barcode: string) => {
+    // Find item by barcode
+    const foundItem = items.find((item) => item.barcode === barcode);
+    
+    if (foundItem) {
+      handleAddItem(foundItem);
+      toast({
+        variant: "success",
+        title: t.stockIn.itemFound,
+        description: `${foundItem.name || t.items.unnamedItem} ${t.stockIn.itemAddedToList}`,
+      });
+    } else {
+      toast({
+        variant: "destructive",
+        title: t.stockIn.itemNotFound,
+        description: `${t.stockIn.noItemWithBarcode} ${barcode}`,
+      });
+    }
   };
 
   const handleQuantityChange = (itemId: number, quantity: number) => {
@@ -588,6 +610,7 @@ export default function StockInPage() {
               </div>
               <Button
                 variant="outline"
+                onClick={() => setIsScannerOpen(true)}
                 className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 text-xs sm:text-sm touch-manipulation min-h-[44px] sm:min-h-0"
               >
                 <ScanLine className="h-4 w-4 mr-2" />
@@ -718,6 +741,14 @@ export default function StockInPage() {
           </div>
         </main>
       </div>
+
+      {/* Barcode Scanner Modal */}
+      <BarcodeScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScan={handleBarcodeScan}
+        onManualEnter={handleBarcodeScan}
+      />
     </div>
   );
 }
