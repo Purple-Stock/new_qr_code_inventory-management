@@ -313,7 +313,7 @@ export default function MovePage() {
     { icon: Move, label: t.menu.move, href: `/teams/${teamId}/move`, active: true },
     { icon: FileText, label: t.menu.transactions, href: `/teams/${teamId}/transactions` },
     { icon: BarChart3, label: t.menu.stockByLocation, href: `/teams/${teamId}/stock-by-location` },
-    { icon: Tag, label: t.menu.labels },
+    { icon: Tag, label: t.menu.labels, href: `/teams/${teamId}/labels` },
     { icon: FileBarChart, label: t.menu.reports },
     { icon: Settings, label: t.menu.settings },
   ];
