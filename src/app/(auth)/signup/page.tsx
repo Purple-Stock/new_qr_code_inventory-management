@@ -76,14 +76,14 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f7fa] flex items-center justify-center p-4 relative">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 flex items-center justify-center p-4 relative">
       {/* Language Selector - Fixed top right */}
-      <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-        <Label htmlFor="language" className="text-sm text-gray-700">
+      <div className="absolute top-6 right-6 flex items-center gap-2 z-10">
+        <Label htmlFor="language" className="text-sm text-gray-600 font-medium">
           Langue:
         </Label>
         <Select value={language} onValueChange={setLanguage}>
-          <SelectTrigger id="language" className="w-[140px]">
+          <SelectTrigger id="language" className="w-[140px] bg-white border-gray-200">
             <SelectValue>
               {language === "en" && (
                 <div className="flex items-center gap-2">
@@ -130,13 +130,13 @@ export default function SignUpPage() {
 
       {/* Main Content Card */}
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-white rounded-2xl shadow-2xl p-10 border border-gray-100">
           {/* Logo and Branding */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-10">
             <div className="inline-flex flex-col items-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-[#6B21A8] rounded-lg mb-3">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#6B21A8] to-[#7C3AED] rounded-2xl mb-4 shadow-lg">
                 <svg
-                  className="w-8 h-8 text-white"
+                  className="w-10 h-10 text-white"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -144,34 +144,30 @@ export default function SignUpPage() {
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth={2}
+                    strokeWidth={2.5}
                     d="M13 10V3L4 14h7v7l9-11h-7z"
                   />
                 </svg>
               </div>
-              <div className="bg-[#6B21A8] px-4 py-2 rounded-lg mb-2">
-                <h1 className="text-xl font-bold text-white uppercase tracking-tight">
-                  PURPLE STOCK
-                </h1>
-              </div>
-              <div className="bg-[#6B21A8] px-4 py-1 rounded-lg">
-                <p className="text-xs text-white font-light">
-                  Your Inventory Simplified
-                </p>
-              </div>
+              <h1 className="text-3xl font-bold text-[#6B21A8] uppercase tracking-tight mb-2">
+                PURPLE STOCK
+              </h1>
+              <p className="text-sm text-gray-500 font-medium">
+                Your Inventory Simplified
+              </p>
             </div>
           </div>
 
           {/* Instructions */}
-          <p className="text-gray-700 text-sm mb-6 text-center">
+          <p className="text-gray-600 text-base mb-6 text-center font-medium">
             Enter your details to create your account
           </p>
 
           {/* Error Message */}
           {error && (
-            <Alert variant="destructive" className="mb-6 border-l-4 border-l-red-500 bg-red-50/50">
-              <AlertTriangle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-600 text-sm">
+            <Alert variant="destructive" className="mb-6 border-l-4 border-l-red-500 bg-red-50 rounded-lg">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              <AlertDescription className="text-red-700 text-sm font-medium">
                 {error}
               </AlertDescription>
             </Alert>
@@ -179,19 +175,19 @@ export default function SignUpPage() {
 
           {/* Success Message */}
           {success && (
-            <Alert className="mb-6 border-l-4 border-l-green-500 bg-green-50/50">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-600 text-sm">
+            <Alert className="mb-6 border-l-4 border-l-green-500 bg-green-50 rounded-lg">
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+              <AlertDescription className="text-green-700 text-sm font-medium">
                 {success}
               </AlertDescription>
             </Alert>
           )}
 
           {/* Sign Up Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email Field */}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-900">
+              <Label htmlFor="email" className="text-gray-700 font-semibold text-sm">
                 Email
               </Label>
               <Input
@@ -200,14 +196,14 @@ export default function SignUpPage() {
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full"
+                className="w-full h-11 border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
                 required
               />
             </div>
 
             {/* Password Field */}
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-900">
+              <Label htmlFor="password" className="text-gray-700 font-semibold text-sm">
                 Password
               </Label>
               <div className="relative">
@@ -217,14 +213,14 @@ export default function SignUpPage() {
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pr-10"
+                  className="w-full h-11 pr-10 border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
                   required
                   minLength={6}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
@@ -239,7 +235,7 @@ export default function SignUpPage() {
 
             {/* Confirm Password Field */}
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-gray-900">
+              <Label htmlFor="confirmPassword" className="text-gray-700 font-semibold text-sm">
                 Confirm Password
               </Label>
               <div className="relative">
@@ -249,14 +245,14 @@ export default function SignUpPage() {
                   placeholder="Confirm your password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full pr-10"
+                  className="w-full h-11 pr-10 border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
                   required
                   minLength={6}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
                   aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                 >
                   {showConfirmPassword ? (
@@ -272,18 +268,18 @@ export default function SignUpPage() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#6B21A8] hover:bg-[#6B21A8]/90 text-white font-bold uppercase py-6 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white font-semibold py-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-6"
             >
               {isLoading ? "Creating Account..." : "Sign Up"}
             </Button>
           </form>
 
           {/* Sign In Link */}
-          <div className="mt-6 text-center text-sm">
-            <span className="text-gray-700">Already have an account? </span>
+          <div className="mt-8 text-center">
+            <span className="text-gray-600 text-sm">Already have an account? </span>
             <Link
               href="/"
-              className="text-[#6B21A8] hover:underline font-medium"
+              className="text-[#6B21A8] hover:text-[#7C3AED] font-semibold text-sm transition-colors"
             >
               Sign In
             </Link>
