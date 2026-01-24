@@ -72,3 +72,42 @@ export async function createItem(data: {
 
   return item;
 }
+
+/**
+ * Update an item
+ */
+export async function updateItem(
+  itemId: number,
+  data: {
+    name?: string | null;
+    sku?: string | null;
+    barcode?: string | null;
+    cost?: number | null;
+    price?: number | null;
+    itemType?: string | null;
+    brand?: string | null;
+    locationId?: number | null;
+  }
+): Promise<Item> {
+  const [item] = await sqlite
+    .update(items)
+    .set({
+      ...(data.name !== undefined && { name: data.name ?? null }),
+      ...(data.sku !== undefined && { sku: data.sku ?? null }),
+      ...(data.barcode !== undefined && { barcode: data.barcode ?? null }),
+      ...(data.cost !== undefined && { cost: data.cost ?? null }),
+      ...(data.price !== undefined && { price: data.price ?? null }),
+      ...(data.itemType !== undefined && { itemType: data.itemType ?? null }),
+      ...(data.brand !== undefined && { brand: data.brand ?? null }),
+      ...(data.locationId !== undefined && { locationId: data.locationId ?? null }),
+      updatedAt: new Date(),
+    })
+    .where(eq(items.id, itemId))
+    .returning();
+
+  if (!item) {
+    throw new Error("Item not found");
+  }
+
+  return item;
+}

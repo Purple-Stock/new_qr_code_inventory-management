@@ -366,7 +366,7 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
               </Link>
             </div>
           ) : (
-            <ItemsList items={filteredItems} formatPrice={(p) => formatPrice(p, language)} t={t} />
+            <ItemsList items={filteredItems} teamId={teamId} formatPrice={(p) => formatPrice(p, language)} t={t} />
           )}
         </main>
       </div>

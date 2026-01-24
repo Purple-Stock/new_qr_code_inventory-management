@@ -1,16 +1,18 @@
 "use client";
 
+import Link from "next/link";
 import { QRCodeDisplay } from "@/components/QRCodeDisplay";
 import { MapPin, Edit, Copy, Trash2 } from "lucide-react";
 import type { Item } from "../_types";
 
 interface ItemsListProps {
   items: Item[];
+  teamId: string;
   formatPrice: (price: number | null) => string;
   t: any;
 }
 
-export function ItemsList({ items, formatPrice, t }: ItemsListProps) {
+export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
   if (items.length === 0) {
     return null;
   }
@@ -72,13 +74,14 @@ export function ItemsList({ items, formatPrice, t }: ItemsListProps) {
             )}
 
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
-              <button
+              <Link
+                href={`/teams/${teamId}/items/${item.id}/edit`}
                 className="p-2.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
                 aria-label="Edit item"
                 title="Edit item"
               >
                 <Edit className="h-4 w-4" />
-              </button>
+              </Link>
               <button
                 className="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
                 aria-label="Copy item"
@@ -187,13 +190,14 @@ export function ItemsList({ items, formatPrice, t }: ItemsListProps) {
                   </td>
                   <td className="px-6 py-5 whitespace-nowrap text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <button
+                      <Link
+                        href={`/teams/${teamId}/items/${item.id}/edit`}
                         className="p-2.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all"
                         aria-label="Edit item"
                         title="Edit item"
                       >
                         <Edit className="h-4 w-4" />
-                      </button>
+                      </Link>
                       <button
                         className="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                         aria-label="Copy item"
