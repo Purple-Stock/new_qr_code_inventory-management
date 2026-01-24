@@ -225,8 +225,11 @@ export async function getTeamReportStats(
       move: 0,
     };
 
-    current[transaction.transactionType] += 1;
-    transactionsByDateMap.set(date, current);
+    const type = transaction.transactionType;
+    if (type === "stock_in" || type === "stock_out" || type === "adjust" || type === "move") {
+      current[type] += 1;
+      transactionsByDateMap.set(date, current);
+    }
   });
 
   const transactionsByDate = Array.from(transactionsByDateMap.entries())
