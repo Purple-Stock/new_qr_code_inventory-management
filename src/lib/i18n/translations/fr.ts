@@ -53,6 +53,7 @@ export const fr = {
     items: "articles",
     transactions: "transactions",
     unnamedItem: "Article sans nom",
+    itemDuplicated: "Article dupliqué avec succès",
   },
   locations: {
     title: "Emplacements",

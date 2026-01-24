@@ -53,6 +53,7 @@ export const ptBR = {
     items: "itens",
     transactions: "transações",
     unnamedItem: "Item Sem Nome",
+    itemDuplicated: "Item duplicado com sucesso",
   },
   locations: {
     title: "Localizações",

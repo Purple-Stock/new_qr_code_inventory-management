@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { QRCodeDisplay } from "@/components/QRCodeDisplay";
-import { MapPin, Edit, Copy, Trash2 } from "lucide-react";
+import { MapPin, Edit, Copy, Trash2, Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast-simple";
 import type { Item } from "../_types";
 
 interface ItemsListProps {
@@ -12,7 +15,69 @@ interface ItemsListProps {
   t: any;
 }
 
+function generateBarcode(): string {
+  return Math.floor(1000000000000 + Math.random() * 9000000000000).toString();
+}
+
 export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [copyingId, setCopyingId] = useState<number | null>(null);
+
+  const handleCopyItem = async (item: Item) => {
+    setCopyingId(item.id);
+    try {
+      const getRes = await fetch(`/api/teams/${teamId}/items/${item.id}`);
+      const getData = await getRes.json();
+      if (!getRes.ok) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: getData.error || "Failed to load item",
+        });
+        return;
+      }
+      const full = getData.item;
+
+      const newBarcode = generateBarcode();
+      const name = (full.name && String(full.name).trim()) ? String(full.name).trim() : "Unnamed Item (copy)";
+      const postRes = await fetch(`/api/teams/${teamId}/items`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          sku: full.sku ?? null,
+          barcode: newBarcode,
+          cost: full.cost ?? null,
+          price: full.price ?? null,
+          itemType: full.itemType ?? null,
+          brand: full.brand ?? null,
+          locationId: full.locationId ?? null,
+          initialQuantity: 0,
+        }),
+      });
+      const postData = await postRes.json();
+
+      if (!postRes.ok) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: postData.error || "Failed to duplicate item",
+        });
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "Success",
+        description: t.items.itemDuplicated,
+      });
+      router.refresh();
+    } finally {
+      setCopyingId(null);
+    }
+  };
+
   if (items.length === 0) {
     return null;
   }
@@ -83,11 +148,18 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
                 <Edit className="h-4 w-4" />
               </Link>
               <button
-                className="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
+                type="button"
+                onClick={() => handleCopyItem(item)}
+                disabled={copyingId === item.id}
+                className="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Copy item"
                 title="Copy item"
               >
-                <Copy className="h-4 w-4" />
+                {copyingId === item.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
               </button>
               <button
                 className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
@@ -199,11 +271,18 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
                         <Edit className="h-4 w-4" />
                       </Link>
                       <button
-                        className="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                        type="button"
+                        onClick={() => handleCopyItem(item)}
+                        disabled={copyingId === item.id}
+                        className="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         aria-label="Copy item"
                         title="Copy item"
                       >
-                        <Copy className="h-4 w-4" />
+                        {copyingId === item.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
                       </button>
                       <button
                         className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"

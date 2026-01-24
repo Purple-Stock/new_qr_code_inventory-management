@@ -53,6 +53,7 @@ export const en = {
     items: "items",
     transactions: "transactions",
     unnamedItem: "Unnamed Item",
+    itemDuplicated: "Item duplicated successfully",
   },
   locations: {
     title: "Locations",
