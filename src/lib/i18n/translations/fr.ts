@@ -25,6 +25,7 @@ export const fr = {
     collapseSidebar: "Réduire la barre latérale",
     createdAt: "Créé le",
     noNotes: "Aucune note.",
+    cannotBeUndone: "Cette action ne peut pas être annulée.",
   },
   items: {
     title: "Articles",

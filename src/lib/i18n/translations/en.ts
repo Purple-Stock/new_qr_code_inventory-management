@@ -25,6 +25,7 @@ export const en = {
     collapseSidebar: "Collapse sidebar",
     createdAt: "Created on",
     noNotes: "No notes.",
+    cannotBeUndone: "This action cannot be undone.",
   },
   items: {
     title: "Items",

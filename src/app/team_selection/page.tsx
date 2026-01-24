@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { TeamCard } from "@/components/TeamCard";
 import { EditTeamModal } from "@/components/EditTeamModal";
+import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/ui/use-toast-simple";
 import Link from "next/link";
@@ -39,6 +40,8 @@ export default function TeamSelectionPage() {
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [deletingTeamId, setDeletingTeamId] = useState<number | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
 
   useEffect(() => {
     // TODO: Get userId from session/auth
@@ -91,18 +94,21 @@ export default function TeamSelectionPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDeleteClick = (id: number) => {
     const team = teams.find((t) => t.id === id);
-    if (!team) return;
-
-    if (!confirm(t.teamSelection.deleteConfirm)) {
-      return;
+    if (team) {
+      setTeamToDelete(team);
+      setDeleteModalOpen(true);
     }
+  };
 
-    setDeletingTeamId(id);
+  const handleDeleteConfirm = async () => {
+    if (!teamToDelete) return;
+
+    setDeletingTeamId(teamToDelete.id);
 
     try {
-      const response = await fetch(`/api/teams/${id}`, {
+      const response = await fetch(`/api/teams/${teamToDelete.id}`, {
         method: "DELETE",
       });
 
@@ -129,6 +135,10 @@ export default function TeamSelectionPage() {
       if (userId) {
         fetchTeams(parseInt(userId, 10));
       }
+
+      // Close modal
+      setDeleteModalOpen(false);
+      setTeamToDelete(null);
     } catch (error) {
       console.error("Error deleting team:", error);
       toast({
@@ -308,7 +318,7 @@ export default function TeamSelectionPage() {
                   itemCount={team.itemCount}
                   transactionCount={team.transactionCount}
                   onEdit={handleEdit}
-                  onDelete={handleDelete}
+                  onDelete={handleDeleteClick}
                   isDeleting={deletingTeamId === team.id}
                 />
               ))}
@@ -326,6 +336,19 @@ export default function TeamSelectionPage() {
         }}
         team={editingTeam}
         onSuccess={handleEditSuccess}
+      />
+
+      {/* Delete Confirm Modal */}
+      <DeleteConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setTeamToDelete(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        title={t.teamSelection.deleteTeam}
+        itemName={teamToDelete?.name}
+        isDeleting={deletingTeamId !== null}
       />
     </div>
   );

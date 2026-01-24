@@ -25,6 +25,7 @@ export const ptBR = {
     collapseSidebar: "Recolher barra lateral",
     createdAt: "Criado em",
     noNotes: "Sem notas.",
+    cannotBeUndone: "Esta ação não pode ser desfeita.",
   },
   items: {
     title: "Itens",
