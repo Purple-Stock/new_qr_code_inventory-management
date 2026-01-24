@@ -21,6 +21,10 @@ export const ptBR = {
     changeTeam: "Trocar Time",
     selectTeam: "Selecionar Time",
     chooseTeam: "Escolha um time",
+    expandSidebar: "Expandir barra lateral",
+    collapseSidebar: "Recolher barra lateral",
+    createdAt: "Criado em",
+    noNotes: "Sem notas.",
   },
   items: {
     title: "Itens",

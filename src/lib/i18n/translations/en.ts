@@ -21,6 +21,10 @@ export const en = {
     changeTeam: "Change Team",
     selectTeam: "Select Team",
     chooseTeam: "Choose a team",
+    expandSidebar: "Expand sidebar",
+    collapseSidebar: "Collapse sidebar",
+    createdAt: "Created on",
+    noNotes: "No notes.",
   },
   items: {
     title: "Items",

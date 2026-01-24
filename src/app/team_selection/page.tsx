@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TeamCard } from "@/components/TeamCard";
+import { useTranslation } from "@/lib/i18n";
 import Link from "next/link";
 
 interface Team {
@@ -27,9 +28,9 @@ interface Team {
 
 export default function TeamSelectionPage() {
   const router = useRouter();
+  const { language, setLanguage, t } = useTranslation();
   const [teams, setTeams] = useState<Team[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [language, setLanguage] = useState("pt-BR");
   const [showSuccess, setShowSuccess] = useState(true);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
@@ -75,7 +76,7 @@ export default function TeamSelectionPage() {
 
   const handleDelete = (id: number) => {
     // TODO: Implement delete functionality
-    if (confirm("Tem certeza que deseja deletar este time?")) {
+    if (confirm(t.common.delete + "?")) {
       console.log("Delete team:", id);
     }
   };
@@ -128,8 +129,8 @@ export default function TeamSelectionPage() {
             onClick={handleSignOut}
             className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-gray-700 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all font-medium text-xs sm:text-sm touch-manipulation min-h-[36px] sm:min-h-0"
           >
-            <span className="hidden sm:inline">Sign Out</span>
-            <span className="sm:hidden">Out</span>
+            <span className="hidden sm:inline">{t.common.signOut}</span>
+            <span className="sm:hidden">{t.common.signOutShort}</span>
             <LogOut className="h-4 w-4" />
           </button>
         </div>
@@ -147,8 +148,8 @@ export default function TeamSelectionPage() {
             </div>
               {!isSidebarCollapsed && (
                 <div className="min-w-0">
-              <h2 className="font-bold text-gray-900 text-lg">Select Team</h2>
-              <p className="text-xs text-gray-500 font-medium">Choose a team</p>
+              <h2 className="font-bold text-gray-900 text-lg">{t.common.selectTeam}</h2>
+              <p className="text-xs text-gray-500 font-medium">{t.common.chooseTeam}</p>
                 </div>
               )}
             </div>
@@ -156,7 +157,7 @@ export default function TeamSelectionPage() {
           <button 
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-8 h-8 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center shadow-md hover:shadow-lg hover:border-[#6B21A8] transition-all z-10 touch-manipulation"
-            aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={isSidebarCollapsed ? t.common.expandSidebar : t.common.collapseSidebar}
           >
             {isSidebarCollapsed ? (
               <ChevronRight className="h-4 w-4 text-gray-600" />
@@ -173,12 +174,12 @@ export default function TeamSelectionPage() {
             <div className="mb-4 sm:mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 p-3 sm:p-4 rounded-lg flex items-center gap-2 sm:gap-3 shadow-sm">
               <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
               <span className="text-green-800 text-xs sm:text-sm font-medium flex-1">
-                Signed in successfully.
+                {t.teamSelection.signedInSuccess}
               </span>
               <button
                 onClick={() => setShowSuccess(false)}
                 className="text-green-600 hover:text-green-800 font-bold text-lg sm:text-xl leading-none touch-manipulation min-w-[24px] min-h-[24px] flex items-center justify-center"
-                aria-label="Close"
+                aria-label={t.common.close}
               >
                 ×
               </button>
@@ -190,15 +191,15 @@ export default function TeamSelectionPage() {
             <div className="flex-1 min-w-0">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-2 sm:mb-3">
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
-                  Select a Team
+                  {t.teamSelection.title}
                 </h1>
                 <button className="flex items-center justify-center sm:justify-start gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm touch-manipulation min-h-[40px] sm:min-h-0 w-full sm:w-auto">
                   <Info className="h-4 w-4" />
-                  Tutorial
+                  {t.common.tutorial}
                 </button>
               </div>
               <p className="text-gray-600 text-sm sm:text-base md:text-lg">
-                Manage your teams or create a new one to get started
+                {t.teamSelection.subtitle}
               </p>
             </div>
 
@@ -208,8 +209,8 @@ export default function TeamSelectionPage() {
                   className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white border-0 shadow-lg hover:shadow-xl transition-all w-full sm:w-auto touch-manipulation min-h-[48px] sm:min-h-0"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Create Team</span>
-                  <span className="sm:hidden">Create</span>
+                  <span className="hidden sm:inline">{t.teamSelection.createTeam}</span>
+                  <span className="sm:hidden">{t.teamSelection.createTeamShort}</span>
                 </Button>
               </Link>
             </div>
@@ -219,19 +220,19 @@ export default function TeamSelectionPage() {
           {isLoading ? (
             <div className="text-center py-12 sm:py-20">
               <div className="inline-block animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-4 border-[#6B21A8] border-t-transparent mb-4"></div>
-              <p className="text-gray-600 text-base sm:text-lg font-medium">Loading teams...</p>
+              <p className="text-gray-600 text-base sm:text-lg font-medium">{t.teamSelection.loadingTeams}</p>
             </div>
           ) : teams.length === 0 ? (
             <div className="text-center py-12 sm:py-20 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 px-4 sm:px-6">
               <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                 <Users className="h-8 w-8 sm:h-10 sm:w-10 text-purple-600" />
               </div>
-              <p className="text-gray-700 text-lg sm:text-xl font-semibold mb-2">No teams found</p>
-              <p className="text-gray-500 text-sm sm:text-base mb-4 sm:mb-6">Get started by creating your first team</p>
+              <p className="text-gray-700 text-lg sm:text-xl font-semibold mb-2">{t.teamSelection.noTeams}</p>
+              <p className="text-gray-500 text-sm sm:text-base mb-4 sm:mb-6">{t.teamSelection.noTeamsMessage}</p>
               <Link href="/teams/new">
                 <Button className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white shadow-lg hover:shadow-xl transition-all touch-manipulation min-h-[48px]">
                   <Plus className="h-4 w-4 mr-2" />
-                  Create Your First Team
+                  {t.teamSelection.createFirstTeam}
                 </Button>
               </Link>
             </div>

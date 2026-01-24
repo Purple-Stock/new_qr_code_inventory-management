@@ -21,6 +21,10 @@ export const fr = {
     changeTeam: "Changer d'équipe",
     selectTeam: "Sélectionner une équipe",
     chooseTeam: "Choisissez une équipe",
+    expandSidebar: "Développer la barre latérale",
+    collapseSidebar: "Réduire la barre latérale",
+    createdAt: "Créé le",
+    noNotes: "Aucune note.",
   },
   items: {
     title: "Articles",
