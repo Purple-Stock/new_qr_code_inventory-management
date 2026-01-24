@@ -28,6 +28,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
 import Link from "next/link";
+import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import { ItemsList } from "./ItemsList";
 import { ItemsSearch } from "./ItemsSearch";
 import { formatPrice } from "../_utils/formatPrice";
@@ -43,8 +44,19 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
   const { language, setLanguage, t } = useTranslation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [filteredItems, setFilteredItems] = useState<Item[]>(items);
   const teamId = team.id.toString();
+
+  const tourSteps: TourStep[] = [
+    { target: "tour-search", title: t.items.tourSearchTitle, description: t.items.tourSearchDesc },
+    { target: "tour-tutorial", title: t.items.tourTutorialTitle, description: t.items.tourTutorialDesc },
+    { target: "tour-categories", title: t.items.tourCategoriesTitle, description: t.items.tourCategoriesDesc },
+    { target: "tour-export", title: t.items.tourExportTitle, description: t.items.tourExportDesc },
+    { target: "tour-add-item", title: t.items.tourAddItemTitle, description: t.items.tourAddItemDesc },
+    { target: "tour-sidebar", title: t.items.tourSidebarTitle, description: t.items.tourSidebarDesc },
+    { target: "tour-list", title: t.items.tourListTitle, description: t.items.tourListDesc },
+  ];
 
   useEffect(() => {
     setFilteredItems(items);
@@ -230,6 +242,7 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
       <div className="flex flex-col lg:flex-row">
         {/* Desktop Sidebar */}
         <aside
+          data-tour="tour-sidebar"
           className={`hidden lg:block bg-white min-h-[calc(100vh-73px)] border-r border-gray-200 shadow-sm relative transition-all duration-300 ${
             isSidebarCollapsed ? "w-20" : "w-64"
           }`}
@@ -319,14 +332,18 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
           </div>
 
           <div className="mb-4 sm:mb-6 space-y-3">
-            <ItemsSearch
-              items={items}
-              onFilteredItemsChange={setFilteredItems}
-              placeholder={t.items.searchPlaceholder}
-            />
+            <div data-tour="tour-search" className="w-full">
+              <ItemsSearch
+                items={items}
+                onFilteredItemsChange={setFilteredItems}
+                placeholder={t.items.searchPlaceholder}
+              />
+            </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <Button
                 variant="outline"
+                onClick={() => setIsTutorialOpen(true)}
+                data-tour="tour-tutorial"
                 className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm flex-1 sm:flex-initial touch-manipulation min-h-[40px] sm:min-h-0"
               >
                 <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -334,18 +351,26 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
               </Button>
               <Button
                 variant="outline"
+                data-tour="tour-categories"
                 className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm flex-1 sm:flex-initial touch-manipulation min-h-[40px] sm:min-h-0"
               >
                 <span className="hidden sm:inline">{t.items.allCategories}</span>
                 <span className="sm:hidden">{t.items.categories}</span>
                 <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
               </Button>
-              <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all h-10 sm:h-11 text-xs sm:text-sm flex-1 sm:flex-initial touch-manipulation min-h-[40px] sm:min-h-0">
+              <Button
+                data-tour="tour-export"
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all h-10 sm:h-11 text-xs sm:text-sm flex-1 sm:flex-initial touch-manipulation min-h-[40px] sm:min-h-0"
+              >
                 <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">{t.items.exportCsv}</span>
                 <span className="sm:hidden">{t.items.exportCsvShort}</span>
               </Button>
-              <Link href={`/teams/${teamId}/items/new`} className="flex-1 sm:flex-initial w-full sm:w-auto">
+              <Link
+                href={`/teams/${teamId}/items/new`}
+                className="flex-1 sm:flex-initial w-full sm:w-auto"
+                data-tour="tour-add-item"
+              >
                 <Button className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white shadow-lg hover:shadow-xl transition-all h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0">
                   <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                   <span className="hidden sm:inline">{t.items.addItem}</span>
@@ -356,7 +381,10 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
           </div>
 
           {filteredItems.length === 0 ? (
-            <div className="text-center py-12 sm:py-20 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 px-4 sm:px-6">
+            <div
+              data-tour="tour-list"
+              className="text-center py-12 sm:py-20 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 px-4 sm:px-6"
+            >
               <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                 <Package className="h-8 w-8 sm:h-10 sm:w-10 text-purple-600" />
               </div>
@@ -370,10 +398,18 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
               </Link>
             </div>
           ) : (
-            <ItemsList items={filteredItems} teamId={teamId} formatPrice={(p) => formatPrice(p, language)} t={t} />
+            <div data-tour="tour-list">
+              <ItemsList items={filteredItems} teamId={teamId} formatPrice={(p) => formatPrice(p, language)} t={t} />
+            </div>
           )}
         </main>
       </div>
+
+      <TutorialTour
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+        steps={tourSteps}
+      />
     </div>
   );
 }
