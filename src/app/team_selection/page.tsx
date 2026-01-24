@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TeamCard } from "@/components/TeamCard";
+import { EditTeamModal } from "@/components/EditTeamModal";
 import { useTranslation } from "@/lib/i18n";
 import Link from "next/link";
 
@@ -33,6 +34,8 @@ export default function TeamSelectionPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(true);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => {
     // TODO: Get userId from session/auth
@@ -70,8 +73,19 @@ export default function TeamSelectionPage() {
   };
 
   const handleEdit = (id: number) => {
-    // TODO: Implement edit functionality
-    console.log("Edit team:", id);
+    const team = teams.find((t) => t.id === id);
+    if (team) {
+      setEditingTeam(team);
+      setIsEditModalOpen(true);
+    }
+  };
+
+  const handleEditSuccess = () => {
+    // Refresh teams list
+    const userId = localStorage.getItem("userId");
+    if (userId) {
+      fetchTeams(parseInt(userId, 10));
+    }
   };
 
   const handleDelete = (id: number) => {
@@ -255,6 +269,17 @@ export default function TeamSelectionPage() {
           )}
         </main>
       </div>
+
+      {/* Edit Team Modal */}
+      <EditTeamModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingTeam(null);
+        }}
+        team={editingTeam}
+        onSuccess={handleEditSuccess}
+      />
     </div>
   );
 }
