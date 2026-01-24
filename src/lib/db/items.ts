@@ -1,5 +1,5 @@
 import { sqlite } from "@/db/client";
-import { items, locations } from "@/db/schema";
+import { items, locations, stockTransactions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import type { Item } from "@/db/schema";
 
@@ -33,6 +33,29 @@ export async function getItemById(itemId: number): Promise<Item | null> {
     .limit(1);
 
   return item || null;
+}
+
+/**
+ * Get item by ID with location name
+ */
+export async function getItemByIdWithLocation(
+  itemId: number
+): Promise<(Item & { locationName?: string | null }) | null> {
+  const [row] = await sqlite
+    .select({
+      item: items,
+      locationName: locations.name,
+    })
+    .from(items)
+    .leftJoin(locations, eq(items.locationId, locations.id))
+    .where(eq(items.id, itemId))
+    .limit(1);
+
+  if (!row?.item) return null;
+  return {
+    ...row.item,
+    locationName: row.locationName || null,
+  };
 }
 
 /**
@@ -110,4 +133,23 @@ export async function updateItem(
   }
 
   return item;
+}
+
+/**
+ * Check if an item has any stock transactions
+ */
+export async function itemHasTransactions(itemId: number): Promise<boolean> {
+  const rows = await sqlite
+    .select()
+    .from(stockTransactions)
+    .where(eq(stockTransactions.itemId, itemId))
+    .limit(1);
+  return rows.length > 0;
+}
+
+/**
+ * Delete an item. Fails if the item has stock transactions.
+ */
+export async function deleteItem(itemId: number): Promise<void> {
+  await sqlite.delete(items).where(eq(items.id, itemId));
 }

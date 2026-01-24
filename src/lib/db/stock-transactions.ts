@@ -233,6 +233,79 @@ export async function getTeamStockTransactions(teamId: number): Promise<StockTra
 }
 
 /**
+ * Get stock transactions for a specific item with related data
+ */
+export async function getItemStockTransactionsWithDetails(
+  teamId: number,
+  itemId: number
+): Promise<TransactionWithDetails[]> {
+  const allTransactions = await sqlite
+    .select()
+    .from(stockTransactions)
+    .where(
+      and(
+        eq(stockTransactions.teamId, teamId),
+        eq(stockTransactions.itemId, itemId)
+      )
+    )
+    .orderBy(desc(stockTransactions.createdAt));
+
+  const itemIds = [...new Set(allTransactions.map((t) => t.itemId))];
+  const userIds = [...new Set(allTransactions.map((t) => t.userId))];
+  const allLocationIds = [
+    ...new Set(
+      allTransactions
+        .map((t) => [t.sourceLocationId, t.destinationLocationId])
+        .flat()
+        .filter((id): id is number => id !== null)
+    ),
+  ];
+
+  const [itemsData, usersData, locationsData] = await Promise.all([
+    itemIds.length > 0
+      ? sqlite.select().from(items).where(inArray(items.id, itemIds))
+      : Promise.resolve([]),
+    userIds.length > 0
+      ? sqlite.select().from(users).where(inArray(users.id, userIds))
+      : Promise.resolve([]),
+    allLocationIds.length > 0
+      ? sqlite.select().from(locations).where(inArray(locations.id, allLocationIds))
+      : Promise.resolve([]),
+  ]);
+
+  const itemsMap = new Map(itemsData.map((item) => [item.id, item]));
+  const usersMap = new Map(usersData.map((user) => [user.id, user]));
+  const locationsMap = new Map(locationsData.map((loc) => [loc.id, loc]));
+
+  return allTransactions.map((t) => {
+    const item = itemsMap.get(t.itemId);
+    const user = usersMap.get(t.userId);
+    const sourceLoc = t.sourceLocationId ? locationsMap.get(t.sourceLocationId) : null;
+    const destLoc = t.destinationLocationId ? locationsMap.get(t.destinationLocationId) : null;
+
+    return {
+      id: t.id,
+      itemId: t.itemId,
+      teamId: t.teamId,
+      transactionType: t.transactionType,
+      quantity: t.quantity,
+      notes: t.notes,
+      userId: t.userId,
+      sourceLocationId: t.sourceLocationId,
+      destinationLocationId: t.destinationLocationId,
+      createdAt: t.createdAt,
+      updatedAt: t.updatedAt,
+      item: item
+        ? { id: item.id, name: item.name, sku: item.sku, barcode: item.barcode }
+        : null,
+      user: user ? { id: user.id, email: user.email } : null,
+      sourceLocation: sourceLoc ? { id: sourceLoc.id, name: sourceLoc.name } : null,
+      destinationLocation: destLoc ? { id: destLoc.id, name: destLoc.name } : null,
+    };
+  });
+}
+
+/**
  * Delete a stock transaction
  */
 export async function deleteStockTransaction(

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { QRCodeDisplay } from "@/components/QRCodeDisplay";
+import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { MapPin, Edit, Copy, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast-simple";
 import type { Item } from "../_types";
@@ -23,6 +24,9 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [copyingId, setCopyingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
 
   const handleCopyItem = async (item: Item) => {
     setCopyingId(item.id);
@@ -78,6 +82,43 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
     }
   };
 
+  const handleDeleteClick = (item: Item) => {
+    setItemToDelete(item);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!itemToDelete) return;
+    setDeletingId(itemToDelete.id);
+    try {
+      const res = await fetch(`/api/teams/${teamId}/items/${itemToDelete.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: data.error || "Failed to delete item",
+        });
+        setDeletingId(null);
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "Success",
+        description: t.items.itemDeleted,
+      });
+      router.refresh();
+      setDeleteModalOpen(false);
+      setItemToDelete(null);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   if (items.length === 0) {
     return null;
   }
@@ -97,9 +138,12 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-bold text-gray-900 mb-1 truncate">
+                <Link
+                  href={`/teams/${teamId}/items/${item.id}`}
+                  className="text-base font-bold text-gray-900 mb-1 truncate block hover:text-[#6B21A8] hover:underline transition-colors"
+                >
                   {item.name || t.items.unnamedItem}
-                </h3>
+                </Link>
                 {item.sku && (
                   <p className="text-xs text-gray-500 mb-1">SKU: {item.sku}</p>
                 )}
@@ -162,11 +206,18 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
                 )}
               </button>
               <button
-                className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
+                type="button"
+                onClick={() => handleDeleteClick(item)}
+                disabled={deletingId === item.id}
+                className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Delete item"
                 title="Delete item"
               >
-                <Trash2 className="h-4 w-4" />
+                {deletingId === item.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
               </button>
             </div>
           </div>
@@ -214,9 +265,12 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
                   </td>
                   <td className="px-6 py-5">
                     <div>
-                      <div className="text-sm font-bold text-gray-900 mb-1">
+                      <Link
+                        href={`/teams/${teamId}/items/${item.id}`}
+                        className="text-sm font-bold text-gray-900 mb-1 block hover:text-[#6B21A8] hover:underline transition-colors"
+                      >
                         {item.name || t.items.unnamedItem}
-                      </div>
+                      </Link>
                       {item.barcode && (
                         <div className="text-xs text-gray-500 font-mono bg-gray-50 px-2 py-1 rounded inline-block">
                           {item.barcode}
@@ -285,11 +339,18 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
                         )}
                       </button>
                       <button
-                        className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        type="button"
+                        onClick={() => handleDeleteClick(item)}
+                        disabled={deletingId === item.id}
+                        className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         aria-label="Delete item"
                         title="Delete item"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {deletingId === item.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </td>
@@ -299,6 +360,19 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
           </table>
         </div>
       </div>
+
+      <DeleteConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setItemToDelete(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        title={t.common.delete}
+        description={t.items.deleteConfirm}
+        itemName={itemToDelete ? (itemToDelete.name || t.items.unnamedItem) : undefined}
+        isDeleting={deletingId !== null}
+      />
     </>
   );
 }
