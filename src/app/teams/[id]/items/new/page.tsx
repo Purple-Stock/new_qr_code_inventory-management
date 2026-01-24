@@ -114,9 +114,10 @@ export default function NewItemPage() {
 
       setSuccess("Item created successfully! Redirecting...");
 
-      // Redirect to items list after 1.5 seconds
-      setTimeout(() => {
-        router.push(`/teams/${teamId}/items`);
+      // Redirect to items list and refresh so the new item appears
+      setTimeout(async () => {
+        await router.push(`/teams/${teamId}/items`);
+        router.refresh();
       }, 1500);
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getTeamItems, createItem } from "@/lib/db/items";
 import { getTeamWithStats } from "@/lib/db/teams";
 
@@ -95,6 +96,8 @@ export async function POST(
       currentStock: currentStock ? parseFloat(currentStock) : undefined,
       minimumStock: minimumStock ? parseFloat(minimumStock) : 0,
     });
+
+    revalidatePath(`/teams/${teamId}/items`);
 
     return NextResponse.json(
       {
