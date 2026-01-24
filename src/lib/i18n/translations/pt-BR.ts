@@ -91,6 +91,10 @@ export const ptBR = {
     noTeamsMessage: "Comece criando seu primeiro time",
     loadingTeams: "Carregando times...",
     signedInSuccess: "Login realizado com sucesso.",
+    deleteConfirm: "Tem certeza que deseja excluir este time? Esta ação não pode ser desfeita.",
+    deleteTeam: "Excluir Time",
+    teamDeleted: "Time excluído com sucesso",
+    errorDeleting: "Ocorreu um erro ao excluir o time",
   },
   stockIn: {
     title: "Entrada de Estoque",

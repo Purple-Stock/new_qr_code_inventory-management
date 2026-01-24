@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTeamWithStats, updateTeam } from "@/lib/db/teams";
+import { getTeamWithStats, updateTeam, deleteTeam } from "@/lib/db/teams";
 
 export async function GET(
   request: NextRequest,
@@ -95,6 +95,53 @@ export async function PUT(
 
     return NextResponse.json(
       { error: "An error occurred while updating the team" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE - Delete a team
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const teamId = parseInt(params.id, 10);
+
+    if (isNaN(teamId)) {
+      return NextResponse.json(
+        { error: "Invalid team ID" },
+        { status: 400 }
+      );
+    }
+
+    // Verify team exists
+    const existingTeam = await getTeamWithStats(teamId);
+    if (!existingTeam) {
+      return NextResponse.json(
+        { error: "Team not found" },
+        { status: 404 }
+      );
+    }
+
+    // Delete team and all related data
+    const deleted = await deleteTeam(teamId);
+
+    if (!deleted) {
+      return NextResponse.json(
+        { error: "Failed to delete team" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      { message: "Team deleted successfully" },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error("Error deleting team:", error);
+    return NextResponse.json(
+      { error: "An error occurred while deleting the team" },
       { status: 500 }
     );
   }

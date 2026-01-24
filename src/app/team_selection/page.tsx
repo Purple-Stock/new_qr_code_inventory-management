@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { TeamCard } from "@/components/TeamCard";
 import { EditTeamModal } from "@/components/EditTeamModal";
 import { useTranslation } from "@/lib/i18n";
+import { useToast } from "@/components/ui/use-toast-simple";
 import Link from "next/link";
 
 interface Team {
@@ -30,12 +31,14 @@ interface Team {
 export default function TeamSelectionPage() {
   const router = useRouter();
   const { language, setLanguage, t } = useTranslation();
+  const { toast } = useToast();
   const [teams, setTeams] = useState<Team[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(true);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [deletingTeamId, setDeletingTeamId] = useState<number | null>(null);
 
   useEffect(() => {
     // TODO: Get userId from session/auth
@@ -88,10 +91,53 @@ export default function TeamSelectionPage() {
     }
   };
 
-  const handleDelete = (id: number) => {
-    // TODO: Implement delete functionality
-    if (confirm(t.common.delete + "?")) {
-      console.log("Delete team:", id);
+  const handleDelete = async (id: number) => {
+    const team = teams.find((t) => t.id === id);
+    if (!team) return;
+
+    if (!confirm(t.teamSelection.deleteConfirm)) {
+      return;
+    }
+
+    setDeletingTeamId(id);
+
+    try {
+      const response = await fetch(`/api/teams/${id}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({
+          title: t.teamSelection.errorDeleting,
+          description: data.error || t.teamSelection.errorDeleting,
+          variant: "destructive",
+        });
+        setDeletingTeamId(null);
+        return;
+      }
+
+      toast({
+        title: t.teamSelection.teamDeleted,
+        description: "",
+        variant: "success",
+      });
+
+      // Refresh teams list
+      const userId = localStorage.getItem("userId");
+      if (userId) {
+        fetchTeams(parseInt(userId, 10));
+      }
+    } catch (error) {
+      console.error("Error deleting team:", error);
+      toast({
+        title: t.teamSelection.errorDeleting,
+        description: t.teamSelection.errorDeleting,
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingTeamId(null);
     }
   };
 
@@ -263,6 +309,7 @@ export default function TeamSelectionPage() {
                   transactionCount={team.transactionCount}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
+                  isDeleting={deletingTeamId === team.id}
                 />
               ))}
             </div>

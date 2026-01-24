@@ -116,3 +116,39 @@ export async function updateTeam(
 
   return updatedTeam;
 }
+
+/**
+ * Delete a team and all related data
+ */
+export async function deleteTeam(teamId: number): Promise<boolean> {
+  // Verify team exists
+  const team = await getTeamWithStats(teamId);
+  if (!team) {
+    return false;
+  }
+
+  // Delete in order: stock_transactions, items, locations, then team
+  // This order respects foreign key constraints
+  
+  // Delete stock transactions
+  await sqlite
+    .delete(stockTransactions)
+    .where(eq(stockTransactions.teamId, teamId));
+
+  // Delete items
+  await sqlite
+    .delete(items)
+    .where(eq(items.teamId, teamId));
+
+  // Delete locations
+  await sqlite
+    .delete(locations)
+    .where(eq(locations.teamId, teamId));
+
+  // Delete team
+  const result = await sqlite
+    .delete(teams)
+    .where(eq(teams.id, teamId));
+
+  return result.changes > 0;
+}

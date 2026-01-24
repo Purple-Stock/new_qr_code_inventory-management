@@ -91,6 +91,10 @@ export const en = {
     noTeamsMessage: "Get started by creating your first team",
     loadingTeams: "Loading teams...",
     signedInSuccess: "Signed in successfully.",
+    deleteConfirm: "Are you sure you want to delete this team? This action cannot be undone.",
+    deleteTeam: "Delete Team",
+    teamDeleted: "Team deleted successfully",
+    errorDeleting: "An error occurred while deleting the team",
   },
   stockIn: {
     title: "Stock In",

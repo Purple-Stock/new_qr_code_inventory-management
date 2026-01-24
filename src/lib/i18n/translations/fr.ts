@@ -91,6 +91,10 @@ export const fr = {
     noTeamsMessage: "Commencez par créer votre première équipe",
     loadingTeams: "Chargement des équipes...",
     signedInSuccess: "Connexion réussie.",
+    deleteConfirm: "Êtes-vous sûr de vouloir supprimer cette équipe? Cette action ne peut pas être annulée.",
+    deleteTeam: "Supprimer l'équipe",
+    teamDeleted: "Équipe supprimée avec succès",
+    errorDeleting: "Une erreur s'est produite lors de la suppression de l'équipe",
   },
   stockIn: {
     title: "Entrée de stock",
