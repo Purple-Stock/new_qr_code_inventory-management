@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Home,
@@ -45,6 +45,10 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [filteredItems, setFilteredItems] = useState<Item[]>(items);
   const teamId = team.id.toString();
+
+  useEffect(() => {
+    setFilteredItems(items);
+  }, [items]);
 
   const handleSignOut = () => {
     localStorage.removeItem("userId");
