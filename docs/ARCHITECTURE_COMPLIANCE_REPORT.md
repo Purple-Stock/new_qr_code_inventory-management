@@ -8,7 +8,7 @@
 
 ## 📊 Resumo Executivo
 
-**Conformidade Geral**: ✅ **82%** - Boa conformidade com pendências pontuais
+**Conformidade Geral**: ✅ **91%** - Alta conformidade
 
 Este relatório foi atualizado após a implementação dos itens críticos de arquitetura (segurança de acesso, consistência transacional, redução de N+1, avanço em Server Components e aumento de testes).
 
@@ -57,7 +57,7 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 
 - `getUserTeamsWithStats` em `src/lib/db/teams.ts` foi otimizada para agregações em lote (`groupBy`) em vez de múltiplas queries por time.
 
-### 7. Avanço em Server Components (Concluído parcialmente, com ganho real)
+### 7. Avanço em Server Components (Concluído)
 
 - Páginas migradas para padrão **Server Component + Client leaf**:
   - `src/app/teams/[id]/reports/page.tsx`
@@ -69,7 +69,8 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `src/app/teams/[id]/stock-by-location/_components/StockByLocationPageClient.tsx`
   - `src/app/teams/[id]/labels/_components/LabelsPageClient.tsx`
   - `src/app/teams/[id]/items/[itemId]/_components/ItemDetailPageClient.tsx`
-- Resultado: páginas `use client` reduziram de **13 para 9**.
+- Rodada adicional concluída para as páginas restantes (`login`, `signup`, `team_selection`, `teams/new`, `settings`, `items/new`, `items/edit`, `locations/new`, `locations/edit`) no formato `page.tsx` server + client leaf.
+- Resultado final: páginas `use client` em `page.tsx` reduziram de **13 para 0**.
 
 ### 8. Endurecimento de segredo de sessão (Concluído)
 
@@ -96,12 +97,11 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 
 ## ⚠️ Pendências Relevantes
 
-1. Ainda existem 9 páginas `use client` que podem seguir migração gradual para Server Components.
-2. Existe oportunidade de unificar ainda mais validações de input (schema único para API + Server Actions).
-3. Parte dos fluxos de escrita ainda está duplicada entre API Routes e Server Actions (pode evoluir para use-cases unificados).
+1. Existe oportunidade de unificar ainda mais validações de input (schema único para API + Server Actions).
+2. Parte dos fluxos de escrita ainda está duplicada entre API Routes e Server Actions (pode evoluir para use-cases unificados).
 
 ---
 
 ## Próxima Meta Recomendada
 
-**Meta de curto prazo**: elevar conformidade de 82% para 90%+ migrando mais páginas críticas para Server Components e consolidando validação de contratos de entrada.
+**Meta de curto prazo**: consolidar validação de contratos de entrada e reduzir duplicação entre API Routes e Server Actions para estabilizar a conformidade acima de 90%.
