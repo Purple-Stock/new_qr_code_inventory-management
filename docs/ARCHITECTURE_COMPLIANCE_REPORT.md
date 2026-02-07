@@ -327,6 +327,8 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `npm run hooks:uninstall` (remove configuração local de hooks do repositório)
 - Hook local versionado adicionado:
   - `.githooks/pre-push` (executa `check:architecture` e `lint:architecture` antes do push)
+- Testes de regressão do guardrail adicionados:
+  - `src/__tests__/scripts/check-architecture.test.ts` com fixtures para regras 1 a 8
 - Pipeline CI criada em GitHub Actions:
   - `.github/workflows/ci.yml`
   - job `architecture`: `npm ci` -> `npm run check:architecture` -> `npm run lint:architecture`
@@ -339,7 +341,7 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 ## ✅ Validação Executada
 
 - `npm run build`: **OK**
-- `npm test -- --runInBand`: **OK** (11 suítes, 44 testes)
+- `npm test -- --runInBand`: **OK** (12 suítes, 53 testes)
 - `npm run check:architecture`: **OK**
 
 ---
