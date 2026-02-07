@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserIdFromRequest } from "@/lib/permissions";
+import { getErrorMessage } from "@/lib/error-utils";
 import {
   errorResponse,
   internalErrorResponse,
@@ -39,10 +40,10 @@ export async function GET(
       },
       200
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching transactions:", error);
     return internalErrorResponse(
-      error.message || "An error occurred while fetching transactions"
+      getErrorMessage(error, "An error occurred while fetching transactions")
     );
   }
 }

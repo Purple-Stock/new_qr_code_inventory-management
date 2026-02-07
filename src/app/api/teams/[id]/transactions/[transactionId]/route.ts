@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { getUserIdFromRequest } from "@/lib/permissions";
+import { getErrorMessage } from "@/lib/error-utils";
 import {
   errorResponse,
   internalErrorResponse,
@@ -41,10 +42,10 @@ export async function DELETE(
       },
       200
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error deleting transaction:", error);
     return internalErrorResponse(
-      error.message || "An error occurred while deleting transaction"
+      getErrorMessage(error, "An error occurred while deleting transaction")
     );
   }
 }

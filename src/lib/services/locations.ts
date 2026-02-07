@@ -7,6 +7,7 @@ import {
   updateLocation,
 } from "@/lib/db/locations";
 import { ERROR_CODES } from "@/lib/errors";
+import { isUniqueConstraintError } from "@/lib/error-utils";
 import { authorizeTeamAccess, authorizeTeamPermission } from "@/lib/permissions";
 import { parseLocationPayload } from "@/lib/contracts/schemas";
 import type { LocationDto, ServiceResult } from "@/lib/services/types";
@@ -108,8 +109,8 @@ export async function createTeamLocation(params: {
       teamId: params.teamId,
     });
     return { ok: true, data: { location: toLocationDto(location) } };
-  } catch (error: any) {
-    if (error?.message?.includes("UNIQUE constraint")) {
+  } catch (error: unknown) {
+    if (isUniqueConstraintError(error)) {
       return {
         ok: false,
         error: conflictValidationServiceError(
@@ -184,8 +185,8 @@ export async function updateTeamLocation(
   try {
     const location = await updateLocation(params.locationId, parsed.data);
     return { ok: true, data: { location: toLocationDto(location) } };
-  } catch (error: any) {
-    if (error?.message?.includes("UNIQUE constraint")) {
+  } catch (error: unknown) {
+    if (isUniqueConstraintError(error)) {
       return {
         ok: false,
         error: conflictValidationServiceError(

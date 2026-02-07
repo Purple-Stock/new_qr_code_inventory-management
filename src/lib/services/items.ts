@@ -8,6 +8,7 @@ import {
   updateItem,
 } from "@/lib/db/items";
 import { ERROR_CODES } from "@/lib/errors";
+import { isUniqueConstraintError } from "@/lib/error-utils";
 import { authorizeTeamAccess, authorizeTeamPermission } from "@/lib/permissions";
 import { parseItemPayload } from "@/lib/contracts/schemas";
 import type { ItemDto, ServiceResult } from "@/lib/services/types";
@@ -118,8 +119,8 @@ export async function createTeamItem(params: {
     });
 
     return { ok: true, data: { item: toItemDto(item) } };
-  } catch (error: any) {
-    if (error?.message?.includes("UNIQUE constraint")) {
+  } catch (error: unknown) {
+    if (isUniqueConstraintError(error)) {
       return {
         ok: false,
         error: conflictValidationServiceError(
@@ -187,8 +188,8 @@ export async function updateTeamItem(
     });
 
     return { ok: true, data: { item: toItemDto(item) } };
-  } catch (error: any) {
-    if (error?.message?.includes("UNIQUE constraint")) {
+  } catch (error: unknown) {
+    if (isUniqueConstraintError(error)) {
       return {
         ok: false,
         error: conflictValidationServiceError("An item with this barcode already exists"),

@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       },
       201
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating team:", error);
     return internalErrorResponse("An error occurred while creating the team");
   }

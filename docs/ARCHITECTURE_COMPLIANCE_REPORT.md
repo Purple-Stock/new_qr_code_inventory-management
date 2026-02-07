@@ -314,14 +314,14 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - bloqueia imports de `@/lib/db/*` em `src/app/*` (exceto `src/app/api/*`) e `src/components/*`
 - Regra expandida:
   - bloqueia imports de `@/lib/db/*` em `src/app/api/teams/*` (API de domínio deve passar por serviços)
-  - bloqueia novos usos explícitos de `any` em `src/lib/services/*` e `src/app/api/*` fora de allowlist temporária de débito técnico
+  - bloqueia usos explícitos de `any` em `src/lib/services/*` e `src/app/api/*` (sem allowlist)
 - Script adicionado ao `package.json`:
   - `npm run check:architecture`
 - Pipeline CI criada em GitHub Actions:
   - `.github/workflows/ci.yml`
   - etapas: `npm ci` -> `npm run check:architecture` -> `npm test -- --runInBand` -> `npm run build`
 - Resultado: desvios arquiteturais críticos voltam a falhar automaticamente no CI antes de merge.
-- Observação: a checagem reporta contabilização do débito técnico remanescente de `any` para facilitar o plano de redução incremental.
+- Observação: nesta etapa, o débito remanescente de `any` nas camadas cobertas foi zerado.
 
 ---
 

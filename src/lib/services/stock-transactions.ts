@@ -1,6 +1,7 @@
 import { createStockTransaction } from "@/lib/db/stock-transactions";
 import { getTeamWithStats } from "@/lib/db/teams";
 import { ERROR_CODES } from "@/lib/errors";
+import { getErrorMessage } from "@/lib/error-utils";
 import { authorizeTeamPermission } from "@/lib/permissions";
 import { parseStockTransactionPayload } from "@/lib/contracts/schemas";
 import type { ServiceResult, StockTransactionDto } from "@/lib/services/types";
@@ -66,11 +67,11 @@ export async function createTeamStockTransaction(params: {
     });
 
     return { ok: true, data: { transaction: toStockTransactionDto(transaction) } };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
       ok: false,
       error: internalServiceError(
-        error?.message || "An error occurred while creating stock transaction"
+        getErrorMessage(error, "An error occurred while creating stock transaction")
       ),
     };
   }

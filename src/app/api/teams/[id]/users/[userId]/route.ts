@@ -37,7 +37,7 @@ export async function PATCH(
     }
 
     return successResponse({ member: result.data.member }, 200);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating team member role:", error);
     return internalErrorResponse("Team member update failed");
   }
@@ -66,7 +66,7 @@ export async function DELETE(
     }
 
     return successResponse({ messageCode: result.data.messageCode }, 200);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error removing team member:", error);
     return internalErrorResponse("Team member remove failed");
   }

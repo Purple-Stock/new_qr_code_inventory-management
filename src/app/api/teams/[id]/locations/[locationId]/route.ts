@@ -83,7 +83,7 @@ export async function PUT(
       },
       200
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating location:", error);
     return internalErrorResponse("An error occurred while updating the location");
   }

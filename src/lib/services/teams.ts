@@ -7,6 +7,7 @@ import {
 } from "@/lib/db/teams";
 import { getActiveCompanyIdForUser } from "@/lib/db/companies";
 import { ERROR_CODES } from "@/lib/errors";
+import { isUniqueConstraintError } from "@/lib/error-utils";
 import {
   authorizePermission,
   authorizeTeamAccess,
@@ -72,8 +73,8 @@ export async function createTeamForUser(params: {
       companyId,
     });
     return { ok: true, data: { team: toTeamDto(team) } };
-  } catch (error: any) {
-    if (error?.message?.includes("UNIQUE constraint")) {
+  } catch (error: unknown) {
+    if (isUniqueConstraintError(error)) {
       return {
         ok: false,
         error: conflictValidationServiceError("A team with this name already exists"),
@@ -174,8 +175,8 @@ export async function updateTeamDetails(
   try {
     const team = await updateTeam(params.teamId, parsed.data);
     return { ok: true, data: { team: toTeamDto(team) } };
-  } catch (error: any) {
-    if (error?.message?.includes("UNIQUE constraint")) {
+  } catch (error: unknown) {
+    if (isUniqueConstraintError(error)) {
       return {
         ok: false,
         error: conflictValidationServiceError("A team with this name already exists"),

@@ -4,6 +4,7 @@ import {
 } from "@/lib/db/stock-transactions";
 import { getItemById } from "@/lib/db/items";
 import { ERROR_CODES } from "@/lib/errors";
+import { getErrorMessage } from "@/lib/error-utils";
 import { authorizeTeamAccess } from "@/lib/permissions";
 import type { ServiceResult, TransactionDto } from "@/lib/services/types";
 import {
@@ -33,11 +34,11 @@ export async function listTeamTransactionsForUser(params: {
       params.searchQuery
     );
     return { ok: true, data: { transactions: transactions.map(toTransactionDto) } };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
       ok: false,
       error: internalServiceError(
-        error?.message || "An error occurred while fetching transactions"
+        getErrorMessage(error, "An error occurred while fetching transactions")
       ),
     };
   }

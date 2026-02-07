@@ -70,7 +70,7 @@ export async function PUT(
       },
       200
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating team:", error);
     return internalErrorResponse("An error occurred while updating the team");
   }
@@ -101,7 +101,7 @@ export async function DELETE(
       { message: "Team deleted successfully" },
       200
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error deleting team:", error);
     return internalErrorResponse("An error occurred while deleting the team");
   }

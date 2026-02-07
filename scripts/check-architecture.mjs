@@ -7,22 +7,7 @@ const ALLOWED_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx"]);
 const DB_IMPORT_PATTERN = /from\s+["']@\/lib\/db\//;
 const EXPLICIT_ANY_PATTERN = /\b(as\s+any|:\s*any)\b/;
 
-const ANY_DEBT_ALLOWLIST = new Set([
-  "src/lib/services/items.ts",
-  "src/lib/services/locations.ts",
-  "src/lib/services/stock-transactions.ts",
-  "src/lib/services/teams.ts",
-  "src/lib/services/transactions.ts",
-  "src/app/api/teams/route.ts",
-  "src/app/api/teams/[id]/route.ts",
-  "src/app/api/teams/[id]/items/route.ts",
-  "src/app/api/teams/[id]/locations/route.ts",
-  "src/app/api/teams/[id]/locations/[locationId]/route.ts",
-  "src/app/api/teams/[id]/stock-transactions/route.ts",
-  "src/app/api/teams/[id]/transactions/route.ts",
-  "src/app/api/teams/[id]/transactions/[transactionId]/route.ts",
-  "src/app/api/teams/[id]/users/[userId]/route.ts",
-]);
+const ANY_DEBT_ALLOWLIST = new Set();
 
 function normalize(filePath) {
   return filePath.replaceAll(path.sep, "/");

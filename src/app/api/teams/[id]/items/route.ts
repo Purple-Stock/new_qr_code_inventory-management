@@ -70,7 +70,7 @@ export async function POST(
       },
       201
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating item:", error);
     return internalErrorResponse("An error occurred while creating the item");
   }
