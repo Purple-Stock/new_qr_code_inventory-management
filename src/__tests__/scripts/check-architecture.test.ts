@@ -152,4 +152,15 @@ describe("scripts/check-architecture.mjs", () => {
     expect(result.ok).toBe(false);
     expect(result.output).toContain("Rule 11");
   });
+
+  it("fails Rule 12 when dynamic API route does not use parseRouteParamId", () => {
+    const dir = createTempProject({
+      "src/lib/services/api.ts": "export const get = (id: number) => id;\n",
+      "src/app/api/teams/[id]/route.ts":
+        'import { successResponse } from "@/lib/api-route";\nimport { get } from "@/lib/services/api";\nexport async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) { const { id } = await params; return successResponse({ id: get(Number(id)) }); }\n',
+    });
+    const result = runCheckIn(dir);
+    expect(result.ok).toBe(false);
+    expect(result.output).toContain("Rule 12");
+  });
 });

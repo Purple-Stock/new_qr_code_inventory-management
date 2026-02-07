@@ -324,6 +324,7 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - exige delegação de API routes para `@/lib/services/*` (com allowlist explícita para rotas adapter-only)
   - exige `catch` em rotas que usam `await request.json()` para evitar falhas não padronizadas de parsing
   - padroniza parsing de IDs de rota com helper central (`parseRouteParamId`) para reduzir duplicação e divergência
+  - exige uso de `parseRouteParamId(...)` em rotas dinâmicas (`src/app/api/**/[...]/route.ts`)
 - Script adicionado ao `package.json`:
   - `npm run check:architecture`
   - `npm run lint:architecture`
@@ -334,7 +335,7 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 - Hook local versionado adicionado:
   - `.githooks/pre-push` (executa `verify:architecture` antes do push)
 - Testes de regressão do guardrail adicionados:
-  - `src/__tests__/scripts/check-architecture.test.ts` com fixtures para regras 1 a 11
+  - `src/__tests__/scripts/check-architecture.test.ts` com fixtures para regras 1 a 12
   - `src/__tests__/lib/api-route.test.ts` com cobertura de `parseRouteParamId`
 - Pipeline CI criada em GitHub Actions:
   - `.github/workflows/ci.yml`

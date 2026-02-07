@@ -16,6 +16,7 @@ const DIRECT_RESPONSE_CONSTRUCTOR_PATTERN = /\bnew\s+Response\s*\(/;
 const SERVICE_IMPORT_PATTERN = /from\s+["']@\/lib\/services\//;
 const REQUEST_JSON_AWAIT_PATTERN = /\bawait\s+request\.json\s*\(/;
 const CATCH_BLOCK_PATTERN = /\bcatch\s*\(/;
+const ROUTE_PARAM_PARSER_CALL_PATTERN = /\bparseRouteParamId\s*\(/;
 
 const SERVICE_IMPORT_ALLOWLIST = new Set(["src/app/api/auth/logout/route.ts"]);
 
@@ -124,6 +125,17 @@ const requestJsonSafetyViolations = allApiFiles
     line: 1,
     text: "Uses await request.json() without catch block in file",
   }));
+const routeParamParserViolations = allApiFiles
+  .filter((file) => file.includes("["))
+  .filter((file) => {
+    const content = fs.readFileSync(path.join(ROOT, file), "utf8");
+    return !ROUTE_PARAM_PARSER_CALL_PATTERN.test(content);
+  })
+  .map((file) => ({
+    file,
+    line: 1,
+    text: "Dynamic API route missing parseRouteParamId(...) usage",
+  }));
 
 if (
   uiDbViolations.length > 0 ||
@@ -137,7 +149,8 @@ if (
   directResponseJsonViolations.length > 0 ||
   directResponseConstructorViolations.length > 0 ||
   serviceDelegationViolations.length > 0 ||
-  requestJsonSafetyViolations.length > 0
+  requestJsonSafetyViolations.length > 0 ||
+  routeParamParserViolations.length > 0
 ) {
   console.error("Architecture check failed.\n");
 
@@ -194,6 +207,11 @@ if (
   printViolations(
     "Rule 11: API routes that call request.json() must include catch handling in the route file.",
     requestJsonSafetyViolations
+  );
+
+  printViolations(
+    "Rule 12: dynamic API routes must parse route ids via parseRouteParamId(...).",
+    routeParamParserViolations
   );
 
   process.exit(1);
