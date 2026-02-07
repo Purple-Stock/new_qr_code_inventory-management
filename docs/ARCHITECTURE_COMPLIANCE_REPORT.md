@@ -318,6 +318,8 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - bloqueia uso de `errorResponse(...)` com 2 argumentos em `src/app/api/*` (errorCode explícito obrigatório)
   - bloqueia uso direto de `NextResponse.json(...)` em `src/app/api/*` (usar helper central de resposta)
   - bloqueia uso de `internalErrorResponse(...)` em `src/app/api/*` quando a rota trabalha com serviços (usar `serviceErrorResponse(internalServiceError(...))`)
+  - bloqueia import de `@/lib/contracts/schemas` em `src/app/api/*` (validação de payload fica na camada de serviço)
+  - bloqueia chamadas `parse*Payload(...)` em `src/app/api/*` (parser de payload fica na camada de serviço)
 - Script adicionado ao `package.json`:
   - `npm run check:architecture`
   - `npm run lint:architecture`

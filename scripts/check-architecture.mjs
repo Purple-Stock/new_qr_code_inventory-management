@@ -9,6 +9,8 @@ const EXPLICIT_ANY_PATTERN = /\b(as\s+any|:\s*any)\b/;
 const TWO_ARG_ERROR_RESPONSE_PATTERN = /errorResponse\s*\(\s*[^,]+,\s*[^,)\n]+\s*\)/;
 const DIRECT_NEXTRESPONSE_JSON_PATTERN = /\bNextResponse\.json\s*\(/;
 const INTERNAL_ERROR_RESPONSE_PATTERN = /\binternalErrorResponse\s*\(/;
+const CONTRACTS_IMPORT_PATTERN = /from\s+["']@\/lib\/contracts\/schemas["']/;
+const PAYLOAD_PARSER_CALL_PATTERN = /\bparse[A-Za-z0-9_]*Payload\s*\(/;
 
 const ANY_DEBT_ALLOWLIST = new Set();
 
@@ -87,6 +89,8 @@ const internalErrorHelperViolations = scanForPattern(
   allApiFiles,
   INTERNAL_ERROR_RESPONSE_PATTERN
 );
+const contractsImportViolations = scanForPattern(allApiFiles, CONTRACTS_IMPORT_PATTERN);
+const payloadParserCallViolations = scanForPattern(allApiFiles, PAYLOAD_PARSER_CALL_PATTERN);
 
 if (
   uiDbViolations.length > 0 ||
@@ -94,7 +98,9 @@ if (
   anyViolations.length > 0 ||
   errorResponseViolations.length > 0 ||
   directJsonResponseViolations.length > 0 ||
-  internalErrorHelperViolations.length > 0
+  internalErrorHelperViolations.length > 0 ||
+  contractsImportViolations.length > 0 ||
+  payloadParserCallViolations.length > 0
 ) {
   console.error("Architecture check failed.\n");
 
@@ -126,6 +132,16 @@ if (
   printViolations(
     "Rule 6: avoid internalErrorResponse in API routes that use services (prefer serviceErrorResponse(internalServiceError(...))).",
     internalErrorHelperViolations
+  );
+
+  printViolations(
+    "Rule 7: keep payload validation/parsing in services (no contracts schema imports in API routes).",
+    contractsImportViolations
+  );
+
+  printViolations(
+    "Rule 8: keep payload parser calls out of API routes (no parse*Payload(...)).",
+    payloadParserCallViolations
   );
 
   process.exit(1);
