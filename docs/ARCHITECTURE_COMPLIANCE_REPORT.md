@@ -420,14 +420,26 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `src/app/api/teams/[id]/stock-transactions/route.ts` em **100%** de statements/branches/functions/lines
   - `src/app/api/teams/[id]/items/[itemId]/transactions/route.ts` em **100%** de statements/branches/functions/lines
 
+### 27. Cobertura de rotas de autenticação restantes (Concluído)
+
+- Suítes adicionadas:
+  - `src/__tests__/api/auth/login.test.ts`
+  - `src/__tests__/api/auth/logout.test.ts`
+- Coberturas garantidas:
+  - `/api/auth/login` (`POST`) com cenários de sucesso, erro de serviço, JSON inválido e exceção inesperada
+  - `/api/auth/logout` (`POST`) com validação de resposta de sucesso e limpeza de sessão
+- Resultado:
+  - `src/app/api/auth/login/route.ts` em **100%** de statements/branches/functions/lines
+  - `src/app/api/auth/logout/route.ts` em **100%** de statements/branches/functions/lines
+
 ---
 
 ## ✅ Validação Executada
 
 - `npm run build`: **OK**
 - `npm run verify:architecture`: **OK**
-- `npm test -- --runInBand`: **OK** (28 suítes, 144 testes)
-- `npm run test:coverage`: **OK** (Statements: **32.57%**, Branches: **21.42%**, Functions: **26.77%**, Lines: **33.02%**)
+- `npm test -- --runInBand`: **OK** (30 suítes, 149 testes)
+- `npm run test:coverage`: **OK** (Statements: **33.14%**, Branches: **21.48%**, Functions: **27.08%**, Lines: **33.61%**)
 - `npm run check:architecture`: **OK**
 
 ---
@@ -435,7 +447,7 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 ## ⚠️ Pendências Relevantes
 
 1. Elevar cobertura da camada `app/*` (principalmente client pages e actions), hoje com baixo impacto de testes automatizados.
-2. Aumentar cobertura das rotas de autenticação ainda sem testes diretos (`src/app/api/auth/login/route.ts`, `src/app/api/auth/logout/route.ts`).
+2. Aumentar cobertura de rotas auxiliares ainda sem suíte direta, como `src/app/api/users/me/password/route.ts`.
 
 ---
 
