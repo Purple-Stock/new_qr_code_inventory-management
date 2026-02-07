@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { signupUser } from "@/lib/services/auth";
 import { setSessionCookie } from "@/lib/session";
 import {

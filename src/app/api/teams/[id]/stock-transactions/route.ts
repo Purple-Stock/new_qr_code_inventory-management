@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getUserIdFromRequest } from "@/lib/permissions";
 import { ERROR_CODES } from "@/lib/errors";
 import { getErrorMessage } from "@/lib/error-utils";

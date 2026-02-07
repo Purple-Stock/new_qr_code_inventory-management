@@ -316,6 +316,7 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - bloqueia imports de `@/lib/db/*` em todo `src/app/api/*` (API deve passar por serviços)
   - bloqueia usos explícitos de `any` em `src/lib/services/*` e `src/app/api/*` (sem allowlist)
   - bloqueia uso de `errorResponse(...)` com 2 argumentos em `src/app/api/*` (errorCode explícito obrigatório)
+  - bloqueia uso direto de `NextResponse.json(...)` em `src/app/api/*` (usar helper central de resposta)
 - Script adicionado ao `package.json`:
   - `npm run check:architecture`
   - `npm run lint:architecture`

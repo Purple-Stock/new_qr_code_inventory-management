@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createTeamItem, listTeamItemsForUser } from "@/lib/services/items";
 import { getUserIdFromRequest } from "@/lib/permissions";

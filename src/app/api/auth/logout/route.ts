@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { clearSessionCookie } from "@/lib/session";
 import { successResponse } from "@/lib/api-route";
 

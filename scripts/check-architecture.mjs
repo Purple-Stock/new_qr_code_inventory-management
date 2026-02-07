@@ -7,6 +7,7 @@ const ALLOWED_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx"]);
 const DB_IMPORT_PATTERN = /from\s+["']@\/lib\/db\//;
 const EXPLICIT_ANY_PATTERN = /\b(as\s+any|:\s*any)\b/;
 const TWO_ARG_ERROR_RESPONSE_PATTERN = /errorResponse\s*\(\s*[^,]+,\s*[^,)\n]+\s*\)/;
+const DIRECT_NEXTRESPONSE_JSON_PATTERN = /\bNextResponse\.json\s*\(/;
 
 const ANY_DEBT_ALLOWLIST = new Set();
 
@@ -77,12 +78,17 @@ const anyMatches = scanForPattern(serviceAndApiFiles, EXPLICIT_ANY_PATTERN);
 const anyViolations = anyMatches.filter((match) => !ANY_DEBT_ALLOWLIST.has(match.file));
 const anyDebt = anyMatches.filter((match) => ANY_DEBT_ALLOWLIST.has(match.file));
 const errorResponseViolations = scanForPattern(allApiFiles, TWO_ARG_ERROR_RESPONSE_PATTERN);
+const directJsonResponseViolations = scanForPattern(
+  allApiFiles,
+  DIRECT_NEXTRESPONSE_JSON_PATTERN
+);
 
 if (
   uiDbViolations.length > 0 ||
   apiDbViolations.length > 0 ||
   anyViolations.length > 0 ||
-  errorResponseViolations.length > 0
+  errorResponseViolations.length > 0 ||
+  directJsonResponseViolations.length > 0
 ) {
   console.error("Architecture check failed.\n");
 
@@ -104,6 +110,11 @@ if (
   printViolations(
     "Rule 4: API routes must call errorResponse with explicit errorCode (avoid 2-arg errorResponse).",
     errorResponseViolations
+  );
+
+  printViolations(
+    "Rule 5: do not call NextResponse.json directly in API routes (use api-route helpers).",
+    directJsonResponseViolations
   );
 
   process.exit(1);
