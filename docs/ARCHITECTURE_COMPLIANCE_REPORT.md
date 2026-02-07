@@ -105,13 +105,16 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `src/app/teams/[id]/locations/new/_components/NewLocationPageClient.tsx`
   - `src/app/teams/[id]/locations/[locationId]/edit/_components/EditLocationPageClient.tsx`
 
-### 11. Unificação de regras em use-cases (Concluído para itens, times e localizações)
+### 11. Unificação de regras em use-cases (Concluído para itens, times, localizações, usuários e estoque)
 
 - Foi extraído o primeiro use-case de escrita compartilhado:
   - `src/lib/services/items.ts` com `createTeamItem(...)`
 - Foram extraídos use-cases adicionais para times e localizações:
   - `src/lib/services/teams.ts` com `createTeamForUser(...)`, `updateTeamDetails(...)` e `deleteTeamWithAuthorization(...)`
   - `src/lib/services/locations.ts` com `createTeamLocation(...)`, `updateTeamLocation(...)` e `deleteTeamLocation(...)`
+- Foram extraídos use-cases de usuários e transações de estoque:
+  - `src/lib/services/users.ts` com `getTeamUsersForManagement(...)`, `createOrAttachTeamMember(...)`, `updateManagedTeamMember(...)`, `removeManagedTeamMember(...)`
+  - `src/lib/services/stock-transactions.ts` com `createTeamStockTransaction(...)`
 - Tipos de retorno padronizados para serviços:
   - `src/lib/services/types.ts`
 - Helper central de erro de serviço:
@@ -123,6 +126,9 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `src/app/api/teams/[id]/route.ts` (PUT/DELETE)
   - `src/app/api/teams/[id]/locations/route.ts` (POST)
   - `src/app/api/teams/[id]/locations/[locationId]/route.ts` (PUT/DELETE)
+  - `src/app/api/teams/[id]/users/route.ts` (GET/POST)
+  - `src/app/api/teams/[id]/users/[userId]/route.ts` (PATCH/DELETE)
+  - `src/app/api/teams/[id]/stock-transactions/route.ts` (POST)
 - Resultado: validação, autorização e tratamento de erro deixam de ficar duplicados nas rotas críticas de escrita desses domínios.
 
 ### 12. Padronização de respostas HTTP para ServiceResult (Concluído)
@@ -148,13 +154,16 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `src/app/api/auth/signup/route.ts`
   - `src/app/api/auth/logout/route.ts`
 - Resultado: respostas de sucesso, erro de domínio e erro interno ficaram consistentes em todas as API Routes, reduzindo boilerplate e divergência de contrato HTTP.
+- Cobertura adicional de testes de serviços:
+  - `src/__tests__/lib/services/users.service.test.ts`
+  - `src/__tests__/lib/services/stock-transactions.service.test.ts`
 
 ---
 
 ## ✅ Validação Executada
 
 - `npm run build`: **OK**
-- `npm test -- --runInBand`: **OK** (5 suítes, 18 testes)
+- `npm test -- --runInBand`: **OK** (7 suítes, 23 testes)
 
 ---
 
