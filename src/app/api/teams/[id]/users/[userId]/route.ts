@@ -6,6 +6,7 @@ import {
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
+import { parseRouteParamId } from "@/lib/api-route";
 import { internalServiceError } from "@/lib/services/errors";
 import {
   removeManagedTeamMember,
@@ -18,10 +19,10 @@ export async function PATCH(
 ) {
   try {
     const { id, userId: userIdParam } = await params;
-    const teamId = parseInt(id, 10);
-    const userId = parseInt(userIdParam, 10);
+    const teamId = parseRouteParamId(id);
+    const userId = parseRouteParamId(userIdParam);
 
-    if (isNaN(teamId) || isNaN(userId)) {
+    if (teamId === null || userId === null) {
       return errorResponse(undefined, 400, ERROR_CODES.INVALID_TEAM_OR_USER_ID);
     }
 
@@ -49,10 +50,10 @@ export async function DELETE(
 ) {
   try {
     const { id, userId: userIdParam } = await params;
-    const teamId = parseInt(id, 10);
-    const userId = parseInt(userIdParam, 10);
+    const teamId = parseRouteParamId(id);
+    const userId = parseRouteParamId(userIdParam);
 
-    if (isNaN(teamId) || isNaN(userId)) {
+    if (teamId === null || userId === null) {
       return errorResponse(undefined, 400, ERROR_CODES.INVALID_TEAM_OR_USER_ID);
     }
 

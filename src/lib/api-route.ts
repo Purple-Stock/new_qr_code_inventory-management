@@ -29,3 +29,8 @@ export function errorResponse(
   }
   return NextResponse.json({ error: message }, { status });
 }
+
+export function parseRouteParamId(value: string): number | null {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isNaN(parsed) ? null : parsed;
+}

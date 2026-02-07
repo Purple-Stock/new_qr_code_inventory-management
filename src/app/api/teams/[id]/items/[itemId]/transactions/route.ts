@@ -6,6 +6,7 @@ import {
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
+import { parseRouteParamId } from "@/lib/api-route";
 import { internalServiceError } from "@/lib/services/errors";
 import { listItemTransactionsForUser } from "@/lib/services/transactions";
 
@@ -16,10 +17,10 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id, itemId: itemIdParam } = await params;
-    const teamId = parseInt(id, 10);
-    const itemId = parseInt(itemIdParam, 10);
+    const teamId = parseRouteParamId(id);
+    const itemId = parseRouteParamId(itemIdParam);
 
-    if (isNaN(teamId) || isNaN(itemId)) {
+    if (teamId === null || itemId === null) {
       return errorResponse(
         "Invalid team ID or item ID",
         400,

@@ -141,4 +141,15 @@ describe("scripts/check-architecture.mjs", () => {
     expect(result.ok).toBe(false);
     expect(result.output).toContain("Rule 10");
   });
+
+  it("fails Rule 11 when request.json() is used without catch", () => {
+    const dir = createTempProject({
+      "src/lib/services/api.ts": "export const create = (p: unknown) => p;\n",
+      "src/app/api/test/route.ts":
+        'import { successResponse } from "@/lib/api-route";\nimport { create } from "@/lib/services/api";\nexport async function POST(request: Request){ const body = await request.json(); return successResponse(create(body)); }\n',
+    });
+    const result = runCheckIn(dir);
+    expect(result.ok).toBe(false);
+    expect(result.output).toContain("Rule 11");
+  });
 });

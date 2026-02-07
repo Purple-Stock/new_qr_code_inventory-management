@@ -6,6 +6,7 @@ import {
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
+import { parseRouteParamId } from "@/lib/api-route";
 import { internalServiceError } from "@/lib/services/errors";
 import {
   createOrAttachTeamMember,
@@ -18,8 +19,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const teamId = parseInt(id, 10);
-    if (isNaN(teamId)) {
+    const teamId = parseRouteParamId(id);
+    if (teamId === null) {
       return errorResponse(undefined, 400, ERROR_CODES.INVALID_TEAM_ID);
     }
 
@@ -52,8 +53,8 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const teamId = parseInt(id, 10);
-    if (isNaN(teamId)) {
+    const teamId = parseRouteParamId(id);
+    if (teamId === null) {
       return errorResponse(undefined, 400, ERROR_CODES.INVALID_TEAM_ID);
     }
 

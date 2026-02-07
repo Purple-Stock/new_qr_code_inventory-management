@@ -322,6 +322,7 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - bloqueia chamadas `parse*Payload(...)` em `src/app/api/*` (parser de payload fica na camada de serviço)
   - bloqueia respostas HTTP manuais em `src/app/api/*` (`Response.json(...)` e `new Response(...)`), exigindo helpers de `api-route`
   - exige delegação de API routes para `@/lib/services/*` (com allowlist explícita para rotas adapter-only)
+  - exige `catch` em rotas que usam `await request.json()` para evitar falhas não padronizadas de parsing
 - Script adicionado ao `package.json`:
   - `npm run check:architecture`
   - `npm run lint:architecture`
@@ -343,7 +344,7 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 ## ✅ Validação Executada
 
 - `npm run build`: **OK**
-- `npm test -- --runInBand`: **OK** (12 suítes, 55 testes)
+- `npm test -- --runInBand`: **OK** (12 suítes, 56 testes)
 - `npm run check:architecture`: **OK**
 
 ---

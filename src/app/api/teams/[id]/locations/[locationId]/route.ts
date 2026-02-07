@@ -10,6 +10,7 @@ import {  errorResponse,
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
+import { parseRouteParamId } from "@/lib/api-route";
 import { internalServiceError } from "@/lib/services/errors";
 
 // GET - Get a specific location
@@ -19,10 +20,10 @@ export async function GET(
 ) {
   try {
     const { id, locationId: locationIdParam } = await params;
-    const teamId = parseInt(id, 10);
-    const locationId = parseInt(locationIdParam, 10);
+    const teamId = parseRouteParamId(id);
+    const locationId = parseRouteParamId(locationIdParam);
 
-    if (isNaN(teamId) || isNaN(locationId)) {
+    if (teamId === null || locationId === null) {
       return errorResponse(
         "Invalid team ID or location ID",
         400,
@@ -53,10 +54,10 @@ export async function PUT(
 ) {
   try {
     const { id, locationId: locationIdParam } = await params;
-    const teamId = parseInt(id, 10);
-    const locationId = parseInt(locationIdParam, 10);
+    const teamId = parseRouteParamId(id);
+    const locationId = parseRouteParamId(locationIdParam);
 
-    if (isNaN(teamId) || isNaN(locationId)) {
+    if (teamId === null || locationId === null) {
       return errorResponse(
         "Invalid team ID or location ID",
         400,
@@ -95,10 +96,10 @@ export async function DELETE(
 ) {
   try {
     const { id, locationId: locationIdParam } = await params;
-    const teamId = parseInt(id, 10);
-    const locationId = parseInt(locationIdParam, 10);
+    const teamId = parseRouteParamId(id);
+    const locationId = parseRouteParamId(locationIdParam);
 
-    if (isNaN(teamId) || isNaN(locationId)) {
+    if (teamId === null || locationId === null) {
       return errorResponse(
         "Invalid team ID or location ID",
         400,

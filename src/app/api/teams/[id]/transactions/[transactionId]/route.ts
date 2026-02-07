@@ -3,6 +3,7 @@ import { getUserIdFromRequest } from "@/lib/permissions";
 import { getErrorMessage } from "@/lib/error-utils";
 import { errorResponse,
   serviceErrorResponse, successResponse } from "@/lib/api-route";
+import { parseRouteParamId } from "@/lib/api-route";
 import { internalServiceError } from "@/lib/services/errors";
 import { deleteTeamTransaction } from "@/lib/services/stock-transactions";
 import { ERROR_CODES } from "@/lib/errors";
@@ -13,10 +14,10 @@ export async function DELETE(
 ) {
   try {
     const { id, transactionId: transactionIdParam } = await params;
-    const teamId = parseInt(id, 10);
-    const transactionId = parseInt(transactionIdParam, 10);
+    const teamId = parseRouteParamId(id);
+    const transactionId = parseRouteParamId(transactionIdParam);
 
-    if (isNaN(teamId) || isNaN(transactionId)) {
+    if (teamId === null || transactionId === null) {
       return errorResponse(
         "Invalid team ID or transaction ID",
         400,

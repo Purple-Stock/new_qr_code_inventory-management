@@ -14,6 +14,8 @@ const PAYLOAD_PARSER_CALL_PATTERN = /\bparse[A-Za-z0-9_]*Payload\s*\(/;
 const DIRECT_RESPONSE_JSON_PATTERN = /\bResponse\.json\s*\(/;
 const DIRECT_RESPONSE_CONSTRUCTOR_PATTERN = /\bnew\s+Response\s*\(/;
 const SERVICE_IMPORT_PATTERN = /from\s+["']@\/lib\/services\//;
+const REQUEST_JSON_AWAIT_PATTERN = /\bawait\s+request\.json\s*\(/;
+const CATCH_BLOCK_PATTERN = /\bcatch\s*\(/;
 
 const SERVICE_IMPORT_ALLOWLIST = new Set(["src/app/api/auth/logout/route.ts"]);
 
@@ -112,6 +114,16 @@ const serviceDelegationViolations = allApiFiles
     line: 1,
     text: "Missing import from '@/lib/services/*' in API route",
   }));
+const requestJsonSafetyViolations = allApiFiles
+  .filter((file) => {
+    const content = fs.readFileSync(path.join(ROOT, file), "utf8");
+    return REQUEST_JSON_AWAIT_PATTERN.test(content) && !CATCH_BLOCK_PATTERN.test(content);
+  })
+  .map((file) => ({
+    file,
+    line: 1,
+    text: "Uses await request.json() without catch block in file",
+  }));
 
 if (
   uiDbViolations.length > 0 ||
@@ -124,7 +136,8 @@ if (
   payloadParserCallViolations.length > 0 ||
   directResponseJsonViolations.length > 0 ||
   directResponseConstructorViolations.length > 0 ||
-  serviceDelegationViolations.length > 0
+  serviceDelegationViolations.length > 0 ||
+  requestJsonSafetyViolations.length > 0
 ) {
   console.error("Architecture check failed.\n");
 
@@ -176,6 +189,11 @@ if (
   printViolations(
     "Rule 10: API routes must delegate business logic to services (require import from '@/lib/services/*'; explicit allowlist for adapter-only routes).",
     serviceDelegationViolations
+  );
+
+  printViolations(
+    "Rule 11: API routes that call request.json() must include catch handling in the route file.",
+    requestJsonSafetyViolations
   );
 
   process.exit(1);

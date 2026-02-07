@@ -4,6 +4,7 @@ import { getErrorMessage } from "@/lib/error-utils";
 import { ERROR_CODES } from "@/lib/errors";
 import { errorResponse,
   serviceErrorResponse, successResponse } from "@/lib/api-route";
+import { parseRouteParamId } from "@/lib/api-route";
 import { internalServiceError } from "@/lib/services/errors";
 import { listTeamTransactionsForUser } from "@/lib/services/transactions";
 
@@ -13,9 +14,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const teamId = parseInt(id, 10);
+    const teamId = parseRouteParamId(id);
 
-    if (isNaN(teamId)) {
+    if (teamId === null) {
       return errorResponse("Invalid team ID", 400, ERROR_CODES.VALIDATION_ERROR);
     }
 
