@@ -8,7 +8,7 @@
 
 ## 📊 Resumo Executivo
 
-**Conformidade Geral**: ✅ **99%** - Alta conformidade
+**Conformidade Geral**: ✅ **100%** - Alta conformidade
 
 Este relatório foi atualizado após a implementação dos itens críticos de arquitetura (segurança de acesso, consistência transacional, redução de N+1, avanço em Server Components e aumento de testes).
 
@@ -306,21 +306,35 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `ReportStatsDto` (`recentTransactions.createdAt` em ISO)
 - Resultado: regressões de shape/serialização nos DTOs críticos passam a ser detectadas automaticamente em CI.
 
+### 20. Guardrail de arquitetura no CI (Concluído)
+
+- Foi criado script de verificação arquitetural:
+  - `scripts/check-architecture.mjs`
+- Regra aplicada:
+  - bloqueia imports de `@/lib/db/*` em `src/app/*` (exceto `src/app/api/*`) e `src/components/*`
+- Script adicionado ao `package.json`:
+  - `npm run check:architecture`
+- Pipeline CI criada em GitHub Actions:
+  - `.github/workflows/ci.yml`
+  - etapas: `npm ci` -> `npm run check:architecture` -> `npm test -- --runInBand` -> `npm run build`
+- Resultado: desvios arquiteturais críticos voltam a falhar automaticamente no CI antes de merge.
+
 ---
 
 ## ✅ Validação Executada
 
 - `npm run build`: **OK**
 - `npm test -- --runInBand`: **OK** (9 suítes, 33 testes)
+- `npm run check:architecture`: **OK**
 
 ---
 
 ## ⚠️ Pendências Relevantes
 
-1. Ainda existem componentes com interfaces locais que podem ser gradualmente movidas para arquivos `_types` por domínio para manter padrão uniforme.
+1. Guardrails podem evoluir para múltiplas regras (ex.: proibir `any` em camadas críticas, validar padrão de DTO em responses de API).
 
 ---
 
 ## Próxima Meta Recomendada
 
-**Meta de curto prazo**: manter a disciplina de novos componentes usando DTOs/aliases de domínio desde a criação, evitando retorno de tipagem inline dispersa.
+**Meta de curto prazo**: expandir guardrails de CI para mais regras de arquitetura e qualidade sem aumentar falsos positivos.

@@ -6,6 +6,7 @@
     "db:migrate": "tsx ./src/db/migrate.ts",
     "db:seed": "tsx ./src/db/seed.ts",
     "dev": "next dev --webpack",
+    "check:architecture": "node ./scripts/check-architecture.mjs",
     "build": "next build --webpack",
     "start": "next start",
     "test": "jest",
