@@ -2,6 +2,10 @@
 
 Sistema de gerenciamento de inventário construído com Next.js, Tailwind CSS, shadcn/ui, SQLite e Drizzle ORM.
 
+## Preview
+
+![Purple Stock - Tela de Itens](public/app.png)
+
 ## Tecnologias
 
 - **Next.js 14** - Framework React

@@ -17,6 +17,7 @@ import { isValidEmail } from "@/lib/validation";
 import { AddUserToTeamsModal } from "@/components/AddUserToTeamsModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { ERROR_CODES } from "@/lib/errors";
+import { parseApiResult } from "@/lib/api-error";
 
 interface Team {
   id: number;
@@ -78,15 +79,21 @@ export default function SettingsPageClient({
     try {
       setIsUsersLoading(true);
       const response = await fetch(`/api/teams/${teamId}/users`);
-      const data = await response.json();
+      const parsed = await parseApiResult<{
+        currentUserId?: number;
+        members?: ManagedUser[];
+        availableUsers?: Array<{ id: number; email: string }>;
+        companyTeams?: Array<{ id: number; name: string }>;
+      }>(response, "Could not load users");
 
-      if (!response.ok) {
+      if (!parsed.ok) {
         setCanManageUsers(false);
         setManagedUsers([]);
         setAvailableUsers([]);
         return;
       }
 
+      const data = parsed.data;
       setCanManageUsers(true);
       setCurrentUserId(data.currentUserId ?? null);
       setManagedUsers(data.members || []);
@@ -111,9 +118,11 @@ export default function SettingsPageClient({
         },
         body: JSON.stringify({ role }),
       });
-
-      const data = await response.json();
-      if (!response.ok) {
+      const parsed = await parseApiResult<{ member: ManagedUser }>(
+        response,
+        t.settings.couldNotUpdateRole
+      );
+      if (!parsed.ok) {
         toast({
           title: t.common.error,
           description: t.settings.couldNotUpdateRole,
@@ -124,7 +133,7 @@ export default function SettingsPageClient({
 
       setManagedUsers((prev) =>
         prev.map((user) =>
-          user.userId === managedUserId ? { ...user, role: data.member.role } : user
+          user.userId === managedUserId ? { ...user, role: parsed.data.member.role } : user
         )
       );
 
@@ -147,9 +156,8 @@ export default function SettingsPageClient({
       const response = await fetch(`/api/teams/${teamId}/users/${managedUserId}`, {
         method: "DELETE",
       });
-      const data = await response.json();
-
-      if (!response.ok) {
+      const parsed = await parseApiResult(response, t.settings.couldNotRemoveMember);
+      if (!parsed.ok) {
         toast({
           title: t.common.error,
           description: t.settings.couldNotRemoveMember,
@@ -219,9 +227,8 @@ export default function SettingsPageClient({
           teamIds: payload.teamIds,
         }),
       });
-      const data = await response.json();
-
-      if (!response.ok) {
+      const parsed = await parseApiResult(response, t.settings.couldNotCreateUser);
+      if (!parsed.ok) {
         toast({
           title: t.common.error,
           description: t.settings.couldNotCreateUser,
@@ -297,11 +304,10 @@ export default function SettingsPageClient({
           confirmPassword,
         }),
       });
-
-      const data = await response.json();
-      if (!response.ok) {
+      const parsed = await parseApiResult(response, t.settings.couldNotUpdatePassword);
+      if (!parsed.ok) {
         const errorMessage =
-          data.errorCode === ERROR_CODES.CURRENT_PASSWORD_INCORRECT
+          parsed.error.errorCode === ERROR_CODES.CURRENT_PASSWORD_INCORRECT
             ? t.settings.currentPasswordIncorrect
             : t.settings.couldNotUpdatePassword;
         toast({
@@ -382,11 +388,13 @@ export default function SettingsPageClient({
           newPassword: editUserPassword || undefined,
         }),
       });
-      const data = await response.json();
-
-      if (!response.ok) {
+      const parsed = await parseApiResult<{ member: ManagedUser }>(
+        response,
+        t.settings.couldNotUpdateUserInfo
+      );
+      if (!parsed.ok) {
         const description =
-          data.errorCode === ERROR_CODES.EMAIL_ALREADY_IN_USE
+          parsed.error.errorCode === ERROR_CODES.EMAIL_ALREADY_IN_USE
             ? t.settings.emailAlreadyInUse
             : t.settings.couldNotUpdateUserInfo;
         toast({
@@ -402,8 +410,8 @@ export default function SettingsPageClient({
           user.userId === editingUserId
             ? {
                 ...user,
-                email: data.member.email ?? normalizedEmail,
-                role: data.member.role ?? user.role,
+                email: parsed.data.member.email ?? normalizedEmail,
+                role: parsed.data.member.role ?? user.role,
               }
             : user
         )

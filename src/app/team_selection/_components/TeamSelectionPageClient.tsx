@@ -18,6 +18,7 @@ import { EditTeamModal } from "@/components/EditTeamModal";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/ui/use-toast-simple";
+import { parseApiResult } from "@/lib/api-error";
 import Link from "next/link";
 
 interface Team {
@@ -51,14 +52,17 @@ export default function TeamSelectionPage() {
   const fetchTeams = async () => {
     try {
       const response = await fetch("/api/teams");
-      const data = await response.json();
+      const parsed = await parseApiResult<{ teams?: Team[] }>(
+        response,
+        "Error fetching teams"
+      );
 
-      if (response.ok) {
-        setTeams(data.teams || []);
-      } else if (response.status === 401) {
+      if (parsed.ok) {
+        setTeams(parsed.data.teams || []);
+      } else if (parsed.error.status === 401) {
         router.push("/");
       } else {
-        console.error("Error fetching teams:", data.error);
+        console.error("Error fetching teams:", parsed.error.error);
       }
     } catch (error) {
       console.error("Error fetching teams:", error);
@@ -103,10 +107,8 @@ export default function TeamSelectionPage() {
       const response = await fetch(`/api/teams/${teamToDelete.id}`, {
         method: "DELETE",
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
+      const parsed = await parseApiResult(response, t.teamSelection.errorDeleting);
+      if (!parsed.ok) {
         toast({
           title: t.teamSelection.errorDeleting,
           description: t.teamSelection.errorDeleting,
