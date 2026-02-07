@@ -125,6 +125,17 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `src/app/api/teams/[id]/locations/[locationId]/route.ts` (PUT/DELETE)
 - Resultado: validação, autorização e tratamento de erro deixam de ficar duplicados nas rotas críticas de escrita desses domínios.
 
+### 12. Padronização de respostas HTTP para ServiceResult (Concluído)
+
+- Foi criado helper de rota para reduzir boilerplate em API Routes:
+  - `src/lib/api-route.ts` (`successResponse`, `serviceErrorResponse`, `internalErrorResponse`)
+- Rotas migradas para usar o helper:
+  - `src/app/api/teams/route.ts`
+  - `src/app/api/teams/[id]/route.ts`
+  - `src/app/api/teams/[id]/items/route.ts`
+  - `src/app/api/teams/[id]/locations/route.ts`
+  - `src/app/api/teams/[id]/locations/[locationId]/route.ts`
+
 ---
 
 ## ✅ Validação Executada

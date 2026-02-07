@@ -8,6 +8,11 @@ import {
   getUserIdFromRequest,
 } from "@/lib/permissions";
 import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
+import {
+  internalErrorResponse,
+  serviceErrorResponse,
+  successResponse,
+} from "@/lib/api-route";
 
 // GET - Get a specific location
 export async function GET(
@@ -54,13 +59,10 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ location }, { status: 200 });
+    return successResponse({ location });
   } catch (error) {
     console.error("Error fetching location:", error);
-    return NextResponse.json(
-      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while fetching location"),
-      { status: 500 }
-    );
+    return internalErrorResponse("An error occurred while fetching location");
   }
 }
 
@@ -89,37 +91,19 @@ export async function PUT(
       payload: body,
     });
     if (!result.ok) {
-      return NextResponse.json(
-        errorPayload(result.error.errorCode, result.error.error),
-        { status: result.error.status }
-      );
+      return serviceErrorResponse(result.error);
     }
 
-    return NextResponse.json(
+    return successResponse(
       {
         message: "Location updated successfully",
         location: result.data.location,
       },
-      { status: 200 }
+      200
     );
   } catch (error: any) {
     console.error("Error updating location:", error);
-
-    // Check for unique constraint violation
-    if (error?.message?.includes("UNIQUE constraint")) {
-      return NextResponse.json(
-        errorPayload(
-          ERROR_CODES.VALIDATION_ERROR,
-          "A location with this name already exists for this team"
-        ),
-        { status: 409 }
-      );
-    }
-
-    return NextResponse.json(
-      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while updating the location"),
-      { status: 500 }
-    );
+    return internalErrorResponse("An error occurred while updating the location");
   }
 }
 
@@ -146,21 +130,15 @@ export async function DELETE(
       locationId,
     });
     if (!result.ok) {
-      return NextResponse.json(
-        errorPayload(result.error.errorCode, result.error.error),
-        { status: result.error.status }
-      );
+      return serviceErrorResponse(result.error);
     }
 
-    return NextResponse.json(
+    return successResponse(
       { message: "Location deleted successfully" },
-      { status: 200 }
+      200
     );
   } catch (error) {
     console.error("Error deleting location:", error);
-    return NextResponse.json(
-      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while deleting the location"),
-      { status: 500 }
-    );
+    return internalErrorResponse("An error occurred while deleting the location");
   }
 }

@@ -7,6 +7,11 @@ import {
   getUserIdFromRequest,
 } from "@/lib/permissions";
 import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
+import {
+  internalErrorResponse,
+  serviceErrorResponse,
+  successResponse,
+} from "@/lib/api-route";
 
 // GET - List items for a team
 export async function GET(
@@ -37,13 +42,10 @@ export async function GET(
 
     const items = await getTeamItems(teamId);
 
-    return NextResponse.json({ items }, { status: 200 });
+    return successResponse({ items });
   } catch (error) {
     console.error("Error fetching items:", error);
-    return NextResponse.json(
-      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while fetching items"),
-      { status: 500 }
-    );
+    return internalErrorResponse("An error occurred while fetching items");
   }
 }
 
@@ -70,27 +72,20 @@ export async function POST(
       payload: body,
     });
     if (!result.ok) {
-      return NextResponse.json(
-        errorPayload(result.error.errorCode, result.error.error),
-        { status: result.error.status }
-      );
+      return serviceErrorResponse(result.error);
     }
 
     revalidatePath(`/teams/${teamId}/items`);
 
-    return NextResponse.json(
+    return successResponse(
       {
         message: "Item created successfully",
         item: result.data.item,
       },
-      { status: 201 }
+      201
     );
   } catch (error: any) {
     console.error("Error creating item:", error);
-
-    return NextResponse.json(
-      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while creating the item"),
-      { status: 500 }
-    );
+    return internalErrorResponse("An error occurred while creating the item");
   }
 }

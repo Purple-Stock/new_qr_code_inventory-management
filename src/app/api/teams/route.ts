@@ -3,6 +3,11 @@ import { getUserTeamsWithStats } from "@/lib/db/teams";
 import { createTeamForUser } from "@/lib/services/teams";
 import { getUserIdFromRequest } from "@/lib/permissions";
 import { ERROR_CODES, errorPayload } from "@/lib/errors";
+import {
+  internalErrorResponse,
+  serviceErrorResponse,
+  successResponse,
+} from "@/lib/api-route";
 
 // GET - List teams for a user
 export async function GET(request: NextRequest) {
@@ -18,13 +23,10 @@ export async function GET(request: NextRequest) {
 
     const teams = await getUserTeamsWithStats(requestUserId);
 
-    return NextResponse.json({ teams }, { status: 200 });
+    return successResponse({ teams });
   } catch (error) {
     console.error("Error fetching teams:", error);
-    return NextResponse.json(
-      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while fetching teams"),
-      { status: 500 }
-    );
+    return internalErrorResponse("An error occurred while fetching teams");
   }
 }
 
@@ -37,25 +39,18 @@ export async function POST(request: NextRequest) {
       payload: body,
     });
     if (!result.ok) {
-      return NextResponse.json(
-        errorPayload(result.error.errorCode, result.error.error),
-        { status: result.error.status }
-      );
+      return serviceErrorResponse(result.error);
     }
 
-    return NextResponse.json(
+    return successResponse(
       {
         message: "Team created successfully",
         team: result.data.team,
       },
-      { status: 201 }
+      201
     );
   } catch (error: any) {
     console.error("Error creating team:", error);
-
-    return NextResponse.json(
-      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while creating the team"),
-      { status: 500 }
-    );
+    return internalErrorResponse("An error occurred while creating the team");
   }
 }

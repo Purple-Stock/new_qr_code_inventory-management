@@ -6,6 +6,11 @@ import {
   getUserIdFromRequest,
 } from "@/lib/permissions";
 import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
+import {
+  internalErrorResponse,
+  serviceErrorResponse,
+  successResponse,
+} from "@/lib/api-route";
 
 // GET - List locations for a team
 export async function GET(
@@ -36,13 +41,10 @@ export async function GET(
 
     const locations = await getTeamLocations(teamId);
 
-    return NextResponse.json({ locations }, { status: 200 });
+    return successResponse({ locations });
   } catch (error) {
     console.error("Error fetching locations:", error);
-    return NextResponse.json(
-      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while fetching locations"),
-      { status: 500 }
-    );
+    return internalErrorResponse("An error occurred while fetching locations");
   }
 }
 
@@ -69,25 +71,18 @@ export async function POST(
       payload: body,
     });
     if (!result.ok) {
-      return NextResponse.json(
-        errorPayload(result.error.errorCode, result.error.error),
-        { status: result.error.status }
-      );
+      return serviceErrorResponse(result.error);
     }
 
-    return NextResponse.json(
+    return successResponse(
       {
         message: "Location created successfully",
         location: result.data.location,
       },
-      { status: 201 }
+      201
     );
   } catch (error: any) {
     console.error("Error creating location:", error);
-
-    return NextResponse.json(
-      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while creating the location"),
-      { status: 500 }
-    );
+    return internalErrorResponse("An error occurred while creating the location");
   }
 }
