@@ -49,6 +49,11 @@ export function toTeamDto(
     createdAt: Date | string;
     updatedAt: Date | string;
   } & Partial<{
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+    stripeSubscriptionStatus: string | null;
+    stripePriceId: string | null;
+    stripeCurrentPeriodEnd: Date | string | null;
     itemCount: number;
     transactionCount: number;
     memberCount: number;
@@ -62,6 +67,13 @@ export function toTeamDto(
     notes: team.notes,
     userId: team.userId,
     companyId: team.companyId,
+    stripeCustomerId: team.stripeCustomerId ?? null,
+    stripeSubscriptionId: team.stripeSubscriptionId ?? null,
+    stripeSubscriptionStatus: team.stripeSubscriptionStatus ?? null,
+    stripePriceId: team.stripePriceId ?? null,
+    stripeCurrentPeriodEnd: team.stripeCurrentPeriodEnd
+      ? toIsoString(team.stripeCurrentPeriodEnd)
+      : null,
     itemCount: team.itemCount ?? 0,
     transactionCount: team.transactionCount ?? 0,
     memberCount: team.memberCount ?? 0,

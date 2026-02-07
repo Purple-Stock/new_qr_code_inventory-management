@@ -70,6 +70,10 @@ src/
 
 - `DATABASE_URL` (opcional): caminho do SQLite. Padrão: `./src/db.sqlite`.
 - `SESSION_SECRET` (obrigatório em produção): segredo para assinatura da sessão.
+- `STRIPE_SECRET_KEY` (obrigatório para billing): chave secreta da Stripe.
+- `STRIPE_PRICE_ID` (obrigatório para billing): `price_id` do plano mensal por time.
+- `STRIPE_WEBHOOK_SECRET` (obrigatório para webhook): segredo do endpoint de webhook.
+- `APP_URL` ou `NEXT_PUBLIC_APP_URL` (recomendado): URL base usada em retornos do Checkout/Portal.
 
 ## Setup local
 
@@ -138,6 +142,9 @@ Observação: existe script `db:seed` no `package.json`, mas o arquivo `src/db/s
 - `GET /api/teams/:id/reports`
 - `GET /api/teams/:id/transactions`
 - `DELETE /api/teams/:id/transactions/:transactionId`
+- `POST /api/teams/:id/billing/checkout`
+- `POST /api/teams/:id/billing/portal`
+- `POST /api/stripe/webhook`
 
 ## Qualidade e CI
 

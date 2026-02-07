@@ -36,6 +36,11 @@ export type TeamDto = {
   notes: string | null;
   userId: number;
   companyId: number | null;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  stripeSubscriptionStatus: string | null;
+  stripePriceId: string | null;
+  stripeCurrentPeriodEnd: string | null;
   itemCount: number;
   transactionCount: number;
   memberCount: number;

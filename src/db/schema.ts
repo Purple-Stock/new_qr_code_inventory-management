@@ -70,6 +70,11 @@ export const teams = sqliteTable(
       .notNull()
       .references(() => users.id),
     companyId: integer("company_id").references(() => companies.id),
+    stripeCustomerId: text("stripe_customer_id"),
+    stripeSubscriptionId: text("stripe_subscription_id"),
+    stripeSubscriptionStatus: text("stripe_subscription_status"),
+    stripePriceId: text("stripe_price_id"),
+    stripeCurrentPeriodEnd: integer("stripe_current_period_end", { mode: "timestamp" }),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .$defaultFn(() => new Date()),
@@ -80,6 +85,12 @@ export const teams = sqliteTable(
   (table) => ({
     userIdIdx: index("index_teams_on_user_id").on(table.userId),
     companyIdIdx: index("index_teams_on_company_id").on(table.companyId),
+    stripeCustomerIdIdx: uniqueIndex("index_teams_on_stripe_customer_id").on(
+      table.stripeCustomerId
+    ),
+    stripeSubscriptionIdIdx: uniqueIndex("index_teams_on_stripe_subscription_id").on(
+      table.stripeSubscriptionId
+    ),
   })
 );
 

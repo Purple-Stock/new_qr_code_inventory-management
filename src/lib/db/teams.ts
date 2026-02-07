@@ -213,6 +213,64 @@ export async function updateTeam(
   return updatedTeam;
 }
 
+export async function getTeamByStripeCustomerId(stripeCustomerId: string): Promise<Team | null> {
+  const [team] = await sqlite
+    .select()
+    .from(teams)
+    .where(eq(teams.stripeCustomerId, stripeCustomerId))
+    .limit(1);
+
+  return team ?? null;
+}
+
+export async function updateTeamStripeCustomerId(
+  teamId: number,
+  stripeCustomerId: string
+): Promise<Team> {
+  const [updatedTeam] = await sqlite
+    .update(teams)
+    .set({
+      stripeCustomerId,
+      updatedAt: new Date(),
+    })
+    .where(eq(teams.id, teamId))
+    .returning();
+
+  if (!updatedTeam) {
+    throw new Error("Team not found");
+  }
+
+  return updatedTeam;
+}
+
+export async function updateTeamStripeSubscription(
+  teamId: number,
+  data: {
+    stripeSubscriptionId: string | null;
+    stripeSubscriptionStatus: string | null;
+    stripePriceId: string | null;
+    stripeCurrentPeriodEnd: Date | null;
+  }
+): Promise<Team> {
+  const [updatedTeam] = await sqlite
+    .update(teams)
+    .set({
+      stripeSubscriptionId: data.stripeSubscriptionId,
+      stripeSubscriptionStatus: data.stripeSubscriptionStatus,
+      stripePriceId: data.stripePriceId,
+      stripeCurrentPeriodEnd: data.stripeCurrentPeriodEnd,
+      updatedAt: new Date(),
+    })
+    .where(eq(teams.id, teamId))
+    .returning();
+
+  if (!updatedTeam) {
+    throw new Error("Team not found");
+  }
+
+  return updatedTeam;
+}
+
 /**
  * Delete a team and all related data
  */

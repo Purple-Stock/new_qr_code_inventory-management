@@ -5,7 +5,10 @@ import type {
   TeamDto,
 } from "@/lib/services/types";
 
-export type Team = Pick<TeamDto, "id" | "name" | "notes">;
+export type Team = Pick<
+  TeamDto,
+  "id" | "name" | "notes" | "stripeSubscriptionStatus" | "stripeCurrentPeriodEnd"
+>;
 
 export type ManagedUser = ManagedUserDto;
 

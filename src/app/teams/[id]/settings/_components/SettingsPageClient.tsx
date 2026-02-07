@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   UserPlus,
   Trash2,
@@ -8,6 +9,7 @@ import {
   KeyRound,
   Eye,
   EyeOff,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,11 +46,14 @@ export default function SettingsPageClient({
   const [companyTeams, setCompanyTeams] = useState<CompanyTeam[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [canManageUsers, setCanManageUsers] = useState(false);
-  const [activeSettingsTab, setActiveSettingsTab] = useState<"users" | "password">("users");
+  const [activeSettingsTab, setActiveSettingsTab] = useState<"users" | "password" | "billing">(
+    "users"
+  );
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isPasswordSaving, setIsPasswordSaving] = useState(false);
+  const [isBillingLoading, setIsBillingLoading] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -59,10 +64,61 @@ export default function SettingsPageClient({
   const [showEditUserPassword, setShowEditUserPassword] = useState(false);
   const { t } = useTranslation();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const [billingStatus, setBillingStatus] = useState<string | null>(
+    initialTeam.stripeSubscriptionStatus ?? null
+  );
+  const [billingPeriodEnd, setBillingPeriodEnd] = useState<string | null>(
+    initialTeam.stripeCurrentPeriodEnd ?? null
+  );
+  const hasStripeSubscription = Boolean(billingStatus);
+  const hasActiveStripeSubscription = ["active", "trialing", "past_due"].includes(
+    billingStatus ?? ""
+  );
+  const formattedPeriodEnd = billingPeriodEnd
+    ? new Date(billingPeriodEnd).toLocaleDateString()
+    : null;
 
   useEffect(() => {
     fetchManagedUsers().finally(() => setIsLoading(false));
   }, [teamId]);
+
+  useEffect(() => {
+    const billingResult = searchParams.get("billing");
+    if (billingResult !== "success") {
+      return;
+    }
+
+    const syncBilling = async () => {
+      try {
+        const syncResult = await fetchApiJsonResult<{
+          synced: boolean;
+          subscriptionStatus: string | null;
+        }>(`/api/teams/${teamId}/billing/sync`, {
+          method: "POST",
+          fallbackError: "Could not sync billing status",
+        });
+        if (!syncResult.ok) {
+          return;
+        }
+
+        setBillingStatus(syncResult.data.subscriptionStatus ?? null);
+
+        const teamResult = await fetchApiResult<{
+          team: { stripeCurrentPeriodEnd?: string | null };
+        }>(`/api/teams/${teamId}`, {
+          fallbackError: "Could not refresh team data",
+        });
+        if (teamResult.ok) {
+          setBillingPeriodEnd(teamResult.data.team.stripeCurrentPeriodEnd ?? null);
+        }
+      } catch (error) {
+        console.error("Error syncing billing status:", error);
+      }
+    };
+
+    void syncBilling();
+  }, [searchParams, teamId]);
 
   useEffect(() => {
     if (!canManageUsers && activeSettingsTab === "users") {
@@ -415,6 +471,70 @@ export default function SettingsPageClient({
     }
   };
 
+  const handleStartCheckout = async () => {
+    setIsBillingLoading(true);
+    try {
+      const parsed = await fetchApiJsonResult<{ url: string }>(
+        `/api/teams/${teamId}/billing/checkout`,
+        {
+          method: "POST",
+          fallbackError: "Could not create checkout session",
+        }
+      );
+
+      if (!parsed.ok) {
+        toast({
+          title: t.common.error,
+          description: parsed.error.error,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      window.location.href = parsed.data.url;
+    } catch (error) {
+      toast({
+        title: t.common.error,
+        description: "Could not create checkout session",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBillingLoading(false);
+    }
+  };
+
+  const handleOpenBillingPortal = async () => {
+    setIsBillingLoading(true);
+    try {
+      const parsed = await fetchApiJsonResult<{ url: string }>(
+        `/api/teams/${teamId}/billing/portal`,
+        {
+          method: "POST",
+          fallbackError: "Could not open billing portal",
+        }
+      );
+
+      if (!parsed.ok) {
+        toast({
+          title: t.common.error,
+          description: parsed.error.error,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      window.location.href = parsed.data.url;
+    } catch (error) {
+      toast({
+        title: t.common.error,
+        description: "Could not open billing portal",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBillingLoading(false);
+    }
+  };
+
   return (
     <TeamLayout
       team={initialTeam}
@@ -456,6 +576,17 @@ export default function SettingsPageClient({
               >
                 {t.settings.changePasswordTab}
               </button>
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab("billing")}
+                className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  activeSettingsTab === "billing"
+                    ? "border-purple-600 text-purple-700"
+                    : "border-transparent text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Assinatura
+              </button>
             </div>
           </div>
 
@@ -465,6 +596,49 @@ export default function SettingsPageClient({
             </div>
           ) : (
             <>
+              {activeSettingsTab === "billing" ? (
+                <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-purple-600" />
+                    Assinatura do time
+                  </h2>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Plano Pro: R$ 29,90 por time/mês.
+                  </p>
+                  <p className="text-sm text-gray-700 mb-4">
+                    Status atual:{" "}
+                    <span className="font-semibold">
+                      {hasStripeSubscription
+                        ? (billingStatus ?? "desconhecido")
+                        : "sem assinatura"}
+                    </span>
+                    {formattedPeriodEnd ? ` • próximo ciclo em ${formattedPeriodEnd}` : ""}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {!hasActiveStripeSubscription ? (
+                      <Button
+                        type="button"
+                        onClick={handleStartCheckout}
+                        disabled={isBillingLoading}
+                        className="bg-purple-600 hover:bg-purple-700 text-white"
+                      >
+                        {isBillingLoading ? "Carregando..." : "Assinar plano Pro"}
+                      </Button>
+                    ) : null}
+                    {hasStripeSubscription ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleOpenBillingPortal}
+                        disabled={isBillingLoading}
+                      >
+                        {isBillingLoading ? "Carregando..." : "Gerenciar assinatura"}
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
               {activeSettingsTab === "users" ? canManageUsers ? (
                 <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
@@ -566,7 +740,7 @@ export default function SettingsPageClient({
                     {t.settings.noPermissionManageMembers}
                   </p>
                 </div>
-              ) : (
+              ) : activeSettingsTab === "password" ? (
                 <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
                     <KeyRound className="h-5 w-5 text-purple-600" />
@@ -664,7 +838,7 @@ export default function SettingsPageClient({
                     </Button>
                   </div>
                 </div>
-              )}
+              ) : null}
             </>
           )}
 
