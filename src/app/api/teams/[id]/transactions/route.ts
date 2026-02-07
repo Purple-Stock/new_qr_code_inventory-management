@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTeamStockTransactionsWithDetails } from "@/lib/db/stock-transactions";
-import { authorizeTeamAccess, getUserIdFromRequest } from "@/lib/permissions";
-import { errorResponse, internalErrorResponse, successResponse } from "@/lib/api-route";
+import { getUserIdFromRequest } from "@/lib/permissions";
+import {
+  errorResponse,
+  internalErrorResponse,
+  serviceErrorResponse,
+  successResponse,
+} from "@/lib/api-route";
+import { listTeamTransactionsForUser } from "@/lib/services/transactions";
 
 export async function GET(
   request: NextRequest,
@@ -15,27 +20,22 @@ export async function GET(
       return errorResponse("Invalid team ID", 400);
     }
 
-    const auth = await authorizeTeamAccess({
-      teamId,
-      requestUserId: getUserIdFromRequest(request),
-    });
-    if (!auth.ok) {
-      return errorResponse(auth.error, auth.status);
-    }
-
     // Get search query from URL params
     const searchParams = request.nextUrl.searchParams;
     const searchQuery = searchParams.get("search") || undefined;
 
-    // Get transactions with details
-    const transactions = await getTeamStockTransactionsWithDetails(
+    const result = await listTeamTransactionsForUser({
       teamId,
-      searchQuery
-    );
+      requestUserId: getUserIdFromRequest(request),
+      searchQuery,
+    });
+    if (!result.ok) {
+      return serviceErrorResponse(result.error);
+    }
 
     return successResponse(
       {
-        transactions,
+        transactions: result.data.transactions,
       },
       200
     );

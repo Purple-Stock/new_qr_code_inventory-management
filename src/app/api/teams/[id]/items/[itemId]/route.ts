@@ -2,20 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import {
   getItemById,
-  getItemByIdWithLocation,
   updateItem,
   deleteItem,
   itemHasTransactions,
 } from "@/lib/db/items";
 import { getTeamWithStats } from "@/lib/db/teams";
 import {
-  authorizeTeamAccess,
   authorizeTeamPermission,
   getUserIdFromRequest,
 } from "@/lib/permissions";
 import { parseItemPayload } from "@/lib/validation";
 import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
-import { errorResponse, internalErrorResponse, successResponse } from "@/lib/api-route";
+import {
+  errorResponse,
+  internalErrorResponse,
+  serviceErrorResponse,
+  successResponse,
+} from "@/lib/api-route";
+import { getTeamItemDetails } from "@/lib/services/items";
 
 interface RouteParams {
   params: Promise<{ id: string; itemId: string }>;
@@ -36,28 +40,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const auth = await authorizeTeamAccess({
+    const result = await getTeamItemDetails({
       teamId,
+      itemId,
       requestUserId: getUserIdFromRequest(request),
     });
-    if (!auth.ok) {
-      return errorResponse(auth.error, auth.status, authErrorToCode(auth.error));
+    if (!result.ok) {
+      return serviceErrorResponse(result.error);
     }
 
-    const item = await getItemByIdWithLocation(itemId);
-    if (!item) {
-      return errorResponse(undefined, 404, ERROR_CODES.ITEM_NOT_FOUND);
-    }
-
-    if (item.teamId !== teamId) {
-      return errorResponse(
-        "Item does not belong to this team",
-        403,
-        ERROR_CODES.FORBIDDEN
-      );
-    }
-
-    return successResponse({ item }, 200);
+    return successResponse({ item: result.data.item }, 200);
   } catch (error) {
     console.error("Error fetching item:", error);
     return internalErrorResponse("An error occurred while fetching the item");

@@ -1,6 +1,7 @@
 import { createItem } from "@/lib/db/items";
+import { getItemByIdWithLocation } from "@/lib/db/items";
 import { ERROR_CODES } from "@/lib/errors";
-import { authorizeTeamPermission } from "@/lib/permissions";
+import { authorizeTeamAccess, authorizeTeamPermission } from "@/lib/permissions";
 import { parseItemPayload } from "@/lib/validation";
 import type { Item } from "@/db/schema";
 import type { ServiceResult } from "@/lib/services/types";
@@ -8,8 +9,41 @@ import {
   authServiceError,
   conflictValidationServiceError,
   internalServiceError,
+  makeServiceError,
+  notFoundServiceError,
   validationServiceError,
 } from "@/lib/services/errors";
+
+export async function getTeamItemDetails(params: {
+  teamId: number;
+  itemId: number;
+  requestUserId: number | null;
+}): Promise<ServiceResult<{ item: Item & { locationName?: string | null } }>> {
+  const auth = await authorizeTeamAccess({
+    teamId: params.teamId,
+    requestUserId: params.requestUserId,
+  });
+  if (!auth.ok) {
+    return { ok: false, error: authServiceError(auth) };
+  }
+
+  const item = await getItemByIdWithLocation(params.itemId);
+  if (!item) {
+    return {
+      ok: false,
+      error: notFoundServiceError(ERROR_CODES.ITEM_NOT_FOUND, "Item not found"),
+    };
+  }
+
+  if (item.teamId !== params.teamId) {
+    return {
+      ok: false,
+      error: makeServiceError(403, ERROR_CODES.FORBIDDEN, "Item does not belong to this team"),
+    };
+  }
+
+  return { ok: true, data: { item } };
+}
 
 export async function createTeamItem(params: {
   teamId: number;

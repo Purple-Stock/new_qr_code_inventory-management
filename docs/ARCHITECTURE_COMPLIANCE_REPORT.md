@@ -115,6 +115,10 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 - Foram extraídos use-cases de usuários e transações de estoque:
   - `src/lib/services/users.ts` com `getTeamUsersForManagement(...)`, `createOrAttachTeamMember(...)`, `updateManagedTeamMember(...)`, `removeManagedTeamMember(...)`
   - `src/lib/services/stock-transactions.ts` com `createTeamStockTransaction(...)`
+- Foram extraídos use-cases de leitura para relatórios e transações:
+  - `src/lib/services/reports.ts` com `getTeamReportStatsForUser(...)`
+  - `src/lib/services/transactions.ts` com `listTeamTransactionsForUser(...)` e `listItemTransactionsForUser(...)`
+  - `src/lib/services/items.ts` com `getTeamItemDetails(...)`
 - Tipos de retorno padronizados para serviços:
   - `src/lib/services/types.ts`
 - Helper central de erro de serviço:
@@ -129,6 +133,10 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `src/app/api/teams/[id]/users/route.ts` (GET/POST)
   - `src/app/api/teams/[id]/users/[userId]/route.ts` (PATCH/DELETE)
   - `src/app/api/teams/[id]/stock-transactions/route.ts` (POST)
+  - `src/app/api/teams/[id]/reports/route.ts` (GET)
+  - `src/app/api/teams/[id]/transactions/route.ts` (GET)
+  - `src/app/api/teams/[id]/items/[itemId]/transactions/route.ts` (GET)
+  - `src/app/api/teams/[id]/items/[itemId]/route.ts` (GET)
 - Resultado: validação, autorização e tratamento de erro deixam de ficar duplicados nas rotas críticas de escrita desses domínios.
 
 ### 12. Padronização de respostas HTTP para ServiceResult (Concluído)

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getItemStockTransactionsWithDetails } from "@/lib/db/stock-transactions";
-import { getItemById } from "@/lib/db/items";
-import { authorizeTeamAccess, getUserIdFromRequest } from "@/lib/permissions";
-import { errorResponse, internalErrorResponse, successResponse } from "@/lib/api-route";
+import { getUserIdFromRequest } from "@/lib/permissions";
+import {
+  errorResponse,
+  internalErrorResponse,
+  serviceErrorResponse,
+  successResponse,
+} from "@/lib/api-route";
+import { listItemTransactionsForUser } from "@/lib/services/transactions";
 
 interface RouteParams {
   params: Promise<{ id: string; itemId: string }>;
@@ -18,25 +22,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return errorResponse("Invalid team ID or item ID", 400);
     }
 
-    const auth = await authorizeTeamAccess({
+    const result = await listItemTransactionsForUser({
       teamId,
+      itemId,
       requestUserId: getUserIdFromRequest(request),
     });
-    if (!auth.ok) {
-      return errorResponse(auth.error, auth.status);
+    if (!result.ok) {
+      return serviceErrorResponse(result.error);
     }
 
-    const item = await getItemById(itemId);
-    if (!item) {
-      return errorResponse("Item not found", 404);
-    }
-    if (item.teamId !== teamId) {
-      return errorResponse("Item does not belong to this team", 403);
-    }
-
-    const transactions = await getItemStockTransactionsWithDetails(teamId, itemId);
-
-    return successResponse({ transactions });
+    return successResponse({ transactions: result.data.transactions });
   } catch (error) {
     console.error("Error fetching item transactions:", error);
     return internalErrorResponse("An error occurred while fetching transactions");
