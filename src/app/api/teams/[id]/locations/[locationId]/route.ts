@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   getLocationById,
-  updateLocation,
-  deleteLocation,
 } from "@/lib/db/locations";
-import { getTeamWithStats } from "@/lib/db/teams";
+import { deleteTeamLocation, updateTeamLocation } from "@/lib/services/locations";
 import {
   authorizeTeamAccess,
-  authorizeTeamPermission,
   getUserIdFromRequest,
 } from "@/lib/permissions";
-import { parseLocationPayload } from "@/lib/validation";
 import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
 
 // GET - Get a specific location
@@ -85,63 +81,24 @@ export async function PUT(
       );
     }
 
-    // Verify team exists
-    const team = await getTeamWithStats(teamId);
-    if (!team) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.TEAM_NOT_FOUND),
-        { status: 404 }
-      );
-    }
-
-    // Verify location exists and belongs to team
-    const existingLocation = await getLocationById(locationId);
-    if (!existingLocation) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.LOCATION_NOT_FOUND),
-        { status: 404 }
-      );
-    }
-
-    if (existingLocation.teamId !== teamId) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.FORBIDDEN, "Location does not belong to this team"),
-        { status: 403 }
-      );
-    }
-
-    const auth = await authorizeTeamPermission({
-      permission: "location:write",
+    const body = await request.json();
+    const result = await updateTeamLocation({
       teamId,
       requestUserId: getUserIdFromRequest(request),
+      locationId,
+      payload: body,
     });
-    if (!auth.ok) {
+    if (!result.ok) {
       return NextResponse.json(
-        errorPayload(authErrorToCode(auth.error), auth.error),
-        { status: auth.status }
+        errorPayload(result.error.errorCode, result.error.error),
+        { status: result.error.status }
       );
     }
-
-    const body = await request.json();
-    const parsed = parseLocationPayload(body);
-    if (!parsed.ok) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.VALIDATION_ERROR, parsed.error),
-        { status: 400 }
-      );
-    }
-    const { name, description } = parsed.data;
-
-    // Update location
-    const location = await updateLocation(locationId, {
-      name,
-      description,
-    });
 
     return NextResponse.json(
       {
         message: "Location updated successfully",
-        location,
+        location: result.data.location,
       },
       { status: 200 }
     );
@@ -183,45 +140,17 @@ export async function DELETE(
       );
     }
 
-    // Verify team exists
-    const team = await getTeamWithStats(teamId);
-    if (!team) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.TEAM_NOT_FOUND),
-        { status: 404 }
-      );
-    }
-
-    // Verify location exists and belongs to team
-    const location = await getLocationById(locationId);
-    if (!location) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.LOCATION_NOT_FOUND),
-        { status: 404 }
-      );
-    }
-
-    if (location.teamId !== teamId) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.FORBIDDEN, "Location does not belong to this team"),
-        { status: 403 }
-      );
-    }
-
-    const auth = await authorizeTeamPermission({
-      permission: "location:delete",
+    const result = await deleteTeamLocation({
       teamId,
       requestUserId: getUserIdFromRequest(request),
+      locationId,
     });
-    if (!auth.ok) {
+    if (!result.ok) {
       return NextResponse.json(
-        errorPayload(authErrorToCode(auth.error), auth.error),
-        { status: auth.status }
+        errorPayload(result.error.errorCode, result.error.error),
+        { status: result.error.status }
       );
     }
-
-    // Delete location
-    await deleteLocation(locationId);
 
     return NextResponse.json(
       { message: "Location deleted successfully" },

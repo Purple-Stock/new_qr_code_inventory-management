@@ -1,19 +1,15 @@
 import { createItem } from "@/lib/db/items";
-import { ERROR_CODES, authErrorToCode } from "@/lib/errors";
-import type { ErrorCode } from "@/lib/errors";
+import { ERROR_CODES } from "@/lib/errors";
 import { authorizeTeamPermission } from "@/lib/permissions";
 import { parseItemPayload } from "@/lib/validation";
 import type { Item } from "@/db/schema";
-
-type ServiceError = {
-  status: number;
-  errorCode: ErrorCode;
-  error: string;
-};
-
-type ServiceResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: ServiceError };
+import type { ServiceResult } from "@/lib/services/types";
+import {
+  authServiceError,
+  conflictValidationServiceError,
+  internalServiceError,
+  validationServiceError,
+} from "@/lib/services/errors";
 
 export async function createTeamItem(params: {
   teamId: number;
@@ -24,11 +20,7 @@ export async function createTeamItem(params: {
   if (!parsed.ok) {
     return {
       ok: false,
-      error: {
-        status: 400,
-        errorCode: ERROR_CODES.VALIDATION_ERROR,
-        error: parsed.error,
-      },
+      error: validationServiceError(parsed.error),
     };
   }
 
@@ -40,11 +32,7 @@ export async function createTeamItem(params: {
   if (!auth.ok) {
     return {
       ok: false,
-      error: {
-        status: auth.status,
-        errorCode: authErrorToCode(auth.error),
-        error: auth.error,
-      },
+      error: authServiceError(auth),
     };
   }
 
@@ -70,21 +58,15 @@ export async function createTeamItem(params: {
     if (error?.message?.includes("UNIQUE constraint")) {
       return {
         ok: false,
-        error: {
-          status: 409,
-          errorCode: ERROR_CODES.VALIDATION_ERROR,
-          error: "An item with this barcode already exists",
-        },
+        error: conflictValidationServiceError(
+          "An item with this barcode already exists"
+        ),
       };
     }
 
     return {
       ok: false,
-      error: {
-        status: 500,
-        errorCode: ERROR_CODES.INTERNAL_ERROR,
-        error: "An error occurred while creating the item",
-      },
+      error: internalServiceError("An error occurred while creating the item"),
     };
   }
 }

@@ -105,21 +105,32 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `src/app/teams/[id]/locations/new/_components/NewLocationPageClient.tsx`
   - `src/app/teams/[id]/locations/[locationId]/edit/_components/EditLocationPageClient.tsx`
 
-### 11. Início da unificação de regras em use-cases (Em andamento)
+### 11. Unificação de regras em use-cases (Concluído para itens, times e localizações)
 
 - Foi extraído o primeiro use-case de escrita compartilhado:
   - `src/lib/services/items.ts` com `createTeamItem(...)`
-- Pontos migrados para usar o mesmo fluxo de domínio:
+- Foram extraídos use-cases adicionais para times e localizações:
+  - `src/lib/services/teams.ts` com `createTeamForUser(...)`, `updateTeamDetails(...)` e `deleteTeamWithAuthorization(...)`
+  - `src/lib/services/locations.ts` com `createTeamLocation(...)`, `updateTeamLocation(...)` e `deleteTeamLocation(...)`
+- Tipos de retorno padronizados para serviços:
+  - `src/lib/services/types.ts`
+- Helper central de erro de serviço:
+  - `src/lib/services/errors.ts`
+- Pontos migrados para usar os mesmos fluxos de domínio:
+  - `src/app/api/teams/route.ts` (POST)
   - `src/app/api/teams/[id]/items/route.ts` (POST)
   - `src/app/teams/[id]/items/_actions/createItem.ts`
-- Resultado: validação, autorização e tratamento de erro de criação de item deixam de ficar duplicados entre API Route e Server Action.
+  - `src/app/api/teams/[id]/route.ts` (PUT/DELETE)
+  - `src/app/api/teams/[id]/locations/route.ts` (POST)
+  - `src/app/api/teams/[id]/locations/[locationId]/route.ts` (PUT/DELETE)
+- Resultado: validação, autorização e tratamento de erro deixam de ficar duplicados nas rotas críticas de escrita desses domínios.
 
 ---
 
 ## ✅ Validação Executada
 
 - `npm run build`: **OK**
-- `npm test -- --runInBand`: **OK** (3 suítes, 12 testes)
+- `npm test -- --runInBand`: **OK** (5 suítes, 18 testes)
 
 ---
 

@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTeamWithStats, updateTeam, deleteTeam } from "@/lib/db/teams";
+import { getTeamWithStats } from "@/lib/db/teams";
+import { deleteTeamWithAuthorization, updateTeamDetails } from "@/lib/services/teams";
 import {
   authorizeTeamAccess,
-  authorizeTeamPermission,
   getUserIdFromRequest,
 } from "@/lib/permissions";
-import { parseTeamUpdatePayload } from "@/lib/validation";
 import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
 
 export async function GET(
@@ -60,64 +59,30 @@ export async function PUT(
       );
     }
 
-    // Verify team exists
-    const existingTeam = await getTeamWithStats(teamId);
-    if (!existingTeam) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.TEAM_NOT_FOUND),
-        { status: 404 }
-      );
-    }
-
-    const auth = await authorizeTeamPermission({
-      permission: "team:update",
+    const body = await request.json();
+    const result = await updateTeamDetails({
       teamId,
       requestUserId: getUserIdFromRequest(request),
+      payload: body,
     });
-    if (!auth.ok) {
+    if (!result.ok) {
       return NextResponse.json(
-        errorPayload(authErrorToCode(auth.error), auth.error),
-        { status: auth.status }
+        errorPayload(result.error.errorCode, result.error.error),
+        { status: result.error.status }
       );
     }
-
-    const body = await request.json();
-    const parsed = parseTeamUpdatePayload(body);
-    if (!parsed.ok) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.VALIDATION_ERROR, parsed.error),
-        { status: 400 }
-      );
-    }
-
-    const { name, notes } = parsed.data;
-
-    // Update team
-    const team = await updateTeam(teamId, {
-      name,
-      notes,
-    });
 
     return NextResponse.json(
       {
         message: "Team updated successfully",
-        team,
+        team: result.data.team,
       },
       { status: 200 }
     );
   } catch (error: any) {
     console.error("Error updating team:", error);
-
-    // Check for unique constraint violation
-    if (error?.message?.includes("UNIQUE constraint")) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.VALIDATION_ERROR, "A team with this name already exists"),
-        { status: 409 }
-      );
-    }
-
     return NextResponse.json(
-      { error: "An error occurred while updating the team" },
+      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while updating the team"),
       { status: 500 }
     );
   }
@@ -139,40 +104,14 @@ export async function DELETE(
       );
     }
 
-    // Verify team exists
-    const existingTeam = await getTeamWithStats(teamId);
-    if (!existingTeam) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.TEAM_NOT_FOUND),
-        { status: 404 }
-      );
-    }
-
-    const auth = await authorizeTeamPermission({
-      permission: "team:delete",
+    const result = await deleteTeamWithAuthorization({
       teamId,
       requestUserId: getUserIdFromRequest(request),
     });
-    if (!auth.ok) {
-      if (auth.status === 403) {
-        return NextResponse.json(
-          errorPayload(ERROR_CODES.INSUFFICIENT_PERMISSIONS, "Only team admins can delete a team"),
-          { status: 403 }
-        );
-      }
+    if (!result.ok) {
       return NextResponse.json(
-        errorPayload(authErrorToCode(auth.error), auth.error),
-        { status: auth.status }
-      );
-    }
-
-    // Delete team and all related data
-    const deleted = await deleteTeam(teamId);
-
-    if (!deleted) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.INTERNAL_ERROR, "Failed to delete team"),
-        { status: 500 }
+        errorPayload(result.error.errorCode, result.error.error),
+        { status: result.error.status }
       );
     }
 
