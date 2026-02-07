@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { createTeamForUser, getUserTeamsForUser } from "@/lib/services/teams";
 import { getUserIdFromRequest } from "@/lib/permissions";
-import {  serviceErrorResponse,
+import { serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
 import { internalServiceError } from "@/lib/services/errors";

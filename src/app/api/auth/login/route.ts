@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { setSessionCookie } from "@/lib/session";
 import { loginUser } from "@/lib/services/auth";
-import {  serviceErrorResponse,
+import { serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
 import { internalServiceError } from "@/lib/services/errors";

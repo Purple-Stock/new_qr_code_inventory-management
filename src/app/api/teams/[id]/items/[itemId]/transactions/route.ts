@@ -1,8 +1,7 @@
 import { NextRequest } from "next/server";
 import { getUserIdFromRequest } from "@/lib/permissions";
 import { ERROR_CODES } from "@/lib/errors";
-import {
-  errorResponse,
+import { errorResponse,
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
