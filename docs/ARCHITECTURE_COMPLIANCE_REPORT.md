@@ -105,6 +105,15 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `src/app/teams/[id]/locations/new/_components/NewLocationPageClient.tsx`
   - `src/app/teams/[id]/locations/[locationId]/edit/_components/EditLocationPageClient.tsx`
 
+### 11. Início da unificação de regras em use-cases (Em andamento)
+
+- Foi extraído o primeiro use-case de escrita compartilhado:
+  - `src/lib/services/items.ts` com `createTeamItem(...)`
+- Pontos migrados para usar o mesmo fluxo de domínio:
+  - `src/app/api/teams/[id]/items/route.ts` (POST)
+  - `src/app/teams/[id]/items/_actions/createItem.ts`
+- Resultado: validação, autorização e tratamento de erro de criação de item deixam de ficar duplicados entre API Route e Server Action.
+
 ---
 
 ## ✅ Validação Executada

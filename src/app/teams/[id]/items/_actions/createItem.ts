@@ -1,12 +1,10 @@
 "use server";
 
-import { createItem } from "@/lib/db/items";
 import { revalidatePath } from "next/cache";
-import { authorizeTeamPermission } from "@/lib/permissions";
+import { createTeamItem } from "@/lib/services/items";
 import { cookies } from "next/headers";
 import { getUserIdFromSessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
-import { parseItemPayload } from "@/lib/validation";
-import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
+import { ERROR_CODES } from "@/lib/errors";
 
 export async function createItemAction(
   teamId: number,
@@ -25,39 +23,27 @@ export async function createItemAction(
   }
 ) {
   try {
-    const parsed = parseItemPayload(data, "create");
-    if (!parsed.ok) {
-      return { success: false, ...errorPayload(ERROR_CODES.VALIDATION_ERROR, parsed.error) };
-    }
-
-    const requestUserId = getUserIdFromSessionToken(
+    const result = await createTeamItem({
+      teamId,
+      requestUserId: getUserIdFromSessionToken(
       (await cookies()).get(SESSION_COOKIE_NAME)?.value
-    );
-    const auth = await authorizeTeamPermission({
-      permission: "item:write",
-      teamId,
-      requestUserId,
+      ),
+      payload: data,
     });
-    if (!auth.ok) {
-      return { success: false, ...errorPayload(authErrorToCode(auth.error), auth.error) };
+    if (!result.ok) {
+      return { success: false, ...result.error };
     }
-
-    const item = await createItem({
-      ...parsed.data,
-      name: parsed.data.name!,
-      barcode: parsed.data.barcode!,
-      teamId,
-    });
 
     // Revalidate the items page
     revalidatePath(`/teams/${teamId}/items`);
 
-    return { success: true, item };
+    return { success: true, item: result.data.item };
   } catch (error: any) {
     console.error("Error creating item:", error);
     return {
       success: false,
-      ...errorPayload(ERROR_CODES.INTERNAL_ERROR, error?.message || "An error occurred while creating the item"),
+      errorCode: ERROR_CODES.INTERNAL_ERROR,
+      error: error?.message || "An error occurred while creating the item",
     };
   }
 }

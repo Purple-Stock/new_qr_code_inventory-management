@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { getTeamItems, createItem } from "@/lib/db/items";
-import { getTeamWithStats } from "@/lib/db/teams";
+import { getTeamItems } from "@/lib/db/items";
+import { createTeamItem } from "@/lib/services/items";
 import {
   authorizeTeamAccess,
-  authorizeTeamPermission,
   getUserIdFromRequest,
 } from "@/lib/permissions";
-import { parseItemPayload } from "@/lib/validation";
 import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
 
 // GET - List items for a team
@@ -65,72 +63,30 @@ export async function POST(
       );
     }
 
-    // Verify team exists
-    const team = await getTeamWithStats(teamId);
-    if (!team) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.TEAM_NOT_FOUND),
-        { status: 404 }
-      );
-    }
-
-    const auth = await authorizeTeamPermission({
-      permission: "item:write",
+    const body = await request.json();
+    const result = await createTeamItem({
       teamId,
       requestUserId: getUserIdFromRequest(request),
+      payload: body,
     });
-    if (!auth.ok) {
+    if (!result.ok) {
       return NextResponse.json(
-        errorPayload(authErrorToCode(auth.error), auth.error),
-        { status: auth.status }
+        errorPayload(result.error.errorCode, result.error.error),
+        { status: result.error.status }
       );
     }
-
-    const body = await request.json();
-    const parsed = parseItemPayload(body, "create");
-    if (!parsed.ok) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.VALIDATION_ERROR, parsed.error),
-        { status: 400 }
-      );
-    }
-    const payload = parsed.data;
-
-    // Create item
-    const item = await createItem({
-      name: payload.name!,
-      sku: payload.sku ?? null,
-      barcode: payload.barcode!,
-      cost: payload.cost ?? null,
-      price: payload.price ?? null,
-      itemType: payload.itemType ?? null,
-      brand: payload.brand ?? null,
-      teamId,
-      locationId: payload.locationId ?? null,
-      initialQuantity: payload.initialQuantity ?? 0,
-      currentStock: payload.currentStock ?? undefined,
-      minimumStock: payload.minimumStock ?? 0,
-    });
 
     revalidatePath(`/teams/${teamId}/items`);
 
     return NextResponse.json(
       {
         message: "Item created successfully",
-        item,
+        item: result.data.item,
       },
       { status: 201 }
     );
   } catch (error: any) {
     console.error("Error creating item:", error);
-    
-    // Check for unique constraint violation
-    if (error?.message?.includes("UNIQUE constraint")) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.VALIDATION_ERROR, "An item with this barcode already exists"),
-        { status: 409 }
-      );
-    }
 
     return NextResponse.json(
       errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while creating the item"),
