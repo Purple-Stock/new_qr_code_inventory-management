@@ -4,11 +4,12 @@ import { LocationsPageClient } from "./_components/LocationsPageClient";
 import { notFound } from "next/navigation";
 
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function LocationsPage({ params }: PageProps) {
-  const teamId = parseInt(params.id, 10);
+  const { id } = await params;
+  const teamId = parseInt(id, 10);
 
   if (isNaN(teamId)) {
     notFound();

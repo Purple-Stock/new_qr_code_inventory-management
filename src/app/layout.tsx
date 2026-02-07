@@ -59,7 +59,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="application-name" content="Purple Stock" />
         <meta name="mobile-web-app-capable" content="yes" />

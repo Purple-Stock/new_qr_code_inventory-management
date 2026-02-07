@@ -5,11 +5,12 @@ import { StockOutPageClient } from "./_components/StockOutPageClient";
 import { notFound } from "next/navigation";
 
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function StockOutPage({ params }: PageProps) {
-  const teamId = parseInt(params.id, 10);
+  const { id } = await params;
+  const teamId = parseInt(id, 10);
 
   if (isNaN(teamId)) {
     notFound();

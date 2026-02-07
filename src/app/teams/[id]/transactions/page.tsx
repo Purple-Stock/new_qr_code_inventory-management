@@ -4,12 +4,13 @@ import { TransactionsPageClient } from "./_components/TransactionsPageClient";
 import { notFound } from "next/navigation";
 
 interface PageProps {
-  params: { id: string };
-  searchParams: { search?: string };
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ search?: string }>;
 }
 
 export default async function TransactionsPage({ params, searchParams }: PageProps) {
-  const teamId = parseInt(params.id, 10);
+  const [{ id }, resolvedSearchParams] = await Promise.all([params, searchParams]);
+  const teamId = parseInt(id, 10);
 
   if (isNaN(teamId)) {
     notFound();
@@ -18,7 +19,7 @@ export default async function TransactionsPage({ params, searchParams }: PagePro
   // Fetch data on the server
   const [team, transactions] = await Promise.all([
     getTeamWithStats(teamId),
-    getTeamStockTransactionsWithDetails(teamId, searchParams.search),
+    getTeamStockTransactionsWithDetails(teamId, resolvedSearchParams.search),
   ]);
 
   if (!team) {
@@ -29,7 +30,7 @@ export default async function TransactionsPage({ params, searchParams }: PagePro
     <TransactionsPageClient
       transactions={transactions}
       team={team}
-      initialSearchQuery={searchParams.search || ""}
+      initialSearchQuery={resolvedSearchParams.search || ""}
     />
   );
 }
