@@ -16,9 +16,11 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { TeamLayout } from "@/components/shared/TeamLayout";
+import { useTranslation } from "@/lib/i18n";
 
 export default function EditLocationPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const params = useParams();
   const teamId = params?.id as string;
   const locationId = params?.locationId as string;
@@ -71,7 +73,7 @@ export default function EditLocationPage() {
     setSuccess("");
 
     if (!name.trim()) {
-      setError("Location name is required");
+      setError(t.locationForm.nameRequired);
       return;
     }
 
@@ -100,14 +102,14 @@ export default function EditLocationPage() {
         return;
       }
 
-      setSuccess("Location updated successfully! Redirecting...");
+      setSuccess(t.locationForm.updateSuccess);
 
       // Redirect to locations list after 1.5 seconds
       setTimeout(() => {
         router.push(`/teams/${teamId}/locations`);
       }, 1500);
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
+      setError(t.locationForm.unexpectedError);
       setIsLoading(false);
     }
   };
@@ -115,7 +117,7 @@ export default function EditLocationPage() {
   if (isLoadingData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Loading location...</p>
+        <p className="text-gray-600">{t.locationForm.loadingLocation}</p>
       </div>
     );
   }
@@ -123,7 +125,7 @@ export default function EditLocationPage() {
   if (!team) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Loading team...</p>
+        <p className="text-gray-600">{t.locationForm.loadingTeam}</p>
       </div>
     );
   }
@@ -140,7 +142,7 @@ export default function EditLocationPage() {
                   </button>
                 </Link>
                 <h1 className="text-3xl font-bold text-gray-900">
-                  Edit Location.
+                  {t.common.edit} {t.menu.locations}
                 </h1>
               </div>
               <Button
@@ -224,7 +226,7 @@ export default function EditLocationPage() {
                   disabled={isLoading}
                   className="bg-[#6B21A8] hover:bg-[#6B21A8]/90 text-white font-semibold px-8 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? "Updating..." : "Update Location"}
+                  {isLoading ? t.locationForm.updating : t.locationForm.updateAction}
                 </Button>
                 <Link href={`/teams/${teamId}/locations`}>
                   <Button

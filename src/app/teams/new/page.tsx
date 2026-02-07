@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,25 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
+import { useTranslation } from "@/lib/i18n";
 
 export default function NewTeamPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [userId, setUserId] = useState<number | null>(null);
-
-  useEffect(() => {
-    // Get userId from localStorage
-    const storedUserId = localStorage.getItem("userId");
-    if (!storedUserId) {
-      router.push("/");
-      return;
-    }
-    setUserId(parseInt(storedUserId, 10));
-  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,12 +25,7 @@ export default function NewTeamPage() {
     setSuccess("");
 
     if (!name.trim()) {
-      setError("Team name is required");
-      return;
-    }
-
-    if (!userId) {
-      setError("User not authenticated");
+      setError(t.team.teamNameRequired);
       return;
     }
 
@@ -50,38 +36,36 @@ export default function NewTeamPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": String(userId),
         },
         body: JSON.stringify({
           name: name.trim(),
           notes: notes.trim() || null,
-          userId,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 401) {
+          router.push("/");
+          return;
+        }
         setError(data.error || "An error occurred while creating the team");
         setIsLoading(false);
         return;
       }
 
-      setSuccess("Team created successfully! Redirecting...");
+      setSuccess(t.team.createSuccess);
 
       // Redirect to team selection after 1.5 seconds
       setTimeout(() => {
         router.push("/team_selection");
       }, 1500);
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
+      setError(t.team.unexpectedError);
       setIsLoading(false);
     }
   };
-
-  if (!userId) {
-    return null; // Will redirect
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50">
@@ -122,10 +106,10 @@ export default function NewTeamPage() {
           {/* Page Title */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Create a New Team
+              {t.team.createTitle}
             </h1>
             <p className="text-gray-600">
-              Create a new team to organize your inventory and manage your items.
+              {t.team.createSubtitle}
             </p>
           </div>
 
@@ -195,9 +179,9 @@ export default function NewTeamPage() {
                 type="submit"
                 disabled={isLoading}
                 className="bg-[#6B21A8] hover:bg-[#6B21A8]/90 text-white font-semibold px-8 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? "Creating..." : "Create Team"}
-              </Button>
+                >
+                {isLoading ? t.team.creating : t.team.createAction}
+                </Button>
               <Link href="/team_selection">
                 <Button
                   type="button"

@@ -57,7 +57,10 @@ export async function GET(
       companyTeams = await getCompanyTeams(team.companyId);
     }
 
-    return NextResponse.json({ members, availableUsers, companyTeams }, { status: 200 });
+    return NextResponse.json(
+      { members, availableUsers, companyTeams, currentUserId: requestUserId },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Error listing users:", error);
     return NextResponse.json(

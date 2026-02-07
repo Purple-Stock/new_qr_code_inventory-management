@@ -19,9 +19,11 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { TeamLayout } from "@/components/shared/TeamLayout";
+import { useTranslation } from "@/lib/i18n";
 
 export default function NewItemPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const params = useParams();
   const teamId = params?.id as string;
 
@@ -96,12 +98,12 @@ export default function NewItemPage() {
     setSuccess("");
 
     if (!name.trim()) {
-      setError("Item name is required");
+      setError(t.itemForm.itemNameRequired);
       return;
     }
 
     if (!barcode.trim()) {
-      setError("Barcode is required");
+      setError(t.itemForm.barcodeRequired);
       return;
     }
 
@@ -132,7 +134,7 @@ export default function NewItemPage() {
         return;
       }
 
-      setSuccess("Item created successfully! Redirecting...");
+      setSuccess(t.itemForm.createSuccess);
 
       // Redirect to items list and refresh so the new item appears
       setTimeout(async () => {
@@ -140,7 +142,7 @@ export default function NewItemPage() {
         router.refresh();
       }, 1500);
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
+      setError(t.itemForm.unexpectedError);
       setIsLoading(false);
     }
   };
@@ -148,7 +150,7 @@ export default function NewItemPage() {
   if (!team) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Loading team...</p>
+        <p className="text-gray-600">{t.itemForm.loadingTeam}</p>
       </div>
     );
   }
@@ -164,7 +166,7 @@ export default function NewItemPage() {
                     <ArrowLeft className="h-5 w-5 text-gray-600" />
                   </button>
                 </Link>
-                <h1 className="text-3xl font-bold text-gray-900">New Item.</h1>
+                <h1 className="text-3xl font-bold text-gray-900">{t.items.newItem}</h1>
               </div>
               <Button
                 variant="outline"
@@ -382,7 +384,7 @@ export default function NewItemPage() {
                   disabled={isLoading}
                   className="bg-[#6B21A8] hover:bg-[#6B21A8]/90 text-white font-semibold px-8 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? "Creating..." : "Create Item"}
+                  {isLoading ? t.itemForm.creating : t.itemForm.createAction}
                 </Button>
                 <Link href={`/teams/${teamId}/items`}>
                   <Button

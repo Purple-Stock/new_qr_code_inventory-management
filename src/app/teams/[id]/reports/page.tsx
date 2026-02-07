@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import {
-  RefreshCw,
   TrendingUp,
   Package,
   MapPin as MapPinIcon,
@@ -137,21 +136,13 @@ export default function ReportsPage() {
       <main className="p-4 sm:p-6 md:p-8">
 
           {/* Header */}
-          <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="mb-4 sm:mb-6">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
                 {t.reports.title}
               </h1>
               <p className="text-sm sm:text-base text-gray-600">{t.reports.subtitle}</p>
             </div>
-            <Button
-              onClick={fetchData}
-              variant="outline"
-              className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
-            >
-              <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              {t.reports.refresh}
-            </Button>
           </div>
 
           {/* Date Range Filter */}

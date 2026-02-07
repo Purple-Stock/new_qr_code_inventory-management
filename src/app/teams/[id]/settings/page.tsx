@@ -61,11 +61,6 @@ export default function SettingsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const storedUserId = localStorage.getItem("userId");
-    if (storedUserId) {
-      setCurrentUserId(parseInt(storedUserId, 10));
-    }
-
     if (teamId) {
       fetchData();
     }
@@ -86,10 +81,7 @@ export default function SettingsPage() {
         setTeam(teamData.team);
       }
 
-      const storedUserId = localStorage.getItem("userId");
-      if (storedUserId) {
-        await fetchManagedUsers(parseInt(storedUserId, 10));
-      }
+      await fetchManagedUsers();
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -97,14 +89,10 @@ export default function SettingsPage() {
     }
   };
 
-  const fetchManagedUsers = async (userId: number) => {
+  const fetchManagedUsers = async () => {
     try {
       setIsUsersLoading(true);
-      const response = await fetch(`/api/teams/${teamId}/users`, {
-        headers: {
-          "x-user-id": String(userId),
-        },
-      });
+      const response = await fetch(`/api/teams/${teamId}/users`);
       const data = await response.json();
 
       if (!response.ok) {
@@ -115,6 +103,7 @@ export default function SettingsPage() {
       }
 
       setCanManageUsers(true);
+      setCurrentUserId(data.currentUserId ?? null);
       setManagedUsers(data.members || []);
       setAvailableUsers(data.availableUsers || []);
       setCompanyTeams(data.companyTeams || []);
@@ -129,21 +118,11 @@ export default function SettingsPage() {
     managedUserId: number,
     role: ManagedUser["role"]
   ) => {
-    if (!currentUserId) {
-      toast({
-        title: t.common.error,
-        description: t.settings.userNotAuthenticated,
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
       const response = await fetch(`/api/teams/${teamId}/users/${managedUserId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": String(currentUserId),
         },
         body: JSON.stringify({ role }),
       });
@@ -178,17 +157,10 @@ export default function SettingsPage() {
   };
 
   const handleRemoveMember = async (managedUserId: number) => {
-    if (!currentUserId) {
-      return;
-    }
-
     setIsMemberSaving(true);
     try {
       const response = await fetch(`/api/teams/${teamId}/users/${managedUserId}`, {
         method: "DELETE",
-        headers: {
-          "x-user-id": String(currentUserId),
-        },
       });
       const data = await response.json();
 
@@ -201,7 +173,7 @@ export default function SettingsPage() {
         return;
       }
 
-      await fetchManagedUsers(currentUserId);
+      await fetchManagedUsers();
       toast({
         title: t.common.success,
         description: t.settings.memberRemovedSuccessfully,
@@ -223,9 +195,6 @@ export default function SettingsPage() {
     role: ManagedUser["role"];
     teamIds: number[];
   }) => {
-    if (!currentUserId) {
-      return;
-    }
     if (!isValidEmail(payload.email)) {
       toast({
         title: t.common.error,
@@ -257,7 +226,6 @@ export default function SettingsPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": String(currentUserId),
         },
         body: JSON.stringify({
           email: payload.email,
@@ -277,7 +245,7 @@ export default function SettingsPage() {
         return;
       }
 
-      await fetchManagedUsers(currentUserId);
+      await fetchManagedUsers();
       setIsAddUserModalOpen(false);
       toast({
         title: t.common.success,
@@ -295,15 +263,6 @@ export default function SettingsPage() {
   };
 
   const handleUpdateCurrentUserPassword = async () => {
-    if (!currentUserId) {
-      toast({
-        title: t.common.error,
-        description: t.settings.userNotAuthenticated,
-        variant: "destructive",
-      });
-      return;
-    }
-
     if (!currentPassword || !newPassword || !confirmPassword) {
       toast({
         title: t.common.error,
@@ -346,7 +305,6 @@ export default function SettingsPage() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": String(currentUserId),
         },
         body: JSON.stringify({
           currentPassword,
@@ -404,7 +362,7 @@ export default function SettingsPage() {
   };
 
   const handleUpdateManagedUserInfo = async () => {
-    if (!currentUserId || !editingUserId) {
+    if (!editingUserId) {
       return;
     }
 
@@ -433,7 +391,6 @@ export default function SettingsPage() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": String(currentUserId),
         },
         body: JSON.stringify({
           email: normalizedEmail,

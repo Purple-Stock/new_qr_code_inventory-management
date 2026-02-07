@@ -66,12 +66,10 @@ export function EditTeamModal({
     setIsSaving(true);
 
     try {
-      const userId = localStorage.getItem("userId");
       const response = await fetch(`/api/teams/${team.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": userId || "",
         },
         body: JSON.stringify({
           name: name.trim(),

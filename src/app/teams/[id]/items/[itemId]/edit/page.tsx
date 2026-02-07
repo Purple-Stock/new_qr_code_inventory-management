@@ -19,9 +19,11 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { TeamLayout } from "@/components/shared/TeamLayout";
+import { useTranslation } from "@/lib/i18n";
 
 export default function EditItemPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const params = useParams();
   const teamId = params?.id as string;
   const itemId = params?.itemId as string;
@@ -109,11 +111,11 @@ export default function EditItemPage() {
     setSuccess("");
 
     if (!name.trim()) {
-      setError("Item name is required");
+      setError(t.itemForm.itemNameRequired);
       return;
     }
     if (!barcode.trim()) {
-      setError("Barcode is required");
+      setError(t.itemForm.barcodeRequired);
       return;
     }
 
@@ -144,14 +146,14 @@ export default function EditItemPage() {
         return;
       }
 
-      setSuccess("Item updated successfully! Redirecting...");
+      setSuccess(t.itemForm.updateSuccess);
 
       setTimeout(async () => {
         await router.push(`/teams/${teamId}/items`);
         router.refresh();
       }, 1500);
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
+      setError(t.itemForm.unexpectedError);
       setIsLoading(false);
     }
   };
@@ -159,7 +161,7 @@ export default function EditItemPage() {
   if (isLoadingData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Loading item...</p>
+        <p className="text-gray-600">{t.itemForm.loadingItem}</p>
       </div>
     );
   }
@@ -167,7 +169,7 @@ export default function EditItemPage() {
   if (!team) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Loading team...</p>
+        <p className="text-gray-600">{t.itemForm.loadingTeam}</p>
       </div>
     );
   }
@@ -182,7 +184,7 @@ export default function EditItemPage() {
                     <ArrowLeft className="h-5 w-5 text-gray-600" />
                   </button>
                 </Link>
-                <h1 className="text-3xl font-bold text-gray-900">Edit Item.</h1>
+                <h1 className="text-3xl font-bold text-gray-900">{t.common.edit} {t.items.item}</h1>
               </div>
               <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50">
                 <Info className="h-4 w-4 mr-2" />
@@ -364,7 +366,7 @@ export default function EditItemPage() {
                   disabled={isLoading}
                   className="bg-[#6B21A8] hover:bg-[#6B21A8]/90 text-white font-semibold px-8 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? "Updating..." : "Update Item"}
+                  {isLoading ? t.itemForm.updating : t.itemForm.updateAction}
                 </Button>
                 <Link href={`/teams/${teamId}/items`}>
                   <Button

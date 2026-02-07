@@ -31,7 +31,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, notes, userId } = body;
+    const { name, notes } = body;
+    const requestUserId = getUserIdFromRequest(request);
 
     // Validation
     if (!name || !name.trim()) {
@@ -41,32 +42,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!userId) {
+    if (!requestUserId) {
       return NextResponse.json(
-        { error: "User ID is required" },
+        { error: "User not authenticated" },
         { status: 401 }
-      );
-    }
-
-    const userIdNum = parseInt(userId, 10);
-    
-    if (isNaN(userIdNum)) {
-      return NextResponse.json(
-        { error: "Invalid user ID" },
-        { status: 400 }
       );
     }
 
     const auth = await authorizePermission({
       permission: "team:create",
-      targetUserId: userIdNum,
-      requestUserId: getUserIdFromRequest(request),
+      targetUserId: requestUserId,
+      requestUserId,
     });
     if (!auth.ok) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const companyId = await getActiveCompanyIdForUser(userIdNum);
+    const companyId = await getActiveCompanyIdForUser(requestUserId);
     if (!companyId) {
       return NextResponse.json(
         { error: "User is not linked to an active company" },
@@ -78,7 +70,7 @@ export async function POST(request: NextRequest) {
     const team = await createTeam({
       name: name.trim(),
       notes: notes || null,
-      userId: userIdNum,
+      userId: requestUserId,
       companyId,
     });
 
