@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { getTeamItems } from "@/lib/db/items";
-import { createTeamItem } from "@/lib/services/items";
-import {
-  authorizeTeamAccess,
-  getUserIdFromRequest,
-} from "@/lib/permissions";
-import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
+import { createTeamItem, listTeamItemsForUser } from "@/lib/services/items";
+import { getUserIdFromRequest } from "@/lib/permissions";
+import { ERROR_CODES } from "@/lib/errors";
 import {
   internalErrorResponse,
   errorResponse,
@@ -27,17 +23,15 @@ export async function GET(
       return errorResponse("Invalid team ID", 400, ERROR_CODES.VALIDATION_ERROR);
     }
 
-    const auth = await authorizeTeamAccess({
+    const result = await listTeamItemsForUser({
       teamId,
       requestUserId: getUserIdFromRequest(request),
     });
-    if (!auth.ok) {
-      return errorResponse(auth.error, auth.status, authErrorToCode(auth.error));
+    if (!result.ok) {
+      return serviceErrorResponse(result.error);
     }
 
-    const items = await getTeamItems(teamId);
-
-    return successResponse({ items });
+    return successResponse({ items: result.data.items });
   } catch (error) {
     console.error("Error fetching items:", error);
     return internalErrorResponse("An error occurred while fetching items");

@@ -118,7 +118,9 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 - Foram extraídos use-cases de leitura para relatórios e transações:
   - `src/lib/services/reports.ts` com `getTeamReportStatsForUser(...)`
   - `src/lib/services/transactions.ts` com `listTeamTransactionsForUser(...)` e `listItemTransactionsForUser(...)`
-  - `src/lib/services/items.ts` com `getTeamItemDetails(...)`
+  - `src/lib/services/items.ts` com `getTeamItemDetails(...)` e `listTeamItemsForUser(...)`
+  - `src/lib/services/locations.ts` com `listTeamLocationsForUser(...)` e `getTeamLocationDetailsForUser(...)`
+  - `src/lib/services/teams.ts` com `getUserTeamsForUser(...)` e `getTeamForUser(...)`
 - Tipos de retorno padronizados para serviços:
   - `src/lib/services/types.ts`
 - Helper central de erro de serviço:
@@ -137,6 +139,11 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `src/app/api/teams/[id]/transactions/route.ts` (GET)
   - `src/app/api/teams/[id]/items/[itemId]/transactions/route.ts` (GET)
   - `src/app/api/teams/[id]/items/[itemId]/route.ts` (GET)
+  - `src/app/api/teams/route.ts` (GET)
+  - `src/app/api/teams/[id]/route.ts` (GET)
+  - `src/app/api/teams/[id]/items/route.ts` (GET)
+  - `src/app/api/teams/[id]/locations/route.ts` (GET)
+  - `src/app/api/teams/[id]/locations/[locationId]/route.ts` (GET)
 - Resultado: validação, autorização e tratamento de erro deixam de ficar duplicados nas rotas críticas de escrita desses domínios.
 
 ### 12. Padronização de respostas HTTP para ServiceResult (Concluído)

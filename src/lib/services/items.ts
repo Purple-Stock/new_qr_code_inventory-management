@@ -1,5 +1,4 @@
-import { createItem } from "@/lib/db/items";
-import { getItemByIdWithLocation } from "@/lib/db/items";
+import { createItem, getItemByIdWithLocation, getTeamItems } from "@/lib/db/items";
 import { ERROR_CODES } from "@/lib/errors";
 import { authorizeTeamAccess, authorizeTeamPermission } from "@/lib/permissions";
 import { parseItemPayload } from "@/lib/validation";
@@ -43,6 +42,29 @@ export async function getTeamItemDetails(params: {
   }
 
   return { ok: true, data: { item } };
+}
+
+export async function listTeamItemsForUser(params: {
+  teamId: number;
+  requestUserId: number | null;
+}): Promise<ServiceResult<{ items: (Item & { locationName?: string | null })[] }>> {
+  const auth = await authorizeTeamAccess({
+    teamId: params.teamId,
+    requestUserId: params.requestUserId,
+  });
+  if (!auth.ok) {
+    return { ok: false, error: authServiceError(auth) };
+  }
+
+  try {
+    const items = await getTeamItems(params.teamId);
+    return { ok: true, data: { items } };
+  } catch {
+    return {
+      ok: false,
+      error: internalServiceError("An error occurred while fetching items"),
+    };
+  }
 }
 
 export async function createTeamItem(params: {

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { deleteTeamWithAuthorization, updateTeamDetails } from "@/lib/services/teams";
 import {
-  authorizeTeamAccess,
-  getUserIdFromRequest,
-} from "@/lib/permissions";
-import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
+  deleteTeamWithAuthorization,
+  getTeamForUser,
+  updateTeamDetails,
+} from "@/lib/services/teams";
+import { getUserIdFromRequest } from "@/lib/permissions";
+import { ERROR_CODES } from "@/lib/errors";
 import {
   internalErrorResponse,
   errorResponse,
@@ -24,15 +25,15 @@ export async function GET(
       return errorResponse("Invalid team ID", 400, ERROR_CODES.VALIDATION_ERROR);
     }
 
-    const auth = await authorizeTeamAccess({
+    const result = await getTeamForUser({
       teamId,
       requestUserId: getUserIdFromRequest(request),
     });
-    if (!auth.ok) {
-      return errorResponse(auth.error, auth.status, authErrorToCode(auth.error));
+    if (!result.ok) {
+      return serviceErrorResponse(result.error);
     }
 
-    return successResponse({ team: auth.team });
+    return successResponse({ team: result.data.team });
   } catch (error) {
     console.error("Error fetching team:", error);
     return internalErrorResponse("An error occurred while fetching team");

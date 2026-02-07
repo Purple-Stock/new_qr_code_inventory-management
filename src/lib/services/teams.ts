@@ -1,7 +1,17 @@
-import { createTeam, deleteTeam, getTeamWithStats, updateTeam } from "@/lib/db/teams";
+import {
+  createTeam,
+  deleteTeam,
+  getTeamWithStats,
+  getUserTeamsWithStats,
+  updateTeam,
+} from "@/lib/db/teams";
 import { getActiveCompanyIdForUser } from "@/lib/db/companies";
 import { ERROR_CODES } from "@/lib/errors";
-import { authorizePermission, authorizeTeamPermission } from "@/lib/permissions";
+import {
+  authorizePermission,
+  authorizeTeamAccess,
+  authorizeTeamPermission,
+} from "@/lib/permissions";
 import { parseTeamCreatePayload, parseTeamUpdatePayload } from "@/lib/validation";
 import type { Team } from "@/db/schema";
 import type { ServiceResult } from "@/lib/services/types";
@@ -74,6 +84,54 @@ export async function createTeamForUser(params: {
       error: internalServiceError("An error occurred while creating the team"),
     };
   }
+}
+
+export async function getUserTeamsForUser(params: {
+  requestUserId: number | null;
+}): Promise<ServiceResult<{ teams: Awaited<ReturnType<typeof getUserTeamsWithStats>> }>> {
+  if (!params.requestUserId) {
+    return {
+      ok: false,
+      error: {
+        status: 401,
+        errorCode: ERROR_CODES.USER_NOT_AUTHENTICATED,
+        error: "User not authenticated",
+      },
+    };
+  }
+
+  try {
+    const teams = await getUserTeamsWithStats(params.requestUserId);
+    return { ok: true, data: { teams } };
+  } catch {
+    return {
+      ok: false,
+      error: internalServiceError("An error occurred while fetching teams"),
+    };
+  }
+}
+
+export async function getTeamForUser(params: {
+  teamId: number;
+  requestUserId: number | null;
+}): Promise<ServiceResult<{ team: NonNullable<Awaited<ReturnType<typeof getTeamWithStats>>> }>> {
+  const auth = await authorizeTeamAccess({
+    teamId: params.teamId,
+    requestUserId: params.requestUserId,
+  });
+  if (!auth.ok) {
+    return { ok: false, error: authServiceError(auth) };
+  }
+
+  const team = auth.team;
+  if (!team) {
+    return {
+      ok: false,
+      error: internalServiceError("An error occurred while fetching team"),
+    };
+  }
+
+  return { ok: true, data: { team } };
 }
 
 export async function updateTeamDetails(params: {

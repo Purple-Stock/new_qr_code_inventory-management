@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserTeamsWithStats } from "@/lib/db/teams";
-import { createTeamForUser } from "@/lib/services/teams";
+import { createTeamForUser, getUserTeamsForUser } from "@/lib/services/teams";
 import { getUserIdFromRequest } from "@/lib/permissions";
-import { ERROR_CODES, errorPayload } from "@/lib/errors";
 import {
   internalErrorResponse,
-  errorResponse,
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
@@ -13,15 +10,13 @@ import {
 // GET - List teams for a user
 export async function GET(request: NextRequest) {
   try {
-    const requestUserId = getUserIdFromRequest(request);
-
-    if (!requestUserId) {
-      return errorResponse(undefined, 401, ERROR_CODES.USER_NOT_AUTHENTICATED);
+    const result = await getUserTeamsForUser({
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!result.ok) {
+      return serviceErrorResponse(result.error);
     }
-
-    const teams = await getUserTeamsWithStats(requestUserId);
-
-    return successResponse({ teams });
+    return successResponse({ teams: result.data.teams });
   } catch (error) {
     console.error("Error fetching teams:", error);
     return internalErrorResponse("An error occurred while fetching teams");

@@ -3,10 +3,11 @@ import {
   createLocation,
   deleteLocation,
   getLocationById,
+  getTeamLocations,
   updateLocation,
 } from "@/lib/db/locations";
 import { ERROR_CODES } from "@/lib/errors";
-import { authorizeTeamPermission } from "@/lib/permissions";
+import { authorizeTeamAccess, authorizeTeamPermission } from "@/lib/permissions";
 import { parseLocationPayload } from "@/lib/validation";
 import type { Location } from "@/db/schema";
 import type { ServiceResult } from "@/lib/services/types";
@@ -14,9 +15,64 @@ import {
   authServiceError,
   conflictValidationServiceError,
   internalServiceError,
+  makeServiceError,
   notFoundServiceError,
   validationServiceError,
 } from "@/lib/services/errors";
+
+export async function listTeamLocationsForUser(params: {
+  teamId: number;
+  requestUserId: number | null;
+}): Promise<ServiceResult<{ locations: Location[] }>> {
+  const auth = await authorizeTeamAccess({
+    teamId: params.teamId,
+    requestUserId: params.requestUserId,
+  });
+  if (!auth.ok) {
+    return { ok: false, error: authServiceError(auth) };
+  }
+
+  try {
+    const locations = await getTeamLocations(params.teamId);
+    return { ok: true, data: { locations } };
+  } catch {
+    return {
+      ok: false,
+      error: internalServiceError("An error occurred while fetching locations"),
+    };
+  }
+}
+
+export async function getTeamLocationDetailsForUser(params: {
+  teamId: number;
+  locationId: number;
+  requestUserId: number | null;
+}): Promise<ServiceResult<{ location: Location }>> {
+  const auth = await authorizeTeamAccess({
+    teamId: params.teamId,
+    requestUserId: params.requestUserId,
+  });
+  if (!auth.ok) {
+    return { ok: false, error: authServiceError(auth) };
+  }
+
+  const location = await getLocationById(params.locationId);
+  if (!location) {
+    return {
+      ok: false,
+      error: notFoundServiceError(ERROR_CODES.LOCATION_NOT_FOUND, "Location not found"),
+    };
+  }
+
+  if (location.teamId !== params.teamId) {
+    return {
+      ok: false,
+      error: makeServiceError(403, ERROR_CODES.FORBIDDEN, "Location does not belong to this team"),
+    };
+  }
+
+  return { ok: true, data: { location } };
+}
 
 export async function createTeamLocation(params: {
   teamId: number;

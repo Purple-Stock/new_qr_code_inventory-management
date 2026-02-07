@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  getLocationById,
-} from "@/lib/db/locations";
-import { deleteTeamLocation, updateTeamLocation } from "@/lib/services/locations";
-import {
-  authorizeTeamAccess,
-  getUserIdFromRequest,
-} from "@/lib/permissions";
-import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
+  deleteTeamLocation,
+  getTeamLocationDetailsForUser,
+  updateTeamLocation,
+} from "@/lib/services/locations";
+import { getUserIdFromRequest } from "@/lib/permissions";
+import { ERROR_CODES } from "@/lib/errors";
 import {
   internalErrorResponse,
   errorResponse,
@@ -33,30 +31,16 @@ export async function GET(
       );
     }
 
-    const auth = await authorizeTeamAccess({
+    const result = await getTeamLocationDetailsForUser({
       teamId,
+      locationId,
       requestUserId: getUserIdFromRequest(request),
     });
-    if (!auth.ok) {
-      return errorResponse(auth.error, auth.status, authErrorToCode(auth.error));
+    if (!result.ok) {
+      return serviceErrorResponse(result.error);
     }
 
-    const location = await getLocationById(locationId);
-
-    if (!location) {
-      return errorResponse(undefined, 404, ERROR_CODES.LOCATION_NOT_FOUND);
-    }
-
-    // Verify location belongs to team
-    if (location.teamId !== teamId) {
-      return errorResponse(
-        "Location does not belong to this team",
-        403,
-        ERROR_CODES.FORBIDDEN
-      );
-    }
-
-    return successResponse({ location });
+    return successResponse({ location: result.data.location });
   } catch (error) {
     console.error("Error fetching location:", error);
     return internalErrorResponse("An error occurred while fetching location");
