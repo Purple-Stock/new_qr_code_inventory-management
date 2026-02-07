@@ -14,6 +14,7 @@ import {
   getUserIdFromRequest,
 } from "@/lib/permissions";
 import { parseItemPayload } from "@/lib/validation";
+import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
 
 interface RouteParams {
   params: Promise<{ id: string; itemId: string }>;
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     if (isNaN(teamId) || isNaN(itemId)) {
       return NextResponse.json(
-        { error: "Invalid team ID or item ID" },
+        errorPayload(ERROR_CODES.VALIDATION_ERROR, "Invalid team ID or item ID"),
         { status: 400 }
       );
     }
@@ -38,20 +39,23 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       requestUserId: getUserIdFromRequest(request),
     });
     if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return NextResponse.json(
+        errorPayload(authErrorToCode(auth.error), auth.error),
+        { status: auth.status }
+      );
     }
 
     const item = await getItemByIdWithLocation(itemId);
     if (!item) {
       return NextResponse.json(
-        { error: "Item not found" },
+        errorPayload(ERROR_CODES.ITEM_NOT_FOUND),
         { status: 404 }
       );
     }
 
     if (item.teamId !== teamId) {
       return NextResponse.json(
-        { error: "Item does not belong to this team" },
+        errorPayload(ERROR_CODES.FORBIDDEN, "Item does not belong to this team"),
         { status: 403 }
       );
     }
@@ -60,7 +64,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   } catch (error) {
     console.error("Error fetching item:", error);
     return NextResponse.json(
-      { error: "An error occurred while fetching the item" },
+      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while fetching the item"),
       { status: 500 }
     );
   }
@@ -75,7 +79,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (isNaN(teamId) || isNaN(itemId)) {
       return NextResponse.json(
-        { error: "Invalid team ID or item ID" },
+        errorPayload(ERROR_CODES.VALIDATION_ERROR, "Invalid team ID or item ID"),
         { status: 400 }
       );
     }
@@ -83,7 +87,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const team = await getTeamWithStats(teamId);
     if (!team) {
       return NextResponse.json(
-        { error: "Team not found" },
+        errorPayload(ERROR_CODES.TEAM_NOT_FOUND),
         { status: 404 }
       );
     }
@@ -91,14 +95,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const existingItem = await getItemById(itemId);
     if (!existingItem) {
       return NextResponse.json(
-        { error: "Item not found" },
+        errorPayload(ERROR_CODES.ITEM_NOT_FOUND),
         { status: 404 }
       );
     }
 
     if (existingItem.teamId !== teamId) {
       return NextResponse.json(
-        { error: "Item does not belong to this team" },
+        errorPayload(ERROR_CODES.FORBIDDEN, "Item does not belong to this team"),
         { status: 403 }
       );
     }
@@ -109,13 +113,19 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       requestUserId: getUserIdFromRequest(request),
     });
     if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return NextResponse.json(
+        errorPayload(authErrorToCode(auth.error), auth.error),
+        { status: auth.status }
+      );
     }
 
     const body = await request.json();
     const parsed = parseItemPayload(body, "update");
     if (!parsed.ok) {
-      return NextResponse.json({ error: parsed.error }, { status: 400 });
+      return NextResponse.json(
+        errorPayload(ERROR_CODES.VALIDATION_ERROR, parsed.error),
+        { status: 400 }
+      );
     }
     const payload = parsed.data;
 
@@ -141,13 +151,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (error instanceof Error && error.message.includes("UNIQUE constraint")) {
       return NextResponse.json(
-        { error: "An item with this barcode already exists" },
+        errorPayload(ERROR_CODES.VALIDATION_ERROR, "An item with this barcode already exists"),
         { status: 409 }
       );
     }
 
     return NextResponse.json(
-      { error: "An error occurred while updating the item" },
+      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while updating the item"),
       { status: 500 }
     );
   }
@@ -162,7 +172,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     if (isNaN(teamId) || isNaN(itemId)) {
       return NextResponse.json(
-        { error: "Invalid team ID or item ID" },
+        errorPayload(ERROR_CODES.VALIDATION_ERROR, "Invalid team ID or item ID"),
         { status: 400 }
       );
     }
@@ -170,7 +180,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const team = await getTeamWithStats(teamId);
     if (!team) {
       return NextResponse.json(
-        { error: "Team not found" },
+        errorPayload(ERROR_CODES.TEAM_NOT_FOUND),
         { status: 404 }
       );
     }
@@ -178,14 +188,14 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const existingItem = await getItemById(itemId);
     if (!existingItem) {
       return NextResponse.json(
-        { error: "Item not found" },
+        errorPayload(ERROR_CODES.ITEM_NOT_FOUND),
         { status: 404 }
       );
     }
 
     if (existingItem.teamId !== teamId) {
       return NextResponse.json(
-        { error: "Item does not belong to this team" },
+        errorPayload(ERROR_CODES.FORBIDDEN, "Item does not belong to this team"),
         { status: 403 }
       );
     }
@@ -196,15 +206,20 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       requestUserId: getUserIdFromRequest(request),
     });
     if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return NextResponse.json(
+        errorPayload(authErrorToCode(auth.error), auth.error),
+        { status: auth.status }
+      );
     }
 
     const hasTx = await itemHasTransactions(itemId);
     if (hasTx) {
       return NextResponse.json(
         {
-          error:
+          ...errorPayload(
+            ERROR_CODES.VALIDATION_ERROR,
             "Cannot delete item: it has stock transaction history. Remove or adjust transactions first.",
+          ),
         },
         { status: 409 }
       );
@@ -220,7 +235,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   } catch (error) {
     console.error("Error deleting item:", error);
     return NextResponse.json(
-      { error: "An error occurred while deleting the item" },
+      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while deleting the item"),
       { status: 500 }
     );
   }

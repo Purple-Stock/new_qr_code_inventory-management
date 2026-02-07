@@ -6,6 +6,7 @@ import { authorizeTeamPermission } from "@/lib/permissions";
 import { cookies } from "next/headers";
 import { getUserIdFromSessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
 import { parseItemPayload } from "@/lib/validation";
+import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
 
 export async function createItemAction(
   teamId: number,
@@ -26,7 +27,7 @@ export async function createItemAction(
   try {
     const parsed = parseItemPayload(data, "create");
     if (!parsed.ok) {
-      return { success: false, error: parsed.error };
+      return { success: false, ...errorPayload(ERROR_CODES.VALIDATION_ERROR, parsed.error) };
     }
 
     const requestUserId = getUserIdFromSessionToken(
@@ -38,7 +39,7 @@ export async function createItemAction(
       requestUserId,
     });
     if (!auth.ok) {
-      return { success: false, error: auth.error };
+      return { success: false, ...errorPayload(authErrorToCode(auth.error), auth.error) };
     }
 
     const item = await createItem({
@@ -56,7 +57,7 @@ export async function createItemAction(
     console.error("Error creating item:", error);
     return {
       success: false,
-      error: error?.message || "An error occurred while creating the item",
+      ...errorPayload(ERROR_CODES.INTERNAL_ERROR, error?.message || "An error occurred while creating the item"),
     };
   }
 }

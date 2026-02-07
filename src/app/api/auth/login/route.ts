@@ -2,13 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyUserCredentials } from "@/lib/db/users";
 import { setSessionCookie } from "@/lib/session";
 import { parseLoginPayload } from "@/lib/validation";
+import { ERROR_CODES, errorPayload } from "@/lib/errors";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const parsed = parseLoginPayload(body);
     if (!parsed.ok) {
-      return NextResponse.json({ error: parsed.error }, { status: 400 });
+      return NextResponse.json(
+        errorPayload(ERROR_CODES.VALIDATION_ERROR, parsed.error),
+        { status: 400 }
+      );
     }
     const { email, password } = parsed.data;
 
@@ -17,7 +21,7 @@ export async function POST(request: NextRequest) {
     
     if (!user) {
       return NextResponse.json(
-        { error: "Invalid email or password" },
+        errorPayload(ERROR_CODES.USER_NOT_AUTHENTICATED, "Invalid email or password"),
         { status: 401 }
       );
     }
@@ -37,7 +41,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(
-      { error: "An error occurred during login" },
+      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred during login"),
       { status: 500 }
     );
   }

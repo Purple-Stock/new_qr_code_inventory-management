@@ -7,6 +7,7 @@ import {
   getUserIdFromRequest,
 } from "@/lib/permissions";
 import { parseLocationPayload } from "@/lib/validation";
+import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
 
 // GET - List locations for a team
 export async function GET(
@@ -19,7 +20,7 @@ export async function GET(
 
     if (isNaN(teamId)) {
       return NextResponse.json(
-        { error: "Invalid team ID" },
+        errorPayload(ERROR_CODES.VALIDATION_ERROR, "Invalid team ID"),
         { status: 400 }
       );
     }
@@ -29,7 +30,10 @@ export async function GET(
       requestUserId: getUserIdFromRequest(request),
     });
     if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return NextResponse.json(
+        errorPayload(authErrorToCode(auth.error), auth.error),
+        { status: auth.status }
+      );
     }
 
     const locations = await getTeamLocations(teamId);
@@ -38,7 +42,7 @@ export async function GET(
   } catch (error) {
     console.error("Error fetching locations:", error);
     return NextResponse.json(
-      { error: "An error occurred while fetching locations" },
+      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while fetching locations"),
       { status: 500 }
     );
   }
@@ -55,7 +59,7 @@ export async function POST(
 
     if (isNaN(teamId)) {
       return NextResponse.json(
-        { error: "Invalid team ID" },
+        errorPayload(ERROR_CODES.VALIDATION_ERROR, "Invalid team ID"),
         { status: 400 }
       );
     }
@@ -64,7 +68,7 @@ export async function POST(
     const team = await getTeamWithStats(teamId);
     if (!team) {
       return NextResponse.json(
-        { error: "Team not found" },
+        errorPayload(ERROR_CODES.TEAM_NOT_FOUND),
         { status: 404 }
       );
     }
@@ -75,13 +79,19 @@ export async function POST(
       requestUserId: getUserIdFromRequest(request),
     });
     if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return NextResponse.json(
+        errorPayload(authErrorToCode(auth.error), auth.error),
+        { status: auth.status }
+      );
     }
 
     const body = await request.json();
     const parsed = parseLocationPayload(body);
     if (!parsed.ok) {
-      return NextResponse.json({ error: parsed.error }, { status: 400 });
+      return NextResponse.json(
+        errorPayload(ERROR_CODES.VALIDATION_ERROR, parsed.error),
+        { status: 400 }
+      );
     }
     const { name, description } = parsed.data;
 
@@ -105,13 +115,16 @@ export async function POST(
     // Check for unique constraint violation
     if (error?.message?.includes("UNIQUE constraint")) {
       return NextResponse.json(
-        { error: "A location with this name already exists for this team" },
+        errorPayload(
+          ERROR_CODES.VALIDATION_ERROR,
+          "A location with this name already exists for this team"
+        ),
         { status: 409 }
       );
     }
 
     return NextResponse.json(
-      { error: "An error occurred while creating the location" },
+      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while creating the location"),
       { status: 500 }
     );
   }

@@ -11,6 +11,7 @@ import {
   getUserIdFromRequest,
 } from "@/lib/permissions";
 import { parseLocationPayload } from "@/lib/validation";
+import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
 
 // GET - Get a specific location
 export async function GET(
@@ -24,7 +25,7 @@ export async function GET(
 
     if (isNaN(teamId) || isNaN(locationId)) {
       return NextResponse.json(
-        { error: "Invalid team ID or location ID" },
+        errorPayload(ERROR_CODES.VALIDATION_ERROR, "Invalid team ID or location ID"),
         { status: 400 }
       );
     }
@@ -34,14 +35,17 @@ export async function GET(
       requestUserId: getUserIdFromRequest(request),
     });
     if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return NextResponse.json(
+        errorPayload(authErrorToCode(auth.error), auth.error),
+        { status: auth.status }
+      );
     }
 
     const location = await getLocationById(locationId);
 
     if (!location) {
       return NextResponse.json(
-        { error: "Location not found" },
+        errorPayload(ERROR_CODES.LOCATION_NOT_FOUND),
         { status: 404 }
       );
     }
@@ -49,7 +53,7 @@ export async function GET(
     // Verify location belongs to team
     if (location.teamId !== teamId) {
       return NextResponse.json(
-        { error: "Location does not belong to this team" },
+        errorPayload(ERROR_CODES.FORBIDDEN, "Location does not belong to this team"),
         { status: 403 }
       );
     }
@@ -58,7 +62,7 @@ export async function GET(
   } catch (error) {
     console.error("Error fetching location:", error);
     return NextResponse.json(
-      { error: "An error occurred while fetching location" },
+      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while fetching location"),
       { status: 500 }
     );
   }
@@ -76,7 +80,7 @@ export async function PUT(
 
     if (isNaN(teamId) || isNaN(locationId)) {
       return NextResponse.json(
-        { error: "Invalid team ID or location ID" },
+        errorPayload(ERROR_CODES.VALIDATION_ERROR, "Invalid team ID or location ID"),
         { status: 400 }
       );
     }
@@ -85,7 +89,7 @@ export async function PUT(
     const team = await getTeamWithStats(teamId);
     if (!team) {
       return NextResponse.json(
-        { error: "Team not found" },
+        errorPayload(ERROR_CODES.TEAM_NOT_FOUND),
         { status: 404 }
       );
     }
@@ -94,14 +98,14 @@ export async function PUT(
     const existingLocation = await getLocationById(locationId);
     if (!existingLocation) {
       return NextResponse.json(
-        { error: "Location not found" },
+        errorPayload(ERROR_CODES.LOCATION_NOT_FOUND),
         { status: 404 }
       );
     }
 
     if (existingLocation.teamId !== teamId) {
       return NextResponse.json(
-        { error: "Location does not belong to this team" },
+        errorPayload(ERROR_CODES.FORBIDDEN, "Location does not belong to this team"),
         { status: 403 }
       );
     }
@@ -112,13 +116,19 @@ export async function PUT(
       requestUserId: getUserIdFromRequest(request),
     });
     if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return NextResponse.json(
+        errorPayload(authErrorToCode(auth.error), auth.error),
+        { status: auth.status }
+      );
     }
 
     const body = await request.json();
     const parsed = parseLocationPayload(body);
     if (!parsed.ok) {
-      return NextResponse.json({ error: parsed.error }, { status: 400 });
+      return NextResponse.json(
+        errorPayload(ERROR_CODES.VALIDATION_ERROR, parsed.error),
+        { status: 400 }
+      );
     }
     const { name, description } = parsed.data;
 
@@ -141,13 +151,16 @@ export async function PUT(
     // Check for unique constraint violation
     if (error?.message?.includes("UNIQUE constraint")) {
       return NextResponse.json(
-        { error: "A location with this name already exists for this team" },
+        errorPayload(
+          ERROR_CODES.VALIDATION_ERROR,
+          "A location with this name already exists for this team"
+        ),
         { status: 409 }
       );
     }
 
     return NextResponse.json(
-      { error: "An error occurred while updating the location" },
+      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while updating the location"),
       { status: 500 }
     );
   }
@@ -165,7 +178,7 @@ export async function DELETE(
 
     if (isNaN(teamId) || isNaN(locationId)) {
       return NextResponse.json(
-        { error: "Invalid team ID or location ID" },
+        errorPayload(ERROR_CODES.VALIDATION_ERROR, "Invalid team ID or location ID"),
         { status: 400 }
       );
     }
@@ -174,7 +187,7 @@ export async function DELETE(
     const team = await getTeamWithStats(teamId);
     if (!team) {
       return NextResponse.json(
-        { error: "Team not found" },
+        errorPayload(ERROR_CODES.TEAM_NOT_FOUND),
         { status: 404 }
       );
     }
@@ -183,14 +196,14 @@ export async function DELETE(
     const location = await getLocationById(locationId);
     if (!location) {
       return NextResponse.json(
-        { error: "Location not found" },
+        errorPayload(ERROR_CODES.LOCATION_NOT_FOUND),
         { status: 404 }
       );
     }
 
     if (location.teamId !== teamId) {
       return NextResponse.json(
-        { error: "Location does not belong to this team" },
+        errorPayload(ERROR_CODES.FORBIDDEN, "Location does not belong to this team"),
         { status: 403 }
       );
     }
@@ -201,7 +214,10 @@ export async function DELETE(
       requestUserId: getUserIdFromRequest(request),
     });
     if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return NextResponse.json(
+        errorPayload(authErrorToCode(auth.error), auth.error),
+        { status: auth.status }
+      );
     }
 
     // Delete location
@@ -214,7 +230,7 @@ export async function DELETE(
   } catch (error) {
     console.error("Error deleting location:", error);
     return NextResponse.json(
-      { error: "An error occurred while deleting the location" },
+      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while deleting the location"),
       { status: 500 }
     );
   }

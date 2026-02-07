@@ -3,6 +3,7 @@ import { createStockTransaction } from "@/lib/db/stock-transactions";
 import { getTeamWithStats } from "@/lib/db/teams";
 import { authorizeTeamPermission, getUserIdFromRequest } from "@/lib/permissions";
 import { parseStockTransactionPayload } from "@/lib/validation";
+import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
 
 export async function POST(
   request: NextRequest,
@@ -14,7 +15,7 @@ export async function POST(
 
     if (isNaN(teamId)) {
       return NextResponse.json(
-        { error: "Invalid team ID" },
+        errorPayload(ERROR_CODES.VALIDATION_ERROR, "Invalid team ID"),
         { status: 400 }
       );
     }
@@ -23,7 +24,7 @@ export async function POST(
     const team = await getTeamWithStats(teamId);
     if (!team) {
       return NextResponse.json(
-        { error: "Team not found" },
+        errorPayload(ERROR_CODES.TEAM_NOT_FOUND),
         { status: 404 }
       );
     }
@@ -31,7 +32,10 @@ export async function POST(
     const body = await request.json();
     const parsed = parseStockTransactionPayload(body);
     if (!parsed.ok) {
-      return NextResponse.json({ error: parsed.error }, { status: 400 });
+      return NextResponse.json(
+        errorPayload(ERROR_CODES.VALIDATION_ERROR, parsed.error),
+        { status: 400 }
+      );
     }
     const payload = parsed.data;
 
@@ -41,10 +45,15 @@ export async function POST(
       requestUserId: getUserIdFromRequest(request),
     });
     if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return NextResponse.json(
+        errorPayload(authErrorToCode(auth.error), auth.error),
+        { status: auth.status }
+      );
     }
     if (!auth.user) {
-      return NextResponse.json({ error: "User not authenticated" }, { status: 401 });
+      return NextResponse.json(errorPayload(ERROR_CODES.USER_NOT_AUTHENTICATED), {
+        status: 401,
+      });
     }
 
     // Create transaction
@@ -73,7 +82,10 @@ export async function POST(
   } catch (error: any) {
     console.error("Error creating stock transaction:", error);
     return NextResponse.json(
-      { error: error.message || "An error occurred while creating stock transaction" },
+      errorPayload(
+        ERROR_CODES.INTERNAL_ERROR,
+        error.message || "An error occurred while creating stock transaction"
+      ),
       { status: 500 }
     );
   }

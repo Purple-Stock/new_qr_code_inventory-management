@@ -6,6 +6,7 @@ import {
   getUserIdFromRequest,
 } from "@/lib/permissions";
 import { parseTeamUpdatePayload } from "@/lib/validation";
+import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
 
 export async function GET(
   request: NextRequest,
@@ -17,7 +18,7 @@ export async function GET(
 
     if (isNaN(teamId)) {
       return NextResponse.json(
-        { error: "Invalid team ID" },
+        errorPayload(ERROR_CODES.VALIDATION_ERROR, "Invalid team ID"),
         { status: 400 }
       );
     }
@@ -27,14 +28,17 @@ export async function GET(
       requestUserId: getUserIdFromRequest(request),
     });
     if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return NextResponse.json(
+        errorPayload(authErrorToCode(auth.error), auth.error),
+        { status: auth.status }
+      );
     }
 
     return NextResponse.json({ team: auth.team }, { status: 200 });
   } catch (error) {
     console.error("Error fetching team:", error);
     return NextResponse.json(
-      { error: "An error occurred while fetching team" },
+      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while fetching team"),
       { status: 500 }
     );
   }
@@ -51,7 +55,7 @@ export async function PUT(
 
     if (isNaN(teamId)) {
       return NextResponse.json(
-        { error: "Invalid team ID" },
+        errorPayload(ERROR_CODES.VALIDATION_ERROR, "Invalid team ID"),
         { status: 400 }
       );
     }
@@ -60,7 +64,7 @@ export async function PUT(
     const existingTeam = await getTeamWithStats(teamId);
     if (!existingTeam) {
       return NextResponse.json(
-        { error: "Team not found" },
+        errorPayload(ERROR_CODES.TEAM_NOT_FOUND),
         { status: 404 }
       );
     }
@@ -71,13 +75,19 @@ export async function PUT(
       requestUserId: getUserIdFromRequest(request),
     });
     if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return NextResponse.json(
+        errorPayload(authErrorToCode(auth.error), auth.error),
+        { status: auth.status }
+      );
     }
 
     const body = await request.json();
     const parsed = parseTeamUpdatePayload(body);
     if (!parsed.ok) {
-      return NextResponse.json({ error: parsed.error }, { status: 400 });
+      return NextResponse.json(
+        errorPayload(ERROR_CODES.VALIDATION_ERROR, parsed.error),
+        { status: 400 }
+      );
     }
 
     const { name, notes } = parsed.data;
@@ -101,7 +111,7 @@ export async function PUT(
     // Check for unique constraint violation
     if (error?.message?.includes("UNIQUE constraint")) {
       return NextResponse.json(
-        { error: "A team with this name already exists" },
+        errorPayload(ERROR_CODES.VALIDATION_ERROR, "A team with this name already exists"),
         { status: 409 }
       );
     }
@@ -124,7 +134,7 @@ export async function DELETE(
 
     if (isNaN(teamId)) {
       return NextResponse.json(
-        { error: "Invalid team ID" },
+        errorPayload(ERROR_CODES.VALIDATION_ERROR, "Invalid team ID"),
         { status: 400 }
       );
     }
@@ -133,7 +143,7 @@ export async function DELETE(
     const existingTeam = await getTeamWithStats(teamId);
     if (!existingTeam) {
       return NextResponse.json(
-        { error: "Team not found" },
+        errorPayload(ERROR_CODES.TEAM_NOT_FOUND),
         { status: 404 }
       );
     }
@@ -146,11 +156,14 @@ export async function DELETE(
     if (!auth.ok) {
       if (auth.status === 403) {
         return NextResponse.json(
-          { error: "Only team admins can delete a team" },
+          errorPayload(ERROR_CODES.INSUFFICIENT_PERMISSIONS, "Only team admins can delete a team"),
           { status: 403 }
         );
       }
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return NextResponse.json(
+        errorPayload(authErrorToCode(auth.error), auth.error),
+        { status: auth.status }
+      );
     }
 
     // Delete team and all related data
@@ -158,7 +171,7 @@ export async function DELETE(
 
     if (!deleted) {
       return NextResponse.json(
-        { error: "Failed to delete team" },
+        errorPayload(ERROR_CODES.INTERNAL_ERROR, "Failed to delete team"),
         { status: 500 }
       );
     }
@@ -170,7 +183,7 @@ export async function DELETE(
   } catch (error: any) {
     console.error("Error deleting team:", error);
     return NextResponse.json(
-      { error: "An error occurred while deleting the team" },
+      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while deleting the team"),
       { status: 500 }
     );
   }
