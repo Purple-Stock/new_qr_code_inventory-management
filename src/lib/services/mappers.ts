@@ -6,10 +6,12 @@ import type {
   ItemDto,
   LocationDto,
   ManagedUserDto,
+  ReportStatsDto,
   StockTransactionDto,
   TeamDto,
   TransactionDto,
 } from "@/lib/services/types";
+import type { ReportStats } from "@/lib/db/reports";
 
 function toIsoString(value: Date | string | null | undefined): string {
   if (!value) return new Date(0).toISOString();
@@ -171,5 +173,15 @@ export function toTransactionDto(transaction: TransactionWithDetails): Transacti
           name: transaction.destinationLocation.name,
         }
       : null,
+  };
+}
+
+export function toReportStatsDto(stats: ReportStats): ReportStatsDto {
+  return {
+    ...stats,
+    recentTransactions: stats.recentTransactions.map((transaction) => ({
+      ...transaction,
+      createdAt: toIsoString(transaction.createdAt),
+    })),
   };
 }

@@ -15,12 +15,7 @@ import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/lib/i18n";
 import { fetchApiResult } from "@/lib/api-client";
 import { TeamLayout } from "@/components/shared/TeamLayout";
-import type { ReportStats } from "@/lib/db/reports";
-
-interface Team {
-  id: number;
-  name: string;
-}
+import type { ReportStats, Team } from "../_types";
 
 interface ReportsPageClientProps {
   teamId: number;

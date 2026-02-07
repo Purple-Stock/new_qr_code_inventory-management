@@ -9,6 +9,7 @@ import {
 import {
   toItemDto,
   toLocationDto,
+  toReportStatsDto,
   toTeamDto,
   toTransactionDto,
 } from "@/lib/services/mappers";
@@ -23,7 +24,7 @@ export async function getTeamReportsData(
     getTeamReportStats(teamId, startDate, endDate),
   ]);
 
-  return { team: team ? toTeamDto(team) : null, stats };
+  return { team: team ? toTeamDto(team) : null, stats: toReportStatsDto(stats) };
 }
 
 export async function getTeamStockByLocationData(teamId: number) {

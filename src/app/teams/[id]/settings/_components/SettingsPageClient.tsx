@@ -18,18 +18,13 @@ import { AddUserToTeamsModal } from "@/components/AddUserToTeamsModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { ERROR_CODES } from "@/lib/errors";
 import { fetchApiJsonResult, fetchApiResult } from "@/lib/api-client";
-
-interface Team {
-  id: number;
-  name: string;
-  notes: string | null;
-}
-
-interface ManagedUser {
-  userId: number;
-  email: string;
-  role: "admin" | "operator" | "viewer";
-}
+import type {
+  AvailableUser,
+  CompanyTeam,
+  ManagedUser,
+  ManagedUserRole,
+  Team,
+} from "../_types";
 
 interface SettingsPageClientProps {
   teamId: number;
@@ -45,8 +40,8 @@ export default function SettingsPageClient({
   const [isMemberSaving, setIsMemberSaving] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [managedUsers, setManagedUsers] = useState<ManagedUser[]>([]);
-  const [availableUsers, setAvailableUsers] = useState<Array<{ id: number; email: string }>>([]);
-  const [companyTeams, setCompanyTeams] = useState<Array<{ id: number; name: string }>>([]);
+  const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([]);
+  const [companyTeams, setCompanyTeams] = useState<CompanyTeam[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [canManageUsers, setCanManageUsers] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState<"users" | "password">("users");
@@ -81,8 +76,8 @@ export default function SettingsPageClient({
       const parsed = await fetchApiResult<{
         currentUserId?: number;
         members?: ManagedUser[];
-        availableUsers?: Array<{ id: number; email: string }>;
-        companyTeams?: Array<{ id: number; name: string }>;
+        availableUsers?: AvailableUser[];
+        companyTeams?: CompanyTeam[];
       }>(`/api/teams/${teamId}/users`, { fallbackError: "Could not load users" });
 
       if (!parsed.ok) {
@@ -107,7 +102,7 @@ export default function SettingsPageClient({
 
   const handleUserRoleChange = async (
     managedUserId: number,
-    role: ManagedUser["role"]
+    role: ManagedUserRole
   ) => {
     try {
       const parsed = await fetchApiJsonResult<{ member: ManagedUser }>(
@@ -181,7 +176,7 @@ export default function SettingsPageClient({
   const handleCreateUserAndAddMember = async (payload: {
     email: string;
     password: string;
-    role: ManagedUser["role"];
+    role: ManagedUserRole;
     teamIds: number[];
   }) => {
     if (!isValidEmail(payload.email)) {
@@ -536,7 +531,7 @@ export default function SettingsPageClient({
                                 onChange={(e) =>
                                   handleUserRoleChange(
                                     managedUser.userId,
-                                    e.target.value as ManagedUser["role"]
+                                    e.target.value as ManagedUserRole
                                   )
                                 }
                                 disabled={isLastAdmin || isMemberSaving}

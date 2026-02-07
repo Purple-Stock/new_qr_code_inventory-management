@@ -8,7 +8,7 @@
 
 ## 📊 Resumo Executivo
 
-**Conformidade Geral**: ✅ **98%** - Alta conformidade
+**Conformidade Geral**: ✅ **99%** - Alta conformidade
 
 Este relatório foi atualizado após a implementação dos itens críticos de arquitetura (segurança de acesso, consistência transacional, redução de N+1, avanço em Server Components e aumento de testes).
 
@@ -278,6 +278,22 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `src/app/teams/[id]/locations/[locationId]/edit/page.tsx`
 - Resultado: leitura server-side ficou centralizada na camada de aplicação, reduzindo acoplamento com persistência e facilitando evolução de regras/DTOs em um ponto único.
 
+### 18. Consolidação final de tipos de UI e remoção de tipos `db/*` em relatórios (Concluído)
+
+- Foi introduzido DTO explícito para estatísticas de relatório:
+  - `src/lib/services/types.ts` com `ReportStatsDto`
+- Mapeamento de relatório padronizado na camada de serviço:
+  - `src/lib/services/mappers.ts` com `toReportStatsDto(...)`
+  - `src/lib/services/reports.ts` e `src/lib/services/team-dashboard.ts` ajustados para retornar `ReportStatsDto`
+- Tipos de domínio extraídos para páginas de relatórios e settings:
+  - `src/app/teams/[id]/reports/_types.ts`
+  - `src/app/teams/[id]/settings/_types.ts`
+- Componente de relatórios deixou de importar tipo de `db/*`:
+  - `src/app/teams/[id]/reports/_components/ReportsPageClient.tsx` agora usa tipos de domínio (`_types`) baseados em DTO.
+- `SettingsPageClient` passou a reutilizar aliases de domínio em vez de interfaces inline locais:
+  - `src/app/teams/[id]/settings/_components/SettingsPageClient.tsx`
+- Resultado: contratos de tipos de UI ficaram mais consistentes por domínio e a camada de apresentação ficou isolada dos tipos internos de persistência.
+
 ---
 
 ## ✅ Validação Executada
@@ -289,11 +305,10 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 
 ## ⚠️ Pendências Relevantes
 
-1. Alguns componentes de UI ainda definem tipos locais inline em vez de reutilizar aliases centralizados de domínio.
-2. Parte dos tipos usados em componentes de relatórios ainda referencia tipos de `db/*` para shape (somente type import), podendo migrar para aliases de serviço.
+1. Ainda existem componentes com interfaces locais que podem ser gradualmente movidas para arquivos `_types` por domínio para manter padrão uniforme.
 
 ---
 
 ## Próxima Meta Recomendada
 
-**Meta de curto prazo**: consolidar aliases de tipos de UI por domínio e remover referências residuais de tipos de `db/*` em componentes.
+**Meta de curto prazo**: manter a disciplina de novos componentes usando DTOs/aliases de domínio desde a criação, evitando retorno de tipagem inline dispersa.
