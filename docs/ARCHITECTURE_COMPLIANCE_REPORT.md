@@ -327,9 +327,10 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - exige uso de parser central de IDs em rotas dinâmicas (`parseRouteParamId(...)` ou `parseRouteParamIds(...)`)
 - Script adicionado ao `package.json`:
   - `npm run check:architecture`
+  - `npm run check:test-policy` (garante suíte dedicada para cada módulo de serviço, com allowlist temporária explícita de débito)
   - `npm run lint:architecture`
   - `npm run test:architecture`
-  - `npm run verify:architecture` (`check:architecture` + `lint:architecture` + `test:architecture`)
+  - `npm run verify:architecture` (`check:architecture` + `check:test-policy` + `lint:architecture` + `test:architecture`)
   - `npm run hooks:install` (configura `core.hooksPath` para `.githooks`)
   - `npm run hooks:uninstall` (remove configuração local de hooks do repositório)
 - Hook local versionado adicionado:
@@ -343,6 +344,9 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - job `validate` (dependente de `architecture`): `npm ci` -> `npm test -- --runInBand` -> `npm run build`
 - Resultado: desvios arquiteturais críticos voltam a falhar automaticamente no CI antes de merge.
 - Observação: nesta etapa, o débito remanescente de `any` nas camadas cobertas foi zerado.
+- Política de testes por feature operacionalizada:
+  - novos módulos em `src/lib/services/*` precisam de suíte dedicada em `src/__tests__/lib/services/<nome>.service.test.ts`
+  - exceções legadas ficam em allowlist temporária explícita no script (`reports`, `team-dashboard`, `transactions`) até eliminação gradual
 
 ---
 
