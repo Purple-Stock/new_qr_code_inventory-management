@@ -134,6 +134,7 @@ export const ptBR = {
   stockIn: {
     title: "Entrada de Estoque",
     subtitle: "Adicione itens ao seu inventário",
+    loadingPage: "Carregando entrada de estoque...",
     location: "Localização",
     locationRequired: "Localização*",
     defaultLocation: "Localização Padrão",
@@ -170,6 +171,7 @@ export const ptBR = {
   stockOut: {
     title: "Saída de Estoque",
     subtitle: "Remova itens do seu inventário",
+    loadingPage: "Carregando saída de estoque...",
     location: "Localização",
     locationRequired: "Localização*",
     defaultLocation: "Localização Padrão",
@@ -207,6 +209,7 @@ export const ptBR = {
   transactions: {
     title: "Transações",
     subtitle: "Acompanhe cada movimento do seu inventário",
+    loadingPage: "Carregando transações...",
     searchPlaceholder: "Buscar transações...",
     date: "DATA",
     type: "TIPO",
@@ -237,6 +240,7 @@ export const ptBR = {
   adjust: {
     title: "Ajustar Estoque",
     subtitle: "Defina a quantidade exata de estoque para os itens",
+    loadingPage: "Carregando ajuste de estoque...",
     location: "Localização",
     locationRequired: "Localização*",
     defaultLocation: "Localização Padrão",
@@ -272,6 +276,7 @@ export const ptBR = {
   move: {
     title: "Mover Estoque",
     subtitle: "Mova estoque de uma localização para outra",
+    loadingPage: "Carregando movimentação de estoque...",
     sourceLocation: "Localização de Origem",
     sourceLocationRequired: "Localização de Origem*",
     destinationLocation: "Localização de Destino",

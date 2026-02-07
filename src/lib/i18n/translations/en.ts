@@ -134,6 +134,7 @@ export const en = {
   stockIn: {
     title: "Stock In",
     subtitle: "Add items to your inventory",
+    loadingPage: "Loading stock in...",
     location: "Location",
     locationRequired: "Location*",
     defaultLocation: "Default Location",
@@ -170,6 +171,7 @@ export const en = {
   stockOut: {
     title: "Stock Out",
     subtitle: "Remove items from your inventory",
+    loadingPage: "Loading stock out...",
     location: "Location",
     locationRequired: "Location*",
     defaultLocation: "Default Location",
@@ -207,6 +209,7 @@ export const en = {
   transactions: {
     title: "Transactions",
     subtitle: "Track every movement in your inventory",
+    loadingPage: "Loading transactions...",
     searchPlaceholder: "Search transactions...",
     date: "DATE",
     type: "TYPE",
@@ -237,6 +240,7 @@ export const en = {
   adjust: {
     title: "Adjust Stock",
     subtitle: "Set the exact stock quantity for items",
+    loadingPage: "Loading adjust stock...",
     location: "Location",
     locationRequired: "Location*",
     defaultLocation: "Default Location",
@@ -272,6 +276,7 @@ export const en = {
   move: {
     title: "Move Stock",
     subtitle: "Move stock from one location to another",
+    loadingPage: "Loading move stock...",
     sourceLocation: "Source Location",
     sourceLocationRequired: "Source Location*",
     destinationLocation: "Destination Location",

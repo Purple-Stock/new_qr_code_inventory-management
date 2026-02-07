@@ -134,6 +134,7 @@ export const fr = {
   stockIn: {
     title: "Entrée de stock",
     subtitle: "Ajoutez des articles à votre inventaire",
+    loadingPage: "Chargement de l'entrée de stock...",
     location: "Emplacement",
     locationRequired: "Emplacement*",
     defaultLocation: "Emplacement par défaut",
@@ -170,6 +171,7 @@ export const fr = {
   stockOut: {
     title: "Sortie de stock",
     subtitle: "Retirez des articles de votre inventaire",
+    loadingPage: "Chargement de la sortie de stock...",
     location: "Emplacement",
     locationRequired: "Emplacement*",
     defaultLocation: "Emplacement par défaut",
@@ -207,6 +209,7 @@ export const fr = {
   transactions: {
     title: "Transactions",
     subtitle: "Suivez chaque mouvement de votre inventaire",
+    loadingPage: "Chargement des transactions...",
     searchPlaceholder: "Rechercher des transactions...",
     date: "DATE",
     type: "TYPE",
@@ -237,6 +240,7 @@ export const fr = {
   adjust: {
     title: "Ajuster le stock",
     subtitle: "Définissez la quantité exacte de stock pour les articles",
+    loadingPage: "Chargement de l'ajustement du stock...",
     location: "Emplacement",
     locationRequired: "Emplacement*",
     defaultLocation: "Emplacement par défaut",
@@ -272,6 +276,7 @@ export const fr = {
   move: {
     title: "Déplacer le stock",
     subtitle: "Déplacez le stock d'un emplacement à un autre",
+    loadingPage: "Chargement du déplacement du stock...",
     sourceLocation: "Emplacement source",
     sourceLocationRequired: "Emplacement source*",
     destinationLocation: "Emplacement de destination",
