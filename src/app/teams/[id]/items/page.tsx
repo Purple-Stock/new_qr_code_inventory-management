@@ -1,7 +1,6 @@
-import { getTeamItems } from "@/lib/db/items";
-import { getTeamWithStats } from "@/lib/db/teams";
 import { ItemsPageClient } from "./_components/ItemsPageClient";
 import { notFound } from "next/navigation";
+import { getTeamItemsData } from "@/lib/services/team-dashboard";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -16,10 +15,7 @@ export default async function ItemsPage({ params }: PageProps) {
   }
 
   // Fetch data on the server
-  const [team, items] = await Promise.all([
-    getTeamWithStats(teamId),
-    getTeamItems(teamId),
-  ]);
+  const { team, items } = await getTeamItemsData(teamId);
 
   if (!team) {
     notFound();

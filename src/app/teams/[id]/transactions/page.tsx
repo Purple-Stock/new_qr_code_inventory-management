@@ -1,8 +1,6 @@
-import { getTeamStockTransactionsWithDetails } from "@/lib/db/stock-transactions";
-import { getTeamWithStats } from "@/lib/db/teams";
 import { TransactionsPageClient } from "./_components/TransactionsPageClient";
 import { notFound } from "next/navigation";
-import { toTransactionDto } from "@/lib/services/mappers";
+import { getTeamTransactionsData } from "@/lib/services/team-dashboard";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -18,10 +16,10 @@ export default async function TransactionsPage({ params, searchParams }: PagePro
   }
 
   // Fetch data on the server
-  const [team, transactions] = await Promise.all([
-    getTeamWithStats(teamId),
-    getTeamStockTransactionsWithDetails(teamId, resolvedSearchParams.search),
-  ]);
+  const { team, transactions } = await getTeamTransactionsData(
+    teamId,
+    resolvedSearchParams.search
+  );
 
   if (!team) {
     notFound();
@@ -29,7 +27,7 @@ export default async function TransactionsPage({ params, searchParams }: PagePro
 
   return (
     <TransactionsPageClient
-      transactions={transactions.map(toTransactionDto)}
+      transactions={transactions}
       team={team}
       initialSearchQuery={resolvedSearchParams.search || ""}
     />

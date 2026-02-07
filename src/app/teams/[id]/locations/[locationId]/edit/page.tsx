@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
-import { getTeamWithStats } from "@/lib/db/teams";
-import { getLocationById } from "@/lib/db/locations";
+import { getTeamLocationEditData } from "@/lib/services/team-dashboard";
 import EditLocationPageClient from "./_components/EditLocationPageClient";
 
 interface PageProps {
@@ -16,12 +15,9 @@ export default async function EditLocationPage({ params }: PageProps) {
     notFound();
   }
 
-  const [team, location] = await Promise.all([
-    getTeamWithStats(teamId),
-    getLocationById(locationId),
-  ]);
+  const { team, location } = await getTeamLocationEditData(teamId, locationId);
 
-  if (!team || !location || location.teamId !== teamId) {
+  if (!team || !location) {
     notFound();
   }
 

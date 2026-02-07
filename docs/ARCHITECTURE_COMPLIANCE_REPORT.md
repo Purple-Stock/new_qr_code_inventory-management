@@ -8,7 +8,7 @@
 
 ## 📊 Resumo Executivo
 
-**Conformidade Geral**: ✅ **97%** - Alta conformidade
+**Conformidade Geral**: ✅ **98%** - Alta conformidade
 
 Este relatório foi atualizado após a implementação dos itens críticos de arquitetura (segurança de acesso, consistência transacional, redução de N+1, avanço em Server Components e aumento de testes).
 
@@ -252,6 +252,32 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `src/app/teams/[id]/locations/page.tsx`
 - Resultado: respostas de domínio para teams/locations/users ficaram desacopladas da persistência e coerentes com a camada de aplicação.
 
+### 17. Migração de leituras server-side de páginas para camada de serviços (Concluído)
+
+- A camada de serviço de dashboard foi expandida para cobrir leituras de páginas operacionais:
+  - `src/lib/services/team-dashboard.ts` com:
+    - `getTeamItemsData(...)`
+    - `getTeamLocationsData(...)`
+    - `getTeamTransactionsData(...)`
+    - `getTeamStockOperationData(...)`
+    - `getTeamBasicData(...)`
+    - `getTeamItemEditData(...)`
+    - `getTeamLocationEditData(...)`
+- Páginas server de `teams/[id]` migradas para consumir serviços em vez de `db/*` direto:
+  - `src/app/teams/[id]/items/page.tsx`
+  - `src/app/teams/[id]/locations/page.tsx`
+  - `src/app/teams/[id]/transactions/page.tsx`
+  - `src/app/teams/[id]/stock-in/page.tsx`
+  - `src/app/teams/[id]/stock-out/page.tsx`
+  - `src/app/teams/[id]/adjust/page.tsx`
+  - `src/app/teams/[id]/move/page.tsx`
+  - `src/app/teams/[id]/settings/page.tsx`
+  - `src/app/teams/[id]/items/new/page.tsx`
+  - `src/app/teams/[id]/items/[itemId]/edit/page.tsx`
+  - `src/app/teams/[id]/locations/new/page.tsx`
+  - `src/app/teams/[id]/locations/[locationId]/edit/page.tsx`
+- Resultado: leitura server-side ficou centralizada na camada de aplicação, reduzindo acoplamento com persistência e facilitando evolução de regras/DTOs em um ponto único.
+
 ---
 
 ## ✅ Validação Executada
@@ -263,11 +289,11 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 
 ## ⚠️ Pendências Relevantes
 
-1. Parte das páginas server-side ainda consulta `db/*` direto para leitura; pode evoluir para uso consistente de serviços de leitura em telas críticas.
-2. Alguns componentes de UI ainda definem tipos locais inline em vez de reutilizar aliases centralizados de domínio.
+1. Alguns componentes de UI ainda definem tipos locais inline em vez de reutilizar aliases centralizados de domínio.
+2. Parte dos tipos usados em componentes de relatórios ainda referencia tipos de `db/*` para shape (somente type import), podendo migrar para aliases de serviço.
 
 ---
 
 ## Próxima Meta Recomendada
 
-**Meta de curto prazo**: concluir migração de leituras server-side para serviços e consolidar aliases de tipos de UI por domínio para reduzir duplicação residual.
+**Meta de curto prazo**: consolidar aliases de tipos de UI por domínio e remover referências residuais de tipos de `db/*` em componentes.

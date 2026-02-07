@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
-import { getTeamWithStats } from "@/lib/db/teams";
-import { getItemByIdWithLocation } from "@/lib/db/items";
+import { getTeamItemEditData } from "@/lib/services/team-dashboard";
 import EditItemPageClient from "./_components/EditItemPageClient";
 
 interface PageProps {
@@ -16,12 +15,9 @@ export default async function EditItemPage({ params }: PageProps) {
     notFound();
   }
 
-  const [team, item] = await Promise.all([
-    getTeamWithStats(teamId),
-    getItemByIdWithLocation(itemId),
-  ]);
+  const { team, item } = await getTeamItemEditData(teamId, itemId);
 
-  if (!team || !item || item.teamId !== teamId) {
+  if (!team || !item) {
     notFound();
   }
 

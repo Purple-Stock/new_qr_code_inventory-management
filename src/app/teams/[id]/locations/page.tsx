@@ -1,8 +1,6 @@
-import { getTeamLocations } from "@/lib/db/locations";
-import { getTeamWithStats } from "@/lib/db/teams";
 import { LocationsPageClient } from "./_components/LocationsPageClient";
 import { notFound } from "next/navigation";
-import { toLocationDto } from "@/lib/services/mappers";
+import { getTeamLocationsData } from "@/lib/services/team-dashboard";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -17,14 +15,11 @@ export default async function LocationsPage({ params }: PageProps) {
   }
 
   // Fetch data on the server
-  const [team, locations] = await Promise.all([
-    getTeamWithStats(teamId),
-    getTeamLocations(teamId),
-  ]);
+  const { team, locations } = await getTeamLocationsData(teamId);
 
   if (!team) {
     notFound();
   }
 
-  return <LocationsPageClient locations={locations.map(toLocationDto)} team={team} />;
+  return <LocationsPageClient locations={locations} team={team} />;
 }

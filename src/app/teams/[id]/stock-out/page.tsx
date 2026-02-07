@@ -1,8 +1,6 @@
-import { getTeamItems } from "@/lib/db/items";
-import { getTeamLocations } from "@/lib/db/locations";
-import { getTeamWithStats } from "@/lib/db/teams";
 import { StockOutPageClient } from "./_components/StockOutPageClient";
 import { notFound } from "next/navigation";
+import { getTeamStockOperationData } from "@/lib/services/team-dashboard";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -17,11 +15,7 @@ export default async function StockOutPage({ params }: PageProps) {
   }
 
   // Fetch data on the server
-  const [team, locations, items] = await Promise.all([
-    getTeamWithStats(teamId),
-    getTeamLocations(teamId),
-    getTeamItems(teamId),
-  ]);
+  const { team, locations, items } = await getTeamStockOperationData(teamId);
 
   if (!team) {
     notFound();

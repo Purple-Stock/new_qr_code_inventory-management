@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getTeamWithStats } from "@/lib/db/teams";
+import { getTeamBasicData } from "@/lib/services/team-dashboard";
 import NewItemPageClient from "./_components/NewItemPageClient";
 
 interface PageProps {
@@ -14,7 +14,7 @@ export default async function NewItemPage({ params }: PageProps) {
     notFound();
   }
 
-  const team = await getTeamWithStats(teamId);
+  const { team } = await getTeamBasicData(teamId);
   if (!team) {
     notFound();
   }
