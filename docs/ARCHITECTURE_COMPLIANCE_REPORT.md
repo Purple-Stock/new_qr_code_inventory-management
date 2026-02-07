@@ -323,6 +323,10 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 - Script adicionado ao `package.json`:
   - `npm run check:architecture`
   - `npm run lint:architecture`
+  - `npm run hooks:install` (configura `core.hooksPath` para `.githooks`)
+  - `npm run hooks:uninstall` (remove configuração local de hooks do repositório)
+- Hook local versionado adicionado:
+  - `.githooks/pre-push` (executa `check:architecture` e `lint:architecture` antes do push)
 - Pipeline CI criada em GitHub Actions:
   - `.github/workflows/ci.yml`
   - job `architecture`: `npm ci` -> `npm run check:architecture` -> `npm run lint:architecture`

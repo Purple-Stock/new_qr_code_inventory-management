@@ -8,6 +8,8 @@
     "dev": "next dev --webpack",
     "check:architecture": "node ./scripts/check-architecture.mjs",
     "lint:architecture": "eslint src/lib/services src/app/api --max-warnings=0",
+    "hooks:install": "git config core.hooksPath .githooks",
+    "hooks:uninstall": "git config --unset core.hooksPath",
     "build": "next build --webpack",
     "start": "next start",
     "test": "jest",
