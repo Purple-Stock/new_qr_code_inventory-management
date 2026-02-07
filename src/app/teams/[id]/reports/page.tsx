@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getTeamReportsData } from "@/lib/services/team-dashboard";
 import ReportsPageClient from "./_components/ReportsPageClient";
 
@@ -14,7 +14,10 @@ export default async function ReportsPage({ params }: PageProps) {
     notFound();
   }
 
-  const { team, stats } = await getTeamReportsData(teamId);
+  const { team, stats, subscriptionRequired } = await getTeamReportsData(teamId);
+  if (subscriptionRequired) {
+    redirect(`/teams/${teamId}/settings?billing=required`);
+  }
   if (!team) {
     notFound();
   }

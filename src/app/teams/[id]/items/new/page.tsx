@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getTeamBasicData } from "@/lib/services/team-dashboard";
 import NewItemPageClient from "./_components/NewItemPageClient";
 
@@ -14,7 +14,10 @@ export default async function NewItemPage({ params }: PageProps) {
     notFound();
   }
 
-  const { team } = await getTeamBasicData(teamId);
+  const { team, subscriptionRequired } = await getTeamBasicData(teamId);
+  if (subscriptionRequired) {
+    redirect(`/teams/${teamId}/settings?billing=required`);
+  }
   if (!team) {
     notFound();
   }

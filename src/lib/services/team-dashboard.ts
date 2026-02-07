@@ -14,113 +14,267 @@ import {
   toTransactionDto,
 } from "@/lib/services/mappers";
 
+const ACTIVE_SUBSCRIPTION_STATUSES = new Set(["active", "trialing"]);
+
+function hasActiveSubscription(team: { stripeSubscriptionStatus?: string | null }): boolean {
+  return ACTIVE_SUBSCRIPTION_STATUSES.has(team.stripeSubscriptionStatus ?? "");
+}
+
+interface TeamDashboardOptions {
+  allowInactiveSubscription?: boolean;
+}
+
 export async function getTeamReportsData(
   teamId: number,
   startDate?: Date,
-  endDate?: Date
+  endDate?: Date,
+  options: TeamDashboardOptions = {}
 ) {
   const [team, stats] = await Promise.all([
     getTeamWithStats(teamId),
     getTeamReportStats(teamId, startDate, endDate),
   ]);
 
-  return { team: team ? toTeamDto(team) : null, stats: toReportStatsDto(stats) };
+  if (!team) {
+    return { team: null, stats: toReportStatsDto(stats), subscriptionRequired: false };
+  }
+  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+    return { team: null, stats: toReportStatsDto(stats), subscriptionRequired: true };
+  }
+
+  return { team: toTeamDto(team), stats: toReportStatsDto(stats), subscriptionRequired: false };
 }
 
-export async function getTeamStockByLocationData(teamId: number) {
+export async function getTeamStockByLocationData(
+  teamId: number,
+  options: TeamDashboardOptions = {}
+) {
   const [team, locations, items] = await Promise.all([
     getTeamWithStats(teamId),
     getTeamLocations(teamId),
     getTeamItems(teamId),
   ]);
 
+  if (!team) {
+    return {
+      team: null,
+      locations: locations.map(toLocationDto),
+      items: items.map((item) => toItemDto(item)),
+      subscriptionRequired: false,
+    };
+  }
+  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+    return {
+      team: null,
+      locations: [],
+      items: [],
+      subscriptionRequired: true,
+    };
+  }
+
   return {
-    team: team ? toTeamDto(team) : null,
+    team: toTeamDto(team),
     locations: locations.map(toLocationDto),
     items: items.map((item) => toItemDto(item)),
+    subscriptionRequired: false,
   };
 }
 
-export async function getTeamLabelsData(teamId: number) {
+export async function getTeamLabelsData(teamId: number, options: TeamDashboardOptions = {}) {
   const [team, items] = await Promise.all([
     getTeamWithStats(teamId),
     getTeamItems(teamId),
   ]);
 
-  return { team: team ? toTeamDto(team) : null, items: items.map((item) => toItemDto(item)) };
+  if (!team) {
+    return { team: null, items: items.map((item) => toItemDto(item)), subscriptionRequired: false };
+  }
+  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+    return { team: null, items: [], subscriptionRequired: true };
+  }
+
+  return { team: toTeamDto(team), items: items.map((item) => toItemDto(item)), subscriptionRequired: false };
 }
 
-export async function getItemDetailsData(teamId: number, itemId: number) {
-  const [item, transactions] = await Promise.all([
+export async function getItemDetailsData(
+  teamId: number,
+  itemId: number,
+  options: TeamDashboardOptions = {}
+) {
+  const [team, item, transactions] = await Promise.all([
+    getTeamWithStats(teamId),
     getItemByIdWithLocation(itemId),
     getItemStockTransactionsWithDetails(teamId, itemId),
   ]);
 
-  if (!item || item.teamId !== teamId) {
-    return { item: null, transactions: [] };
+  if (!team) {
+    return { item: null, transactions: [], subscriptionRequired: false };
+  }
+  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+    return { item: null, transactions: [], subscriptionRequired: true };
   }
 
-  return { item: toItemDto(item), transactions: transactions.map(toTransactionDto) };
+  if (!item || item.teamId !== teamId) {
+    return { item: null, transactions: [], subscriptionRequired: false };
+  }
+
+  return { item: toItemDto(item), transactions: transactions.map(toTransactionDto), subscriptionRequired: false };
 }
 
-export async function getTeamItemsData(teamId: number) {
+export async function getTeamItemsData(teamId: number, options: TeamDashboardOptions = {}) {
   const [team, items] = await Promise.all([getTeamWithStats(teamId), getTeamItems(teamId)]);
+  if (!team) {
+    return {
+      team: null,
+      items: items.map((item) => toItemDto(item)),
+      subscriptionRequired: false,
+    };
+  }
+  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+    return {
+      team: null,
+      items: [],
+      subscriptionRequired: true,
+    };
+  }
   return {
-    team: team ? toTeamDto(team) : null,
+    team: toTeamDto(team),
     items: items.map((item) => toItemDto(item)),
+    subscriptionRequired: false,
   };
 }
 
-export async function getTeamLocationsData(teamId: number) {
+export async function getTeamLocationsData(teamId: number, options: TeamDashboardOptions = {}) {
   const [team, locations] = await Promise.all([getTeamWithStats(teamId), getTeamLocations(teamId)]);
+  if (!team) {
+    return {
+      team: null,
+      locations: locations.map(toLocationDto),
+      subscriptionRequired: false,
+    };
+  }
+  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+    return {
+      team: null,
+      locations: [],
+      subscriptionRequired: true,
+    };
+  }
   return {
-    team: team ? toTeamDto(team) : null,
+    team: toTeamDto(team),
     locations: locations.map(toLocationDto),
+    subscriptionRequired: false,
   };
 }
 
-export async function getTeamTransactionsData(teamId: number, searchQuery?: string) {
+export async function getTeamTransactionsData(
+  teamId: number,
+  searchQuery?: string,
+  options: TeamDashboardOptions = {}
+) {
   const [team, transactions] = await Promise.all([
     getTeamWithStats(teamId),
     getTeamStockTransactionsWithDetails(teamId, searchQuery),
   ]);
+  if (!team) {
+    return {
+      team: null,
+      transactions: transactions.map(toTransactionDto),
+      subscriptionRequired: false,
+    };
+  }
+  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+    return {
+      team: null,
+      transactions: [],
+      subscriptionRequired: true,
+    };
+  }
   return {
-    team: team ? toTeamDto(team) : null,
+    team: toTeamDto(team),
     transactions: transactions.map(toTransactionDto),
+    subscriptionRequired: false,
   };
 }
 
-export async function getTeamStockOperationData(teamId: number) {
+export async function getTeamStockOperationData(
+  teamId: number,
+  options: TeamDashboardOptions = {}
+) {
   const [team, locations, items] = await Promise.all([
     getTeamWithStats(teamId),
     getTeamLocations(teamId),
     getTeamItems(teamId),
   ]);
 
+  if (!team) {
+    return {
+      team: null,
+      locations: locations.map(toLocationDto),
+      items: items.map((item) => toItemDto(item)),
+      subscriptionRequired: false,
+    };
+  }
+  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+    return {
+      team: null,
+      locations: [],
+      items: [],
+      subscriptionRequired: true,
+    };
+  }
+
   return {
-    team: team ? toTeamDto(team) : null,
+    team: toTeamDto(team),
     locations: locations.map(toLocationDto),
     items: items.map((item) => toItemDto(item)),
+    subscriptionRequired: false,
   };
 }
 
-export async function getTeamBasicData(teamId: number) {
+export async function getTeamBasicData(teamId: number, options: TeamDashboardOptions = {}) {
   const team = await getTeamWithStats(teamId);
-  return { team: team ? toTeamDto(team) : null };
+  if (!team) {
+    return { team: null, subscriptionRequired: false };
+  }
+  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+    return { team: null, subscriptionRequired: true };
+  }
+  return { team: toTeamDto(team), subscriptionRequired: false };
 }
 
-export async function getTeamItemEditData(teamId: number, itemId: number) {
+export async function getTeamItemEditData(
+  teamId: number,
+  itemId: number,
+  options: TeamDashboardOptions = {}
+) {
   const [team, item] = await Promise.all([getTeamWithStats(teamId), getItemByIdWithLocation(itemId)]);
-  if (!team || !item || item.teamId !== teamId) {
-    return { team: null, item: null };
+  if (!team) {
+    return { team: null, item: null, subscriptionRequired: false };
   }
-  return { team: toTeamDto(team), item: toItemDto(item) };
+  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+    return { team: null, item: null, subscriptionRequired: true };
+  }
+  if (!team || !item || item.teamId !== teamId) {
+    return { team: null, item: null, subscriptionRequired: false };
+  }
+  return { team: toTeamDto(team), item: toItemDto(item), subscriptionRequired: false };
 }
 
-export async function getTeamLocationEditData(teamId: number, locationId: number) {
+export async function getTeamLocationEditData(
+  teamId: number,
+  locationId: number,
+  options: TeamDashboardOptions = {}
+) {
   const [team, location] = await Promise.all([getTeamWithStats(teamId), getLocationById(locationId)]);
-  if (!team || !location || location.teamId !== teamId) {
-    return { team: null, location: null };
+  if (!team) {
+    return { team: null, location: null, subscriptionRequired: false };
   }
-  return { team: toTeamDto(team), location: toLocationDto(location) };
+  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+    return { team: null, location: null, subscriptionRequired: true };
+  }
+  if (!team || !location || location.teamId !== teamId) {
+    return { team: null, location: null, subscriptionRequired: false };
+  }
+  return { team: toTeamDto(team), location: toLocationDto(location), subscriptionRequired: false };
 }

@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getTeamLabelsData } from "@/lib/services/team-dashboard";
 import LabelsPageClient from "./_components/LabelsPageClient";
 
@@ -14,7 +14,10 @@ export default async function LabelsPage({ params }: PageProps) {
     notFound();
   }
 
-  const { team, items } = await getTeamLabelsData(teamId);
+  const { team, items, subscriptionRequired } = await getTeamLabelsData(teamId);
+  if (subscriptionRequired) {
+    redirect(`/teams/${teamId}/settings?billing=required`);
+  }
   if (!team) {
     notFound();
   }

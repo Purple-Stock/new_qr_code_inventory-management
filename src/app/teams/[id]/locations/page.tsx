@@ -1,5 +1,5 @@
 import { LocationsPageClient } from "./_components/LocationsPageClient";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getTeamLocationsData } from "@/lib/services/team-dashboard";
 
 interface PageProps {
@@ -15,7 +15,11 @@ export default async function LocationsPage({ params }: PageProps) {
   }
 
   // Fetch data on the server
-  const { team, locations } = await getTeamLocationsData(teamId);
+  const { team, locations, subscriptionRequired } = await getTeamLocationsData(teamId);
+
+  if (subscriptionRequired) {
+    redirect(`/teams/${teamId}/settings?billing=required`);
+  }
 
   if (!team) {
     notFound();

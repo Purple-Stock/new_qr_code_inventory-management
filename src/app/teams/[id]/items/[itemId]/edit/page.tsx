@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getTeamItemEditData } from "@/lib/services/team-dashboard";
 import EditItemPageClient from "./_components/EditItemPageClient";
 
@@ -15,7 +15,11 @@ export default async function EditItemPage({ params }: PageProps) {
     notFound();
   }
 
-  const { team, item } = await getTeamItemEditData(teamId, itemId);
+  const { team, item, subscriptionRequired } = await getTeamItemEditData(teamId, itemId);
+
+  if (subscriptionRequired) {
+    redirect(`/teams/${teamId}/settings?billing=required`);
+  }
 
   if (!team || !item) {
     notFound();

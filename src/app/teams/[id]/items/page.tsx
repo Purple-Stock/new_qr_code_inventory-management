@@ -1,5 +1,5 @@
 import { ItemsPageClient } from "./_components/ItemsPageClient";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getTeamItemsData } from "@/lib/services/team-dashboard";
 
 interface PageProps {
@@ -15,7 +15,11 @@ export default async function ItemsPage({ params }: PageProps) {
   }
 
   // Fetch data on the server
-  const { team, items } = await getTeamItemsData(teamId);
+  const { team, items, subscriptionRequired } = await getTeamItemsData(teamId);
+
+  if (subscriptionRequired) {
+    redirect(`/teams/${teamId}/settings?billing=required`);
+  }
 
   if (!team) {
     notFound();

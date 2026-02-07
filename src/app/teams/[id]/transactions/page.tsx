@@ -1,5 +1,5 @@
 import { TransactionsPageClient } from "./_components/TransactionsPageClient";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getTeamTransactionsData } from "@/lib/services/team-dashboard";
 
 interface PageProps {
@@ -16,10 +16,14 @@ export default async function TransactionsPage({ params, searchParams }: PagePro
   }
 
   // Fetch data on the server
-  const { team, transactions } = await getTeamTransactionsData(
+  const { team, transactions, subscriptionRequired } = await getTeamTransactionsData(
     teamId,
     resolvedSearchParams.search
   );
+
+  if (subscriptionRequired) {
+    redirect(`/teams/${teamId}/settings?billing=required`);
+  }
 
   if (!team) {
     notFound();

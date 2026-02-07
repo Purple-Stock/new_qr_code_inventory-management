@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getTeamLocationEditData } from "@/lib/services/team-dashboard";
 import EditLocationPageClient from "./_components/EditLocationPageClient";
 
@@ -15,7 +15,11 @@ export default async function EditLocationPage({ params }: PageProps) {
     notFound();
   }
 
-  const { team, location } = await getTeamLocationEditData(teamId, locationId);
+  const { team, location, subscriptionRequired } = await getTeamLocationEditData(teamId, locationId);
+
+  if (subscriptionRequired) {
+    redirect(`/teams/${teamId}/settings?billing=required`);
+  }
 
   if (!team || !location) {
     notFound();

@@ -1,5 +1,5 @@
 import { StockOutPageClient } from "./_components/StockOutPageClient";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getTeamStockOperationData } from "@/lib/services/team-dashboard";
 
 interface PageProps {
@@ -15,7 +15,11 @@ export default async function StockOutPage({ params }: PageProps) {
   }
 
   // Fetch data on the server
-  const { team, locations, items } = await getTeamStockOperationData(teamId);
+  const { team, locations, items, subscriptionRequired } = await getTeamStockOperationData(teamId);
+
+  if (subscriptionRequired) {
+    redirect(`/teams/${teamId}/settings?billing=required`);
+  }
 
   if (!team) {
     notFound();

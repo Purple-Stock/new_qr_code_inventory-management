@@ -14,7 +14,7 @@ export default async function SettingsPage({ params }: PageProps) {
     notFound();
   }
 
-  const { team } = await getTeamBasicData(teamId);
+  const { team } = await getTeamBasicData(teamId, { allowInactiveSubscription: true });
   if (!team) {
     notFound();
   }

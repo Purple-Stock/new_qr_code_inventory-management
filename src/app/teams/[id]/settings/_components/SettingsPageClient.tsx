@@ -65,6 +65,7 @@ export default function SettingsPageClient({
   const { t } = useTranslation();
   const { toast } = useToast();
   const searchParams = useSearchParams();
+  const billingRequired = searchParams.get("billing") === "required";
   const [billingStatus, setBillingStatus] = useState<string | null>(
     initialTeam.stripeSubscriptionStatus ?? null
   );
@@ -121,10 +122,16 @@ export default function SettingsPageClient({
   }, [searchParams, teamId]);
 
   useEffect(() => {
-    if (!canManageUsers && activeSettingsTab === "users") {
+    if (!billingRequired && !canManageUsers && activeSettingsTab === "users") {
       setActiveSettingsTab("password");
     }
-  }, [canManageUsers, activeSettingsTab]);
+  }, [canManageUsers, activeSettingsTab, billingRequired]);
+
+  useEffect(() => {
+    if (billingRequired) {
+      setActiveSettingsTab("billing");
+    }
+  }, [billingRequired]);
 
   const fetchManagedUsers = async () => {
     try {
@@ -552,7 +559,7 @@ export default function SettingsPageClient({
 
           <div className="mb-4 sm:mb-6 border-b border-gray-200">
             <div className="flex gap-2 sm:gap-3 overflow-x-auto">
-              {canManageUsers && (
+              {canManageUsers && !billingRequired ? (
                 <button
                   type="button"
                   onClick={() => setActiveSettingsTab("users")}
@@ -564,7 +571,8 @@ export default function SettingsPageClient({
                 >
                   {t.settings.usersPermissionsTab}
                 </button>
-              )}
+              ) : null}
+              {!billingRequired ? (
               <button
                 type="button"
                 onClick={() => setActiveSettingsTab("password")}
@@ -576,6 +584,7 @@ export default function SettingsPageClient({
               >
                 {t.settings.changePasswordTab}
               </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => setActiveSettingsTab("billing")}
@@ -605,6 +614,11 @@ export default function SettingsPageClient({
                   <p className="text-sm text-gray-600 mb-4">
                     Plano Pro: R$ 29,90 por time/mês.
                   </p>
+                  {billingRequired ? (
+                    <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mb-4">
+                      Assinatura obrigatória para liberar o acesso ao sistema deste time.
+                    </p>
+                  ) : null}
                   <p className="text-sm text-gray-700 mb-4">
                     Status atual:{" "}
                     <span className="font-semibold">
