@@ -432,14 +432,23 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `src/app/api/auth/login/route.ts` em **100%** de statements/branches/functions/lines
   - `src/app/api/auth/logout/route.ts` em **100%** de statements/branches/functions/lines
 
+### 28. Cobertura de alteração de senha do usuário (Concluído)
+
+- Suíte adicionada:
+  - `src/__tests__/api/users-me-password-route.test.ts`
+- Coberturas garantidas:
+  - `/api/users/me/password` (`PATCH`) com cenários de sucesso, erro de serviço, JSON inválido e exceção inesperada
+- Resultado:
+  - `src/app/api/users/me/password/route.ts` em **100%** de statements/branches/functions/lines
+
 ---
 
 ## ✅ Validação Executada
 
 - `npm run build`: **OK**
 - `npm run verify:architecture`: **OK**
-- `npm test -- --runInBand`: **OK** (30 suítes, 149 testes)
-- `npm run test:coverage`: **OK** (Statements: **33.14%**, Branches: **21.48%**, Functions: **27.08%**, Lines: **33.61%**)
+- `npm test -- --runInBand`: **OK** (31 suítes, 153 testes)
+- `npm run test:coverage`: **OK** (Statements: **33.49%**, Branches: **21.55%**, Functions: **27.24%**, Lines: **33.97%**)
 - `npm run check:architecture`: **OK**
 
 ---
@@ -447,7 +456,7 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 ## ⚠️ Pendências Relevantes
 
 1. Elevar cobertura da camada `app/*` (principalmente client pages e actions), hoje com baixo impacto de testes automatizados.
-2. Aumentar cobertura de rotas auxiliares ainda sem suíte direta, como `src/app/api/users/me/password/route.ts`.
+2. Avaliar objetivo de cobertura por pacote (`api`, `services`, `db`) e transformar em meta gradual de CI.
 
 ---
 
