@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { FormPageShell } from "@/components/shared/FormPageShell";
 import { useTranslation } from "@/lib/i18n";
-import { parseApiResult } from "@/lib/api-error";
+import { fetchApiJsonResult } from "@/lib/api-client";
 import { LocationForm } from "../../../_components/LocationForm";
 
 interface EditLocationPageClientProps {
@@ -43,16 +43,14 @@ export default function EditLocationPageClient({
     setIsLoading(true);
 
     try {
-      const response = await fetch(`/api/teams/${teamId}/locations/${locationId}`, {
+      const result = await fetchApiJsonResult(`/api/teams/${teamId}/locations/${locationId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: {
           name: name.trim(),
           description: description.trim() || null,
-        }),
+        },
+        fallbackError: t.locationForm.unexpectedError,
       });
-
-      const result = await parseApiResult(response, t.locationForm.unexpectedError);
 
       if (!result.ok) {
         setError(t.locationForm.unexpectedError);

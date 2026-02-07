@@ -16,7 +16,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 import { useTranslation } from "@/lib/i18n"
-import { parseApiResult } from "@/lib/api-error"
+import { fetchApiJsonResult } from "@/lib/api-client"
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -50,17 +50,13 @@ export default function SignUpPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ companyName, email, password }),
-      })
-
-      const result = await parseApiResult<{ user?: { id?: number; role?: string } }>(
-        response,
-        t.auth.signup.unexpectedError
+      const result = await fetchApiJsonResult<{ user?: { id?: number; role?: string } }>(
+        "/api/auth/signup",
+        {
+          method: "POST",
+          body: { companyName, email, password },
+          fallbackError: t.auth.signup.unexpectedError,
+        }
       )
 
       if (!result.ok) {

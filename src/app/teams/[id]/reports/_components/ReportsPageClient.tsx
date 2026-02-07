@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/lib/i18n";
-import { parseApiResult } from "@/lib/api-error";
+import { fetchApiResult } from "@/lib/api-client";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import type { ReportStats } from "@/lib/db/reports";
 
@@ -53,8 +53,10 @@ export default function ReportsPageClient({
       if (startDate) params.append("startDate", startDate);
       if (endDate) params.append("endDate", endDate);
       const queryString = params.toString();
-      const reportsResponse = await fetch(`/api/teams/${teamId}/reports${queryString ? `?${queryString}` : ""}`);
-      const reportsResult = await parseApiResult<{ stats?: ReportStats }>(reportsResponse, "Failed to fetch reports");
+      const reportsResult = await fetchApiResult<{ stats?: ReportStats }>(
+        `/api/teams/${teamId}/reports${queryString ? `?${queryString}` : ""}`,
+        { fallbackError: "Failed to fetch reports" }
+      );
       if (reportsResult.ok && reportsResult.data.stats) {
         setStats(reportsResult.data.stats);
       }

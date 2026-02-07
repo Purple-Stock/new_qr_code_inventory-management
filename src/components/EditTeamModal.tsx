@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/ui/use-toast-simple";
+import { fetchApiJsonResult } from "@/lib/api-client";
 
 interface Team {
   id: number;
@@ -66,20 +67,15 @@ export function EditTeamModal({
     setIsSaving(true);
 
     try {
-      const response = await fetch(`/api/teams/${team.id}`, {
+      const result = await fetchApiJsonResult(`/api/teams/${team.id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+        body: {
           name: name.trim(),
           notes: notes.trim() || null,
-        }),
+        },
+        fallbackError: t.settings.errorSaving,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
+      if (!result.ok) {
         toast({
           title: t.settings.errorSaving,
           description: t.settings.errorSaving,

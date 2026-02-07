@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
+import { fetchApiResult } from "@/lib/api-client";
 import Link from "next/link";
 
 interface TeamLayoutProps {
@@ -37,7 +38,7 @@ export function TeamLayout({ team, activeMenuItem, children }: TeamLayoutProps) 
   const teamId = team.id.toString();
 
   const handleSignOut = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetchApiResult("/api/auth/logout", { method: "POST" });
     localStorage.removeItem("userId");
     localStorage.removeItem("userRole");
     router.push("/");

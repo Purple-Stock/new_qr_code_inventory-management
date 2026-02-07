@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { FormPageShell } from "@/components/shared/FormPageShell";
 import { useTranslation } from "@/lib/i18n";
-import { parseApiResult } from "@/lib/api-error";
+import { fetchApiJsonResult } from "@/lib/api-client";
 import { ItemForm, type ItemFormValues } from "../../../_components/ItemForm";
 
 interface EditItemPageClientProps {
@@ -66,10 +66,9 @@ export default function EditItemPageClient({
     setIsLoading(true);
 
     try {
-      const response = await fetch(`/api/teams/${teamId}/items/${itemId}`, {
+      const result = await fetchApiJsonResult(`/api/teams/${teamId}/items/${itemId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: {
           name: form.name.trim(),
           sku: form.sku.trim() || null,
           barcode: form.barcode.trim(),
@@ -77,10 +76,9 @@ export default function EditItemPageClient({
           price: form.price ? parseFloat(form.price) : null,
           itemType: form.itemType.trim() || null,
           brand: form.brand.trim() || null,
-        }),
+        },
+        fallbackError: t.itemForm.unexpectedError,
       });
-
-      const result = await parseApiResult(response, t.itemForm.unexpectedError);
 
       if (!result.ok) {
         setError(t.itemForm.unexpectedError);

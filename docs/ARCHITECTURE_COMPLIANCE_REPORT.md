@@ -90,6 +90,8 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 
 - Foi criado um helper único para parsing resiliente de payloads JSON:
   - `src/lib/api-error.ts` (`parseApiResult` e `parseApiError`)
+- Foi criada uma camada utilitária de client HTTP para centralizar `fetch` + parsing:
+  - `src/lib/api-client.ts` (`fetchApiResult` e `fetchApiJsonResult`)
 - Fluxos de UI migrados para o helper (remoção de parsing manual duplicado):
   - `src/app/(main)/_components/LoginPageClient.tsx`
   - `src/app/(auth)/signup/_components/SignUpPageClient.tsx`

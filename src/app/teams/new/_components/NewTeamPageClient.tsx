@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { useTranslation } from "@/lib/i18n";
-import { parseApiResult } from "@/lib/api-error";
+import { fetchApiJsonResult } from "@/lib/api-client";
 
 export default function NewTeamPage() {
   const router = useRouter();
@@ -33,18 +33,14 @@ export default function NewTeamPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/teams", {
+      const result = await fetchApiJsonResult("/api/teams", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+        body: {
           name: name.trim(),
           notes: notes.trim() || null,
-        }),
+        },
+        fallbackError: t.team.unexpectedError,
       });
-
-      const result = await parseApiResult(response, t.team.unexpectedError);
 
       if (!result.ok) {
         if (result.error.status === 401) {

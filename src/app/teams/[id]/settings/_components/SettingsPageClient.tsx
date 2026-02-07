@@ -17,7 +17,7 @@ import { isValidEmail } from "@/lib/validation";
 import { AddUserToTeamsModal } from "@/components/AddUserToTeamsModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { ERROR_CODES } from "@/lib/errors";
-import { parseApiResult } from "@/lib/api-error";
+import { fetchApiJsonResult, fetchApiResult } from "@/lib/api-client";
 
 interface Team {
   id: number;
@@ -78,13 +78,12 @@ export default function SettingsPageClient({
   const fetchManagedUsers = async () => {
     try {
       setIsUsersLoading(true);
-      const response = await fetch(`/api/teams/${teamId}/users`);
-      const parsed = await parseApiResult<{
+      const parsed = await fetchApiResult<{
         currentUserId?: number;
         members?: ManagedUser[];
         availableUsers?: Array<{ id: number; email: string }>;
         companyTeams?: Array<{ id: number; name: string }>;
-      }>(response, "Could not load users");
+      }>(`/api/teams/${teamId}/users`, { fallbackError: "Could not load users" });
 
       if (!parsed.ok) {
         setCanManageUsers(false);
@@ -111,16 +110,13 @@ export default function SettingsPageClient({
     role: ManagedUser["role"]
   ) => {
     try {
-      const response = await fetch(`/api/teams/${teamId}/users/${managedUserId}`, {
+      const parsed = await fetchApiJsonResult<{ member: ManagedUser }>(
+        `/api/teams/${teamId}/users/${managedUserId}`,
+        {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
+          body: { role },
+          fallbackError: t.settings.couldNotUpdateRole,
         },
-        body: JSON.stringify({ role }),
-      });
-      const parsed = await parseApiResult<{ member: ManagedUser }>(
-        response,
-        t.settings.couldNotUpdateRole
       );
       if (!parsed.ok) {
         toast({
@@ -153,10 +149,10 @@ export default function SettingsPageClient({
   const handleRemoveMember = async (managedUserId: number) => {
     setIsMemberSaving(true);
     try {
-      const response = await fetch(`/api/teams/${teamId}/users/${managedUserId}`, {
+      const parsed = await fetchApiResult(`/api/teams/${teamId}/users/${managedUserId}`, {
         method: "DELETE",
+        fallbackError: t.settings.couldNotRemoveMember,
       });
-      const parsed = await parseApiResult(response, t.settings.couldNotRemoveMember);
       if (!parsed.ok) {
         toast({
           title: t.common.error,
@@ -215,19 +211,16 @@ export default function SettingsPageClient({
 
     setIsMemberSaving(true);
     try {
-      const response = await fetch(`/api/teams/${teamId}/users`, {
+      const parsed = await fetchApiJsonResult(`/api/teams/${teamId}/users`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+        body: {
           email: payload.email,
           password: payload.password,
           role: payload.role,
           teamIds: payload.teamIds,
-        }),
+        },
+        fallbackError: t.settings.couldNotCreateUser,
       });
-      const parsed = await parseApiResult(response, t.settings.couldNotCreateUser);
       if (!parsed.ok) {
         toast({
           title: t.common.error,
@@ -293,18 +286,15 @@ export default function SettingsPageClient({
 
     setIsPasswordSaving(true);
     try {
-      const response = await fetch("/api/users/me/password", {
+      const parsed = await fetchApiJsonResult("/api/users/me/password", {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+        body: {
           currentPassword,
           newPassword,
           confirmPassword,
-        }),
+        },
+        fallbackError: t.settings.couldNotUpdatePassword,
       });
-      const parsed = await parseApiResult(response, t.settings.couldNotUpdatePassword);
       if (!parsed.ok) {
         const errorMessage =
           parsed.error.errorCode === ERROR_CODES.CURRENT_PASSWORD_INCORRECT
@@ -378,19 +368,16 @@ export default function SettingsPageClient({
 
     setIsMemberSaving(true);
     try {
-      const response = await fetch(`/api/teams/${teamId}/users/${editingUserId}`, {
+      const parsed = await fetchApiJsonResult<{ member: ManagedUser }>(
+        `/api/teams/${teamId}/users/${editingUserId}`,
+        {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+          body: {
           email: normalizedEmail,
           newPassword: editUserPassword || undefined,
-        }),
-      });
-      const parsed = await parseApiResult<{ member: ManagedUser }>(
-        response,
-        t.settings.couldNotUpdateUserInfo
+          },
+          fallbackError: t.settings.couldNotUpdateUserInfo,
+        }
       );
       if (!parsed.ok) {
         const description =

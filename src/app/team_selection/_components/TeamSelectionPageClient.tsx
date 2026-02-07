@@ -18,7 +18,7 @@ import { EditTeamModal } from "@/components/EditTeamModal";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/ui/use-toast-simple";
-import { parseApiResult } from "@/lib/api-error";
+import { fetchApiResult } from "@/lib/api-client";
 import Link from "next/link";
 
 interface Team {
@@ -51,11 +51,9 @@ export default function TeamSelectionPage() {
 
   const fetchTeams = async () => {
     try {
-      const response = await fetch("/api/teams");
-      const parsed = await parseApiResult<{ teams?: Team[] }>(
-        response,
-        "Error fetching teams"
-      );
+      const parsed = await fetchApiResult<{ teams?: Team[] }>("/api/teams", {
+        fallbackError: "Error fetching teams",
+      });
 
       if (parsed.ok) {
         setTeams(parsed.data.teams || []);
@@ -72,7 +70,7 @@ export default function TeamSelectionPage() {
   };
 
   const handleSignOut = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetchApiResult("/api/auth/logout", { method: "POST" });
     localStorage.removeItem("userId");
     localStorage.removeItem("userRole");
     router.push("/");
@@ -104,10 +102,10 @@ export default function TeamSelectionPage() {
     setDeletingTeamId(teamToDelete.id);
 
     try {
-      const response = await fetch(`/api/teams/${teamToDelete.id}`, {
+      const parsed = await fetchApiResult(`/api/teams/${teamToDelete.id}`, {
         method: "DELETE",
+        fallbackError: t.teamSelection.errorDeleting,
       });
-      const parsed = await parseApiResult(response, t.teamSelection.errorDeleting);
       if (!parsed.ok) {
         toast({
           title: t.teamSelection.errorDeleting,
