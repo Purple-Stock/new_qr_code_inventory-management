@@ -32,9 +32,10 @@ function runCheckIn(dir: string): { ok: true; output: string } | { ok: false; ou
 describe("scripts/check-architecture.mjs", () => {
   it("passes on a compliant fixture", () => {
     const dir = createTempProject({
+      "src/lib/services/api.ts": "export const getStatus = () => ({ ok: true });\n",
       "src/lib/services/example.ts": "export const ok = true;\n",
       "src/app/api/example/route.ts":
-        'import { successResponse } from "@/lib/api-route";\nexport function GET(){return successResponse({ ok: true });}\n',
+        'import { successResponse } from "@/lib/api-route";\nimport { getStatus } from "@/lib/services/api";\nexport function GET(){return successResponse(getStatus());}\n',
       "src/components/Widget.tsx": "export function Widget(){ return null; }\n",
     });
 
@@ -129,5 +130,15 @@ describe("scripts/check-architecture.mjs", () => {
     const result = runCheckIn(dir);
     expect(result.ok).toBe(false);
     expect(result.output).toContain("Rule 9");
+  });
+
+  it("fails Rule 10 when API route does not import services", () => {
+    const dir = createTempProject({
+      "src/app/api/test/route.ts":
+        'import { successResponse } from "@/lib/api-route";\nexport function GET(){ return successResponse({ ok: true }); }\n',
+    });
+    const result = runCheckIn(dir);
+    expect(result.ok).toBe(false);
+    expect(result.output).toContain("Rule 10");
   });
 });

@@ -321,6 +321,7 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - bloqueia import de `@/lib/contracts/schemas` em `src/app/api/*` (validação de payload fica na camada de serviço)
   - bloqueia chamadas `parse*Payload(...)` em `src/app/api/*` (parser de payload fica na camada de serviço)
   - bloqueia respostas HTTP manuais em `src/app/api/*` (`Response.json(...)` e `new Response(...)`), exigindo helpers de `api-route`
+  - exige delegação de API routes para `@/lib/services/*` (com allowlist explícita para rotas adapter-only)
 - Script adicionado ao `package.json`:
   - `npm run check:architecture`
   - `npm run lint:architecture`
@@ -342,7 +343,7 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 ## ✅ Validação Executada
 
 - `npm run build`: **OK**
-- `npm test -- --runInBand`: **OK** (12 suítes, 53 testes)
+- `npm test -- --runInBand`: **OK** (12 suítes, 55 testes)
 - `npm run check:architecture`: **OK**
 
 ---
