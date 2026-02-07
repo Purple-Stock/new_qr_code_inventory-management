@@ -313,7 +313,7 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 - Regra aplicada:
   - bloqueia imports de `@/lib/db/*` em `src/app/*` (exceto `src/app/api/*`) e `src/components/*`
 - Regra expandida:
-  - bloqueia imports de `@/lib/db/*` em `src/app/api/teams/*`, `src/app/api/auth/*` e `src/app/api/users/*` (API de domínio deve passar por serviços)
+  - bloqueia imports de `@/lib/db/*` em todo `src/app/api/*` (API deve passar por serviços)
   - bloqueia usos explícitos de `any` em `src/lib/services/*` e `src/app/api/*` (sem allowlist)
 - Script adicionado ao `package.json`:
   - `npm run check:architecture`

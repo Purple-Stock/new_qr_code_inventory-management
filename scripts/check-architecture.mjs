@@ -65,15 +65,12 @@ const uiAndPagesFiles = collectFiles(path.join(ROOT, "src/app"))
   .filter((file) => !file.startsWith("src/app/api/"))
   .concat(collectFiles(path.join(ROOT, "src/components")));
 
-const teamsApiFiles = collectFiles(path.join(ROOT, "src/app/api/teams"));
-const authApiFiles = collectFiles(path.join(ROOT, "src/app/api/auth"));
-const usersApiFiles = collectFiles(path.join(ROOT, "src/app/api/users"));
-const restrictedApiFiles = teamsApiFiles.concat(authApiFiles, usersApiFiles);
+const allApiFiles = collectFiles(path.join(ROOT, "src/app/api"));
 const serviceAndApiFiles = collectFiles(path.join(ROOT, "src/lib/services"))
   .concat(collectFiles(path.join(ROOT, "src/app/api")));
 
 const uiDbViolations = scanForPattern(uiAndPagesFiles, DB_IMPORT_PATTERN);
-const restrictedApiDbViolations = scanForPattern(restrictedApiFiles, DB_IMPORT_PATTERN);
+const apiDbViolations = scanForPattern(allApiFiles, DB_IMPORT_PATTERN);
 
 const anyMatches = scanForPattern(serviceAndApiFiles, EXPLICIT_ANY_PATTERN);
 const anyViolations = anyMatches.filter((match) => !ANY_DEBT_ALLOWLIST.has(match.file));
@@ -81,7 +78,7 @@ const anyDebt = anyMatches.filter((match) => ANY_DEBT_ALLOWLIST.has(match.file))
 
 if (
   uiDbViolations.length > 0 ||
-  restrictedApiDbViolations.length > 0 ||
+  apiDbViolations.length > 0 ||
   anyViolations.length > 0
 ) {
   console.error("Architecture check failed.\n");
@@ -92,8 +89,8 @@ if (
   );
 
   printViolations(
-    "Rule 2: do not import '@/lib/db/*' from domain API routes (src/app/api/teams, src/app/api/auth, src/app/api/users).",
-    restrictedApiDbViolations
+    "Rule 2: do not import '@/lib/db/*' from API routes (src/app/api/*).",
+    apiDbViolations
   );
 
   printViolations(
