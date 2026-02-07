@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyUserCredentials } from "@/lib/db/users";
 import { setSessionCookie } from "@/lib/session";
-import { parseLoginPayload } from "@/lib/validation";
+import { parseLoginPayload } from "@/lib/contracts/schemas";
 import { ERROR_CODES, errorPayload } from "@/lib/errors";
 import { errorResponse, internalErrorResponse, successResponse } from "@/lib/api-route";
 

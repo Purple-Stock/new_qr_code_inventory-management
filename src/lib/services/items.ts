@@ -9,7 +9,7 @@ import {
 } from "@/lib/db/items";
 import { ERROR_CODES } from "@/lib/errors";
 import { authorizeTeamAccess, authorizeTeamPermission } from "@/lib/permissions";
-import { parseItemPayload } from "@/lib/validation";
+import { parseItemPayload } from "@/lib/contracts/schemas";
 import type { Item } from "@/db/schema";
 import type { ServiceResult } from "@/lib/services/types";
 import {

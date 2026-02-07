@@ -8,7 +8,7 @@ import {
 } from "@/lib/db/locations";
 import { ERROR_CODES } from "@/lib/errors";
 import { authorizeTeamAccess, authorizeTeamPermission } from "@/lib/permissions";
-import { parseLocationPayload } from "@/lib/validation";
+import { parseLocationPayload } from "@/lib/contracts/schemas";
 import type { Location } from "@/db/schema";
 import type { ServiceResult } from "@/lib/services/types";
 import {

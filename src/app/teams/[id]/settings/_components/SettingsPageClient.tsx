@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/ui/use-toast-simple";
-import { isValidEmail } from "@/lib/validation";
+import { isValidEmail } from "@/lib/contracts/schemas";
 import { AddUserToTeamsModal } from "@/components/AddUserToTeamsModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { ERROR_CODES } from "@/lib/errors";

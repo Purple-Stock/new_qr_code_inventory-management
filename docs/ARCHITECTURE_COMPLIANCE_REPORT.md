@@ -8,7 +8,7 @@
 
 ## 📊 Resumo Executivo
 
-**Conformidade Geral**: ✅ **94%** - Alta conformidade
+**Conformidade Geral**: ✅ **95%** - Alta conformidade
 
 Este relatório foi atualizado após a implementação dos itens críticos de arquitetura (segurança de acesso, consistência transacional, redução de N+1, avanço em Server Components e aumento de testes).
 
@@ -194,6 +194,22 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 - Cobertura de serviço ampliada:
   - `src/__tests__/lib/services/stock-transactions.service.test.ts` com cenário de delete autorizado.
 
+### 14. Contratos de entrada unificados em camada de schemas (Concluído)
+
+- Foi criada uma camada central de contratos/parsing:
+  - `src/lib/contracts/schemas.ts`
+- Serviços e rotas passaram a consumir os schemas compartilhados diretamente:
+  - `src/lib/services/teams.ts`
+  - `src/lib/services/items.ts`
+  - `src/lib/services/locations.ts`
+  - `src/lib/services/stock-transactions.ts`
+  - `src/lib/services/users.ts`
+  - `src/app/api/auth/login/route.ts`
+  - `src/app/api/auth/signup/route.ts`
+  - `src/app/api/users/me/password/route.ts`
+- `src/lib/validation.ts` foi mantido como facade de compatibilidade (re-export), para evitar quebra de imports legados durante a migração gradual.
+- Resultado: o contrato de entrada e mensagens de validação deixam de ficar espalhados e passam a ter fonte única para API Routes, Services e componentes que precisam de validação comum (ex.: email em settings).
+
 ---
 
 ## ✅ Validação Executada
@@ -205,11 +221,11 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 
 ## ⚠️ Pendências Relevantes
 
-1. Existe oportunidade de unificar ainda mais validações de input em schema formal único (ex.: Zod compartilhado para API + Actions + forms).
-2. Parte das páginas server-side ainda consulta `db/*` direto para leitura; pode evoluir para uso consistente de serviços de leitura em telas críticas.
+1. Parte das páginas server-side ainda consulta `db/*` direto para leitura; pode evoluir para uso consistente de serviços de leitura em telas críticas.
+2. Pode haver evolução futura para schema declarativo com geração de tipos e mensagens localizadas (caso queiram ampliar i18n de erros de validação).
 
 ---
 
 ## Próxima Meta Recomendada
 
-**Meta de curto prazo**: consolidar contratos de entrada com schema único e ampliar adoção da camada de serviços para leituras server-side.
+**Meta de curto prazo**: ampliar adoção da camada de serviços para leituras server-side e padronizar contratos de saída (DTOs de resposta) por domínio.

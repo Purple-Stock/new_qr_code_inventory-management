@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserIdFromRequest } from "@/lib/permissions";
 import { verifyPassword } from "@/lib/auth";
 import { findUserById, updateUserPassword } from "@/lib/db/users";
-import { parsePasswordChangePayload } from "@/lib/validation";
+import { parsePasswordChangePayload } from "@/lib/contracts/schemas";
 import { ERROR_CODES, errorPayload } from "@/lib/errors";
 import { errorResponse, internalErrorResponse, successResponse } from "@/lib/api-route";
 

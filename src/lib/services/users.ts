@@ -15,7 +15,7 @@ import {
 } from "@/lib/db/team-members";
 import { ERROR_CODES } from "@/lib/errors";
 import { authorizeTeamPermission, isUserRole } from "@/lib/permissions";
-import { isValidEmail, normalizeEmail } from "@/lib/validation";
+import { isValidEmail, normalizeEmail } from "@/lib/contracts/schemas";
 import type { ServiceResult } from "@/lib/services/types";
 import {
   authServiceError,

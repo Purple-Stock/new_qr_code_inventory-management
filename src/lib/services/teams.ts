@@ -12,7 +12,7 @@ import {
   authorizeTeamAccess,
   authorizeTeamPermission,
 } from "@/lib/permissions";
-import { parseTeamCreatePayload, parseTeamUpdatePayload } from "@/lib/validation";
+import { parseTeamCreatePayload, parseTeamUpdatePayload } from "@/lib/contracts/schemas";
 import type { Team } from "@/db/schema";
 import type { ServiceResult } from "@/lib/services/types";
 import {

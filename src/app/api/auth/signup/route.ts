@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findUserByEmail } from "@/lib/db/users";
 import { onboardCompanyOwner } from "@/lib/db/onboarding";
-import { parseSignupPayload } from "@/lib/validation";
+import { parseSignupPayload } from "@/lib/contracts/schemas";
 import { setSessionCookie } from "@/lib/session";
 import { ERROR_CODES, errorPayload } from "@/lib/errors";
 import { errorResponse, internalErrorResponse, successResponse } from "@/lib/api-route";

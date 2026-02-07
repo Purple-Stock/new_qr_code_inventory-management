@@ -2,7 +2,7 @@ import { createStockTransaction } from "@/lib/db/stock-transactions";
 import { getTeamWithStats } from "@/lib/db/teams";
 import { ERROR_CODES } from "@/lib/errors";
 import { authorizeTeamPermission } from "@/lib/permissions";
-import { parseStockTransactionPayload } from "@/lib/validation";
+import { parseStockTransactionPayload } from "@/lib/contracts/schemas";
 import type { ServiceResult } from "@/lib/services/types";
 import {
   authServiceError,
