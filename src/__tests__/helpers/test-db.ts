@@ -6,7 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const testHelpersDir = path.dirname(__filename);
 
 let testDb: Database.Database | null = null;
 let testDrizzle: ReturnType<typeof drizzle> | null = null;
@@ -30,7 +30,7 @@ export function getTestDb(): {
   testDrizzle = drizzle(testDb, { schema });
 
   // Run migrations
-  const migrationsDir = path.resolve(__dirname, "../../db/migrations");
+  const migrationsDir = path.resolve(testHelpersDir, "../../db/migrations");
   const migrationFiles = fs
     .readdirSync(migrationsDir)
     .filter((file) => file.endsWith(".sql"))

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTeamWithStats, updateTeam, deleteTeam } from "@/lib/db/teams";
-import { authorizeTeamPermission, getUserIdFromRequest } from "@/lib/permissions";
+import {
+  authorizeTeamAccess,
+  authorizeTeamPermission,
+  getUserIdFromRequest,
+} from "@/lib/permissions";
 
 export async function GET(
   request: NextRequest,
@@ -17,16 +21,15 @@ export async function GET(
       );
     }
 
-    const team = await getTeamWithStats(teamId);
-
-    if (!team) {
-      return NextResponse.json(
-        { error: "Team not found" },
-        { status: 404 }
-      );
+    const auth = await authorizeTeamAccess({
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    return NextResponse.json({ team }, { status: 200 });
+    return NextResponse.json({ team: auth.team }, { status: 200 });
   } catch (error) {
     console.error("Error fetching team:", error);
     return NextResponse.json(

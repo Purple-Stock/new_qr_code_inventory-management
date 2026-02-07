@@ -59,6 +59,51 @@ export function getUserIdFromRequest(request: NextRequest): number | null {
   return getUserIdFromSessionCookie(request);
 }
 
+async function getTeamAccessContext(params: {
+  teamId: number;
+  requestUserId?: number | null;
+}) {
+  if (!params.requestUserId) {
+    return { ok: false, status: 401, error: "User not authenticated" as const };
+  }
+
+  const team = await getTeamWithStats(params.teamId);
+  if (!team) {
+    return { ok: false, status: 404, error: "Team not found" as const };
+  }
+
+  const user = await findUserById(params.requestUserId);
+  if (!user) {
+    return { ok: false, status: 401, error: "User not authenticated" as const };
+  }
+
+  const [membership] = await sqlite
+    .select({ role: teamMembers.role })
+    .from(teamMembers)
+    .where(
+      and(
+        eq(teamMembers.teamId, params.teamId),
+        eq(teamMembers.userId, params.requestUserId),
+        eq(teamMembers.status, "active")
+      )
+    )
+    .limit(1);
+
+  const teamRole: TeamMemberRole | null = membership?.role ?? null;
+  if (!teamRole) {
+    return { ok: false, status: 403, error: "Forbidden" as const };
+  }
+
+  return { ok: true as const, team, user, teamRole };
+}
+
+export async function authorizeTeamAccess(params: {
+  teamId: number;
+  requestUserId?: number | null;
+}) {
+  return getTeamAccessContext(params);
+}
+
 export async function authorizePermission(params: {
   permission: Permission;
   targetUserId: number;
@@ -91,41 +136,15 @@ export async function authorizeTeamPermission(params: {
   teamId: number;
   requestUserId?: number | null;
 }) {
-  if (!params.requestUserId) {
-    return { ok: false, status: 401, error: "User not authenticated" as const };
+  const access = await getTeamAccessContext(params);
+  if (!access.ok) {
+    return access;
   }
 
-  const team = await getTeamWithStats(params.teamId);
-  if (!team) {
-    return { ok: false, status: 404, error: "Team not found" as const };
-  }
-
-  const user = await findUserById(params.requestUserId);
-  if (!user) {
-    return { ok: false, status: 401, error: "User not authenticated" as const };
-  }
-
-  const [membership] = await sqlite
-    .select({ role: teamMembers.role })
-    .from(teamMembers)
-    .where(
-      and(
-        eq(teamMembers.teamId, params.teamId),
-        eq(teamMembers.userId, params.requestUserId),
-        eq(teamMembers.status, "active")
-      )
-    )
-    .limit(1);
-
-  const teamRole: TeamMemberRole | null = membership?.role ?? null;
-
-  if (!teamRole) {
-    return { ok: false, status: 403, error: "Forbidden" as const };
-  }
-
+  const teamRole = access.teamRole as TeamMemberRole;
   if (!canTeam(teamRole, params.permission)) {
     return { ok: false, status: 403, error: "Insufficient permissions" as const };
   }
 
-  return { ok: true as const, team, user, teamRole };
+  return { ok: true as const, team: access.team, user: access.user, teamRole };
 }

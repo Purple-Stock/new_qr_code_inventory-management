@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTeamStockTransactionsWithDetails } from "@/lib/db/stock-transactions";
-import { getTeamWithStats } from "@/lib/db/teams";
+import { authorizeTeamAccess, getUserIdFromRequest } from "@/lib/permissions";
 
 export async function GET(
   request: NextRequest,
@@ -17,13 +17,12 @@ export async function GET(
       );
     }
 
-    // Verify team exists
-    const team = await getTeamWithStats(teamId);
-    if (!team) {
-      return NextResponse.json(
-        { error: "Team not found" },
-        { status: 404 }
-      );
+    const auth = await authorizeTeamAccess({
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     // Get search query from URL params

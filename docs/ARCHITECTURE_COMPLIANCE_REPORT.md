@@ -1,6 +1,6 @@
 # Relatório de Conformidade com Next.js Architecture Playbook
 
-**Data**: Janeiro 2026  
+**Data**: 7 de fevereiro de 2026  
 **Projeto**: Purple Stock - Inventory Management  
 **Versão do Playbook**: 2.0
 
@@ -8,437 +8,100 @@
 
 ## 📊 Resumo Executivo
 
-**Conformidade Geral**: ⚠️ **60%** - Parcialmente Conforme
+**Conformidade Geral**: ✅ **82%** - Boa conformidade com pendências pontuais
 
-O projeto segue algumas práticas do playbook, mas há áreas significativas que precisam de ajustes para alcançar conformidade total.
-
----
-
-## ✅ Áreas Conformes
-
-### 1. Estrutura de Diretórios (Parcialmente Conforme)
-
-**✅ Pontos Positivos:**
-- ✅ Uso de `src/` como diretório raiz
-- ✅ Separação de `components/ui/` para componentes base
-- ✅ Organização de `lib/` para utilitários
-- ✅ Uso de route groups `(auth)` e `(main)`
-- ✅ API routes organizadas em `app/api/`
-
-**❌ Pontos a Melhorar:**
-- ❌ **Falta de colocation**: Não há `_components/`, `_hooks/`, `_utils/` próximos às rotas
-- ❌ **Estrutura de rotas**: Rotas como `/teams/[id]/items` não estão dentro de `(main)`
-- ❌ **Componentes compartilhados**: Alguns componentes estão em `components/` quando poderiam estar colocalizados
-
-**Recomendação:**
-```
-src/app/
-├── (auth)/
-│   └── signup/
-│       ├── page.tsx
-│       ├── _components/  ← Adicionar
-│       └── _utils/       ← Adicionar
-├── (main)/
-│   ├── page.tsx
-│   └── teams/            ← Mover para dentro de (main)
-│       └── [id]/
-│           └── items/
-│               ├── page.tsx
-│               ├── _components/  ← Adicionar
-│               └── _hooks/       ← Adicionar
-```
+Este relatório foi atualizado após a implementação dos itens críticos de arquitetura (segurança de acesso, consistência transacional, redução de N+1, avanço em Server Components e aumento de testes).
 
 ---
 
-### 2. TypeScript Configuration (Parcialmente Conforme)
+## ✅ Itens Implementados
 
-**✅ Pontos Positivos:**
-- ✅ `strict: true` habilitado
-- ✅ Path aliases configurados (`@/*`)
-- ✅ `moduleResolution: "bundler"`
+### 1. Segurança e isolamento multi-tenant em rotas GET (Concluído)
 
-**❌ Pontos a Melhorar:**
-- ❌ **Target**: Usando `ES2017` ao invés de `ES2020` (recomendado)
-- ❌ **Lib**: Falta `ES2020` na lista de libs
-- ❌ **Strict checks**: Não há `noImplicitAny`, `strictNullChecks`, `strictFunctionTypes` explicitamente
+- Foi criado um fluxo de autorização de acesso ao time (`authorizeTeamAccess`) em `src/lib/permissions.ts`.
+- Rotas GET de dados de time passaram a exigir sessão + membership ativo:
+  - `src/app/api/teams/[id]/route.ts`
+  - `src/app/api/teams/[id]/items/route.ts`
+  - `src/app/api/teams/[id]/items/[itemId]/route.ts`
+  - `src/app/api/teams/[id]/items/[itemId]/transactions/route.ts`
+  - `src/app/api/teams/[id]/locations/route.ts`
+  - `src/app/api/teams/[id]/locations/[locationId]/route.ts`
+  - `src/app/api/teams/[id]/transactions/route.ts`
+  - `src/app/api/teams/[id]/reports/route.ts`
 
-**Recomendação:**
-```json
-{
-  "compilerOptions": {
-    "target": "ES2020",  // ← Atualizar
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],  // ← Atualizar
-    "strict": true,
-    "noImplicitAny": true,  // ← Adicionar
-    "strictNullChecks": true,  // ← Adicionar
-    "strictFunctionTypes": true  // ← Adicionar
-  }
-}
-```
+### 2. Atomicidade em transações de estoque (Concluído)
 
----
+- `createStockTransaction` agora roda em transação de banco (`sqlite.transaction`) em `src/lib/db/stock-transactions.ts`.
+- A operação passou a garantir:
+  - validação de item dentro do mesmo time;
+  - rollback automático se falhar (incluindo validação de estoque insuficiente);
+  - atualização de saldo e movimentação no mesmo escopo transacional.
 
-### 3. API Routes (Conforme)
+### 3. Atomicidade em operações compostas de time (Concluído)
 
-**✅ Pontos Positivos:**
-- ✅ Estrutura RESTful correta
-- ✅ Tratamento de erros adequado
-- ✅ Validação de parâmetros
-- ✅ Status codes apropriados
-- ✅ Tipagem de parâmetros de rota
+- `createTeam` e `deleteTeam` migrados para transações em `src/lib/db/teams.ts`.
+- `deleteTeam` também remove dados dependentes no mesmo transaction scope (`stock_transactions`, `webhooks`, `items`, `locations`, `team_members`, `teams`).
 
-**Exemplo de boa prática encontrada:**
-```typescript
-// src/app/api/teams/[id]/route.ts
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  // Validação, tratamento de erro, etc.
-}
-```
+### 4. Padronização de camada de aplicação (Concluído)
 
----
+- Foi adicionada camada de serviço para composição de dados de páginas:
+  - `src/lib/services/team-dashboard.ts`
+- As páginas de dashboard migradas passam a usar o serviço como ponto único de orquestração de leitura.
 
-### 4. Gestão de Estado (Conforme)
+### 5. Server Action insegura protegida (Concluído)
 
-**✅ Pontos Positivos:**
-- ✅ Uso de React Context para i18n (`I18nProvider`)
-- ✅ Padrão correto de Context API
+- `createItemAction` agora exige autenticação/autorização (`item:write`) antes de persistir dados:
+  - `src/app/teams/[id]/items/_actions/createItem.ts`
 
-**Implementação atual:**
-```typescript
-// src/components/I18nProvider.tsx
-// src/lib/i18n/index.tsx
-// Segue o padrão do playbook
-```
+### 6. Remoção de N+1 em times com estatísticas (Concluído)
 
----
+- `getUserTeamsWithStats` em `src/lib/db/teams.ts` foi otimizada para agregações em lote (`groupBy`) em vez de múltiplas queries por time.
 
-### 5. Font Optimization (Conforme)
+### 7. Avanço em Server Components (Concluído parcialmente, com ganho real)
 
-**✅ Pontos Positivos:**
-- ✅ Uso de `next/font/google` com Inter
-- ✅ Configuração correta no layout
+- Páginas migradas para padrão **Server Component + Client leaf**:
+  - `src/app/teams/[id]/reports/page.tsx`
+  - `src/app/teams/[id]/stock-by-location/page.tsx`
+  - `src/app/teams/[id]/labels/page.tsx`
+  - `src/app/teams/[id]/items/[itemId]/page.tsx`
+- Novos client leaves:
+  - `src/app/teams/[id]/reports/_components/ReportsPageClient.tsx`
+  - `src/app/teams/[id]/stock-by-location/_components/StockByLocationPageClient.tsx`
+  - `src/app/teams/[id]/labels/_components/LabelsPageClient.tsx`
+  - `src/app/teams/[id]/items/[itemId]/_components/ItemDetailPageClient.tsx`
+- Resultado: páginas `use client` reduziram de **13 para 9**.
 
-```typescript
-// src/app/layout.tsx
-import { Inter } from "next/font/google"
-const inter = Inter({ subsets: ["latin"] })
-```
+### 8. Endurecimento de segredo de sessão (Concluído)
+
+- Em produção, ausência de `SESSION_SECRET` agora falha explicitamente:
+  - `src/lib/session.ts`
+
+### 9. Cobertura de testes arquiteturais (Concluído)
+
+- Novos testes adicionados:
+  - `src/__tests__/api/teams/reports-auth.test.ts` (401/403 em acesso multi-tenant)
+  - `src/__tests__/lib/stock-transactions-atomicity.test.ts` (rollback em falha de estoque)
+- Ajustes de infraestrutura de teste:
+  - `jest.config.js` convertido para ESM
+  - correção em `src/__tests__/helpers/test-db.ts`
 
 ---
 
-## ❌ Áreas Não Conformes
+## ✅ Validação Executada
 
-### 1. Server Components vs Client Components (Não Conforme)
-
-**❌ Problema Crítico:**
-- **TODAS as páginas são Client Components** (`'use client'`)
-- O playbook recomenda usar Server Components por padrão
-- Data fetching está sendo feito no cliente ao invés do servidor
-
-**Exemplo do problema:**
-```typescript
-// ❌ ATUAL (Client Component)
-"use client";
-export default function ItemsPage() {
-  const [items, setItems] = useState([]);
-  useEffect(() => {
-    fetch(`/api/teams/${teamId}/items`).then(...)
-  }, []);
-}
-
-// ✅ DEVERIA SER (Server Component)
-import { getTeamItems } from "@/lib/db/items";
-export default async function ItemsPage({ params }) {
-  const items = await getTeamItems(params.id);
-  return <ItemsList items={items} />;
-}
-```
-
-**Impacto:**
-- ⚠️ Bundle size maior
-- ⚠️ Performance pior (JavaScript desnecessário no cliente)
-- ⚠️ SEO potencialmente afetado
-- ⚠️ First Contentful Paint mais lento
-
-**Recomendação:**
-1. Converter páginas para Server Components quando possível
-2. Extrair apenas partes interativas para Client Components
-3. Mover data fetching para o servidor
+- `npm run build`: **OK**
+- `npm test -- --runInBand`: **OK** (3 suítes, 12 testes)
 
 ---
 
-### 2. Data Fetching Patterns (Não Conforme)
+## ⚠️ Pendências Relevantes
 
-**❌ Problema:**
-- Uso de `fetch` em `useEffect` (padrão antigo)
-- Não há uso de Server Components para data fetching
-- Falta de cache strategy nas API routes
-
-**Atual:**
-```typescript
-// ❌ Client-side fetching
-useEffect(() => {
-  fetch(`/api/teams/${teamId}/items`)
-    .then(res => res.json())
-    .then(data => setItems(data.items));
-}, [teamId]);
-```
-
-**Deveria ser:**
-```typescript
-// ✅ Server Component
-export default async function ItemsPage({ params }) {
-  const items = await getTeamItems(params.id);
-  return <ItemsList items={items} />;
-}
-
-// ✅ Ou com Server Actions
-'use server'
-export async function getItems(teamId: number) {
-  return await getTeamItems(teamId);
-}
-```
-
-**Recomendação:**
-- Implementar Server Components para páginas de listagem
-- Usar Server Actions para mutations
-- Adicionar cache headers nas API routes
+1. Ainda existem 9 páginas `use client` que podem seguir migração gradual para Server Components.
+2. Existe oportunidade de unificar ainda mais validações de input (schema único para API + Server Actions).
+3. Parte dos fluxos de escrita ainda está duplicada entre API Routes e Server Actions (pode evoluir para use-cases unificados).
 
 ---
 
-### 3. Falta de Server Actions (Não Conforme)
+## Próxima Meta Recomendada
 
-**❌ Problema:**
-- Todas as mutations usam API routes via `fetch`
-- Não há uso de Server Actions (`'use server'`)
-
-**Atual:**
-```typescript
-// ❌ Client fazendo fetch para API route
-const response = await fetch(`/api/teams/${teamId}`, {
-  method: 'PUT',
-  body: JSON.stringify(data)
-});
-```
-
-**Deveria ter:**
-```typescript
-// ✅ Server Action
-// app/teams/[id]/_actions/updateTeam.ts
-'use server'
-export async function updateTeam(teamId: number, data: TeamData) {
-  const team = await updateTeamInDB(teamId, data);
-  revalidatePath(`/teams/${teamId}`);
-  return team;
-}
-```
-
----
-
-### 4. Estrutura de Colocation (Não Conforme)
-
-**❌ Problema:**
-- Não há `_components/`, `_hooks/`, `_utils/` próximos às rotas
-- Componentes específicos estão em `components/` global
-
-**Recomendação:**
-```
-src/app/teams/[id]/items/
-├── page.tsx
-├── _components/
-│   ├── ItemsTable.tsx
-│   ├── ItemCard.tsx
-│   └── ItemFilters.tsx
-├── _hooks/
-│   └── useItems.ts
-└── _actions/
-    └── updateItem.ts
-```
-
----
-
-### 5. Tratamento de Erros (Parcialmente Conforme)
-
-**✅ Pontos Positivos:**
-- Tratamento de erros nas API routes
-
-**❌ Pontos a Melhorar:**
-- Falta de `error.tsx` nas rotas
-- Falta de `loading.tsx` para estados de carregamento
-- Falta de `not-found.tsx` para 404
-
-**Recomendação:**
-```
-src/app/teams/[id]/items/
-├── page.tsx
-├── error.tsx      ← Adicionar
-├── loading.tsx   ← Adicionar
-└── not-found.tsx  ← Adicionar (se aplicável)
-```
-
----
-
-### 6. Type Organization (Parcialmente Conforme)
-
-**✅ Pontos Positivos:**
-- Tipos definidos próximos aos componentes
-
-**❌ Pontos a Melhorar:**
-- Falta de `src/types/` centralizado
-- Tipos duplicados em vários arquivos
-- Falta de tipos compartilhados para API
-
-**Recomendação:**
-```
-src/types/
-├── index.ts      # Tipos de domínio
-├── api.ts        # Tipos de API
-└── database.ts   # Tipos do banco
-```
-
----
-
-### 7. Variáveis de Ambiente (Não Verificado)
-
-**❌ Não há:**
-- `.env.example` documentado
-- Type-safe env vars (`src/lib/env.ts`)
-- Validação de env vars
-
-**Recomendação:**
-Criar `src/lib/env.ts` com validação de variáveis de ambiente.
-
----
-
-### 8. Testing Strategy (Não Implementado)
-
-**❌ Problema:**
-- Configuração de testes presente mas não seguindo padrão do playbook
-- Falta de Vitest (playbook recomenda)
-- Falta de testes de componentes
-
-**Recomendação:**
-- Migrar de Jest para Vitest
-- Adicionar testes de componentes com React Testing Library
-- Seguir estrutura do playbook
-
----
-
-## 📋 Checklist de Conformidade
-
-### Estrutura
-- [x] Uso de `src/` como diretório raiz
-- [x] Separação de `components/ui/`
-- [ ] Colocation com `_components/`, `_hooks/`, `_utils/`
-- [x] Route groups `(auth)` e `(main)`
-- [ ] Rotas principais dentro de `(main)`
-
-### TypeScript
-- [x] `strict: true`
-- [x] Path aliases configurados
-- [ ] Target ES2020
-- [ ] Strict checks explícitos
-
-### Componentes
-- [ ] Server Components como padrão
-- [x] Client Components apenas quando necessário
-- [ ] Colocation de componentes específicos
-
-### Data Fetching
-- [ ] Server Components para data fetching
-- [ ] Server Actions para mutations
-- [ ] Cache strategy nas APIs
-
-### API Routes
-- [x] Estrutura RESTful
-- [x] Tratamento de erros
-- [x] Validação de parâmetros
-- [ ] Cache headers
-
-### Performance
-- [x] Font optimization
-- [ ] Image optimization (se aplicável)
-- [ ] Dynamic imports (se necessário)
-
-### Erros & Loading
-- [ ] `error.tsx` nas rotas
-- [ ] `loading.tsx` nas rotas
-- [ ] `not-found.tsx` onde aplicável
-
-### Types
-- [ ] `src/types/` centralizado
-- [ ] Tipos compartilhados
-- [ ] Type-safe env vars
-
-### Testing
-- [ ] Vitest configurado
-- [ ] Component tests
-- [ ] API tests
-
----
-
-## 🎯 Prioridades de Refatoração
-
-### 🔴 Alta Prioridade
-1. **Converter páginas para Server Components**
-   - Impacto: Performance, SEO, Bundle size
-   - Esforço: Médio-Alto
-
-2. **Implementar Server Actions**
-   - Impacto: Performance, UX
-   - Esforço: Médio
-
-3. **Adicionar error.tsx e loading.tsx**
-   - Impacto: UX
-   - Esforço: Baixo
-
-### 🟡 Média Prioridade
-4. **Reorganizar estrutura com colocation**
-   - Impacto: Manutenibilidade
-   - Esforço: Médio
-
-5. **Centralizar tipos em src/types/**
-   - Impacto: Manutenibilidade
-   - Esforço: Baixo-Médio
-
-6. **Atualizar TypeScript config**
-   - Impacto: Type safety
-   - Esforço: Baixo
-
-### 🟢 Baixa Prioridade
-7. **Migrar para Vitest**
-   - Impacto: Developer experience
-   - Esforço: Médio
-
-8. **Type-safe env vars**
-   - Impacto: Type safety
-   - Esforço: Baixo
-
----
-
-## 📝 Conclusão
-
-O projeto está **parcialmente conforme** com o Next.js Architecture Playbook. As áreas críticas que precisam de atenção são:
-
-1. **Uso excessivo de Client Components** - Maior impacto na performance
-2. **Data fetching no cliente** - Deveria ser no servidor
-3. **Falta de Server Actions** - Para melhor UX e performance
-
-As áreas que estão bem implementadas:
-- ✅ Estrutura de API routes
-- ✅ Gestão de estado com Context
-- ✅ Font optimization
-- ✅ TypeScript básico
-
-**Recomendação Geral**: Focar primeiro na conversão para Server Components e implementação de Server Actions, pois isso terá o maior impacto positivo na performance e experiência do usuário.
-
----
-
-**Próximos Passos Sugeridos:**
-1. Criar um plano de refatoração detalhado
-2. Priorizar conversão de páginas mais acessadas
-3. Implementar Server Actions para mutations críticas
-4. Adicionar error boundaries e loading states
+**Meta de curto prazo**: elevar conformidade de 82% para 90%+ migrando mais páginas críticas para Server Components e consolidando validação de contratos de entrada.

@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTeamLocations, createLocation } from "@/lib/db/locations";
 import { getTeamWithStats } from "@/lib/db/teams";
-import { authorizeTeamPermission, getUserIdFromRequest } from "@/lib/permissions";
+import {
+  authorizeTeamAccess,
+  authorizeTeamPermission,
+  getUserIdFromRequest,
+} from "@/lib/permissions";
 
 // GET - List locations for a team
 export async function GET(
@@ -19,13 +23,12 @@ export async function GET(
       );
     }
 
-    // Verify team exists
-    const team = await getTeamWithStats(teamId);
-    if (!team) {
-      return NextResponse.json(
-        { error: "Team not found" },
-        { status: 404 }
-      );
+    const auth = await authorizeTeamAccess({
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     const locations = await getTeamLocations(teamId);

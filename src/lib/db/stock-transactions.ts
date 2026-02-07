@@ -1,6 +1,6 @@
 import { sqlite } from "@/db/client";
 import { stockTransactions, items, users, locations } from "@/db/schema";
-import { eq, desc, and, or, like, inArray } from "drizzle-orm";
+import { eq, desc, and, inArray } from "drizzle-orm";
 import type { StockTransaction, StockTransactionType } from "@/db/schema";
 
 /**
@@ -16,53 +16,56 @@ export async function createStockTransaction(data: {
   sourceLocationId?: number | null;
   destinationLocationId?: number | null;
 }): Promise<StockTransaction> {
-  // Create transaction
-  const [transaction] = await sqlite
-    .insert(stockTransactions)
-    .values({
-      itemId: data.itemId,
-      teamId: data.teamId,
-      transactionType: data.transactionType,
-      quantity: data.quantity,
-      notes: data.notes || null,
-      userId: data.userId,
-      sourceLocationId: data.sourceLocationId || null,
-      destinationLocationId: data.destinationLocationId || null,
-    })
-    .returning();
+  return sqlite.transaction(async (tx) => {
+    const [item] = await tx
+      .select()
+      .from(items)
+      .where(and(eq(items.id, data.itemId), eq(items.teamId, data.teamId)))
+      .limit(1);
 
-  // Update item stock based on transaction type
-  const item = await sqlite
-    .select()
-    .from(items)
-    .where(eq(items.id, data.itemId))
-    .limit(1);
+    if (!item) {
+      throw new Error("Item not found for team");
+    }
 
-  if (item.length > 0) {
-    const currentItem = item[0];
-    let newStock = currentItem.currentStock || 0;
-    let newLocationId = currentItem.locationId;
+    let newStock = item.currentStock || 0;
+    let newLocationId = item.locationId;
 
     if (data.transactionType === "stock_in") {
       newStock += data.quantity;
-      // Update location if provided
       if (data.destinationLocationId) {
         newLocationId = data.destinationLocationId;
       }
     } else if (data.transactionType === "stock_out") {
+      if (newStock < data.quantity) {
+        throw new Error("Insufficient stock for stock out");
+      }
       newStock -= data.quantity;
     } else if (data.transactionType === "adjust") {
       newStock = data.quantity;
+      if (data.destinationLocationId) {
+        newLocationId = data.destinationLocationId;
+      }
     } else if (data.transactionType === "move") {
-      // For move, stock doesn't change, only location changes
-      // Update location to destination
       if (data.destinationLocationId) {
         newLocationId = data.destinationLocationId;
       }
     }
 
-    // Update item stock and location
-    await sqlite
+    const [transaction] = await tx
+      .insert(stockTransactions)
+      .values({
+        itemId: data.itemId,
+        teamId: data.teamId,
+        transactionType: data.transactionType,
+        quantity: data.quantity,
+        notes: data.notes || null,
+        userId: data.userId,
+        sourceLocationId: data.sourceLocationId || null,
+        destinationLocationId: data.destinationLocationId || null,
+      })
+      .returning();
+
+    await tx
       .update(items)
       .set({
         currentStock: Math.max(0, newStock),
@@ -70,9 +73,9 @@ export async function createStockTransaction(data: {
         updatedAt: new Date(),
       })
       .where(eq(items.id, data.itemId));
-  }
 
-  return transaction;
+    return transaction;
+  });
 }
 
 /**

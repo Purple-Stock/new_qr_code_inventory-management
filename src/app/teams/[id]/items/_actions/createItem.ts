@@ -2,6 +2,9 @@
 
 import { createItem } from "@/lib/db/items";
 import { revalidatePath } from "next/cache";
+import { authorizeTeamPermission } from "@/lib/permissions";
+import { cookies } from "next/headers";
+import { getUserIdFromSessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
 
 export async function createItemAction(
   teamId: number,
@@ -20,6 +23,18 @@ export async function createItemAction(
   }
 ) {
   try {
+    const requestUserId = getUserIdFromSessionToken(
+      (await cookies()).get(SESSION_COOKIE_NAME)?.value
+    );
+    const auth = await authorizeTeamPermission({
+      permission: "item:write",
+      teamId,
+      requestUserId,
+    });
+    if (!auth.ok) {
+      return { success: false, error: auth.error };
+    }
+
     const item = await createItem({
       ...data,
       teamId,

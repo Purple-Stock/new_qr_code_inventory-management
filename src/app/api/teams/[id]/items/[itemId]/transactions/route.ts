@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getItemStockTransactionsWithDetails } from "@/lib/db/stock-transactions";
 import { getItemById } from "@/lib/db/items";
-import { getTeamWithStats } from "@/lib/db/teams";
+import { authorizeTeamAccess, getUserIdFromRequest } from "@/lib/permissions";
 
 interface RouteParams {
   params: Promise<{ id: string; itemId: string }>;
@@ -20,9 +20,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const team = await getTeamWithStats(teamId);
-    if (!team) {
-      return NextResponse.json({ error: "Team not found" }, { status: 404 });
+    const auth = await authorizeTeamAccess({
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     const item = await getItemById(itemId);

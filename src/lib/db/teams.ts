@@ -1,5 +1,5 @@
 import { sqlite } from "@/db/client";
-import { teams, items, stockTransactions, locations, teamMembers } from "@/db/schema";
+import { teams, items, stockTransactions, locations, teamMembers, webhooks } from "@/db/schema";
 import { and, eq, count, inArray } from "drizzle-orm";
 import type { Team } from "@/db/schema";
 
@@ -38,31 +38,32 @@ export async function createTeam(data: {
   userId: number;
   companyId: number;
 }): Promise<Team> {
-  const [team] = await sqlite
-    .insert(teams)
-    .values({
-      name: data.name,
-      notes: data.notes || null,
+  return sqlite.transaction(async (tx) => {
+    const [team] = await tx
+      .insert(teams)
+      .values({
+        name: data.name,
+        notes: data.notes || null,
+        userId: data.userId,
+        companyId: data.companyId,
+      })
+      .returning();
+
+    await tx.insert(locations).values({
+      name: "Default Location",
+      description: "Default location for all items",
+      teamId: team.id,
+    });
+
+    await tx.insert(teamMembers).values({
+      teamId: team.id,
       userId: data.userId,
-      companyId: data.companyId,
-    })
-    .returning();
+      role: "admin",
+      status: "active",
+    });
 
-  // Create default location for the team (like Rails model does)
-  await sqlite.insert(locations).values({
-    name: "Default Location",
-    description: "Default location for all items",
-    teamId: team.id,
+    return team;
   });
-
-  await sqlite.insert(teamMembers).values({
-    teamId: team.id,
-    userId: data.userId,
-    role: "admin",
-    status: "active",
-  });
-
-  return team;
 }
 
 /**
@@ -138,19 +139,43 @@ export async function getUserTeamsWithStats(userId: number) {
     .from(teams)
     .where(inArray(teams.id, memberTeamIds));
 
-  const teamsWithStats = await Promise.all(
-    userTeams.map(async (team) => {
-      const stats = await getTeamWithStats(team.id);
-      return (
-        stats || {
-          ...team,
-          itemCount: 0,
-          transactionCount: 0,
-          memberCount: 0,
-        }
-      );
-    })
+  const teamIds = userTeams.map((team) => team.id);
+
+  const [itemCounts, transactionCounts, memberCounts] = await Promise.all([
+    sqlite
+      .select({ teamId: items.teamId, count: count() })
+      .from(items)
+      .where(inArray(items.teamId, teamIds))
+      .groupBy(items.teamId),
+    sqlite
+      .select({ teamId: stockTransactions.teamId, count: count() })
+      .from(stockTransactions)
+      .where(inArray(stockTransactions.teamId, teamIds))
+      .groupBy(stockTransactions.teamId),
+    sqlite
+      .select({ teamId: teamMembers.teamId, count: count() })
+      .from(teamMembers)
+      .where(
+        and(
+          inArray(teamMembers.teamId, teamIds),
+          eq(teamMembers.status, "active")
+        )
+      )
+      .groupBy(teamMembers.teamId),
+  ]);
+
+  const itemCountByTeam = new Map(itemCounts.map((row) => [row.teamId, row.count]));
+  const transactionCountByTeam = new Map(
+    transactionCounts.map((row) => [row.teamId, row.count])
   );
+  const memberCountByTeam = new Map(memberCounts.map((row) => [row.teamId, row.count]));
+
+  const teamsWithStats = userTeams.map((team) => ({
+    ...team,
+    itemCount: itemCountByTeam.get(team.id) || 0,
+    transactionCount: transactionCountByTeam.get(team.id) || 0,
+    memberCount: memberCountByTeam.get(team.id) || 0,
+  }));
 
   return teamsWithStats.map((team) => {
     const teamRole = teamRoleById.get(team.id);
@@ -198,28 +223,14 @@ export async function deleteTeam(teamId: number): Promise<boolean> {
     return false;
   }
 
-  // Delete in order: stock_transactions, items, locations, then team
-  // This order respects foreign key constraints
-  
-  // Delete stock transactions
-  await sqlite
-    .delete(stockTransactions)
-    .where(eq(stockTransactions.teamId, teamId));
+  return sqlite.transaction(async (tx) => {
+    await tx.delete(stockTransactions).where(eq(stockTransactions.teamId, teamId));
+    await tx.delete(webhooks).where(eq(webhooks.teamId, teamId));
+    await tx.delete(items).where(eq(items.teamId, teamId));
+    await tx.delete(locations).where(eq(locations.teamId, teamId));
+    await tx.delete(teamMembers).where(eq(teamMembers.teamId, teamId));
 
-  // Delete items
-  await sqlite
-    .delete(items)
-    .where(eq(items.teamId, teamId));
-
-  // Delete locations
-  await sqlite
-    .delete(locations)
-    .where(eq(locations.teamId, teamId));
-
-  // Delete team
-  const result = await sqlite
-    .delete(teams)
-    .where(eq(teams.id, teamId));
-
-  return result.changes > 0;
+    const result = await tx.delete(teams).where(eq(teams.id, teamId));
+    return result.changes > 0;
+  });
 }

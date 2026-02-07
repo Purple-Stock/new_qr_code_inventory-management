@@ -10,7 +10,15 @@ type SessionPayload = {
 };
 
 function getSessionSecret(): string {
-  return process.env.SESSION_SECRET || "dev-only-session-secret-change-me";
+  if (process.env.SESSION_SECRET) {
+    return process.env.SESSION_SECRET;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("SESSION_SECRET must be set in production");
+  }
+
+  return "dev-only-session-secret-change-me";
 }
 
 function sign(value: string): string {
