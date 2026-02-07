@@ -2,7 +2,6 @@
 
 echo "Running architecture checks before push..."
 
-npm run check:architecture || exit 1
-npm run lint:architecture || exit 1
+npm run verify:architecture || exit 1
 
 echo "Pre-push checks passed."

@@ -327,16 +327,18 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 - Script adicionado ao `package.json`:
   - `npm run check:architecture`
   - `npm run lint:architecture`
+  - `npm run test:architecture`
+  - `npm run verify:architecture` (`check:architecture` + `lint:architecture` + `test:architecture`)
   - `npm run hooks:install` (configura `core.hooksPath` para `.githooks`)
   - `npm run hooks:uninstall` (remove configuração local de hooks do repositório)
 - Hook local versionado adicionado:
-  - `.githooks/pre-push` (executa `check:architecture` e `lint:architecture` antes do push)
+  - `.githooks/pre-push` (executa `verify:architecture` antes do push)
 - Testes de regressão do guardrail adicionados:
   - `src/__tests__/scripts/check-architecture.test.ts` com fixtures para regras 1 a 11
   - `src/__tests__/lib/api-route.test.ts` com cobertura de `parseRouteParamId`
 - Pipeline CI criada em GitHub Actions:
   - `.github/workflows/ci.yml`
-  - job `architecture`: `npm ci` -> `npm run check:architecture` -> `npm run lint:architecture`
+  - job `architecture`: `npm ci` -> `npm run verify:architecture`
   - job `validate` (dependente de `architecture`): `npm ci` -> `npm test -- --runInBand` -> `npm run build`
 - Resultado: desvios arquiteturais críticos voltam a falhar automaticamente no CI antes de merge.
 - Observação: nesta etapa, o débito remanescente de `any` nas camadas cobertas foi zerado.
