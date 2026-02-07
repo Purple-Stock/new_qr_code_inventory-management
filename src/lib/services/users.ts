@@ -1,4 +1,9 @@
-import { createUser, updateUserEmail, updateUserPassword } from "@/lib/db/users";
+import {
+  createUser,
+  findUserById,
+  updateUserEmail,
+  updateUserPassword,
+} from "@/lib/db/users";
 import {
   countActiveTeamAdmins,
   ensureActiveCompanyMember,
@@ -14,6 +19,7 @@ import {
   upsertTeamMember,
 } from "@/lib/db/team-members";
 import { ERROR_CODES } from "@/lib/errors";
+import { verifyPassword } from "@/lib/auth";
 import { authorizeTeamPermission, isUserRole } from "@/lib/permissions";
 import { isValidEmail, normalizeEmail } from "@/lib/contracts/schemas";
 import type {
@@ -476,6 +482,107 @@ export async function removeManagedTeamMember(params: {
         ERROR_CODES.TEAM_MEMBER_REMOVE_FAILED,
         "Team member remove failed"
       ),
+    };
+  }
+}
+
+export async function updateOwnPassword(params: {
+  requestUserId: number | null;
+  payload: unknown;
+}): Promise<ServiceResult<{ messageCode: "PASSWORD_UPDATED" }>> {
+  if (!params.requestUserId) {
+    return {
+      ok: false,
+      error: makeServiceError(
+        401,
+        ERROR_CODES.USER_NOT_AUTHENTICATED,
+        "User not authenticated"
+      ),
+    };
+  }
+
+  const body =
+    params.payload && typeof params.payload === "object"
+      ? (params.payload as Record<string, unknown>)
+      : {};
+
+  const currentPassword =
+    typeof body.currentPassword === "string" ? body.currentPassword : "";
+  const newPassword = typeof body.newPassword === "string" ? body.newPassword : "";
+  const passwordConfirmation =
+    typeof body.passwordConfirmation === "string" ? body.passwordConfirmation : "";
+
+  if (!currentPassword || !newPassword || !passwordConfirmation) {
+    return {
+      ok: false,
+      error: makeServiceError(
+        400,
+        ERROR_CODES.PASSWORD_FIELDS_REQUIRED,
+        "Current password, new password, and password confirmation are required"
+      ),
+    };
+  }
+
+  if (newPassword.length < 6) {
+    return {
+      ok: false,
+      error: makeServiceError(
+        400,
+        ERROR_CODES.PASSWORD_TOO_SHORT,
+        "Password must be at least 6 characters"
+      ),
+    };
+  }
+
+  if (newPassword !== passwordConfirmation) {
+    return {
+      ok: false,
+      error: makeServiceError(
+        400,
+        ERROR_CODES.PASSWORD_CONFIRMATION_MISMATCH,
+        "Password confirmation does not match"
+      ),
+    };
+  }
+
+  if (currentPassword === newPassword) {
+    return {
+      ok: false,
+      error: makeServiceError(
+        400,
+        ERROR_CODES.PASSWORD_MUST_DIFFER,
+        "New password must be different from current password"
+      ),
+    };
+  }
+
+  try {
+    const user = await findUserById(params.requestUserId);
+    if (!user) {
+      return {
+        ok: false,
+        error: makeServiceError(404, ERROR_CODES.USER_NOT_FOUND, "User not found"),
+      };
+    }
+
+    const validCurrentPassword = await verifyPassword(currentPassword, user.passwordHash);
+    if (!validCurrentPassword) {
+      return {
+        ok: false,
+        error: makeServiceError(
+          400,
+          ERROR_CODES.CURRENT_PASSWORD_INCORRECT,
+          "Current password is incorrect"
+        ),
+      };
+    }
+
+    await updateUserPassword(params.requestUserId, newPassword);
+    return { ok: true, data: { messageCode: "PASSWORD_UPDATED" } };
+  } catch {
+    return {
+      ok: false,
+      error: makeServiceError(500, ERROR_CODES.INTERNAL_ERROR, "Password update failed"),
     };
   }
 }

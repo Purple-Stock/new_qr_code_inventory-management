@@ -313,13 +313,15 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 - Regra aplicada:
   - bloqueia imports de `@/lib/db/*` em `src/app/*` (exceto `src/app/api/*`) e `src/components/*`
 - Regra expandida:
-  - bloqueia imports de `@/lib/db/*` em `src/app/api/teams/*` (API de domínio deve passar por serviços)
+  - bloqueia imports de `@/lib/db/*` em `src/app/api/teams/*`, `src/app/api/auth/*` e `src/app/api/users/*` (API de domínio deve passar por serviços)
   - bloqueia usos explícitos de `any` em `src/lib/services/*` e `src/app/api/*` (sem allowlist)
 - Script adicionado ao `package.json`:
   - `npm run check:architecture`
+  - `npm run lint:architecture`
 - Pipeline CI criada em GitHub Actions:
   - `.github/workflows/ci.yml`
-  - etapas: `npm ci` -> `npm run check:architecture` -> `npm test -- --runInBand` -> `npm run build`
+  - job `architecture`: `npm ci` -> `npm run check:architecture` -> `npm run lint:architecture`
+  - job `validate` (dependente de `architecture`): `npm ci` -> `npm test -- --runInBand` -> `npm run build`
 - Resultado: desvios arquiteturais críticos voltam a falhar automaticamente no CI antes de merge.
 - Observação: nesta etapa, o débito remanescente de `any` nas camadas cobertas foi zerado.
 
@@ -328,14 +330,14 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 ## ✅ Validação Executada
 
 - `npm run build`: **OK**
-- `npm test -- --runInBand`: **OK** (9 suítes, 33 testes)
+- `npm test -- --runInBand`: **OK** (10 suítes, 37 testes)
 - `npm run check:architecture`: **OK**
 
 ---
 
 ## ⚠️ Pendências Relevantes
 
-1. Guardrails podem evoluir para múltiplas regras (ex.: proibir `any` em camadas críticas, validar padrão de DTO em responses de API).
+1. Ativar branch protection no repositório exigindo o status check `architecture` como obrigatório antes de merge.
 
 ---
 

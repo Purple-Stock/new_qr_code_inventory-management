@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserIdFromRequest } from "@/lib/permissions";
+import { ERROR_CODES } from "@/lib/errors";
 import {
   errorResponse,
   internalErrorResponse,
@@ -18,7 +19,7 @@ export async function GET(
     const teamId = parseInt(id, 10);
 
     if (isNaN(teamId)) {
-      return errorResponse("Invalid team ID", 400);
+      return errorResponse("Invalid team ID", 400, ERROR_CODES.VALIDATION_ERROR);
     }
 
     // Get query parameters for date filtering

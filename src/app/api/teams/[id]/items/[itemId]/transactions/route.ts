@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserIdFromRequest } from "@/lib/permissions";
+import { ERROR_CODES } from "@/lib/errors";
 import {
   errorResponse,
   internalErrorResponse,
@@ -19,7 +20,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const itemId = parseInt(itemIdParam, 10);
 
     if (isNaN(teamId) || isNaN(itemId)) {
-      return errorResponse("Invalid team ID or item ID", 400);
+      return errorResponse(
+        "Invalid team ID or item ID",
+        400,
+        ERROR_CODES.VALIDATION_ERROR
+      );
     }
 
     const result = await listItemTransactionsForUser({

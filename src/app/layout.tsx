@@ -6,6 +6,8 @@ import { I18nProvider } from "@/components/I18nProvider"
 import Script from "next/script"
 
 const inter = Inter({ subsets: ["latin"] })
+const faviconSvgDataUrl =
+  "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg transform='translate(16,16) scale(0.12)'%3E%3Cpath fill='%237D3C98' d='M0,-100 L86,-50 L86,50 L0,100 L-86,50 L-86,-50 Z'/%3E%3Cpath fill='white' d='M30,-50 L-15,10 H15 L-10,55 L40,0 H15 Z'/%3E%3C/g%3E%3C/svg%3E"
 
 export const metadata: Metadata = {
   title: "Purple Stock - Your Inventory Simplified",
@@ -20,10 +22,7 @@ export const metadata: Metadata = {
     telephone: false,
   },
   icons: {
-    icon: [
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-    ],
+    icon: [{ url: faviconSvgDataUrl, type: "image/svg+xml" }],
     apple: [
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
@@ -67,7 +66,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Purple Stock" />
         <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href={faviconSvgDataUrl} type="image/svg+xml" />
       </head>
       <body className={inter.className} suppressHydrationWarning>
         <I18nProvider>
