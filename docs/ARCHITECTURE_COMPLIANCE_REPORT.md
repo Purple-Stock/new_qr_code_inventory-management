@@ -294,12 +294,24 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `src/app/teams/[id]/settings/_components/SettingsPageClient.tsx`
 - Resultado: contratos de tipos de UI ficaram mais consistentes por domínio e a camada de apresentação ficou isolada dos tipos internos de persistência.
 
+### 19. Testes de contrato de DTO (Concluído)
+
+- Foi adicionada suíte dedicada para garantir contratos de saída e serialização de datas:
+  - `src/__tests__/lib/services/dto-contracts.service.test.ts`
+- Coberturas incluídas:
+  - `TeamDto` (datas ISO em criação de time)
+  - `LocationDto` e `ItemDto` (datas ISO)
+  - `StockTransactionDto` (datas ISO)
+  - `TransactionDto` em listagem (datas ISO)
+  - `ReportStatsDto` (`recentTransactions.createdAt` em ISO)
+- Resultado: regressões de shape/serialização nos DTOs críticos passam a ser detectadas automaticamente em CI.
+
 ---
 
 ## ✅ Validação Executada
 
 - `npm run build`: **OK**
-- `npm test -- --runInBand`: **OK** (8 suítes, 28 testes)
+- `npm test -- --runInBand`: **OK** (9 suítes, 33 testes)
 
 ---
 
