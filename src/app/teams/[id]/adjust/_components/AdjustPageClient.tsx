@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Search, Info, ScanLine, Plus, Minus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +32,6 @@ interface AdjustPageClientProps {
 }
 
 export function AdjustPageClient({ items, locations, team }: AdjustPageClientProps) {
-  const router = useRouter();
   const { t } = useTranslation();
   const { toast } = useToast();
   const [selectedLocation, setSelectedLocation] = useState<string>(
@@ -127,12 +125,6 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
 
     setIsSubmitting(true);
     try {
-      const userId = localStorage.getItem("userId");
-      if (!userId) {
-        router.push("/");
-        return;
-      }
-
       // Create transactions using Server Action
       const results = await Promise.all(
         selectedItems.map((si) =>
@@ -141,7 +133,6 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
             quantity: si.newStock,
             locationId: selectedLocation ? parseInt(selectedLocation) : null,
             notes: notes || null,
-            userId: parseInt(userId),
           })
         )
       );

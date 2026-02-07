@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Search, Info, ScanLine, Plus, Minus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +27,6 @@ interface StockOutPageClientProps {
 }
 
 export function StockOutPageClient({ items, locations, team }: StockOutPageClientProps) {
-  const router = useRouter();
   const { t } = useTranslation();
   const { toast } = useToast();
   const [selectedLocation, setSelectedLocation] = useState<string>(
@@ -152,12 +150,6 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
 
     setIsSubmitting(true);
     try {
-      const userId = localStorage.getItem("userId");
-      if (!userId) {
-        router.push("/");
-        return;
-      }
-
       // Create transactions using Server Action
       const results = await Promise.all(
         selectedItems.map((si) =>
@@ -166,7 +158,6 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
             quantity: si.quantity,
             locationId: selectedLocation ? parseInt(selectedLocation) : null,
             notes: notes || null,
-            userId: parseInt(userId),
           })
         )
       );

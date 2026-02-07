@@ -85,7 +85,8 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
     setFilteredItems(items);
   }, [items]);
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
     localStorage.removeItem("userId");
     localStorage.removeItem("userRole");
     router.push("/");

@@ -15,16 +15,17 @@ import {
 } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
+import { useTranslation } from "@/lib/i18n"
 
 export default function SignUpPage() {
   const router = useRouter()
+  const { language, setLanguage, t } = useTranslation()
   const [companyName, setCompanyName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [language, setLanguage] = useState("en")
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -36,12 +37,12 @@ export default function SignUpPage() {
 
     // Validation
     if (password !== confirmPassword) {
-      setError("Passwords do not match")
+      setError(t.auth.signup.passwordMismatch)
       return
     }
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters")
+      setError(t.auth.signup.passwordMinLength)
       return
     }
 
@@ -59,19 +60,24 @@ export default function SignUpPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || "An error occurred during signup")
+        setError(data.error || t.auth.signup.signupError)
         setIsLoading(false)
         return
       }
 
-      setSuccess("Account created successfully! Redirecting to login...")
+      if (data.user?.id) {
+        localStorage.setItem("userId", String(data.user.id))
+        localStorage.setItem("userRole", data.user.role || "viewer")
+      }
+
+      setSuccess(t.auth.signup.accountCreatedRedirecting)
       
       // Redirect to login after 2 seconds
       setTimeout(() => {
-        router.push("/")
+        router.push("/team_selection")
       }, 2000)
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.")
+      setError(t.auth.signup.unexpectedError)
       setIsLoading(false)
     }
   }
@@ -81,7 +87,7 @@ export default function SignUpPage() {
       {/* Language Selector - Fixed top right */}
       <div className="absolute top-6 right-6 flex items-center gap-2 z-10">
         <Label htmlFor="language" className="text-sm text-gray-600 font-medium">
-          Langue:
+          {t.auth.language}:
         </Label>
         <Select value={language} onValueChange={setLanguage}>
           <SelectTrigger id="language" className="w-[140px] bg-white border-gray-200">
@@ -89,19 +95,19 @@ export default function SignUpPage() {
               {language === "en" && (
                 <div className="flex items-center gap-2">
                   <span>🇺🇸</span>
-                  <span>English</span>
+                  <span>{t.auth.languageEnglish}</span>
                 </div>
               )}
               {language === "fr" && (
                 <div className="flex items-center gap-2">
                   <span>🇫🇷</span>
-                  <span>Français</span>
+                  <span>{t.auth.languageFrench}</span>
                 </div>
               )}
               {language === "pt-BR" && (
                 <div className="flex items-center gap-2">
                   <span>🇧🇷</span>
-                  <span>Português</span>
+                  <span>{t.auth.languagePortuguese}</span>
                 </div>
               )}
             </SelectValue>
@@ -110,19 +116,19 @@ export default function SignUpPage() {
             <SelectItem value="en">
               <div className="flex items-center gap-2">
                 <span>🇺🇸</span>
-                <span>English</span>
+                <span>{t.auth.languageEnglish}</span>
               </div>
             </SelectItem>
             <SelectItem value="fr">
               <div className="flex items-center gap-2">
                 <span>🇫🇷</span>
-                <span>Français</span>
+                <span>{t.auth.languageFrench}</span>
               </div>
             </SelectItem>
             <SelectItem value="pt-BR">
               <div className="flex items-center gap-2">
                 <span>🇧🇷</span>
-                <span>Português</span>
+                <span>{t.auth.languagePortuguese}</span>
               </div>
             </SelectItem>
           </SelectContent>
@@ -154,14 +160,14 @@ export default function SignUpPage() {
                 PURPLE STOCK
               </h1>
               <p className="text-sm text-gray-500 font-medium">
-                Your Inventory Simplified
+                {t.auth.appTagline}
               </p>
             </div>
           </div>
 
           {/* Instructions */}
           <p className="text-gray-600 text-base mb-6 text-center font-medium">
-            Enter your details to create your account
+            {t.auth.signup.instructions}
           </p>
 
           {/* Error Message */}
@@ -188,12 +194,12 @@ export default function SignUpPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="companyName" className="text-gray-700 font-semibold text-sm">
-                Company Name
+                {t.auth.signup.companyNameLabel}
               </Label>
               <Input
                 id="companyName"
                 type="text"
-                placeholder="Enter your company name"
+                placeholder={t.auth.signup.companyNamePlaceholder}
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 className="w-full h-11 border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
@@ -204,12 +210,12 @@ export default function SignUpPage() {
             {/* Email Field */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-gray-700 font-semibold text-sm">
-                Email
+                {t.auth.signup.emailLabel}
               </Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="Enter your email"
+                placeholder={t.auth.signup.emailPlaceholder}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full h-11 border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
@@ -219,13 +225,13 @@ export default function SignUpPage() {
 
             <div className="space-y-2">
               <Label htmlFor="password" className="text-gray-700 font-semibold text-sm">
-                Password
+                {t.auth.signup.passwordLabel}
               </Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder={t.auth.signup.passwordPlaceholder}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full h-11 pr-10 border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
@@ -236,7 +242,7 @@ export default function SignUpPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? t.auth.signup.hidePassword : t.auth.signup.showPassword}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -245,19 +251,19 @@ export default function SignUpPage() {
                   )}
                 </button>
               </div>
-              <p className="text-xs text-gray-500">Minimum 6 characters</p>
+              <p className="text-xs text-gray-500">{t.auth.signup.passwordMinHint}</p>
             </div>
 
             {/* Confirm Password Field */}
             <div className="space-y-2">
               <Label htmlFor="confirmPassword" className="text-gray-700 font-semibold text-sm">
-                Confirm Password
+                {t.auth.signup.confirmPasswordLabel}
               </Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirm your password"
+                  placeholder={t.auth.signup.confirmPasswordPlaceholder}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full h-11 pr-10 border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
@@ -268,7 +274,7 @@ export default function SignUpPage() {
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
-                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  aria-label={showConfirmPassword ? t.auth.signup.hidePassword : t.auth.signup.showPassword}
                 >
                   {showConfirmPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -285,18 +291,18 @@ export default function SignUpPage() {
               disabled={isLoading}
               className="w-full bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white font-semibold py-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-6"
             >
-              {isLoading ? "Creating Account..." : "Sign Up"}
+              {isLoading ? t.auth.signup.creatingAccount : t.auth.signup.signUp}
             </Button>
           </form>
 
           {/* Sign In Link */}
           <div className="mt-8 text-center">
-            <span className="text-gray-600 text-sm">Already have an account? </span>
+            <span className="text-gray-600 text-sm">{t.auth.signup.alreadyHaveAccount} </span>
             <Link
               href="/"
               className="text-[#6B21A8] hover:text-[#7C3AED] font-semibold text-sm transition-colors"
             >
-              Sign In
+              {t.auth.signup.signInLink}
             </Link>
           </div>
         </div>

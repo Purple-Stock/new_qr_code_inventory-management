@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyUserCredentials } from "@/lib/db/users";
+import { setSessionCookie } from "@/lib/session";
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,13 +28,15 @@ export async function POST(request: NextRequest) {
     // Return user without password hash
     const { passwordHash, ...userWithoutPassword } = user;
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         message: "Login successful",
         user: userWithoutPassword,
       },
       { status: 200 }
     );
+    setSessionCookie(response, user.id);
+    return response;
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(

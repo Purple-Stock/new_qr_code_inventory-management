@@ -69,7 +69,7 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         <I18nProvider>
         {children}
         </I18nProvider>

@@ -4,6 +4,7 @@ import { sqlite } from "@/db/client";
 import { teamMembers } from "@/db/schema";
 import { findUserById } from "@/lib/db/users";
 import { getTeamWithStats } from "@/lib/db/teams";
+import { getUserIdFromSessionCookie } from "@/lib/session";
 import type { TeamMemberRole, UserRole } from "@/db/schema";
 
 export type Permission =
@@ -55,17 +56,7 @@ function canTeam(teamRole: TeamMemberRole, permission: TeamPermission) {
 }
 
 export function getUserIdFromRequest(request: NextRequest): number | null {
-  const fromHeader = request.headers.get("x-user-id");
-  if (fromHeader && !Number.isNaN(Number(fromHeader))) {
-    return Number(fromHeader);
-  }
-
-  const fromQuery = request.nextUrl.searchParams.get("userId");
-  if (fromQuery && !Number.isNaN(Number(fromQuery))) {
-    return Number(fromQuery);
-  }
-
-  return null;
+  return getUserIdFromSessionCookie(request);
 }
 
 export async function authorizePermission(params: {

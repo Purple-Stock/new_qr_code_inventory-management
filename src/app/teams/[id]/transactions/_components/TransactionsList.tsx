@@ -23,17 +23,7 @@ export function TransactionsList({ transactions, teamId, onDelete }: Transaction
       return;
     }
 
-    const userId = Number(localStorage.getItem("userId"));
-    if (!userId) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "User not authenticated",
-      });
-      return;
-    }
-
-    const result = await deleteTransactionAction(teamId, transactionId, userId);
+    const result = await deleteTransactionAction(teamId, transactionId);
 
     if (!result.success) {
       toast({

@@ -3,17 +3,22 @@
 import { deleteStockTransaction } from "@/lib/db/stock-transactions";
 import { revalidatePath } from "next/cache";
 import { authorizeTeamPermission } from "@/lib/permissions";
+import { cookies } from "next/headers";
+import { getUserIdFromSessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
 
 export async function deleteTransactionAction(
   teamId: number,
-  transactionId: number,
-  userId: number
+  transactionId: number
 ) {
   try {
+    const requestUserId = getUserIdFromSessionToken(
+      (await cookies()).get(SESSION_COOKIE_NAME)?.value
+    );
+
     const auth = await authorizeTeamPermission({
       permission: "transaction:delete",
       teamId,
-      requestUserId: userId,
+      requestUserId,
     });
     if (!auth.ok) {
       return {

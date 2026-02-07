@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Search, Info, ScanLine, Plus, Minus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +27,6 @@ interface MovePageClientProps {
 }
 
 export function MovePageClient({ items, locations, team }: MovePageClientProps) {
-  const router = useRouter();
   const { t } = useTranslation();
   const { toast } = useToast();
   const [sourceLocation, setSourceLocation] = useState<string>(
@@ -162,12 +160,6 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
 
     setIsSubmitting(true);
     try {
-      const userId = localStorage.getItem("userId");
-      if (!userId) {
-        router.push("/");
-        return;
-      }
-
       // Create transactions using Server Action
       const results = await Promise.all(
         selectedItems.map((si) =>
@@ -177,7 +169,6 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
             sourceLocationId: sourceLocation ? parseInt(sourceLocation) : null,
             destinationLocationId: destinationLocation ? parseInt(destinationLocation) : null,
             notes: notes || null,
-            userId: parseInt(userId),
           })
         )
       );

@@ -105,7 +105,8 @@ export default function StockByLocationPage() {
     }
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
     localStorage.removeItem("userId");
     localStorage.removeItem("userRole");
     router.push("/");

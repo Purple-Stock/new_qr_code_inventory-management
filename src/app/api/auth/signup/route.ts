@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { findUserByEmail } from "@/lib/db/users";
 import { onboardCompanyOwner } from "@/lib/db/onboarding";
 import { isValidEmail, normalizeEmail } from "@/lib/validation";
+import { setSessionCookie } from "@/lib/session";
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
     // Return user without password hash
     const { passwordHash, ...userWithoutPassword } = user;
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         message: "User created successfully",
         user: userWithoutPassword,
@@ -57,6 +58,8 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
+    setSessionCookie(response, user.id);
+    return response;
   } catch (error) {
     console.error("Signup error:", error);
     return NextResponse.json(

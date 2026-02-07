@@ -15,14 +15,15 @@ import {
 } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
+import { useTranslation } from "@/lib/i18n"
 
 export default function LoginPage() {
   const router = useRouter()
+  const { language, setLanguage, t } = useTranslation()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [language, setLanguage] = useState("en")
-  const [error, setError] = useState("You need to sign in or sign up before continuing.")
+  const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,21 +43,21 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || "Invalid email or password")
+        setError(data.error || t.auth.login.invalidCredentials)
         setIsLoading(false)
         return
       }
 
-      // Save user ID to localStorage
+      // Backward compatibility while legacy client flows still read localStorage.
       if (data.user?.id) {
-        localStorage.setItem("userId", data.user.id.toString())
+        localStorage.setItem("userId", String(data.user.id))
         localStorage.setItem("userRole", data.user.role || "viewer")
       }
 
       // Redirect to team selection
       router.push("/team_selection")
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.")
+      setError(t.auth.login.unexpectedError)
       setIsLoading(false)
     }
   }
@@ -66,7 +67,7 @@ export default function LoginPage() {
       {/* Language Selector - Fixed top right */}
       <div className="absolute top-3 right-3 sm:top-6 sm:right-6 flex items-center gap-1 sm:gap-2 z-10">
         <Label htmlFor="language" className="text-xs sm:text-sm text-gray-600 font-medium hidden sm:inline">
-          Langue:
+          {t.auth.language}:
         </Label>
         <Select value={language} onValueChange={setLanguage}>
           <SelectTrigger id="language" className="w-[100px] sm:w-[140px] bg-white border-gray-200 text-xs sm:text-sm h-8 sm:h-10">
@@ -74,21 +75,21 @@ export default function LoginPage() {
               {language === "en" && (
                 <div className="flex items-center gap-1 sm:gap-2">
                   <span className="text-sm sm:text-base">🇺🇸</span>
-                  <span className="hidden sm:inline">English</span>
+                  <span className="hidden sm:inline">{t.auth.languageEnglish}</span>
                   <span className="sm:hidden">EN</span>
                 </div>
               )}
               {language === "fr" && (
                 <div className="flex items-center gap-1 sm:gap-2">
                   <span className="text-sm sm:text-base">🇫🇷</span>
-                  <span className="hidden sm:inline">Français</span>
+                  <span className="hidden sm:inline">{t.auth.languageFrench}</span>
                   <span className="sm:hidden">FR</span>
                 </div>
               )}
               {language === "pt-BR" && (
                 <div className="flex items-center gap-1 sm:gap-2">
                   <span className="text-sm sm:text-base">🇧🇷</span>
-                  <span className="hidden sm:inline">Português</span>
+                  <span className="hidden sm:inline">{t.auth.languagePortuguese}</span>
                   <span className="sm:hidden">PT</span>
                 </div>
               )}
@@ -98,19 +99,19 @@ export default function LoginPage() {
             <SelectItem value="en">
               <div className="flex items-center gap-2">
                 <span>🇺🇸</span>
-                <span>English</span>
+                <span>{t.auth.languageEnglish}</span>
               </div>
             </SelectItem>
             <SelectItem value="fr">
               <div className="flex items-center gap-2">
                 <span>🇫🇷</span>
-                <span>Français</span>
+                <span>{t.auth.languageFrench}</span>
               </div>
             </SelectItem>
             <SelectItem value="pt-BR">
               <div className="flex items-center gap-2">
                 <span>🇧🇷</span>
-                <span>Português</span>
+                <span>{t.auth.languagePortuguese}</span>
               </div>
             </SelectItem>
           </SelectContent>
@@ -142,14 +143,14 @@ export default function LoginPage() {
                 PURPLE STOCK
               </h1>
               <p className="text-xs sm:text-sm text-gray-500 font-medium">
-                Your Inventory Simplified
+                {t.auth.appTagline}
               </p>
             </div>
           </div>
 
           {/* Instructions */}
           <p className="text-gray-600 text-sm sm:text-base mb-4 sm:mb-6 text-center font-medium">
-            Enter your credentials to access your account
+            {t.auth.login.instructions}
           </p>
 
           {/* Error Message */}
@@ -161,18 +162,26 @@ export default function LoginPage() {
               </AlertDescription>
             </Alert>
           )}
+          {!error && (
+            <Alert variant="destructive" className="mb-4 sm:mb-6 border-l-4 border-l-red-500 bg-red-50 rounded-lg">
+              <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+              <AlertDescription className="text-red-700 text-xs sm:text-sm font-medium">
+                {t.auth.login.mustSignInOrSignUp}
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
             {/* Email Field */}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-700 font-semibold text-sm">
-                Email
-              </Label>
+                <Label htmlFor="email" className="text-gray-700 font-semibold text-sm">
+                {t.auth.login.emailLabel}
+                </Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="Enter your email"
+                placeholder={t.auth.login.emailPlaceholder}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full h-12 sm:h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
@@ -182,22 +191,14 @@ export default function LoginPage() {
 
             {/* Password Field */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <Label htmlFor="password" className="text-gray-700 font-semibold text-sm">
-                  Password
-                </Label>
-                <Link
-                  href="/forgot-password"
-                  className="text-xs sm:text-sm text-[#6B21A8] hover:text-[#7C3AED] font-medium transition-colors"
-                >
-                  Forgot password?
-                </Link>
-              </div>
+              <Label htmlFor="password" className="text-gray-700 font-semibold text-sm">
+                {t.auth.login.passwordLabel}
+              </Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder={t.auth.login.passwordPlaceholder}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full h-12 sm:h-11 pr-12 sm:pr-10 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
@@ -207,7 +208,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors p-1 touch-manipulation"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? t.auth.login.hidePassword : t.auth.login.showPassword}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5 sm:h-5 sm:w-5" />
@@ -224,18 +225,18 @@ export default function LoginPage() {
               disabled={isLoading}
               className="w-full bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white font-semibold py-5 sm:py-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-4 sm:mt-6 text-base sm:text-base touch-manipulation min-h-[48px]"
             >
-              {isLoading ? "Signing In..." : "Sign In"}
+              {isLoading ? t.auth.login.signingIn : t.auth.login.signIn}
             </Button>
           </form>
 
           {/* Sign Up Link */}
           <div className="mt-6 sm:mt-8 text-center">
-            <span className="text-gray-600 text-xs sm:text-sm">Don't have an account? </span>
+            <span className="text-gray-600 text-xs sm:text-sm">{t.auth.login.dontHaveAccount} </span>
             <Link
               href="/signup"
               className="text-[#6B21A8] hover:text-[#7C3AED] font-semibold text-xs sm:text-sm transition-colors"
             >
-              Sign Up
+              {t.auth.login.signUpLink}
             </Link>
           </div>
         </div>

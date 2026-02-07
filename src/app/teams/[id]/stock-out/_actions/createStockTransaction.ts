@@ -3,6 +3,8 @@
 import { createStockTransaction } from "@/lib/db/stock-transactions";
 import { revalidatePath } from "next/cache";
 import { authorizeTeamPermission } from "@/lib/permissions";
+import { cookies } from "next/headers";
+import { getUserIdFromSessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
 
 export async function createStockOutAction(
   teamId: number,
@@ -11,19 +13,28 @@ export async function createStockOutAction(
     quantity: number;
     locationId: number | null;
     notes: string | null;
-    userId: number;
   }
 ) {
   try {
+    const requestUserId = getUserIdFromSessionToken(
+      (await cookies()).get(SESSION_COOKIE_NAME)?.value
+    );
+
     const auth = await authorizeTeamPermission({
       permission: "stock:write",
       teamId,
-      requestUserId: data.userId,
+      requestUserId,
     });
     if (!auth.ok) {
       return {
         success: false,
         error: auth.error,
+      };
+    }
+    if (!auth.user) {
+      return {
+        success: false,
+        error: "User not authenticated",
       };
     }
 
@@ -33,7 +44,7 @@ export async function createStockOutAction(
       transactionType: "stock_out",
       quantity: data.quantity,
       notes: data.notes,
-      userId: data.userId,
+      userId: auth.user.id,
       sourceLocationId: data.locationId,
     });
 

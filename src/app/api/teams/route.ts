@@ -6,28 +6,16 @@ import { getActiveCompanyIdForUser } from "@/lib/db/companies";
 // GET - List teams for a user
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Get userId from session/cookie/auth
-    // For now, we'll use a query parameter or header
-    // In production, use proper authentication middleware
-    const userIdParam = request.nextUrl.searchParams.get("userId");
-    
-    if (!userIdParam) {
+    const requestUserId = getUserIdFromRequest(request);
+
+    if (!requestUserId) {
       return NextResponse.json(
-        { error: "User ID is required" },
+        { error: "User not authenticated" },
         { status: 401 }
       );
     }
 
-    const userId = parseInt(userIdParam, 10);
-    
-    if (isNaN(userId)) {
-      return NextResponse.json(
-        { error: "Invalid user ID" },
-        { status: 400 }
-      );
-    }
-
-    const teams = await getUserTeamsWithStats(userId);
+    const teams = await getUserTeamsWithStats(requestUserId);
 
     return NextResponse.json({ teams }, { status: 200 });
   } catch (error) {

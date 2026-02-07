@@ -27,10 +27,10 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { itemId, transactionType, quantity, notes, userId, locationId, sourceLocationId, destinationLocationId } = body;
+    const { itemId, transactionType, quantity, notes, locationId, sourceLocationId, destinationLocationId } = body;
 
     // Validation
-    if (!itemId || !transactionType || !quantity || !userId) {
+    if (!itemId || !transactionType || !quantity) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -44,21 +44,16 @@ export async function POST(
       );
     }
 
-    const userIdNum = parseInt(userId, 10);
-    if (isNaN(userIdNum)) {
-      return NextResponse.json(
-        { error: "Invalid user ID" },
-        { status: 400 }
-      );
-    }
-
     const auth = await authorizeTeamPermission({
       permission: "stock:write",
       teamId,
-      requestUserId: getUserIdFromRequest(request) ?? userIdNum,
+      requestUserId: getUserIdFromRequest(request),
     });
     if (!auth.ok) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+    if (!auth.user) {
+      return NextResponse.json({ error: "User not authenticated" }, { status: 401 });
     }
 
     // Create transaction
@@ -68,7 +63,7 @@ export async function POST(
       transactionType,
       quantity: parseFloat(quantity),
       notes: notes || null,
-      userId: userIdNum,
+      userId: auth.user.id,
       sourceLocationId: sourceLocationId ? parseInt(sourceLocationId, 10) : (transactionType === "move" ? null : null),
       destinationLocationId: destinationLocationId ? parseInt(destinationLocationId, 10) : (locationId ? parseInt(locationId, 10) : null),
     });

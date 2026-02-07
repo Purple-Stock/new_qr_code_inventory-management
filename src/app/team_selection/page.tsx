@@ -44,25 +44,18 @@ export default function TeamSelectionPage() {
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
 
   useEffect(() => {
-    // TODO: Get userId from session/auth
-    // For now, using localStorage or query param
-    const userId = localStorage.getItem("userId");
-    
-    if (!userId) {
-      router.push("/");
-      return;
-    }
-
-    fetchTeams(parseInt(userId, 10));
+    fetchTeams();
   }, [router]);
 
-  const fetchTeams = async (userId: number) => {
+  const fetchTeams = async () => {
     try {
-      const response = await fetch(`/api/teams?userId=${userId}`);
+      const response = await fetch("/api/teams");
       const data = await response.json();
 
       if (response.ok) {
         setTeams(data.teams || []);
+      } else if (response.status === 401) {
+        router.push("/");
       } else {
         console.error("Error fetching teams:", data.error);
       }
@@ -73,7 +66,8 @@ export default function TeamSelectionPage() {
     }
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
     localStorage.removeItem("userId");
     localStorage.removeItem("userRole");
     router.push("/");
@@ -88,11 +82,7 @@ export default function TeamSelectionPage() {
   };
 
   const handleEditSuccess = () => {
-    // Refresh teams list
-    const userId = localStorage.getItem("userId");
-    if (userId) {
-      fetchTeams(parseInt(userId, 10));
-    }
+    fetchTeams();
   };
 
   const handleDeleteClick = (id: number) => {
@@ -105,17 +95,12 @@ export default function TeamSelectionPage() {
 
   const handleDeleteConfirm = async () => {
     if (!teamToDelete) return;
-    const userId = localStorage.getItem("userId");
-    if (!userId) return;
 
     setDeletingTeamId(teamToDelete.id);
 
     try {
       const response = await fetch(`/api/teams/${teamToDelete.id}`, {
         method: "DELETE",
-        headers: {
-          "x-user-id": userId,
-        },
       });
 
       const data = await response.json();
@@ -136,11 +121,7 @@ export default function TeamSelectionPage() {
         variant: "success",
       });
 
-      // Refresh teams list
-      const refreshUserId = localStorage.getItem("userId");
-      if (refreshUserId) {
-        fetchTeams(parseInt(refreshUserId, 10));
-      }
+      fetchTeams();
 
       // Close modal
       setDeleteModalOpen(false);
