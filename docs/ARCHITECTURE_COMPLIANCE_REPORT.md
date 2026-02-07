@@ -396,21 +396,33 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `src/app/api/teams/[id]/locations/route.ts` em **90.00%** statements/lines e **75%** branches
   - `src/app/api/teams/[id]/locations/[locationId]/route.ts` em **83.33%** statements/lines e **75%** branches
 
+### 25. Cobertura de rotas de transações (Concluído)
+
+- Suítes adicionadas para rotas de transações:
+  - `src/__tests__/api/teams/transactions-route.test.ts`
+  - `src/__tests__/api/teams/transactions-transaction-id-route.test.ts`
+- Coberturas garantidas:
+  - `/api/teams/[id]/transactions` (`GET`) com cenários de ID inválido, sucesso, query `search`, erro de serviço e exceção
+  - `/api/teams/[id]/transactions/[transactionId]` (`DELETE`) com cenários de IDs inválidos, sucesso, erro de serviço e exceção
+- Resultado:
+  - `src/app/api/teams/[id]/transactions/route.ts` em **100%** de statements/branches/functions/lines
+  - `src/app/api/teams/[id]/transactions/[transactionId]/route.ts` em **100%** de statements/branches/functions/lines
+
 ---
 
 ## ✅ Validação Executada
 
 - `npm run build`: **OK**
 - `npm run verify:architecture`: **OK**
-- `npm test -- --runInBand`: **OK** (24 suítes, 127 testes)
-- `npm run test:coverage`: **OK** (Statements: **30.57%**, Branches: **20.53%**, Functions: **26.14%**, Lines: **30.97%**)
+- `npm test -- --runInBand`: **OK** (26 suítes, 136 testes)
+- `npm run test:coverage`: **OK** (Statements: **31.60%**, Branches: **21.04%**, Functions: **26.45%**, Lines: **32.02%**)
 - `npm run check:architecture`: **OK**
 
 ---
 
 ## ⚠️ Pendências Relevantes
 
-1. Aumentar cobertura nas rotas ainda sem testes diretos em `src/app/api/teams/[id]/*` (`transactions`, `transactions/[transactionId]`, `stock-transactions`, `items/[itemId]/transactions`).
+1. Aumentar cobertura nas rotas ainda sem testes diretos em `src/app/api/teams/[id]/*` (`stock-transactions`, `items/[itemId]/transactions`).
 2. Elevar cobertura da camada `app/*` (principalmente client pages e actions), hoje com baixo impacto de testes automatizados.
 
 ---
