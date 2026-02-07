@@ -2,13 +2,15 @@ import { NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getUserIdFromRequest } from "@/lib/permissions";
 import { ERROR_CODES } from "@/lib/errors";
-import { errorResponse,
+import {
+  errorResponse,
+  parseRouteParamIds,
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
-import { parseRouteParamId } from "@/lib/api-route";
 import { internalServiceError } from "@/lib/services/errors";
-import { deleteTeamItemById,
+import {
+  deleteTeamItemById,
   getTeamItemDetails,
   updateTeamItem,
 } from "@/lib/services/items";
@@ -21,8 +23,10 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id, itemId: itemIdParam } = await params;
-    const teamId = parseRouteParamId(id);
-    const itemId = parseRouteParamId(itemIdParam);
+    const { teamId, itemId } = parseRouteParamIds({
+      teamId: id,
+      itemId: itemIdParam,
+    });
 
     if (teamId === null || itemId === null) {
       return errorResponse(
@@ -52,8 +56,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     const { id, itemId: itemIdParam } = await params;
-    const teamId = parseRouteParamId(id);
-    const itemId = parseRouteParamId(itemIdParam);
+    const { teamId, itemId } = parseRouteParamIds({
+      teamId: id,
+      itemId: itemIdParam,
+    });
 
     if (teamId === null || itemId === null) {
       return errorResponse(
@@ -87,8 +93,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id, itemId: itemIdParam } = await params;
-    const teamId = parseRouteParamId(id);
-    const itemId = parseRouteParamId(itemIdParam);
+    const { teamId, itemId } = parseRouteParamIds({
+      teamId: id,
+      itemId: itemIdParam,
+    });
 
     if (teamId === null || itemId === null) {
       return errorResponse(

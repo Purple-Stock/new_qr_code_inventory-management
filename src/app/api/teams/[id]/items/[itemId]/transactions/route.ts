@@ -1,11 +1,12 @@
 import { NextRequest } from "next/server";
 import { getUserIdFromRequest } from "@/lib/permissions";
 import { ERROR_CODES } from "@/lib/errors";
-import { errorResponse,
+import {
+  errorResponse,
+  parseRouteParamIds,
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
-import { parseRouteParamId } from "@/lib/api-route";
 import { internalServiceError } from "@/lib/services/errors";
 import { listItemTransactionsForUser } from "@/lib/services/transactions";
 
@@ -16,8 +17,10 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id, itemId: itemIdParam } = await params;
-    const teamId = parseRouteParamId(id);
-    const itemId = parseRouteParamId(itemIdParam);
+    const { teamId, itemId } = parseRouteParamIds({
+      teamId: id,
+      itemId: itemIdParam,
+    });
 
     if (teamId === null || itemId === null) {
       return errorResponse(

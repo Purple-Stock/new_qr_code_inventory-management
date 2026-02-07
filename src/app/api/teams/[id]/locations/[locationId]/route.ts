@@ -1,15 +1,17 @@
 import { NextRequest } from "next/server";
-import { deleteTeamLocation,
+import {
+  deleteTeamLocation,
   getTeamLocationDetailsForUser,
   updateTeamLocation,
 } from "@/lib/services/locations";
 import { getUserIdFromRequest } from "@/lib/permissions";
 import { ERROR_CODES } from "@/lib/errors";
-import { errorResponse,
+import {
+  errorResponse,
+  parseRouteParamIds,
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
-import { parseRouteParamId } from "@/lib/api-route";
 import { internalServiceError } from "@/lib/services/errors";
 
 // GET - Get a specific location
@@ -19,8 +21,10 @@ export async function GET(
 ) {
   try {
     const { id, locationId: locationIdParam } = await params;
-    const teamId = parseRouteParamId(id);
-    const locationId = parseRouteParamId(locationIdParam);
+    const { teamId, locationId } = parseRouteParamIds({
+      teamId: id,
+      locationId: locationIdParam,
+    });
 
     if (teamId === null || locationId === null) {
       return errorResponse(
@@ -53,8 +57,10 @@ export async function PUT(
 ) {
   try {
     const { id, locationId: locationIdParam } = await params;
-    const teamId = parseRouteParamId(id);
-    const locationId = parseRouteParamId(locationIdParam);
+    const { teamId, locationId } = parseRouteParamIds({
+      teamId: id,
+      locationId: locationIdParam,
+    });
 
     if (teamId === null || locationId === null) {
       return errorResponse(
@@ -95,8 +101,10 @@ export async function DELETE(
 ) {
   try {
     const { id, locationId: locationIdParam } = await params;
-    const teamId = parseRouteParamId(id);
-    const locationId = parseRouteParamId(locationIdParam);
+    const { teamId, locationId } = parseRouteParamIds({
+      teamId: id,
+      locationId: locationIdParam,
+    });
 
     if (teamId === null || locationId === null) {
       return errorResponse(

@@ -1,9 +1,12 @@
 import { NextRequest } from "next/server";
 import { getUserIdFromRequest } from "@/lib/permissions";
 import { getErrorMessage } from "@/lib/error-utils";
-import { errorResponse,
-  serviceErrorResponse, successResponse } from "@/lib/api-route";
-import { parseRouteParamId } from "@/lib/api-route";
+import {
+  errorResponse,
+  parseRouteParamIds,
+  serviceErrorResponse,
+  successResponse,
+} from "@/lib/api-route";
 import { internalServiceError } from "@/lib/services/errors";
 import { deleteTeamTransaction } from "@/lib/services/stock-transactions";
 import { ERROR_CODES } from "@/lib/errors";
@@ -14,8 +17,10 @@ export async function DELETE(
 ) {
   try {
     const { id, transactionId: transactionIdParam } = await params;
-    const teamId = parseRouteParamId(id);
-    const transactionId = parseRouteParamId(transactionIdParam);
+    const { teamId, transactionId } = parseRouteParamIds({
+      teamId: id,
+      transactionId: transactionIdParam,
+    });
 
     if (teamId === null || transactionId === null) {
       return errorResponse(

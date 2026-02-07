@@ -16,7 +16,7 @@ const DIRECT_RESPONSE_CONSTRUCTOR_PATTERN = /\bnew\s+Response\s*\(/;
 const SERVICE_IMPORT_PATTERN = /from\s+["']@\/lib\/services\//;
 const REQUEST_JSON_AWAIT_PATTERN = /\bawait\s+request\.json\s*\(/;
 const CATCH_BLOCK_PATTERN = /\bcatch\s*\(/;
-const ROUTE_PARAM_PARSER_CALL_PATTERN = /\bparseRouteParamId\s*\(/;
+const ROUTE_PARAM_PARSER_CALL_PATTERN = /\bparseRouteParamId(?:s)?\s*\(/;
 
 const SERVICE_IMPORT_ALLOWLIST = new Set(["src/app/api/auth/logout/route.ts"]);
 
@@ -210,7 +210,7 @@ if (
   );
 
   printViolations(
-    "Rule 12: dynamic API routes must parse route ids via parseRouteParamId(...).",
+    "Rule 12: dynamic API routes must parse route ids via parseRouteParamId(...) or parseRouteParamIds(...).",
     routeParamParserViolations
   );
 

@@ -323,8 +323,8 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - bloqueia respostas HTTP manuais em `src/app/api/*` (`Response.json(...)` e `new Response(...)`), exigindo helpers de `api-route`
   - exige delegação de API routes para `@/lib/services/*` (com allowlist explícita para rotas adapter-only)
   - exige `catch` em rotas que usam `await request.json()` para evitar falhas não padronizadas de parsing
-  - padroniza parsing de IDs de rota com helper central (`parseRouteParamId`) para reduzir duplicação e divergência
-  - exige uso de `parseRouteParamId(...)` em rotas dinâmicas (`src/app/api/**/[...]/route.ts`)
+  - padroniza parsing de IDs de rota com helpers centrais (`parseRouteParamId` e `parseRouteParamIds`) para reduzir duplicação e divergência
+  - exige uso de parser central de IDs em rotas dinâmicas (`parseRouteParamId(...)` ou `parseRouteParamIds(...)`)
 - Script adicionado ao `package.json`:
   - `npm run check:architecture`
   - `npm run lint:architecture`
@@ -336,7 +336,7 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `.githooks/pre-push` (executa `verify:architecture` antes do push)
 - Testes de regressão do guardrail adicionados:
   - `src/__tests__/scripts/check-architecture.test.ts` com fixtures para regras 1 a 12
-  - `src/__tests__/lib/api-route.test.ts` com cobertura de `parseRouteParamId`
+- `src/__tests__/lib/api-route.test.ts` com cobertura de `parseRouteParamId` e `parseRouteParamIds`
 - Pipeline CI criada em GitHub Actions:
   - `.github/workflows/ci.yml`
   - job `architecture`: `npm ci` -> `npm run verify:architecture`
@@ -349,7 +349,7 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 ## ✅ Validação Executada
 
 - `npm run build`: **OK**
-- `npm test -- --runInBand`: **OK** (13 suítes, 58 testes)
+- `npm test -- --runInBand`: **OK** (13 suítes, 61 testes)
 - `npm run check:architecture`: **OK**
 
 ---

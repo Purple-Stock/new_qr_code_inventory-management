@@ -1,4 +1,4 @@
-import { parseRouteParamId } from "@/lib/api-route";
+import { parseRouteParamId, parseRouteParamIds } from "@/lib/api-route";
 
 describe("api-route utils", () => {
   describe("parseRouteParamId", () => {
@@ -10,6 +10,22 @@ describe("api-route utils", () => {
     it("returns null for invalid numeric strings", () => {
       expect(parseRouteParamId("abc")).toBeNull();
       expect(parseRouteParamId("")).toBeNull();
+    });
+  });
+
+  describe("parseRouteParamIds", () => {
+    it("parses multiple ids while preserving keys", () => {
+      expect(parseRouteParamIds({ teamId: "12", itemId: "003" })).toEqual({
+        teamId: 12,
+        itemId: 3,
+      });
+    });
+
+    it("returns null for invalid values", () => {
+      expect(parseRouteParamIds({ teamId: "x", itemId: "9" })).toEqual({
+        teamId: null,
+        itemId: 9,
+      });
     });
   });
 });

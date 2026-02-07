@@ -34,3 +34,15 @@ export function parseRouteParamId(value: string): number | null {
   const parsed = Number.parseInt(value, 10);
   return Number.isNaN(parsed) ? null : parsed;
 }
+
+export function parseRouteParamIds<T extends Record<string, string>>(
+  params: T
+): { [K in keyof T]: number | null } {
+  const parsed = {} as { [K in keyof T]: number | null };
+
+  for (const [key, value] of Object.entries(params)) {
+    parsed[key as keyof T] = parseRouteParamId(value);
+  }
+
+  return parsed;
+}

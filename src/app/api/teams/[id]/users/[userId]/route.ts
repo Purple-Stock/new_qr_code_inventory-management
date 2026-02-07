@@ -1,13 +1,15 @@
 import { NextRequest } from "next/server";
 import { getUserIdFromRequest } from "@/lib/permissions";
 import { ERROR_CODES } from "@/lib/errors";
-import { errorResponse,
+import {
+  errorResponse,
+  parseRouteParamIds,
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
-import { parseRouteParamId } from "@/lib/api-route";
 import { internalServiceError } from "@/lib/services/errors";
-import { removeManagedTeamMember,
+import {
+  removeManagedTeamMember,
   updateManagedTeamMember,
 } from "@/lib/services/users";
 
@@ -17,8 +19,10 @@ export async function PATCH(
 ) {
   try {
     const { id, userId: userIdParam } = await params;
-    const teamId = parseRouteParamId(id);
-    const userId = parseRouteParamId(userIdParam);
+    const { teamId, userId } = parseRouteParamIds({
+      teamId: id,
+      userId: userIdParam,
+    });
 
     if (teamId === null || userId === null) {
       return errorResponse(undefined, 400, ERROR_CODES.INVALID_TEAM_OR_USER_ID);
@@ -48,8 +52,10 @@ export async function DELETE(
 ) {
   try {
     const { id, userId: userIdParam } = await params;
-    const teamId = parseRouteParamId(id);
-    const userId = parseRouteParamId(userIdParam);
+    const { teamId, userId } = parseRouteParamIds({
+      teamId: id,
+      userId: userIdParam,
+    });
 
     if (teamId === null || userId === null) {
       return errorResponse(undefined, 400, ERROR_CODES.INVALID_TEAM_OR_USER_ID);
