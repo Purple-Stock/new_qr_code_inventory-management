@@ -6,6 +6,7 @@ const ALLOWED_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx"]);
 
 const DB_IMPORT_PATTERN = /from\s+["']@\/lib\/db\//;
 const EXPLICIT_ANY_PATTERN = /\b(as\s+any|:\s*any)\b/;
+const TWO_ARG_ERROR_RESPONSE_PATTERN = /errorResponse\s*\(\s*[^,]+,\s*[^,)\n]+\s*\)/;
 
 const ANY_DEBT_ALLOWLIST = new Set();
 
@@ -75,11 +76,13 @@ const apiDbViolations = scanForPattern(allApiFiles, DB_IMPORT_PATTERN);
 const anyMatches = scanForPattern(serviceAndApiFiles, EXPLICIT_ANY_PATTERN);
 const anyViolations = anyMatches.filter((match) => !ANY_DEBT_ALLOWLIST.has(match.file));
 const anyDebt = anyMatches.filter((match) => ANY_DEBT_ALLOWLIST.has(match.file));
+const errorResponseViolations = scanForPattern(allApiFiles, TWO_ARG_ERROR_RESPONSE_PATTERN);
 
 if (
   uiDbViolations.length > 0 ||
   apiDbViolations.length > 0 ||
-  anyViolations.length > 0
+  anyViolations.length > 0 ||
+  errorResponseViolations.length > 0
 ) {
   console.error("Architecture check failed.\n");
 
@@ -96,6 +99,11 @@ if (
   printViolations(
     "Rule 3: avoid explicit 'any' in services/api (allowed only in temporary debt allowlist).",
     anyViolations
+  );
+
+  printViolations(
+    "Rule 4: API routes must call errorResponse with explicit errorCode (avoid 2-arg errorResponse).",
+    errorResponseViolations
   );
 
   process.exit(1);
