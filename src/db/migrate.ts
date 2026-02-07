@@ -24,7 +24,7 @@ const appliedSet = new Set(applied.map((row) => row.filename));
 
 const migrationFiles = fs
   .readdirSync(migrationsDir)
-  .filter((file) => file.endsWith(".sql"))
+  .filter((file) => file.endsWith(".sql") && !file.endsWith(".down.sql"))
   .sort();
 
 const now = Math.floor(Date.now() / 1000);

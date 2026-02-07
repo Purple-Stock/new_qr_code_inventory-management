@@ -90,6 +90,7 @@ Aplicação em `http://localhost:3000`.
 - `npm run test:watch`: watch mode.
 - `npm run test:coverage`: cobertura.
 - `npm run db:migrate`: aplica SQLs de `src/db/migrations`.
+- `npm run db:rollback -- --steps=1`: faz rollback das últimas migrações aplicadas (requer arquivos `*.down.sql` correspondentes).
 - `npm run verify:architecture`: checks arquiteturais + política de testes + lint de arquitetura + testes de arquitetura.
 - `npm run hooks:install`: ativa `.githooks/pre-push`.
 - `npm run hooks:uninstall`: remove hook local.

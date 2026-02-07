@@ -1,0 +1,10 @@
+DROP TABLE IF EXISTS webhooks;
+DROP TABLE IF EXISTS api_keys;
+DROP TABLE IF EXISTS stock_transactions;
+DROP TABLE IF EXISTS items;
+DROP TABLE IF EXISTS locations;
+DROP TABLE IF EXISTS team_members;
+DROP TABLE IF EXISTS company_members;
+DROP TABLE IF EXISTS teams;
+DROP TABLE IF EXISTS companies;
+DROP TABLE IF EXISTS users;

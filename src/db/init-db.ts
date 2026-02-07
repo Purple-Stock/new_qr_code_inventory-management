@@ -30,7 +30,7 @@ export function ensureDatabase() {
   // Get migration files
   const migrationFiles = fs
     .readdirSync(migrationsDir)
-    .filter((file) => file.endsWith(".sql"))
+    .filter((file) => file.endsWith(".sql") && !file.endsWith(".down.sql"))
     .sort();
 
   const now = Math.floor(Date.now() / 1000);

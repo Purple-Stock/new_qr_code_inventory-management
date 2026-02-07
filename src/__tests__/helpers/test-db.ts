@@ -33,7 +33,7 @@ export function getTestDb(): {
   const migrationsDir = path.resolve(testHelpersDir, "../../db/migrations");
   const migrationFiles = fs
     .readdirSync(migrationsDir)
-    .filter((file) => file.endsWith(".sql"))
+    .filter((file) => file.endsWith(".sql") && !file.endsWith(".down.sql"))
     .sort();
 
   for (const file of migrationFiles) {
