@@ -19,6 +19,9 @@ import {
   X,
   UserPlus,
   Trash2,
+  KeyRound,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +61,14 @@ export default function SettingsPage() {
   const [newMemberRole, setNewMemberRole] = useState<ManagedUser["role"]>("viewer");
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [canManageUsers, setCanManageUsers] = useState(false);
+  const [activeSettingsTab, setActiveSettingsTab] = useState<"users" | "password">("users");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isPasswordSaving, setIsPasswordSaving] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { language, setLanguage, t } = useTranslation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -355,6 +366,99 @@ export default function SettingsPage() {
     }
   };
 
+  const handleUpdateCurrentUserPassword = async () => {
+    if (!currentUserId) {
+      toast({
+        title: t.common.error,
+        description: t.settings.userNotAuthenticated,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast({
+        title: t.common.error,
+        description: t.settings.requiredPasswordFields,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: t.common.error,
+        description: t.settings.passwordMinLength,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: t.common.error,
+        description: t.settings.passwordsDoNotMatch,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword === currentPassword) {
+      toast({
+        title: t.common.error,
+        description: t.settings.newPasswordMustDiffer,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsPasswordSaving(true);
+    try {
+      const response = await fetch("/api/users/me/password", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": String(currentUserId),
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+          confirmPassword,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        const errorMessage =
+          data.error === "Current password is incorrect"
+            ? t.settings.currentPasswordIncorrect
+            : data.error || t.settings.couldNotUpdatePassword;
+        toast({
+          title: t.common.error,
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      toast({
+        title: t.common.success,
+        description: t.settings.passwordUpdatedSuccessfully,
+      });
+    } catch (error) {
+      toast({
+        title: t.common.error,
+        description: t.settings.couldNotUpdatePassword,
+        variant: "destructive",
+      });
+    } finally {
+      setIsPasswordSaving(false);
+    }
+  };
+
   const menuItems = [
     { icon: Home, label: t.menu.itemList, href: `/teams/${teamId}/items` },
     { icon: MapPin, label: t.menu.locations, href: `/teams/${teamId}/locations` },
@@ -432,7 +536,7 @@ export default function SettingsPage() {
         >
           <div className="flex items-center justify-between mb-6">
             {!isSidebarCollapsed && (
-              <h2 className="text-lg font-bold text-gray-900">{team?.name || "Team"}</h2>
+              <h2 className="text-lg font-bold text-gray-900">{team?.name || t.settings.teamFallback}</h2>
             )}
             <button
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -493,7 +597,7 @@ export default function SettingsPage() {
           } w-64`}
         >
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-gray-900">{team?.name || "Team"}</h2>
+            <h2 className="text-lg font-bold text-gray-900">{team?.name || t.settings.teamFallback}</h2>
             <button
               onClick={() => setIsMobileSidebarOpen(false)}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -555,13 +659,40 @@ export default function SettingsPage() {
             <p className="text-sm sm:text-base text-gray-600">{t.settings.subtitle}</p>
           </div>
 
+          <div className="mb-4 sm:mb-6 border-b border-gray-200">
+            <div className="flex gap-2 sm:gap-3 overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab("users")}
+                className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  activeSettingsTab === "users"
+                    ? "border-purple-600 text-purple-700"
+                    : "border-transparent text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                {t.settings.usersPermissionsTab}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab("password")}
+                className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  activeSettingsTab === "password"
+                    ? "border-purple-600 text-purple-700"
+                    : "border-transparent text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                {t.settings.changePasswordTab}
+              </button>
+            </div>
+          </div>
+
           {isLoading ? (
             <div className="text-center py-12">
               <p className="text-gray-600">{t.settings.loading}</p>
             </div>
           ) : (
             <>
-              {canManageUsers ? (
+              {activeSettingsTab === "users" ? canManageUsers ? (
                 <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
                     {t.settings.usersPermissionsTitle}
@@ -649,7 +780,7 @@ export default function SettingsPage() {
                                 {managedUser.email}
                               </p>
                               <p className="text-xs text-gray-500">
-                                ID: {managedUser.userId}
+                                {t.settings.memberIdLabel}: {managedUser.userId}
                               </p>
                               {isLastAdmin && (
                                 <p className="text-xs text-amber-600 mt-1">
@@ -697,6 +828,104 @@ export default function SettingsPage() {
                   <p className="text-sm text-gray-600">
                     {t.settings.noPermissionManageMembers}
                   </p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+                    <KeyRound className="h-5 w-5 text-purple-600" />
+                    {t.settings.changePasswordTitle}
+                  </h2>
+                  <p className="text-sm text-gray-600 mb-4 sm:mb-6">
+                    {t.settings.changePasswordSubtitle}
+                  </p>
+
+                  <div className="grid grid-cols-1 gap-3 max-w-xl">
+                    <div className="relative">
+                      <Input
+                        type={showCurrentPassword ? "text" : "password"}
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder={t.settings.currentPasswordPlaceholder}
+                        className="h-10 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        aria-label={
+                          showCurrentPassword
+                            ? t.settings.hidePassword
+                            : t.settings.showPassword
+                        }
+                      >
+                        {showCurrentPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        type={showNewPassword ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder={t.settings.newPasswordPlaceholder}
+                        className="h-10 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        aria-label={
+                          showNewPassword
+                            ? t.settings.hidePassword
+                            : t.settings.showPassword
+                        }
+                      >
+                        {showNewPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder={t.settings.confirmPasswordPlaceholder}
+                        className="h-10 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        aria-label={
+                          showConfirmPassword
+                            ? t.settings.hidePassword
+                            : t.settings.showPassword
+                        }
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={handleUpdateCurrentUserPassword}
+                      disabled={isPasswordSaving}
+                      className="bg-purple-600 hover:bg-purple-700 text-white w-fit"
+                    >
+                      {isPasswordSaving
+                        ? t.settings.updatingPassword
+                        : t.settings.updatePassword}
+                    </Button>
+                  </div>
                 </div>
               )}
             </>
