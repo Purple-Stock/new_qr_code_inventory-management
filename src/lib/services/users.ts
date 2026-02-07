@@ -16,7 +16,12 @@ import {
 import { ERROR_CODES } from "@/lib/errors";
 import { authorizeTeamPermission, isUserRole } from "@/lib/permissions";
 import { isValidEmail, normalizeEmail } from "@/lib/contracts/schemas";
-import type { ServiceResult } from "@/lib/services/types";
+import type {
+  AvailableUserDto,
+  CompanyTeamDto,
+  ManagedUserDto,
+  ServiceResult,
+} from "@/lib/services/types";
 import {
   authServiceError,
   internalServiceError,
@@ -24,15 +29,20 @@ import {
   notFoundServiceError,
   validationServiceError,
 } from "@/lib/services/errors";
+import {
+  toAvailableUserDto,
+  toCompanyTeamDto,
+  toManagedUserDto,
+} from "@/lib/services/mappers";
 
 export async function getTeamUsersForManagement(params: {
   teamId: number;
   requestUserId: number | null;
 }): Promise<
   ServiceResult<{
-    members: Awaited<ReturnType<typeof getTeamMembersWithUsers>>;
-    availableUsers: Array<{ id: number; email: string }>;
-    companyTeams: Array<{ id: number; name: string }>;
+    members: ManagedUserDto[];
+    availableUsers: AvailableUserDto[];
+    companyTeams: CompanyTeamDto[];
     currentUserId: number;
   }>
 > {
@@ -65,20 +75,22 @@ export async function getTeamUsersForManagement(params: {
 
   try {
     const members = await getTeamMembersWithUsers(params.teamId);
-    let availableUsers: Array<{ id: number; email: string }> = [];
-    let companyTeams: Array<{ id: number; name: string }> = [];
+    let availableUsers: AvailableUserDto[] = [];
+    let companyTeams: CompanyTeamDto[] = [];
 
     if (team.companyId) {
       const companyUsers = await getCompanyActiveUsers(team.companyId);
       const memberIds = new Set(members.map((member) => member.userId));
-      availableUsers = companyUsers.filter((user) => !memberIds.has(user.id));
-      companyTeams = await getCompanyTeams(team.companyId);
+      availableUsers = companyUsers
+        .filter((user) => !memberIds.has(user.id))
+        .map(toAvailableUserDto);
+      companyTeams = (await getCompanyTeams(team.companyId)).map(toCompanyTeamDto);
     }
 
     return {
       ok: true,
       data: {
-        members,
+        members: members.map(toManagedUserDto),
         availableUsers,
         companyTeams,
         currentUserId: params.requestUserId,
@@ -239,7 +251,7 @@ export async function updateManagedTeamMember(params: {
   payload: unknown;
 }): Promise<
   ServiceResult<{
-    member: { userId: number; email: string; role: string; status: string };
+    member: ManagedUserDto;
   }>
 > {
   if (!params.requestUserId) {
@@ -378,12 +390,12 @@ export async function updateManagedTeamMember(params: {
     return {
       ok: true,
       data: {
-        member: {
+        member: toManagedUserDto({
           userId: refreshedMember.userId,
           email: refreshedMember.email,
           role: refreshedMember.role,
           status: refreshedMember.status,
-        },
+        }),
       },
     };
   } catch {

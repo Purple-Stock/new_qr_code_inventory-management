@@ -1,8 +1,5 @@
-import type { TransactionDto } from "@/lib/services/types";
+import type { TeamDto, TransactionDto } from "@/lib/services/types";
 
 export type TransactionWithDetails = TransactionDto;
 
-export interface Team {
-  id: number;
-  name: string;
-}
+export type Team = Pick<TeamDto, "id" | "name">;

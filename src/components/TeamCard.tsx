@@ -8,7 +8,7 @@ import Link from "next/link";
 interface TeamCardProps {
   id: number;
   name: string;
-  createdAt: Date | number;
+  createdAt: Date | number | string;
   notes: string | null;
   itemCount: number;
   transactionCount: number;
@@ -32,7 +32,7 @@ export function TeamCard({
 }: TeamCardProps) {
   const { language, t } = useTranslation();
   
-  const formatDate = (date: Date | number) => {
+  const formatDate = (date: Date | number | string) => {
     const dateObj = date instanceof Date ? date : new Date(date);
     const locale = language === "pt-BR" ? "pt-BR" : language === "fr" ? "fr-FR" : "en-US";
     return new Intl.DateTimeFormat(locale, {

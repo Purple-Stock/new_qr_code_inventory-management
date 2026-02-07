@@ -19,17 +19,10 @@ import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/ui/use-toast-simple";
 import { fetchApiResult } from "@/lib/api-client";
+import type { TeamDto } from "@/lib/services/types";
 import Link from "next/link";
 
-interface Team {
-  id: number;
-  name: string;
-  notes: string | null;
-  createdAt: Date | number;
-  itemCount: number;
-  transactionCount: number;
-  canDeleteTeam?: boolean;
-}
+type Team = TeamDto;
 
 export default function TeamSelectionPage() {
   const router = useRouter();
@@ -313,7 +306,7 @@ export default function TeamSelectionPage() {
                   key={team.id}
                   id={team.id}
                   name={team.name}
-                  createdAt={team.createdAt instanceof Date ? team.createdAt : new Date(team.createdAt)}
+                  createdAt={team.createdAt}
                   notes={team.notes}
                   itemCount={team.itemCount}
                   transactionCount={team.transactionCount}

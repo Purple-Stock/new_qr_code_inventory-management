@@ -30,6 +30,47 @@ export type ItemDto = {
   updatedAt: string;
 };
 
+export type TeamDto = {
+  id: number;
+  name: string;
+  notes: string | null;
+  userId: number;
+  companyId: number | null;
+  itemCount: number;
+  transactionCount: number;
+  memberCount: number;
+  teamRole?: string;
+  canDeleteTeam?: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LocationDto = {
+  id: number;
+  name: string;
+  description: string | null;
+  teamId: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ManagedUserDto = {
+  userId: number;
+  email: string;
+  role: string;
+  status: string;
+};
+
+export type AvailableUserDto = {
+  id: number;
+  email: string;
+};
+
+export type CompanyTeamDto = {
+  id: number;
+  name: string;
+};
+
 export type StockTransactionDto = {
   id: number;
   itemId: number;

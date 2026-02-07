@@ -8,7 +8,7 @@
 
 ## 📊 Resumo Executivo
 
-**Conformidade Geral**: ✅ **96%** - Alta conformidade
+**Conformidade Geral**: ✅ **97%** - Alta conformidade
 
 Este relatório foi atualizado após a implementação dos itens críticos de arquitetura (segurança de acesso, consistência transacional, redução de N+1, avanço em Server Components e aumento de testes).
 
@@ -228,6 +228,30 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `src/app/teams/[id]/items/[itemId]/_components/ItemDetailPageClient.tsx` passou a usar tipos DTO
 - Resultado: contrato de resposta estável na camada de aplicação, com datas normalizadas e menor acoplamento da UI com estrutura interna de persistência.
 
+### 16. Padronização de contratos de saída (DTOs) em domínios de teams/locations/users (Concluído)
+
+- DTOs adicionais foram formalizados:
+  - `src/lib/services/types.ts` com `TeamDto`, `LocationDto`, `ManagedUserDto`, `AvailableUserDto`, `CompanyTeamDto`
+- Mapeadores de saída expandidos:
+  - `src/lib/services/mappers.ts` com `toTeamDto`, `toLocationDto`, `toManagedUserDto`, `toAvailableUserDto`, `toCompanyTeamDto`
+- Serviços migrados para responder com DTOs explícitos:
+  - `src/lib/services/teams.ts`
+  - `src/lib/services/locations.ts`
+  - `src/lib/services/users.ts`
+- Tipos de UI alinhados aos contratos de serviço:
+  - `src/app/teams/[id]/locations/_types.ts`
+  - `src/app/teams/[id]/items/_types.ts`
+  - `src/app/teams/[id]/transactions/_types.ts`
+  - `src/app/teams/[id]/stock-in/_types.ts`
+  - `src/app/teams/[id]/stock-out/_types.ts`
+  - `src/app/teams/[id]/adjust/_types.ts`
+  - `src/app/teams/[id]/move/_types.ts`
+  - `src/app/team_selection/_components/TeamSelectionPageClient.tsx`
+  - `src/components/TeamCard.tsx`
+- Página server de localizações convertida para mapear DB -> DTO antes do client:
+  - `src/app/teams/[id]/locations/page.tsx`
+- Resultado: respostas de domínio para teams/locations/users ficaram desacopladas da persistência e coerentes com a camada de aplicação.
+
 ---
 
 ## ✅ Validação Executada
@@ -240,10 +264,10 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 ## ⚠️ Pendências Relevantes
 
 1. Parte das páginas server-side ainda consulta `db/*` direto para leitura; pode evoluir para uso consistente de serviços de leitura em telas críticas.
-2. Domínios de `teams`, `locations` e `users` ainda podem adotar DTOs explícitos de saída para completar a padronização em toda a aplicação.
+2. Alguns componentes de UI ainda definem tipos locais inline em vez de reutilizar aliases centralizados de domínio.
 
 ---
 
 ## Próxima Meta Recomendada
 
-**Meta de curto prazo**: concluir migração de leituras server-side para serviços e fechar padronização de DTOs nos domínios remanescentes (`teams`, `locations`, `users`).
+**Meta de curto prazo**: concluir migração de leituras server-side para serviços e consolidar aliases de tipos de UI por domínio para reduzir duplicação residual.

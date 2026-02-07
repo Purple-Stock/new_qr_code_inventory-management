@@ -9,8 +9,7 @@ import {
 import { ERROR_CODES } from "@/lib/errors";
 import { authorizeTeamAccess, authorizeTeamPermission } from "@/lib/permissions";
 import { parseLocationPayload } from "@/lib/contracts/schemas";
-import type { Location } from "@/db/schema";
-import type { ServiceResult } from "@/lib/services/types";
+import type { LocationDto, ServiceResult } from "@/lib/services/types";
 import {
   authServiceError,
   conflictValidationServiceError,
@@ -19,11 +18,12 @@ import {
   notFoundServiceError,
   validationServiceError,
 } from "@/lib/services/errors";
+import { toLocationDto } from "@/lib/services/mappers";
 
 export async function listTeamLocationsForUser(params: {
   teamId: number;
   requestUserId: number | null;
-}): Promise<ServiceResult<{ locations: Location[] }>> {
+}): Promise<ServiceResult<{ locations: LocationDto[] }>> {
   const auth = await authorizeTeamAccess({
     teamId: params.teamId,
     requestUserId: params.requestUserId,
@@ -34,7 +34,7 @@ export async function listTeamLocationsForUser(params: {
 
   try {
     const locations = await getTeamLocations(params.teamId);
-    return { ok: true, data: { locations } };
+    return { ok: true, data: { locations: locations.map(toLocationDto) } };
   } catch {
     return {
       ok: false,
@@ -47,7 +47,7 @@ export async function getTeamLocationDetailsForUser(params: {
   teamId: number;
   locationId: number;
   requestUserId: number | null;
-}): Promise<ServiceResult<{ location: Location }>> {
+}): Promise<ServiceResult<{ location: LocationDto }>> {
   const auth = await authorizeTeamAccess({
     teamId: params.teamId,
     requestUserId: params.requestUserId,
@@ -71,14 +71,14 @@ export async function getTeamLocationDetailsForUser(params: {
     };
   }
 
-  return { ok: true, data: { location } };
+  return { ok: true, data: { location: toLocationDto(location) } };
 }
 
 export async function createTeamLocation(params: {
   teamId: number;
   requestUserId: number | null;
   payload: unknown;
-}): Promise<ServiceResult<{ location: Location }>> {
+}): Promise<ServiceResult<{ location: LocationDto }>> {
   const team = await getTeamWithStats(params.teamId);
   if (!team) {
     return {
@@ -107,7 +107,7 @@ export async function createTeamLocation(params: {
       description: parsed.data.description,
       teamId: params.teamId,
     });
-    return { ok: true, data: { location } };
+    return { ok: true, data: { location: toLocationDto(location) } };
   } catch (error: any) {
     if (error?.message?.includes("UNIQUE constraint")) {
       return {
@@ -133,7 +133,7 @@ export interface UpdateTeamLocationInput {
 
 export async function updateTeamLocation(
   params: UpdateTeamLocationInput
-): Promise<ServiceResult<{ location: Location }>> {
+): Promise<ServiceResult<{ location: LocationDto }>> {
   const team = await getTeamWithStats(params.teamId);
   if (!team) {
     return {
@@ -183,7 +183,7 @@ export async function updateTeamLocation(
 
   try {
     const location = await updateLocation(params.locationId, parsed.data);
-    return { ok: true, data: { location } };
+    return { ok: true, data: { location: toLocationDto(location) } };
   } catch (error: any) {
     if (error?.message?.includes("UNIQUE constraint")) {
       return {

@@ -2,6 +2,7 @@ import { getTeamLocations } from "@/lib/db/locations";
 import { getTeamWithStats } from "@/lib/db/teams";
 import { LocationsPageClient } from "./_components/LocationsPageClient";
 import { notFound } from "next/navigation";
+import { toLocationDto } from "@/lib/services/mappers";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -25,5 +26,5 @@ export default async function LocationsPage({ params }: PageProps) {
     notFound();
   }
 
-  return <LocationsPageClient locations={locations} team={team} />;
+  return <LocationsPageClient locations={locations.map(toLocationDto)} team={team} />;
 }

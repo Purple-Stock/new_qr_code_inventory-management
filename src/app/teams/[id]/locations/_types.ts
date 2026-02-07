@@ -1,14 +1,5 @@
-export interface Location {
-  id: number;
-  name: string;
-  description: string | null;
-  createdAt: Date | number;
-  updatedAt: Date | number;
-}
+import type { LocationDto, TeamDto } from "@/lib/services/types";
 
-export interface Team {
-  id: number;
-  name: string;
-  itemCount: number;
-  transactionCount: number;
-}
+export type Location = LocationDto;
+
+export type Team = Pick<TeamDto, "id" | "name" | "itemCount" | "transactionCount">;

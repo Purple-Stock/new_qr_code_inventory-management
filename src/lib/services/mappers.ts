@@ -1,6 +1,15 @@
 import type { Item, StockTransaction } from "@/db/schema";
 import type { TransactionWithDetails } from "@/lib/db/stock-transactions";
-import type { ItemDto, StockTransactionDto, TransactionDto } from "@/lib/services/types";
+import type {
+  AvailableUserDto,
+  CompanyTeamDto,
+  ItemDto,
+  LocationDto,
+  ManagedUserDto,
+  StockTransactionDto,
+  TeamDto,
+  TransactionDto,
+} from "@/lib/services/types";
 
 function toIsoString(value: Date | string | null | undefined): string {
   if (!value) return new Date(0).toISOString();
@@ -25,6 +34,85 @@ export function toItemDto(item: Item & { locationName?: string | null }): ItemDt
     locationName: item.locationName ?? null,
     createdAt: toIsoString(item.createdAt),
     updatedAt: toIsoString(item.updatedAt),
+  };
+}
+
+export function toTeamDto(
+  team: {
+    id: number;
+    name: string;
+    notes: string | null;
+    userId: number;
+    companyId: number | null;
+    createdAt: Date | string;
+    updatedAt: Date | string;
+  } & Partial<{
+    itemCount: number;
+    transactionCount: number;
+    memberCount: number;
+    teamRole: string;
+    canDeleteTeam: boolean;
+  }>
+): TeamDto {
+  return {
+    id: team.id,
+    name: team.name,
+    notes: team.notes,
+    userId: team.userId,
+    companyId: team.companyId,
+    itemCount: team.itemCount ?? 0,
+    transactionCount: team.transactionCount ?? 0,
+    memberCount: team.memberCount ?? 0,
+    teamRole: team.teamRole,
+    canDeleteTeam: team.canDeleteTeam,
+    createdAt: toIsoString(team.createdAt),
+    updatedAt: toIsoString(team.updatedAt),
+  };
+}
+
+export function toLocationDto(location: {
+  id: number;
+  name: string;
+  description: string | null;
+  teamId: number;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}): LocationDto {
+  return {
+    id: location.id,
+    name: location.name,
+    description: location.description,
+    teamId: location.teamId,
+    createdAt: toIsoString(location.createdAt),
+    updatedAt: toIsoString(location.updatedAt),
+  };
+}
+
+export function toManagedUserDto(member: {
+  userId: number;
+  email: string;
+  role: string;
+  status: string;
+}): ManagedUserDto {
+  return {
+    userId: member.userId,
+    email: member.email,
+    role: member.role,
+    status: member.status,
+  };
+}
+
+export function toAvailableUserDto(user: { id: number; email: string }): AvailableUserDto {
+  return {
+    id: user.id,
+    email: user.email,
+  };
+}
+
+export function toCompanyTeamDto(team: { id: number; name: string }): CompanyTeamDto {
+  return {
+    id: team.id,
+    name: team.name,
   };
 }
 

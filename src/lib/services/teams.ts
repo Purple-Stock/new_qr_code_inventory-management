@@ -13,8 +13,7 @@ import {
   authorizeTeamPermission,
 } from "@/lib/permissions";
 import { parseTeamCreatePayload, parseTeamUpdatePayload } from "@/lib/contracts/schemas";
-import type { Team } from "@/db/schema";
-import type { ServiceResult } from "@/lib/services/types";
+import type { ServiceResult, TeamDto } from "@/lib/services/types";
 import {
   authServiceError,
   conflictValidationServiceError,
@@ -22,11 +21,12 @@ import {
   notFoundServiceError,
   validationServiceError,
 } from "@/lib/services/errors";
+import { toTeamDto } from "@/lib/services/mappers";
 
 export async function createTeamForUser(params: {
   requestUserId: number | null;
   payload: unknown;
-}): Promise<ServiceResult<{ team: Team }>> {
+}): Promise<ServiceResult<{ team: TeamDto }>> {
   const parsed = parseTeamCreatePayload(params.payload);
   if (!parsed.ok) {
     return { ok: false, error: validationServiceError(parsed.error) };
@@ -71,7 +71,7 @@ export async function createTeamForUser(params: {
       userId: params.requestUserId,
       companyId,
     });
-    return { ok: true, data: { team } };
+    return { ok: true, data: { team: toTeamDto(team) } };
   } catch (error: any) {
     if (error?.message?.includes("UNIQUE constraint")) {
       return {
@@ -88,7 +88,7 @@ export async function createTeamForUser(params: {
 
 export async function getUserTeamsForUser(params: {
   requestUserId: number | null;
-}): Promise<ServiceResult<{ teams: Awaited<ReturnType<typeof getUserTeamsWithStats>> }>> {
+}): Promise<ServiceResult<{ teams: TeamDto[] }>> {
   if (!params.requestUserId) {
     return {
       ok: false,
@@ -102,7 +102,7 @@ export async function getUserTeamsForUser(params: {
 
   try {
     const teams = await getUserTeamsWithStats(params.requestUserId);
-    return { ok: true, data: { teams } };
+    return { ok: true, data: { teams: teams.map(toTeamDto) } };
   } catch {
     return {
       ok: false,
@@ -114,7 +114,7 @@ export async function getUserTeamsForUser(params: {
 export async function getTeamForUser(params: {
   teamId: number;
   requestUserId: number | null;
-}): Promise<ServiceResult<{ team: NonNullable<Awaited<ReturnType<typeof getTeamWithStats>>> }>> {
+}): Promise<ServiceResult<{ team: TeamDto }>> {
   const auth = await authorizeTeamAccess({
     teamId: params.teamId,
     requestUserId: params.requestUserId,
@@ -131,7 +131,7 @@ export async function getTeamForUser(params: {
     };
   }
 
-  return { ok: true, data: { team } };
+  return { ok: true, data: { team: toTeamDto(team) } };
 }
 
 export interface UpdateTeamDetailsInput {
@@ -142,7 +142,7 @@ export interface UpdateTeamDetailsInput {
 
 export async function updateTeamDetails(
   params: UpdateTeamDetailsInput
-): Promise<ServiceResult<{ team: Team }>> {
+): Promise<ServiceResult<{ team: TeamDto }>> {
   const existingTeam = await getTeamWithStats(params.teamId);
   if (!existingTeam) {
     return {
@@ -173,7 +173,7 @@ export async function updateTeamDetails(
 
   try {
     const team = await updateTeam(params.teamId, parsed.data);
-    return { ok: true, data: { team } };
+    return { ok: true, data: { team: toTeamDto(team) } };
   } catch (error: any) {
     if (error?.message?.includes("UNIQUE constraint")) {
       return {

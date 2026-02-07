@@ -1,16 +1,11 @@
 import type { ItemDto } from "@/lib/services/types";
+import type { LocationDto, TeamDto } from "@/lib/services/types";
 
 export type Item = Pick<ItemDto, "id" | "name" | "sku" | "barcode" | "currentStock" | "locationName">;
 
-export interface Location {
-  id: number;
-  name: string;
-}
+export type Location = Pick<LocationDto, "id" | "name">;
 
-export interface Team {
-  id: number;
-  name: string;
-}
+export type Team = Pick<TeamDto, "id" | "name">;
 
 export interface SelectedItem {
   item: Item;
