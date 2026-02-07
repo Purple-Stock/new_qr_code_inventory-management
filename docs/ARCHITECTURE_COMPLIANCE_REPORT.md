@@ -108,7 +108,7 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 ### 11. Unificação de regras em use-cases (Concluído para itens, times, localizações, usuários e estoque)
 
 - Foi extraído o primeiro use-case de escrita compartilhado:
-  - `src/lib/services/items.ts` com `createTeamItem(...)`
+  - `src/lib/services/items.ts` com `createTeamItem(...)`, `updateTeamItem(...)` e `deleteTeamItemById(...)`
 - Foram extraídos use-cases adicionais para times e localizações:
   - `src/lib/services/teams.ts` com `createTeamForUser(...)`, `updateTeamDetails(...)` e `deleteTeamWithAuthorization(...)`
   - `src/lib/services/locations.ts` com `createTeamLocation(...)`, `updateTeamLocation(...)` e `deleteTeamLocation(...)`
@@ -170,6 +170,7 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `src/app/api/auth/logout/route.ts`
 - Resultado: respostas de sucesso, erro de domínio e erro interno ficaram consistentes em todas as API Routes, reduzindo boilerplate e divergência de contrato HTTP.
 - Cobertura adicional de testes de serviços:
+  - `src/__tests__/lib/services/items.service.test.ts`
   - `src/__tests__/lib/services/users.service.test.ts`
   - `src/__tests__/lib/services/stock-transactions.service.test.ts`
 
@@ -178,7 +179,7 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 ## ✅ Validação Executada
 
 - `npm run build`: **OK**
-- `npm test -- --runInBand`: **OK** (7 suítes, 23 testes)
+- `npm test -- --runInBand`: **OK** (8 suítes, 25 testes)
 
 ---
 
