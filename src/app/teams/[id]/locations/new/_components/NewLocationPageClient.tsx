@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { FormPageShell } from "@/components/shared/FormPageShell";
 import { useTranslation } from "@/lib/i18n";
+import { parseApiResult } from "@/lib/api-error";
 import { LocationForm } from "../../_components/LocationForm";
 
 interface NewLocationPageClientProps {
@@ -47,7 +48,9 @@ export default function NewLocationPageClient({
         }),
       });
 
-      if (!response.ok) {
+      const result = await parseApiResult(response, t.locationForm.unexpectedError);
+
+      if (!result.ok) {
         setError(t.locationForm.unexpectedError);
         setIsLoading(false);
         return;

@@ -16,6 +16,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 import { useTranslation } from "@/lib/i18n"
+import { parseApiResult } from "@/lib/api-error"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -40,18 +41,21 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       })
 
-      const data = await response.json()
+      const result = await parseApiResult<{ user?: { id?: number; role?: string } }>(
+        response,
+        t.auth.login.unexpectedError
+      )
 
-      if (!response.ok) {
+      if (!result.ok) {
         setError(t.auth.login.invalidCredentials)
         setIsLoading(false)
         return
       }
 
       // Backward compatibility while legacy client flows still read localStorage.
-      if (data.user?.id) {
-        localStorage.setItem("userId", String(data.user.id))
-        localStorage.setItem("userRole", data.user.role || "viewer")
+      if (result.data.user?.id) {
+        localStorage.setItem("userId", String(result.data.user.id))
+        localStorage.setItem("userRole", result.data.user.role || "viewer")
       }
 
       // Redirect to team selection

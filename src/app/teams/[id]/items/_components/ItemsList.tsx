@@ -7,6 +7,7 @@ import { QRCodeDisplay } from "@/components/QRCodeDisplay";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { MapPin, Edit, Copy, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast-simple";
+import { parseApiResult } from "@/lib/api-error";
 import type { Item } from "../_types";
 
 interface ItemsListProps {
@@ -14,6 +15,12 @@ interface ItemsListProps {
   teamId: string;
   formatPrice: (price: number | null) => string;
   t: any;
+}
+
+interface ItemDetails extends Item {
+  cost?: number | null;
+  brand?: string | null;
+  locationId?: number | null;
 }
 
 function generateBarcode(): string {
@@ -32,8 +39,8 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
     setCopyingId(item.id);
     try {
       const getRes = await fetch(`/api/teams/${teamId}/items/${item.id}`);
-      const getData = await getRes.json();
-      if (!getRes.ok) {
+      const getResult = await parseApiResult<{ item?: ItemDetails }>(getRes, t.items.failedToLoadItem);
+      if (!getResult.ok || !getResult.data.item) {
         toast({
           variant: "destructive",
           title: t.common.error,
@@ -41,7 +48,7 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
         });
         return;
       }
-      const full = getData.item;
+      const full = getResult.data.item;
       const newBarcode = generateBarcode();
       const name = (full.name && String(full.name).trim())
         ? String(full.name).trim()
@@ -63,9 +70,8 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
           initialQuantity: 0,
         }),
       });
-      const postData = await postRes.json();
-
-      if (!postRes.ok) {
+      const postResult = await parseApiResult(postRes, t.items.failedToDuplicateItem);
+      if (!postResult.ok) {
         toast({
           variant: "destructive",
           title: t.common.error,
@@ -97,9 +103,8 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
       const res = await fetch(`/api/teams/${teamId}/items/${itemToDelete.id}`, {
         method: "DELETE",
       });
-      const data = await res.json();
-
-      if (!res.ok) {
+      const result = await parseApiResult(res, t.items.failedToDeleteItem);
+      if (!result.ok) {
         toast({
           variant: "destructive",
           title: t.common.error,

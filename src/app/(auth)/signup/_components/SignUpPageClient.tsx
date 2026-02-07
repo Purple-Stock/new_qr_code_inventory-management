@@ -16,6 +16,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 import { useTranslation } from "@/lib/i18n"
+import { parseApiResult } from "@/lib/api-error"
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -57,17 +58,20 @@ export default function SignUpPage() {
         body: JSON.stringify({ companyName, email, password }),
       })
 
-      const data = await response.json()
+      const result = await parseApiResult<{ user?: { id?: number; role?: string } }>(
+        response,
+        t.auth.signup.unexpectedError
+      )
 
-      if (!response.ok) {
+      if (!result.ok) {
         setError(t.auth.signup.signupError)
         setIsLoading(false)
         return
       }
 
-      if (data.user?.id) {
-        localStorage.setItem("userId", String(data.user.id))
-        localStorage.setItem("userRole", data.user.role || "viewer")
+      if (result.data.user?.id) {
+        localStorage.setItem("userId", String(result.data.user.id))
+        localStorage.setItem("userRole", result.data.user.role || "viewer")
       }
 
       setSuccess(t.auth.signup.accountCreatedRedirecting)

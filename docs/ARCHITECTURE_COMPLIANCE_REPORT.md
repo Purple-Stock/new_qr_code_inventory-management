@@ -86,6 +86,23 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `jest.config.js` convertido para ESM
   - correção em `src/__tests__/helpers/test-db.ts`
 
+### 10. Padronização de parsing de resposta/erro no frontend (Concluído)
+
+- Foi criado um helper único para parsing resiliente de payloads JSON:
+  - `src/lib/api-error.ts` (`parseApiResult` e `parseApiError`)
+- Fluxos de UI migrados para o helper (remoção de parsing manual duplicado):
+  - `src/app/(main)/_components/LoginPageClient.tsx`
+  - `src/app/(auth)/signup/_components/SignUpPageClient.tsx`
+  - `src/app/team_selection/_components/TeamSelectionPageClient.tsx`
+  - `src/app/teams/new/_components/NewTeamPageClient.tsx`
+  - `src/app/teams/[id]/settings/_components/SettingsPageClient.tsx`
+  - `src/app/teams/[id]/reports/_components/ReportsPageClient.tsx`
+  - `src/app/teams/[id]/items/_components/ItemsList.tsx`
+  - `src/app/teams/[id]/items/new/_components/NewItemPageClient.tsx`
+  - `src/app/teams/[id]/items/[itemId]/edit/_components/EditItemPageClient.tsx`
+  - `src/app/teams/[id]/locations/new/_components/NewLocationPageClient.tsx`
+  - `src/app/teams/[id]/locations/[locationId]/edit/_components/EditLocationPageClient.tsx`
+
 ---
 
 ## ✅ Validação Executada

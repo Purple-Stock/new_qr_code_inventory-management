@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { FormPageShell } from "@/components/shared/FormPageShell";
 import { useTranslation } from "@/lib/i18n";
+import { parseApiResult } from "@/lib/api-error";
 import { ItemForm, type ItemFormValues } from "../../_components/ItemForm";
 
 interface NewItemPageClientProps {
@@ -83,7 +84,9 @@ export default function NewItemPageClient({
         }),
       });
 
-      if (!response.ok) {
+      const result = await parseApiResult(response, t.itemForm.unexpectedError);
+
+      if (!result.ok) {
         setError(t.itemForm.unexpectedError);
         setIsLoading(false);
         return;

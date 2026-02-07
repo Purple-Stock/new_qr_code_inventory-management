@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { useTranslation } from "@/lib/i18n";
+import { parseApiResult } from "@/lib/api-error";
 
 export default function NewTeamPage() {
   const router = useRouter();
@@ -43,10 +44,10 @@ export default function NewTeamPage() {
         }),
       });
 
-      const data = await response.json();
+      const result = await parseApiResult(response, t.team.unexpectedError);
 
-      if (!response.ok) {
-        if (response.status === 401) {
+      if (!result.ok) {
+        if (result.error.status === 401) {
           router.push("/");
           return;
         }

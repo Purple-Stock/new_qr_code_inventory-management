@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/lib/i18n";
+import { parseApiResult } from "@/lib/api-error";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import type { ReportStats } from "@/lib/db/reports";
 
@@ -53,9 +54,9 @@ export default function ReportsPageClient({
       if (endDate) params.append("endDate", endDate);
       const queryString = params.toString();
       const reportsResponse = await fetch(`/api/teams/${teamId}/reports${queryString ? `?${queryString}` : ""}`);
-      const reportsData = await reportsResponse.json();
-      if (reportsResponse.ok) {
-        setStats(reportsData.stats);
+      const reportsResult = await parseApiResult<{ stats?: ReportStats }>(reportsResponse, "Failed to fetch reports");
+      if (reportsResult.ok && reportsResult.data.stats) {
+        setStats(reportsResult.data.stats);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
