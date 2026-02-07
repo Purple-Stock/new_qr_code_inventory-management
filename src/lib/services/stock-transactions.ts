@@ -7,9 +7,11 @@ import type { ServiceResult } from "@/lib/services/types";
 import {
   authServiceError,
   internalServiceError,
+  makeServiceError,
   notFoundServiceError,
   validationServiceError,
 } from "@/lib/services/errors";
+import { deleteStockTransaction } from "@/lib/db/stock-transactions";
 
 export async function createTeamStockTransaction(params: {
   teamId: number;
@@ -69,6 +71,45 @@ export async function createTeamStockTransaction(params: {
       error: internalServiceError(
         error?.message || "An error occurred while creating stock transaction"
       ),
+    };
+  }
+}
+
+export async function deleteTeamTransaction(params: {
+  teamId: number;
+  transactionId: number;
+  requestUserId: number | null;
+}): Promise<ServiceResult<null>> {
+  const team = await getTeamWithStats(params.teamId);
+  if (!team) {
+    return {
+      ok: false,
+      error: notFoundServiceError(ERROR_CODES.TEAM_NOT_FOUND, "Team not found"),
+    };
+  }
+
+  const auth = await authorizeTeamPermission({
+    permission: "transaction:delete",
+    teamId: params.teamId,
+    requestUserId: params.requestUserId,
+  });
+  if (!auth.ok) {
+    return { ok: false, error: authServiceError(auth) };
+  }
+
+  try {
+    const deleted = await deleteStockTransaction(params.transactionId, params.teamId);
+    if (!deleted) {
+      return {
+        ok: false,
+        error: makeServiceError(404, ERROR_CODES.VALIDATION_ERROR, "Transaction not found"),
+      };
+    }
+    return { ok: true, data: null };
+  } catch {
+    return {
+      ok: false,
+      error: internalServiceError("An error occurred while deleting transaction"),
     };
   }
 }

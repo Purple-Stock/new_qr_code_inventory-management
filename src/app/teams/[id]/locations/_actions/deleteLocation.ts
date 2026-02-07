@@ -1,33 +1,29 @@
 "use server";
 
-import { deleteLocation } from "@/lib/db/locations";
 import { revalidatePath } from "next/cache";
-import { authorizeTeamPermission } from "@/lib/permissions";
 import { cookies } from "next/headers";
 import { getUserIdFromSessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
+import { deleteTeamLocation } from "@/lib/services/locations";
 
 export async function deleteLocationAction(
   teamId: number,
   locationId: number
 ) {
   try {
-    const requestUserId = getUserIdFromSessionToken(
-      (await cookies()).get(SESSION_COOKIE_NAME)?.value
-    );
-
-    const auth = await authorizeTeamPermission({
-      permission: "location:delete",
+    const result = await deleteTeamLocation({
       teamId,
-      requestUserId,
+      locationId,
+      requestUserId: getUserIdFromSessionToken(
+        (await cookies()).get(SESSION_COOKIE_NAME)?.value
+      ),
     });
-    if (!auth.ok) {
+    if (!result.ok) {
       return {
         success: false,
-        error: auth.error,
+        error: result.error.error,
+        errorCode: result.error.errorCode,
       };
     }
-
-    await deleteLocation(locationId);
 
     // Revalidate relevant pages
     revalidatePath(`/teams/${teamId}/locations`);

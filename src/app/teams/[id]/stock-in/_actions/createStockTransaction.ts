@@ -1,12 +1,10 @@
 "use server";
 
-import { createStockTransaction } from "@/lib/db/stock-transactions";
 import { revalidatePath } from "next/cache";
-import { authorizeTeamPermission } from "@/lib/permissions";
 import { cookies } from "next/headers";
 import { getUserIdFromSessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
-import { parseStockActionInput } from "@/lib/validation";
-import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
+import { ERROR_CODES, errorPayload } from "@/lib/errors";
+import { createTeamStockTransaction } from "@/lib/services/stock-transactions";
 
 export async function createStockInAction(
   teamId: number,
@@ -18,49 +16,30 @@ export async function createStockInAction(
   }
 ) {
   try {
-    const parsed = parseStockActionInput(data, "stock_in");
-    if (!parsed.ok) {
-      return { success: false, ...errorPayload(ERROR_CODES.VALIDATION_ERROR, parsed.error) };
-    }
-
-    const requestUserId = getUserIdFromSessionToken(
-      (await cookies()).get(SESSION_COOKIE_NAME)?.value
-    );
-
-    const auth = await authorizeTeamPermission({
-      permission: "stock:write",
+    const result = await createTeamStockTransaction({
       teamId,
-      requestUserId,
+      requestUserId: getUserIdFromSessionToken(
+        (await cookies()).get(SESSION_COOKIE_NAME)?.value
+      ),
+      payload: {
+        ...data,
+        transactionType: "stock_in",
+      },
     });
-    if (!auth.ok) {
+    if (!result.ok) {
       return {
         success: false,
-        ...errorPayload(authErrorToCode(auth.error), auth.error),
+        errorCode: result.error.errorCode,
+        error: result.error.error,
       };
     }
-    if (!auth.user) {
-      return {
-        success: false,
-        ...errorPayload(ERROR_CODES.USER_NOT_AUTHENTICATED),
-      };
-    }
-
-    const transaction = await createStockTransaction({
-      itemId: parsed.data.itemId,
-      teamId,
-      transactionType: "stock_in",
-      quantity: parsed.data.quantity,
-      notes: parsed.data.notes,
-      userId: auth.user.id,
-      destinationLocationId: parsed.data.destinationLocationId,
-    });
 
     // Revalidate relevant pages
     revalidatePath(`/teams/${teamId}/stock-in`);
     revalidatePath(`/teams/${teamId}/items`);
     revalidatePath(`/teams/${teamId}/transactions`);
 
-    return { success: true, transaction };
+    return { success: true, transaction: result.data.transaction };
   } catch (error: any) {
     console.error("Error creating stock transaction:", error);
     return {

@@ -1,7 +1,10 @@
-import { createTeamStockTransaction } from "@/lib/services/stock-transactions";
+import {
+  createTeamStockTransaction,
+  deleteTeamTransaction,
+} from "@/lib/services/stock-transactions";
 import { ERROR_CODES } from "@/lib/errors";
 import { getTestDb, cleanupTestDb, clearTestDb } from "../../helpers/test-db";
-import { items, locations, teamMembers, teams, users } from "@/db/schema";
+import { items, locations, stockTransactions, teamMembers, teams, users } from "@/db/schema";
 
 jest.mock("@/db/client", () => {
   const { getTestDb } = require("../../helpers/test-db");
@@ -94,5 +97,56 @@ describe("stock-transactions service", () => {
     if (result.ok) return;
     expect(result.error.status).toBe(400);
     expect(result.error.errorCode).toBe(ERROR_CODES.VALIDATION_ERROR);
+  });
+
+  it("deletes a transaction with valid permission and team scope", async () => {
+    const { drizzle } = getTestDb();
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "stock-delete@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Stock Delete Team", userId: user.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+    const [location] = await drizzle
+      .insert(locations)
+      .values({ name: "Delete Main", description: null, teamId: team.id })
+      .returning();
+    const [item] = await drizzle
+      .insert(items)
+      .values({
+        name: "Item Delete",
+        barcode: "stock-delete-barcode",
+        teamId: team.id,
+        locationId: location.id,
+        initialQuantity: 0,
+        currentStock: 10,
+      })
+      .returning();
+    const [transaction] = await drizzle
+      .insert(stockTransactions)
+      .values({
+        itemId: item.id,
+        teamId: team.id,
+        transactionType: "stock_out",
+        quantity: 2,
+        userId: user.id,
+      })
+      .returning();
+
+    const result = await deleteTeamTransaction({
+      teamId: team.id,
+      transactionId: transaction.id,
+      requestUserId: user.id,
+    });
+
+    expect(result.ok).toBe(true);
   });
 });

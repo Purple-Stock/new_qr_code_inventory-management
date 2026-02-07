@@ -1,8 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-import { deleteStockTransaction } from "@/lib/db/stock-transactions";
-import { getTeamWithStats } from "@/lib/db/teams";
-import { authorizeTeamPermission, getUserIdFromRequest } from "@/lib/permissions";
-import { errorResponse, internalErrorResponse, successResponse } from "@/lib/api-route";
+import { NextRequest } from "next/server";
+import { getUserIdFromRequest } from "@/lib/permissions";
+import {
+  errorResponse,
+  internalErrorResponse,
+  serviceErrorResponse,
+  successResponse,
+} from "@/lib/api-route";
+import { deleteTeamTransaction } from "@/lib/services/stock-transactions";
+import { ERROR_CODES } from "@/lib/errors";
 
 export async function DELETE(
   request: NextRequest,
@@ -14,29 +19,20 @@ export async function DELETE(
     const transactionId = parseInt(transactionIdParam, 10);
 
     if (isNaN(teamId) || isNaN(transactionId)) {
-      return errorResponse("Invalid team ID or transaction ID", 400);
+      return errorResponse(
+        "Invalid team ID or transaction ID",
+        400,
+        ERROR_CODES.VALIDATION_ERROR
+      );
     }
 
-    // Verify team exists
-    const team = await getTeamWithStats(teamId);
-    if (!team) {
-      return errorResponse("Team not found", 404);
-    }
-
-    const auth = await authorizeTeamPermission({
-      permission: "transaction:delete",
+    const result = await deleteTeamTransaction({
       teamId,
       requestUserId: getUserIdFromRequest(request),
+      transactionId,
     });
-    if (!auth.ok) {
-      return errorResponse(auth.error, auth.status);
-    }
-
-    // Delete transaction
-    const deleted = await deleteStockTransaction(transactionId, teamId);
-
-    if (!deleted) {
-      return errorResponse("Transaction not found", 404);
+    if (!result.ok) {
+      return serviceErrorResponse(result.error);
     }
 
     return successResponse(

@@ -8,7 +8,7 @@
 
 ## 📊 Resumo Executivo
 
-**Conformidade Geral**: ✅ **91%** - Alta conformidade
+**Conformidade Geral**: ✅ **94%** - Alta conformidade
 
 Este relatório foi atualizado após a implementação dos itens críticos de arquitetura (segurança de acesso, consistência transacional, redução de N+1, avanço em Server Components e aumento de testes).
 
@@ -176,22 +176,40 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `src/__tests__/lib/services/teams.service.test.ts` (cenários adicionais de update/delete)
   - `src/__tests__/lib/services/locations.service.test.ts` (cenários adicionais de update/delete)
 
+### 13. Consolidação de mutações entre API Routes e Server Actions (Concluído)
+
+- Server Actions de estoque migradas para usar o mesmo serviço de domínio da API:
+  - `src/app/teams/[id]/stock-in/_actions/createStockTransaction.ts`
+  - `src/app/teams/[id]/stock-out/_actions/createStockTransaction.ts`
+  - `src/app/teams/[id]/adjust/_actions/createStockTransaction.ts`
+  - `src/app/teams/[id]/move/_actions/createStockTransaction.ts`
+  - serviço compartilhado: `src/lib/services/stock-transactions.ts` (`createTeamStockTransaction`)
+- Exclusões de localização e transação via Server Actions migradas para serviços:
+  - `src/app/teams/[id]/locations/_actions/deleteLocation.ts` → `deleteTeamLocation(...)`
+  - `src/app/teams/[id]/transactions/_actions/deleteTransaction.ts` → `deleteTeamTransaction(...)`
+- Rota API de exclusão de transação também migrada para serviço:
+  - `src/app/api/teams/[id]/transactions/[transactionId]/route.ts` → `deleteTeamTransaction(...)`
+- Foi removido parsing local duplicado de actions:
+  - `parseStockActionInput` removido de `src/lib/validation.ts`
+- Cobertura de serviço ampliada:
+  - `src/__tests__/lib/services/stock-transactions.service.test.ts` com cenário de delete autorizado.
+
 ---
 
 ## ✅ Validação Executada
 
 - `npm run build`: **OK**
-- `npm test -- --runInBand`: **OK** (8 suítes, 27 testes)
+- `npm test -- --runInBand`: **OK** (8 suítes, 28 testes)
 
 ---
 
 ## ⚠️ Pendências Relevantes
 
-1. Existe oportunidade de unificar ainda mais validações de input (schema único para API + Server Actions).
-2. Parte dos fluxos de escrita ainda está duplicada entre API Routes e Server Actions (pode evoluir para use-cases unificados).
+1. Existe oportunidade de unificar ainda mais validações de input em schema formal único (ex.: Zod compartilhado para API + Actions + forms).
+2. Parte das páginas server-side ainda consulta `db/*` direto para leitura; pode evoluir para uso consistente de serviços de leitura em telas críticas.
 
 ---
 
 ## Próxima Meta Recomendada
 
-**Meta de curto prazo**: consolidar validação de contratos de entrada e reduzir duplicação entre API Routes e Server Actions para estabilizar a conformidade acima de 90%.
+**Meta de curto prazo**: consolidar contratos de entrada com schema único e ampliar adoção da camada de serviços para leituras server-side.
