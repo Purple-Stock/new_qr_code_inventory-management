@@ -457,14 +457,27 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - cobertura de functions nessas actions em **100%**
   - avanço real da camada `app/*` com cenários de sucesso, erro de domínio e exceção
 
+### 30. Cobertura de utilitários de UI de transações (Concluído)
+
+- Suíte adicionada:
+  - `src/__tests__/app/transactions-utils.test.ts`
+- Módulos cobertos:
+  - `src/app/teams/[id]/transactions/_utils/getTransactionType.ts`
+  - `src/app/teams/[id]/transactions/_utils/formatDate.ts`
+- Cenários validados:
+  - labels e cores por tipo de transação
+  - formatação de quantidade e localização (incluindo `move`)
+  - fallback para tipos/locais desconhecidos
+  - formatação de data por locale (`en`, `fr`, `pt-BR`)
+
 ---
 
 ## ✅ Validação Executada
 
 - `npm run build`: **OK**
 - `npm run verify:architecture`: **OK**
-- `npm test -- --runInBand`: **OK** (32 suítes, 161 testes)
-- `npm run test:coverage`: **OK** (Statements: **35.68%**, Branches: **21.80%**, Functions: **28.34%**, Lines: **36.22%**)
+- `npm test -- --runInBand`: **OK** (33 suítes, 171 testes)
+- `npm run test:coverage`: **OK** (Statements: **36.38%**, Branches: **23.39%**, Functions: **29.13%**, Lines: **36.94%**)
 - `npm run check:architecture`: **OK**
 
 ---
