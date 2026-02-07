@@ -346,21 +346,36 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 - Observação: nesta etapa, o débito remanescente de `any` nas camadas cobertas foi zerado.
 - Política de testes por feature operacionalizada:
   - novos módulos em `src/lib/services/*` precisam de suíte dedicada em `src/__tests__/lib/services/<nome>.service.test.ts`
-  - exceções legadas ficam em allowlist temporária explícita no script (`reports`, `team-dashboard`, `transactions`) até eliminação gradual
+  - allowlist legada removida após criação das suítes faltantes (`reports`, `team-dashboard`, `transactions`)
+
+### 21. Cobertura de rotas críticas de times (Concluído)
+
+- Suítes adicionadas para rotas centrais de times:
+  - `src/__tests__/api/teams/route.test.ts`
+  - `src/__tests__/api/teams/team-id-route.test.ts`
+- Coberturas garantidas:
+  - `/api/teams` (`GET`, `POST`) com cenários de sucesso, erro de serviço e exceção
+  - `/api/teams/[id]` (`GET`, `PUT`, `DELETE`) com cenários de ID inválido, sucesso e erro de serviço
+- Resultado:
+  - `src/app/api/teams/route.ts` em **100%** de statements/branches/functions/lines
+  - `src/app/api/teams/[id]/route.ts` em **88.09%** statements/lines e **83.33%** branches
 
 ---
 
 ## ✅ Validação Executada
 
 - `npm run build`: **OK**
-- `npm test -- --runInBand`: **OK** (13 suítes, 61 testes)
+- `npm run verify:architecture`: **OK**
+- `npm test -- --runInBand`: **OK** (18 suítes, 86 testes)
+- `npm run test:coverage`: **OK** (Statements: **25.52%**, Branches: **18.18%**, Functions: **23.93%**, Lines: **25.77%**)
 - `npm run check:architecture`: **OK**
 
 ---
 
 ## ⚠️ Pendências Relevantes
 
-1. Expandir gradualmente os guardrails para regras semânticas de domínio (ex.: cobertura mínima de testes para novos serviços), sem aumentar falsos positivos.
+1. Aumentar cobertura nas rotas ainda sem testes diretos em `src/app/api/teams/[id]/*` (`items`, `locations`, `transactions`, `users`, `stock-transactions`).
+2. Elevar cobertura da camada `app/*` (principalmente client pages e actions), hoje com baixo impacto de testes automatizados.
 
 ---
 
