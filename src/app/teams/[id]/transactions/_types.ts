@@ -1,6 +1,6 @@
-import type { TransactionWithDetails } from "@/lib/db/stock-transactions";
+import type { TransactionDto } from "@/lib/services/types";
 
-export type { TransactionWithDetails };
+export type TransactionWithDetails = TransactionDto;
 
 export interface Team {
   id: number;

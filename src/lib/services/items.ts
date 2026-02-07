@@ -10,8 +10,7 @@ import {
 import { ERROR_CODES } from "@/lib/errors";
 import { authorizeTeamAccess, authorizeTeamPermission } from "@/lib/permissions";
 import { parseItemPayload } from "@/lib/contracts/schemas";
-import type { Item } from "@/db/schema";
-import type { ServiceResult } from "@/lib/services/types";
+import type { ItemDto, ServiceResult } from "@/lib/services/types";
 import {
   authServiceError,
   conflictValidationServiceError,
@@ -20,12 +19,13 @@ import {
   notFoundServiceError,
   validationServiceError,
 } from "@/lib/services/errors";
+import { toItemDto } from "@/lib/services/mappers";
 
 export async function getTeamItemDetails(params: {
   teamId: number;
   itemId: number;
   requestUserId: number | null;
-}): Promise<ServiceResult<{ item: Item & { locationName?: string | null } }>> {
+}): Promise<ServiceResult<{ item: ItemDto }>> {
   const auth = await authorizeTeamAccess({
     teamId: params.teamId,
     requestUserId: params.requestUserId,
@@ -49,13 +49,13 @@ export async function getTeamItemDetails(params: {
     };
   }
 
-  return { ok: true, data: { item } };
+  return { ok: true, data: { item: toItemDto(item) } };
 }
 
 export async function listTeamItemsForUser(params: {
   teamId: number;
   requestUserId: number | null;
-}): Promise<ServiceResult<{ items: (Item & { locationName?: string | null })[] }>> {
+}): Promise<ServiceResult<{ items: ItemDto[] }>> {
   const auth = await authorizeTeamAccess({
     teamId: params.teamId,
     requestUserId: params.requestUserId,
@@ -66,7 +66,7 @@ export async function listTeamItemsForUser(params: {
 
   try {
     const items = await getTeamItems(params.teamId);
-    return { ok: true, data: { items } };
+    return { ok: true, data: { items: items.map((item) => toItemDto(item)) } };
   } catch {
     return {
       ok: false,
@@ -79,7 +79,7 @@ export async function createTeamItem(params: {
   teamId: number;
   requestUserId: number | null;
   payload: unknown;
-}): Promise<ServiceResult<{ item: Item }>> {
+}): Promise<ServiceResult<{ item: ItemDto }>> {
   const parsed = parseItemPayload(params.payload, "create");
   if (!parsed.ok) {
     return {
@@ -117,7 +117,7 @@ export async function createTeamItem(params: {
       minimumStock: payload.minimumStock ?? 0,
     });
 
-    return { ok: true, data: { item } };
+    return { ok: true, data: { item: toItemDto(item) } };
   } catch (error: any) {
     if (error?.message?.includes("UNIQUE constraint")) {
       return {
@@ -144,7 +144,7 @@ export interface UpdateTeamItemInput {
 
 export async function updateTeamItem(
   params: UpdateTeamItemInput
-): Promise<ServiceResult<{ item: Item }>> {
+): Promise<ServiceResult<{ item: ItemDto }>> {
   const auth = await authorizeTeamPermission({
     permission: "item:write",
     teamId: params.teamId,
@@ -186,7 +186,7 @@ export async function updateTeamItem(
       locationId: payload.locationId,
     });
 
-    return { ok: true, data: { item } };
+    return { ok: true, data: { item: toItemDto(item) } };
   } catch (error: any) {
     if (error?.message?.includes("UNIQUE constraint")) {
       return {

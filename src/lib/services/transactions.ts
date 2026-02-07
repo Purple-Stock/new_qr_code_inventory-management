@@ -1,24 +1,24 @@
 import {
   getItemStockTransactionsWithDetails,
   getTeamStockTransactionsWithDetails,
-  type TransactionWithDetails,
 } from "@/lib/db/stock-transactions";
 import { getItemById } from "@/lib/db/items";
 import { ERROR_CODES } from "@/lib/errors";
 import { authorizeTeamAccess } from "@/lib/permissions";
-import type { ServiceResult } from "@/lib/services/types";
+import type { ServiceResult, TransactionDto } from "@/lib/services/types";
 import {
   authServiceError,
   internalServiceError,
   makeServiceError,
   notFoundServiceError,
 } from "@/lib/services/errors";
+import { toTransactionDto } from "@/lib/services/mappers";
 
 export async function listTeamTransactionsForUser(params: {
   teamId: number;
   requestUserId: number | null;
   searchQuery?: string;
-}): Promise<ServiceResult<{ transactions: TransactionWithDetails[] }>> {
+}): Promise<ServiceResult<{ transactions: TransactionDto[] }>> {
   const auth = await authorizeTeamAccess({
     teamId: params.teamId,
     requestUserId: params.requestUserId,
@@ -32,7 +32,7 @@ export async function listTeamTransactionsForUser(params: {
       params.teamId,
       params.searchQuery
     );
-    return { ok: true, data: { transactions } };
+    return { ok: true, data: { transactions: transactions.map(toTransactionDto) } };
   } catch (error: any) {
     return {
       ok: false,
@@ -47,7 +47,7 @@ export async function listItemTransactionsForUser(params: {
   teamId: number;
   itemId: number;
   requestUserId: number | null;
-}): Promise<ServiceResult<{ transactions: TransactionWithDetails[] }>> {
+}): Promise<ServiceResult<{ transactions: TransactionDto[] }>> {
   const auth = await authorizeTeamAccess({
     teamId: params.teamId,
     requestUserId: params.requestUserId,
@@ -75,7 +75,7 @@ export async function listItemTransactionsForUser(params: {
       params.teamId,
       params.itemId
     );
-    return { ok: true, data: { transactions } };
+    return { ok: true, data: { transactions: transactions.map(toTransactionDto) } };
   } catch {
     return {
       ok: false,

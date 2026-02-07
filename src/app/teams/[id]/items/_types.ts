@@ -1,13 +1,9 @@
-export interface Item {
-  id: number;
-  name: string | null;
-  sku: string | null;
-  barcode: string | null;
-  itemType: string | null;
-  currentStock: number | null;
-  price: number | null;
-  locationName?: string | null;
-}
+import type { ItemDto } from "@/lib/services/types";
+
+export type Item = Pick<
+  ItemDto,
+  "id" | "name" | "sku" | "barcode" | "itemType" | "currentStock" | "price" | "locationName"
+>;
 
 export interface Team {
   id: number;

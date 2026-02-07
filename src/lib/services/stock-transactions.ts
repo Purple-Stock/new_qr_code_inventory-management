@@ -3,7 +3,7 @@ import { getTeamWithStats } from "@/lib/db/teams";
 import { ERROR_CODES } from "@/lib/errors";
 import { authorizeTeamPermission } from "@/lib/permissions";
 import { parseStockTransactionPayload } from "@/lib/contracts/schemas";
-import type { ServiceResult } from "@/lib/services/types";
+import type { ServiceResult, StockTransactionDto } from "@/lib/services/types";
 import {
   authServiceError,
   internalServiceError,
@@ -12,12 +12,13 @@ import {
   validationServiceError,
 } from "@/lib/services/errors";
 import { deleteStockTransaction } from "@/lib/db/stock-transactions";
+import { toStockTransactionDto } from "@/lib/services/mappers";
 
 export async function createTeamStockTransaction(params: {
   teamId: number;
   requestUserId: number | null;
   payload: unknown;
-}): Promise<ServiceResult<{ transaction: unknown }>> {
+}): Promise<ServiceResult<{ transaction: StockTransactionDto }>> {
   const team = await getTeamWithStats(params.teamId);
   if (!team) {
     return {
@@ -64,7 +65,7 @@ export async function createTeamStockTransaction(params: {
       destinationLocationId: payload.destinationLocationId ?? (payload.locationId ?? null),
     });
 
-    return { ok: true, data: { transaction } };
+    return { ok: true, data: { transaction: toStockTransactionDto(transaction) } };
   } catch (error: any) {
     return {
       ok: false,

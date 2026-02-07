@@ -22,33 +22,12 @@ import {
   formatLocation,
 } from "@/app/teams/[id]/transactions/_utils/getTransactionType";
 import { formatDate } from "@/app/teams/[id]/transactions/_utils/formatDate";
+import type { ItemDto, TransactionDto } from "@/lib/services/types";
 
 type TransactionTypeFilter = "all" | "stock_in" | "stock_out" | "adjust" | "move";
 
-interface ItemWithLocation {
-  id: number;
-  name: string | null;
-  sku: string | null;
-  barcode: string | null;
-  cost: number | null;
-  price: number | null;
-  itemType: string | null;
-  brand: string | null;
-  currentStock: number | null;
-  locationId: number | null;
-  locationName?: string | null;
-}
-
-interface TransactionWithDetails {
-  id: number;
-  transactionType: string;
-  quantity: number;
-  notes: string | null;
-  createdAt: string | Date;
-  user: { email: string } | null;
-  sourceLocation: { name: string } | null;
-  destinationLocation: { name: string } | null;
-}
+type ItemWithLocation = ItemDto;
+type TransactionWithDetails = TransactionDto;
 
 interface ItemDetailPageClientProps {
   teamId: number;

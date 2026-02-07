@@ -3,6 +3,7 @@ import { getTeamItems, getItemByIdWithLocation } from "@/lib/db/items";
 import { getTeamLocations } from "@/lib/db/locations";
 import { getTeamReportStats } from "@/lib/db/reports";
 import { getItemStockTransactionsWithDetails } from "@/lib/db/stock-transactions";
+import { toItemDto, toTransactionDto } from "@/lib/services/mappers";
 
 export async function getTeamReportsData(
   teamId: number,
@@ -46,5 +47,5 @@ export async function getItemDetailsData(teamId: number, itemId: number) {
     return { item: null, transactions: [] };
   }
 
-  return { item, transactions };
+  return { item: toItemDto(item), transactions: transactions.map(toTransactionDto) };
 }
