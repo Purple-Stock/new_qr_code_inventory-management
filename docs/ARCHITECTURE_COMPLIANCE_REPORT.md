@@ -360,21 +360,33 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `src/app/api/teams/route.ts` em **100%** de statements/branches/functions/lines
   - `src/app/api/teams/[id]/route.ts` em **88.09%** statements/lines e **83.33%** branches
 
+### 22. Cobertura de gestão de membros do time (Concluído)
+
+- Suítes adicionadas para rotas de usuários de time:
+  - `src/__tests__/api/teams/users-route.test.ts`
+  - `src/__tests__/api/teams/users-user-id-route.test.ts`
+- Coberturas garantidas:
+  - `/api/teams/[id]/users` (`GET`, `POST`) com cenários de ID inválido, sucesso, erro de serviço e JSON inválido
+  - `/api/teams/[id]/users/[userId]` (`PATCH`, `DELETE`) com cenários de IDs inválidos, sucesso, erro de serviço e falha inesperada
+- Resultado:
+  - `src/app/api/teams/[id]/users/route.ts` em **93.33%** statements/lines e **100%** branches/functions
+  - `src/app/api/teams/[id]/users/[userId]/route.ts` em **100%** de statements/branches/functions/lines
+
 ---
 
 ## ✅ Validação Executada
 
 - `npm run build`: **OK**
 - `npm run verify:architecture`: **OK**
-- `npm test -- --runInBand`: **OK** (18 suítes, 86 testes)
-- `npm run test:coverage`: **OK** (Statements: **25.52%**, Branches: **18.18%**, Functions: **23.93%**, Lines: **25.77%**)
+- `npm test -- --runInBand`: **OK** (20 suítes, 101 testes)
+- `npm run test:coverage`: **OK** (Statements: **27.09%**, Branches: **19.00%**, Functions: **24.56%**, Lines: **27.38%**)
 - `npm run check:architecture`: **OK**
 
 ---
 
 ## ⚠️ Pendências Relevantes
 
-1. Aumentar cobertura nas rotas ainda sem testes diretos em `src/app/api/teams/[id]/*` (`items`, `locations`, `transactions`, `users`, `stock-transactions`).
+1. Aumentar cobertura nas rotas ainda sem testes diretos em `src/app/api/teams/[id]/*` (`items`, `locations`, `transactions`, `stock-transactions`).
 2. Elevar cobertura da camada `app/*` (principalmente client pages e actions), hoje com baixo impacto de testes automatizados.
 
 ---
