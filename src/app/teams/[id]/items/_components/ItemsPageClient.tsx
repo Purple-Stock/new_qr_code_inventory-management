@@ -138,9 +138,6 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0">
-          <button className="hidden md:block text-sm text-gray-700 hover:text-[#6B21A8] transition-colors font-medium">
-            {t.common.subscribe}
-          </button>
           <div className="flex items-center gap-0.5 sm:gap-1 bg-gray-100 rounded-lg p-0.5 sm:p-1">
             <button
               onClick={() => setLanguage("en")}

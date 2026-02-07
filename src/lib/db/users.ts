@@ -156,3 +156,19 @@ export async function updateUserRole(userId: number, role: UserRole): Promise<Us
 
   return user;
 }
+
+/**
+ * Update user email
+ */
+export async function updateUserEmail(userId: number, email: string): Promise<User | null> {
+  const [user] = await sqlite
+    .update(users)
+    .set({
+      email,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, userId))
+    .returning();
+
+  return user ?? null;
+}

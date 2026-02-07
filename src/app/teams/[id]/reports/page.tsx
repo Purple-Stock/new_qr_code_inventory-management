@@ -1,22 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import {
-  Home,
-  MapPin,
-  ArrowUp,
-  ArrowDown,
-  RotateCcw,
-  Move,
-  FileText,
-  BarChart3,
-  Tag,
-  FileBarChart,
-  Settings,
-  LogOut,
-  Menu,
-  X,
   RefreshCw,
   TrendingUp,
   Package,
@@ -29,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/lib/i18n";
-import Link from "next/link";
+import { TeamLayout } from "@/components/shared/TeamLayout";
 import type { ReportStats } from "@/lib/db/reports";
 
 interface Team {
@@ -38,16 +24,13 @@ interface Team {
 }
 
 export default function ReportsPage() {
-  const router = useRouter();
   const params = useParams();
   const teamId = params?.id as string;
 
   const [team, setTeam] = useState<Team | null>(null);
   const [stats, setStats] = useState<ReportStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { language, setLanguage, t } = useTranslation();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const { language, t } = useTranslation();
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
@@ -82,12 +65,6 @@ export default function ReportsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleSignOut = () => {
-    localStorage.removeItem("userId");
-    localStorage.removeItem("userRole");
-    router.push("/");
   };
 
   const formatPrice = (price: number) => {
@@ -152,197 +129,12 @@ export default function ReportsPage() {
     setEndDate("");
   };
 
-  const menuItems = [
-    { icon: Home, label: t.menu.itemList, href: `/teams/${teamId}/items` },
-    { icon: MapPin, label: t.menu.locations, href: `/teams/${teamId}/locations` },
-    { icon: ArrowUp, label: t.menu.stockIn, href: `/teams/${teamId}/stock-in` },
-    { icon: ArrowDown, label: t.menu.stockOut, href: `/teams/${teamId}/stock-out` },
-    { icon: RotateCcw, label: t.menu.adjust, href: `/teams/${teamId}/adjust` },
-    { icon: Move, label: t.menu.move, href: `/teams/${teamId}/move` },
-    { icon: FileText, label: t.menu.transactions, href: `/teams/${teamId}/transactions` },
-    { icon: BarChart3, label: t.menu.stockByLocation, href: `/teams/${teamId}/stock-by-location` },
-    { icon: Tag, label: t.menu.labels, href: `/teams/${teamId}/labels` },
-    { icon: FileBarChart, label: t.menu.reports, href: `/teams/${teamId}/reports`, active: true },
-    { icon: Settings, label: t.menu.settings, href: `/teams/${teamId}/settings` },
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm px-3 sm:px-4 md:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-4">
-        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-md">
-            <span className="text-white text-xs sm:text-sm font-bold">PS</span>
-          </div>
-          <h1 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 hidden sm:block">
-            PURPLE STOCK
-          </h1>
-        </div>
-
-        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0">
-          <button
-            onClick={() => setLanguage("en")}
-            className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors touch-manipulation min-h-[40px] sm:min-h-0 ${
-              language === "en"
-                ? "bg-purple-100 text-purple-700"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            EN
-          </button>
-          <button
-            onClick={() => setLanguage("pt-BR")}
-            className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors touch-manipulation min-h-[40px] sm:min-h-0 ${
-              language === "pt-BR"
-                ? "bg-purple-100 text-purple-700"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            PT
-          </button>
-          <button
-            onClick={() => setLanguage("fr")}
-            className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors touch-manipulation min-h-[40px] sm:min-h-0 ${
-              language === "fr"
-                ? "bg-purple-100 text-purple-700"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            FR
-          </button>
-          <button
-            onClick={handleSignOut}
-            className="px-2 sm:px-3 py-1 sm:py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-md text-xs sm:text-sm font-medium transition-colors touch-manipulation min-h-[40px] sm:min-h-0"
-          >
-            <span className="hidden sm:inline">{t.common.signOut}</span>
-            <span className="sm:hidden">{t.common.signOutShort}</span>
-          </button>
-        </div>
-      </header>
-
-      <div className="flex flex-col lg:flex-row">
-        {/* Sidebar */}
-        <aside
-          className={`bg-white min-h-[calc(100vh-73px)] border-r border-gray-200 p-6 shadow-sm transition-all duration-300 ${
-            isSidebarCollapsed ? "w-20" : "w-64"
-          } hidden lg:block`}
-        >
-          <div className="flex items-center justify-between mb-6">
-            {!isSidebarCollapsed && (
-              <h2 className="text-lg font-bold text-gray-900">{team?.name || "Team"}</h2>
-            )}
-            <button
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              {isSidebarCollapsed ? (
-                <X className="h-5 w-5 text-gray-600" />
-              ) : (
-                <X className="h-5 w-5 text-gray-600" />
-              )}
-            </button>
-          </div>
-
-          <nav className="space-y-2">
-            {menuItems.map((item, index) => {
-              const Icon = item.icon;
-              if (item.href) {
-                return (
-                  <Link
-                    key={index}
-                    href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                      item.active
-                        ? "bg-purple-100 text-purple-700 font-semibold"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
-                    <Icon className="h-5 w-5 flex-shrink-0" />
-                    {!isSidebarCollapsed && <span className="text-sm">{item.label}</span>}
-                  </Link>
-                );
-              }
-              return (
-                <div
-                  key={index}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-not-allowed opacity-50 ${
-                    item.active ? "bg-purple-100 text-purple-700 font-semibold" : "text-gray-700"
-                  }`}
-                >
-                  <Icon className="h-5 w-5 flex-shrink-0" />
-                  {!isSidebarCollapsed && <span className="text-sm">{item.label}</span>}
-                </div>
-              );
-            })}
-          </nav>
-        </aside>
-
-        {/* Mobile Sidebar */}
-        {isMobileSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-            onClick={() => setIsMobileSidebarOpen(false)}
-          />
-        )}
-        <aside
-          className={`fixed top-[73px] left-0 h-[calc(100vh-73px)] bg-white border-r border-gray-200 p-6 shadow-lg z-50 transition-transform duration-300 lg:hidden ${
-            isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } w-64`}
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-gray-900">{team?.name || "Team"}</h2>
-            <button
-              onClick={() => setIsMobileSidebarOpen(false)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <X className="h-5 w-5 text-gray-600" />
-            </button>
-          </div>
-
-          <nav className="space-y-2">
-            {menuItems.map((item, index) => {
-              const Icon = item.icon;
-              if (item.href) {
-                return (
-                  <Link
-                    key={index}
-                    href={item.href}
-                    onClick={() => setIsMobileSidebarOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                      item.active
-                        ? "bg-purple-100 text-purple-700 font-semibold"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
-                    <Icon className="h-5 w-5 flex-shrink-0" />
-                    <span className="text-sm">{item.label}</span>
-                  </Link>
-                );
-              }
-              return (
-                <div
-                  key={index}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-not-allowed opacity-50 ${
-                    item.active ? "bg-purple-100 text-purple-700 font-semibold" : "text-gray-700"
-                  }`}
-                >
-                  <Icon className="h-5 w-5 flex-shrink-0" />
-                  <span className="text-sm">{item.label}</span>
-                </div>
-              );
-            })}
-          </nav>
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-6 md:p-8">
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMobileSidebarOpen(true)}
-            className="lg:hidden mb-4 p-2 bg-white rounded-lg shadow-sm border border-gray-200"
-          >
-            <Menu className="h-5 w-5 text-gray-600" />
-          </button>
+    <TeamLayout
+      team={team ?? { id: Number(teamId || 0), name: "Team" }}
+      activeMenuItem="reports"
+    >
+      <main className="p-4 sm:p-6 md:p-8">
 
           {/* Header */}
           <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -676,8 +468,7 @@ export default function ReportsPage() {
               <p className="text-gray-600">{t.reports.noData}</p>
             </div>
           )}
-        </main>
-      </div>
-    </div>
+      </main>
+    </TeamLayout>
   );
 }

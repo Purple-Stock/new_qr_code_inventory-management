@@ -1,24 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import {
-  Home,
-  MapPin,
-  ArrowUp,
-  ArrowDown,
-  RotateCcw,
-  Move,
-  FileText,
-  BarChart3,
-  Tag,
-  FileBarChart,
-  Settings,
-  LogOut,
-  Menu,
-  X,
   UserPlus,
   Trash2,
+  Pencil,
   KeyRound,
   Eye,
   EyeOff,
@@ -29,7 +16,7 @@ import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/ui/use-toast-simple";
 import { isValidEmail } from "@/lib/validation";
 import { AddUserToTeamsModal } from "@/components/AddUserToTeamsModal";
-import Link from "next/link";
+import { TeamLayout } from "@/components/shared/TeamLayout";
 
 interface Team {
   id: number;
@@ -44,7 +31,6 @@ interface ManagedUser {
 }
 
 export default function SettingsPage() {
-  const router = useRouter();
   const params = useParams();
   const teamId = params?.id as string;
 
@@ -56,9 +42,6 @@ export default function SettingsPage() {
   const [managedUsers, setManagedUsers] = useState<ManagedUser[]>([]);
   const [availableUsers, setAvailableUsers] = useState<Array<{ id: number; email: string }>>([]);
   const [companyTeams, setCompanyTeams] = useState<Array<{ id: number; name: string }>>([]);
-  const [selectedUserId, setSelectedUserId] = useState<string>("");
-  const [memberEmail, setMemberEmail] = useState("");
-  const [newMemberRole, setNewMemberRole] = useState<ManagedUser["role"]>("viewer");
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [canManageUsers, setCanManageUsers] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState<"users" | "password">("users");
@@ -69,9 +52,12 @@ export default function SettingsPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { language, setLanguage, t } = useTranslation();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [editUserEmail, setEditUserEmail] = useState("");
+  const [editUserPassword, setEditUserPassword] = useState("");
+  const [showEditUserPassword, setShowEditUserPassword] = useState(false);
+  const { t } = useTranslation();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -84,6 +70,12 @@ export default function SettingsPage() {
       fetchData();
     }
   }, [teamId]);
+
+  useEffect(() => {
+    if (!canManageUsers && activeSettingsTab === "users") {
+      setActiveSettingsTab("password");
+    }
+  }, [canManageUsers, activeSettingsTab]);
 
   const fetchData = async () => {
     try {
@@ -131,12 +123,6 @@ export default function SettingsPage() {
     } finally {
       setIsUsersLoading(false);
     }
-  };
-
-  const handleSignOut = () => {
-    localStorage.removeItem("userId");
-    localStorage.removeItem("userRole");
-    router.push("/");
   };
 
   const handleUserRoleChange = async (
@@ -188,64 +174,6 @@ export default function SettingsPage() {
         description: t.settings.couldNotUpdateRole,
         variant: "destructive",
       });
-    }
-  };
-
-  const handleAddMember = async () => {
-    if (!currentUserId || (!selectedUserId && !memberEmail.trim())) {
-      return;
-    }
-
-    if (memberEmail.trim() && !isValidEmail(memberEmail)) {
-      toast({
-        title: t.common.error,
-        description: t.settings.invalidEmailFormat,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsMemberSaving(true);
-    try {
-      const response = await fetch(`/api/teams/${teamId}/users`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": String(currentUserId),
-        },
-        body: JSON.stringify({
-          userId: selectedUserId ? parseInt(selectedUserId, 10) : undefined,
-          email: memberEmail.trim() || undefined,
-          role: newMemberRole,
-        }),
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        toast({
-          title: t.common.error,
-          description: data.error || t.settings.couldNotAddMember,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      await fetchManagedUsers(currentUserId);
-      setSelectedUserId("");
-      setMemberEmail("");
-      setNewMemberRole("viewer");
-      toast({
-        title: t.common.success,
-        description: t.settings.memberAddedSuccessfully,
-      });
-    } catch (error) {
-      toast({
-        title: t.common.error,
-        description: t.settings.couldNotAddMember,
-        variant: "destructive",
-      });
-    } finally {
-      setIsMemberSaving(false);
     }
   };
 
@@ -459,197 +387,108 @@ export default function SettingsPage() {
     }
   };
 
-  const menuItems = [
-    { icon: Home, label: t.menu.itemList, href: `/teams/${teamId}/items` },
-    { icon: MapPin, label: t.menu.locations, href: `/teams/${teamId}/locations` },
-    { icon: ArrowUp, label: t.menu.stockIn, href: `/teams/${teamId}/stock-in` },
-    { icon: ArrowDown, label: t.menu.stockOut, href: `/teams/${teamId}/stock-out` },
-    { icon: RotateCcw, label: t.menu.adjust, href: `/teams/${teamId}/adjust` },
-    { icon: Move, label: t.menu.move, href: `/teams/${teamId}/move` },
-    { icon: FileText, label: t.menu.transactions, href: `/teams/${teamId}/transactions` },
-    { icon: BarChart3, label: t.menu.stockByLocation, href: `/teams/${teamId}/stock-by-location` },
-    { icon: Tag, label: t.menu.labels, href: `/teams/${teamId}/labels` },
-    { icon: FileBarChart, label: t.menu.reports, href: `/teams/${teamId}/reports` },
-    { icon: Settings, label: t.menu.settings, href: `/teams/${teamId}/settings`, active: true },
-  ];
+  const openEditUserModal = (user: ManagedUser) => {
+    setEditingUserId(user.userId);
+    setEditUserEmail(user.email);
+    setEditUserPassword("");
+    setShowEditUserPassword(false);
+    setIsEditUserModalOpen(true);
+  };
+
+  const closeEditUserModal = () => {
+    setIsEditUserModalOpen(false);
+    setEditingUserId(null);
+    setEditUserEmail("");
+    setEditUserPassword("");
+    setShowEditUserPassword(false);
+  };
+
+  const handleUpdateManagedUserInfo = async () => {
+    if (!currentUserId || !editingUserId) {
+      return;
+    }
+
+    const normalizedEmail = editUserEmail.trim().toLowerCase();
+    if (!isValidEmail(normalizedEmail)) {
+      toast({
+        title: t.common.error,
+        description: t.settings.invalidEmailFormat,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (editUserPassword && editUserPassword.length < 6) {
+      toast({
+        title: t.common.error,
+        description: t.settings.passwordMinLength,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsMemberSaving(true);
+    try {
+      const response = await fetch(`/api/teams/${teamId}/users/${editingUserId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": String(currentUserId),
+        },
+        body: JSON.stringify({
+          email: normalizedEmail,
+          newPassword: editUserPassword || undefined,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        const description =
+          data.error === "Email already in use"
+            ? t.settings.emailAlreadyInUse
+            : data.error || t.settings.couldNotUpdateUserInfo;
+        toast({
+          title: t.common.error,
+          description,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setManagedUsers((prev) =>
+        prev.map((user) =>
+          user.userId === editingUserId
+            ? {
+                ...user,
+                email: data.member.email ?? normalizedEmail,
+                role: data.member.role ?? user.role,
+              }
+            : user
+        )
+      );
+
+      toast({
+        title: t.common.success,
+        description: t.settings.userInfoUpdatedSuccessfully,
+      });
+      closeEditUserModal();
+    } catch (error) {
+      toast({
+        title: t.common.error,
+        description: t.settings.couldNotUpdateUserInfo,
+        variant: "destructive",
+      });
+    } finally {
+      setIsMemberSaving(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm px-3 sm:px-4 md:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-4">
-        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-md">
-            <span className="text-white text-xs sm:text-sm font-bold">PS</span>
-          </div>
-          <h1 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 hidden sm:block">
-            PURPLE STOCK
-          </h1>
-        </div>
-
-        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0">
-          <button
-            onClick={() => setLanguage("en")}
-            className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors touch-manipulation min-h-[40px] sm:min-h-0 ${
-              language === "en"
-                ? "bg-purple-100 text-purple-700"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            EN
-          </button>
-          <button
-            onClick={() => setLanguage("pt-BR")}
-            className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors touch-manipulation min-h-[40px] sm:min-h-0 ${
-              language === "pt-BR"
-                ? "bg-purple-100 text-purple-700"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            PT
-          </button>
-          <button
-            onClick={() => setLanguage("fr")}
-            className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors touch-manipulation min-h-[40px] sm:min-h-0 ${
-              language === "fr"
-                ? "bg-purple-100 text-purple-700"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            FR
-          </button>
-          <button
-            onClick={handleSignOut}
-            className="px-2 sm:px-3 py-1 sm:py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-md text-xs sm:text-sm font-medium transition-colors touch-manipulation min-h-[40px] sm:min-h-0"
-          >
-            <span className="hidden sm:inline">{t.common.signOut}</span>
-            <span className="sm:hidden">{t.common.signOutShort}</span>
-          </button>
-        </div>
-      </header>
-
-      <div className="flex flex-col lg:flex-row">
-        {/* Sidebar */}
-        <aside
-          className={`bg-white min-h-[calc(100vh-73px)] border-r border-gray-200 p-6 shadow-sm transition-all duration-300 ${
-            isSidebarCollapsed ? "w-20" : "w-64"
-          } hidden lg:block`}
-        >
-          <div className="flex items-center justify-between mb-6">
-            {!isSidebarCollapsed && (
-              <h2 className="text-lg font-bold text-gray-900">{team?.name || t.settings.teamFallback}</h2>
-            )}
-            <button
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              {isSidebarCollapsed ? (
-                <X className="h-5 w-5 text-gray-600" />
-              ) : (
-                <X className="h-5 w-5 text-gray-600" />
-              )}
-            </button>
-          </div>
-
-          <nav className="space-y-2">
-            {menuItems.map((item, index) => {
-              const Icon = item.icon;
-              if (item.href) {
-                return (
-                  <Link
-                    key={index}
-                    href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                      item.active
-                        ? "bg-purple-100 text-purple-700 font-semibold"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
-                    <Icon className="h-5 w-5 flex-shrink-0" />
-                    {!isSidebarCollapsed && <span className="text-sm">{item.label}</span>}
-                  </Link>
-                );
-              }
-              return (
-                <div
-                  key={index}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-not-allowed opacity-50 ${
-                    item.active ? "bg-purple-100 text-purple-700 font-semibold" : "text-gray-700"
-                  }`}
-                >
-                  <Icon className="h-5 w-5 flex-shrink-0" />
-                  {!isSidebarCollapsed && <span className="text-sm">{item.label}</span>}
-                </div>
-              );
-            })}
-          </nav>
-        </aside>
-
-        {/* Mobile Sidebar */}
-        {isMobileSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-            onClick={() => setIsMobileSidebarOpen(false)}
-          />
-        )}
-        <aside
-          className={`fixed top-[73px] left-0 h-[calc(100vh-73px)] bg-white border-r border-gray-200 p-6 shadow-lg z-50 transition-transform duration-300 lg:hidden ${
-            isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } w-64`}
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-gray-900">{team?.name || t.settings.teamFallback}</h2>
-            <button
-              onClick={() => setIsMobileSidebarOpen(false)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <X className="h-5 w-5 text-gray-600" />
-            </button>
-          </div>
-
-          <nav className="space-y-2">
-            {menuItems.map((item, index) => {
-              const Icon = item.icon;
-              if (item.href) {
-                return (
-                  <Link
-                    key={index}
-                    href={item.href}
-                    onClick={() => setIsMobileSidebarOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                      item.active
-                        ? "bg-purple-100 text-purple-700 font-semibold"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
-                    <Icon className="h-5 w-5 flex-shrink-0" />
-                    <span className="text-sm">{item.label}</span>
-                  </Link>
-                );
-              }
-              return (
-                <div
-                  key={index}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-not-allowed opacity-50 ${
-                    item.active ? "bg-purple-100 text-purple-700 font-semibold" : "text-gray-700"
-                  }`}
-                >
-                  <Icon className="h-5 w-5 flex-shrink-0" />
-                  <span className="text-sm">{item.label}</span>
-                </div>
-              );
-            })}
-          </nav>
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-6 md:p-8">
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMobileSidebarOpen(true)}
-            className="lg:hidden mb-4 p-2 bg-white rounded-lg shadow-sm border border-gray-200"
-          >
-            <Menu className="h-5 w-5 text-gray-600" />
-          </button>
+    <TeamLayout
+      team={team ?? { id: Number(teamId || 0), name: t.settings.teamFallback }}
+      activeMenuItem="settings"
+    >
+      <main className="p-4 sm:p-6 md:p-8">
 
           {/* Header */}
           <div className="mb-4 sm:mb-6">
@@ -661,17 +500,19 @@ export default function SettingsPage() {
 
           <div className="mb-4 sm:mb-6 border-b border-gray-200">
             <div className="flex gap-2 sm:gap-3 overflow-x-auto">
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab("users")}
-                className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                  activeSettingsTab === "users"
-                    ? "border-purple-600 text-purple-700"
-                    : "border-transparent text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                {t.settings.usersPermissionsTab}
-              </button>
+              {canManageUsers && (
+                <button
+                  type="button"
+                  onClick={() => setActiveSettingsTab("users")}
+                  className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                    activeSettingsTab === "users"
+                      ? "border-purple-600 text-purple-700"
+                      : "border-transparent text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  {t.settings.usersPermissionsTab}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setActiveSettingsTab("password")}
@@ -712,51 +553,6 @@ export default function SettingsPage() {
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_180px_auto] gap-2 mb-4">
-                    <select
-                      value={selectedUserId}
-                      onChange={(e) => setSelectedUserId(e.target.value)}
-                      className="h-10 rounded-md border border-gray-300 px-3 text-sm"
-                    >
-                      <option value="">{t.settings.selectUserToAdd}</option>
-                      {availableUsers.map((user) => (
-                        <option key={user.id} value={user.id}>
-                          {user.email}
-                        </option>
-                      ))}
-                    </select>
-
-                    <Input
-                      type="email"
-                      value={memberEmail}
-                      onChange={(e) => setMemberEmail(e.target.value)}
-                      placeholder={t.settings.orAddByEmail}
-                      className="h-10"
-                    />
-
-                    <select
-                      value={newMemberRole}
-                      onChange={(e) =>
-                        setNewMemberRole(e.target.value as ManagedUser["role"])
-                      }
-                      className="h-10 rounded-md border border-gray-300 px-3 text-sm"
-                    >
-                      <option value="admin">{t.settings.roleAdmin}</option>
-                      <option value="operator">{t.settings.roleOperator}</option>
-                      <option value="viewer">{t.settings.roleViewer}</option>
-                    </select>
-
-                    <Button
-                      type="button"
-                      onClick={handleAddMember}
-                      disabled={(!selectedUserId && !memberEmail.trim()) || isMemberSaving}
-                      className="bg-purple-600 hover:bg-purple-700 text-white"
-                    >
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      {t.settings.add}
-                    </Button>
-                  </div>
-
                   {isUsersLoading ? (
                     <p className="text-sm text-gray-600">{t.settings.loadingUsers}</p>
                   ) : managedUsers.length === 0 ? (
@@ -789,6 +585,15 @@ export default function SettingsPage() {
                               )}
                             </div>
                             <div className="flex items-center gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => openEditUserModal(managedUser)}
+                                disabled={isMemberSaving || managedUser.userId === currentUserId}
+                                className="border-gray-200 text-gray-700 hover:bg-gray-50"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
                               <select
                                 value={managedUser.role}
                                 onChange={(e) =>
@@ -938,8 +743,80 @@ export default function SettingsPage() {
             onClose={() => setIsAddUserModalOpen(false)}
             onSubmit={handleCreateUserAndAddMember}
           />
-        </main>
-      </div>
-    </div>
+
+          {isEditUserModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg">
+                <div className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] px-6 py-4 rounded-t-xl">
+                  <h2 className="text-lg font-bold text-white">{t.settings.editUserTitle}</h2>
+                </div>
+                <div className="p-6 space-y-4">
+                  <div>
+                    <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                      {t.settings.modalEmail}
+                    </label>
+                    <Input
+                      type="email"
+                      value={editUserEmail}
+                      onChange={(e) => setEditUserEmail(e.target.value)}
+                      placeholder={t.settings.modalEmailPlaceholder}
+                      disabled={isMemberSaving}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                      {t.settings.newPasswordOptional}
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type={showEditUserPassword ? "text" : "password"}
+                        value={editUserPassword}
+                        onChange={(e) => setEditUserPassword(e.target.value)}
+                        placeholder={t.settings.editUserPasswordPlaceholder}
+                        className="pr-10"
+                        disabled={isMemberSaving}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowEditUserPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        aria-label={
+                          showEditUserPassword
+                            ? t.settings.hidePassword
+                            : t.settings.showPassword
+                        }
+                      >
+                        {showEditUserPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={closeEditUserModal}
+                      disabled={isMemberSaving}
+                    >
+                      {t.settings.modalCancel}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleUpdateManagedUserInfo}
+                      disabled={isMemberSaving}
+                      className="bg-purple-600 hover:bg-purple-700 text-white"
+                    >
+                      {isMemberSaving ? t.settings.modalSaving : t.settings.saveUserChanges}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+      </main>
+    </TeamLayout>
   );
 }

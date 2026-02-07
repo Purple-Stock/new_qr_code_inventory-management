@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserIdFromRequest, authorizeTeamPermission, isUserRole } from "@/lib/permissions";
 import {
   countActiveTeamAdmins,
+  findUserByEmail,
   getTeamMembers,
+  getTeamMembersWithUsers,
   suspendTeamMember,
   updateTeamMemberRole,
 } from "@/lib/db/team-members";
+import { updateUserEmail, updateUserPassword } from "@/lib/db/users";
+import { isValidEmail, normalizeEmail } from "@/lib/validation";
 
 export async function PATCH(
   request: NextRequest,
@@ -35,12 +39,15 @@ export async function PATCH(
 
     const body = await request.json();
     const { role } = body;
+    const rawEmail = typeof body.email === "string" ? body.email : "";
+    const email = normalizeEmail(rawEmail);
+    const newPassword = typeof body.newPassword === "string" ? body.newPassword : "";
 
-    if (!isUserRole(role)) {
+    if (role !== undefined && !isUserRole(role)) {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 });
     }
 
-    if (role !== "admin") {
+    if (role !== undefined && role !== "admin") {
       const members = await getTeamMembers(teamId);
       const currentMember = members.find((member) => member.userId === userId);
       if (!currentMember) {
@@ -58,21 +65,63 @@ export async function PATCH(
       }
     }
 
-    const membership = await updateTeamMemberRole({
-      teamId,
-      userId,
-      role,
-    });
-    if (!membership) {
+    if (role !== undefined) {
+      const membership = await updateTeamMemberRole({
+        teamId,
+        userId,
+        role,
+      });
+      if (!membership) {
+        return NextResponse.json({ error: "Team member not found" }, { status: 404 });
+      }
+    } else {
+      const members = await getTeamMembers(teamId);
+      const currentMember = members.find((member) => member.userId === userId);
+      if (!currentMember) {
+        return NextResponse.json({ error: "Team member not found" }, { status: 404 });
+      }
+    }
+
+    if (email) {
+      if (!isValidEmail(email)) {
+        return NextResponse.json({ error: "Invalid email format" }, { status: 400 });
+      }
+
+      const existingUser = await findUserByEmail(email);
+      if (existingUser && existingUser.id !== userId) {
+        return NextResponse.json({ error: "Email already in use" }, { status: 400 });
+      }
+
+      const updatedUser = await updateUserEmail(userId, email);
+      if (!updatedUser) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+    }
+
+    if (newPassword) {
+      if (newPassword.length < 6) {
+        return NextResponse.json(
+          { error: "Password must be at least 6 characters" },
+          { status: 400 }
+        );
+      }
+
+      await updateUserPassword(userId, newPassword);
+    }
+
+    const refreshedMembers = await getTeamMembersWithUsers(teamId);
+    const refreshedMember = refreshedMembers.find((member) => member.userId === userId);
+    if (!refreshedMember) {
       return NextResponse.json({ error: "Team member not found" }, { status: 404 });
     }
 
     return NextResponse.json(
       {
         member: {
-          userId: membership.userId,
-          role: membership.role,
-          status: membership.status,
+          userId: refreshedMember.userId,
+          email: refreshedMember.email,
+          role: refreshedMember.role,
+          status: refreshedMember.status,
         },
       },
       { status: 200 }

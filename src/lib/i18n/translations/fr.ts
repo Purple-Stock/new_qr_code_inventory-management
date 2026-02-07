@@ -442,6 +442,16 @@ export const fr = {
     invalidEmailFormat: "Format d'e-mail invalide",
     couldNotUpdateRole: "Impossible de mettre à jour le rôle",
     roleUpdatedSuccessfully: "Rôle mis à jour avec succès",
+    editUserTitle: "Modifier l'Utilisateur",
+    saveUserChanges: "Enregistrer les modifications",
+    newPasswordOptional: "Nouveau mot de passe (optionnel)",
+    editUserPasswordPlaceholder:
+      "Laissez vide pour conserver le mot de passe actuel",
+    userInfoUpdatedSuccessfully:
+      "Les informations de l'utilisateur ont été mises à jour avec succès",
+    couldNotUpdateUserInfo:
+      "Impossible de mettre à jour les informations de l'utilisateur",
+    emailAlreadyInUse: "Cet e-mail est déjà utilisé",
     couldNotAddMember: "Impossible d'ajouter le membre",
     memberAddedSuccessfully: "Membre ajouté avec succès",
     couldNotRemoveMember: "Impossible de supprimer le membre",
