@@ -316,7 +316,7 @@ export default function SettingsPage() {
       const data = await response.json();
       if (!response.ok) {
         const errorMessage =
-          data.error === "Current password is incorrect"
+          data.errorCode === "CURRENT_PASSWORD_INCORRECT"
             ? t.settings.currentPasswordIncorrect
             : t.settings.couldNotUpdatePassword;
         toast({
@@ -401,7 +401,7 @@ export default function SettingsPage() {
 
       if (!response.ok) {
         const description =
-          data.error === "Email already in use"
+          data.errorCode === "EMAIL_ALREADY_IN_USE"
             ? t.settings.emailAlreadyInUse
             : t.settings.couldNotUpdateUserInfo;
         toast({

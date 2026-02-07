@@ -21,12 +21,12 @@ export async function PATCH(
     const userId = parseInt(userIdParam, 10);
 
     if (isNaN(teamId) || isNaN(userId)) {
-      return NextResponse.json({ error: "Invalid team ID or user ID" }, { status: 400 });
+      return NextResponse.json({ errorCode: "INVALID_TEAM_OR_USER_ID" }, { status: 400 });
     }
 
     const requestUserId = getUserIdFromRequest(request);
     if (!requestUserId) {
-      return NextResponse.json({ error: "User not authenticated" }, { status: 401 });
+      return NextResponse.json({ errorCode: "USER_NOT_AUTHENTICATED" }, { status: 401 });
     }
 
     const auth = await authorizeTeamPermission({
@@ -45,21 +45,21 @@ export async function PATCH(
     const newPassword = typeof body.newPassword === "string" ? body.newPassword : "";
 
     if (role !== undefined && !isUserRole(role)) {
-      return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+      return NextResponse.json({ errorCode: "INVALID_ROLE" }, { status: 400 });
     }
 
     if (role !== undefined && role !== "admin") {
       const members = await getTeamMembers(teamId);
       const currentMember = members.find((member) => member.userId === userId);
       if (!currentMember) {
-        return NextResponse.json({ error: "Team member not found" }, { status: 404 });
+        return NextResponse.json({ errorCode: "TEAM_MEMBER_NOT_FOUND" }, { status: 404 });
       }
 
       if (currentMember.role === "admin") {
         const adminCount = await countActiveTeamAdmins(teamId);
         if (adminCount <= 1) {
           return NextResponse.json(
-            { error: "Cannot remove the last admin from this team" },
+            { errorCode: "LAST_ADMIN_CANNOT_BE_REMOVED" },
             { status: 400 }
           );
         }
@@ -73,36 +73,36 @@ export async function PATCH(
         role,
       });
       if (!membership) {
-        return NextResponse.json({ error: "Team member not found" }, { status: 404 });
+        return NextResponse.json({ errorCode: "TEAM_MEMBER_NOT_FOUND" }, { status: 404 });
       }
     } else {
       const members = await getTeamMembers(teamId);
       const currentMember = members.find((member) => member.userId === userId);
       if (!currentMember) {
-        return NextResponse.json({ error: "Team member not found" }, { status: 404 });
+        return NextResponse.json({ errorCode: "TEAM_MEMBER_NOT_FOUND" }, { status: 404 });
       }
     }
 
     if (email) {
       if (!isValidEmail(email)) {
-        return NextResponse.json({ error: "Invalid email format" }, { status: 400 });
+        return NextResponse.json({ errorCode: "INVALID_EMAIL_FORMAT" }, { status: 400 });
       }
 
       const existingUser = await findUserByEmail(email);
       if (existingUser && existingUser.id !== userId) {
-        return NextResponse.json({ error: "Email already in use" }, { status: 400 });
+        return NextResponse.json({ errorCode: "EMAIL_ALREADY_IN_USE" }, { status: 400 });
       }
 
       const updatedUser = await updateUserEmail(userId, email);
       if (!updatedUser) {
-        return NextResponse.json({ error: "User not found" }, { status: 404 });
+        return NextResponse.json({ errorCode: "USER_NOT_FOUND" }, { status: 404 });
       }
     }
 
     if (newPassword) {
       if (newPassword.length < 6) {
         return NextResponse.json(
-          { error: "Password must be at least 6 characters" },
+          { errorCode: "PASSWORD_TOO_SHORT" },
           { status: 400 }
         );
       }
@@ -113,7 +113,7 @@ export async function PATCH(
     const refreshedMembers = await getTeamMembersWithUsers(teamId);
     const refreshedMember = refreshedMembers.find((member) => member.userId === userId);
     if (!refreshedMember) {
-      return NextResponse.json({ error: "Team member not found" }, { status: 404 });
+      return NextResponse.json({ errorCode: "TEAM_MEMBER_NOT_FOUND" }, { status: 404 });
     }
 
     return NextResponse.json(
@@ -130,7 +130,7 @@ export async function PATCH(
   } catch (error: any) {
     console.error("Error updating team member role:", error);
     return NextResponse.json(
-      { error: error?.message || "An error occurred while updating team member role" },
+      { errorCode: "TEAM_MEMBER_UPDATE_FAILED" },
       { status: 500 }
     );
   }
@@ -146,12 +146,12 @@ export async function DELETE(
     const userId = parseInt(userIdParam, 10);
 
     if (isNaN(teamId) || isNaN(userId)) {
-      return NextResponse.json({ error: "Invalid team ID or user ID" }, { status: 400 });
+      return NextResponse.json({ errorCode: "INVALID_TEAM_OR_USER_ID" }, { status: 400 });
     }
 
     const requestUserId = getUserIdFromRequest(request);
     if (!requestUserId) {
-      return NextResponse.json({ error: "User not authenticated" }, { status: 401 });
+      return NextResponse.json({ errorCode: "USER_NOT_AUTHENTICATED" }, { status: 401 });
     }
 
     const auth = await authorizeTeamPermission({
@@ -166,14 +166,14 @@ export async function DELETE(
     const members = await getTeamMembers(teamId);
     const currentMember = members.find((member) => member.userId === userId);
     if (!currentMember) {
-      return NextResponse.json({ error: "Team member not found" }, { status: 404 });
+      return NextResponse.json({ errorCode: "TEAM_MEMBER_NOT_FOUND" }, { status: 404 });
     }
 
     if (currentMember.role === "admin") {
       const adminCount = await countActiveTeamAdmins(teamId);
       if (adminCount <= 1) {
         return NextResponse.json(
-          { error: "Cannot remove the last admin from this team" },
+          { errorCode: "LAST_ADMIN_CANNOT_BE_REMOVED" },
           { status: 400 }
         );
       }
@@ -181,14 +181,14 @@ export async function DELETE(
 
     const membership = await suspendTeamMember(teamId, userId);
     if (!membership) {
-      return NextResponse.json({ error: "Team member not found" }, { status: 404 });
+      return NextResponse.json({ errorCode: "TEAM_MEMBER_NOT_FOUND" }, { status: 404 });
     }
 
-    return NextResponse.json({ message: "Team member removed successfully" }, { status: 200 });
+    return NextResponse.json({ messageCode: "TEAM_MEMBER_REMOVED" }, { status: 200 });
   } catch (error: any) {
     console.error("Error removing team member:", error);
     return NextResponse.json(
-      { error: error?.message || "An error occurred while removing team member" },
+      { errorCode: "TEAM_MEMBER_REMOVE_FAILED" },
       { status: 500 }
     );
   }

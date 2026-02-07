@@ -7,7 +7,10 @@ export async function PATCH(request: NextRequest) {
   try {
     const requestUserId = getUserIdFromRequest(request);
     if (!requestUserId) {
-      return NextResponse.json({ error: "User not authenticated" }, { status: 401 });
+      return NextResponse.json(
+        { errorCode: "USER_NOT_AUTHENTICATED" },
+        { status: 401 }
+      );
     }
 
     const body = await request.json();
@@ -19,35 +22,35 @@ export async function PATCH(request: NextRequest) {
 
     if (!currentPassword || !newPassword || !confirmPassword) {
       return NextResponse.json(
-        { error: "Current password, new password and confirmation are required" },
+        { errorCode: "PASSWORD_FIELDS_REQUIRED" },
         { status: 400 }
       );
     }
 
     if (newPassword.length < 6) {
       return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
+        { errorCode: "PASSWORD_TOO_SHORT" },
         { status: 400 }
       );
     }
 
     if (newPassword !== confirmPassword) {
       return NextResponse.json(
-        { error: "New password and confirmation do not match" },
+        { errorCode: "PASSWORD_CONFIRMATION_MISMATCH" },
         { status: 400 }
       );
     }
 
     if (currentPassword === newPassword) {
       return NextResponse.json(
-        { error: "New password must be different from current password" },
+        { errorCode: "PASSWORD_MUST_DIFFER" },
         { status: 400 }
       );
     }
 
     const user = await findUserById(requestUserId);
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ errorCode: "USER_NOT_FOUND" }, { status: 404 });
     }
 
     const validCurrentPassword = await verifyPassword(
@@ -56,7 +59,7 @@ export async function PATCH(request: NextRequest) {
     );
     if (!validCurrentPassword) {
       return NextResponse.json(
-        { error: "Current password is incorrect" },
+        { errorCode: "CURRENT_PASSWORD_INCORRECT" },
         { status: 400 }
       );
     }
@@ -64,13 +67,13 @@ export async function PATCH(request: NextRequest) {
     await updateUserPassword(requestUserId, newPassword);
 
     return NextResponse.json(
-      { message: "Password updated successfully" },
+      { messageCode: "PASSWORD_UPDATED" },
       { status: 200 }
     );
   } catch (error) {
     console.error("Error updating password:", error);
     return NextResponse.json(
-      { error: "An error occurred while updating password" },
+      { errorCode: "PASSWORD_UPDATE_FAILED" },
       { status: 500 }
     );
   }

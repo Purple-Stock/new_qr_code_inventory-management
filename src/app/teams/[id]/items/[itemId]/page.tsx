@@ -107,7 +107,7 @@ export default function ItemDetailPage() {
   if (!item) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4">
-        <p className="text-gray-600">Item not found</p>
+        <p className="text-gray-600">{t.items.itemNotFound}</p>
         <Link href={`/teams/${teamId}/items`}>
           <Button variant="outline">{t.items.backToList}</Button>
         </Link>

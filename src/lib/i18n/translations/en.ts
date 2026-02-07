@@ -71,6 +71,7 @@ export const en = {
     deleteConfirm: "Are you sure you want to delete this item? This action cannot be undone.",
     itemDeleted: "Item deleted successfully",
     backToList: "Back to List",
+    itemNotFound: "Item not found",
     itemInformation: "Item information",
     currentStatus: "Current Status",
     tourSearchTitle: "Search",

@@ -71,6 +71,7 @@ export const fr = {
     deleteConfirm: "Êtes-vous sûr de vouloir supprimer cet article ? Cette action ne peut pas être annulée.",
     itemDeleted: "Article supprimé avec succès",
     backToList: "Retour à la liste",
+    itemNotFound: "Article introuvable",
     itemInformation: "Informations sur l'article",
     currentStatus: "Statut actuel",
     tourSearchTitle: "Recherche",

@@ -71,6 +71,7 @@ export const ptBR = {
     deleteConfirm: "Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.",
     itemDeleted: "Item excluído com sucesso",
     backToList: "Voltar à lista",
+    itemNotFound: "Item não encontrado",
     itemInformation: "Informações do item",
     currentStatus: "Status atual",
     tourSearchTitle: "Busca",
