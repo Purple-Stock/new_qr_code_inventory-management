@@ -17,6 +17,7 @@ import {
 } from "@/lib/db/team-members";
 import { isValidEmail, normalizeEmail } from "@/lib/validation";
 import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
+import { errorResponse, internalErrorResponse, successResponse } from "@/lib/api-route";
 
 export async function GET(
   request: NextRequest,
@@ -26,12 +27,12 @@ export async function GET(
     const { id } = await params;
     const teamId = parseInt(id, 10);
     if (isNaN(teamId)) {
-      return NextResponse.json(errorPayload(ERROR_CODES.INVALID_TEAM_ID), { status: 400 });
+      return errorResponse(undefined, 400, ERROR_CODES.INVALID_TEAM_ID);
     }
 
     const requestUserId = getUserIdFromRequest(request);
     if (!requestUserId) {
-      return NextResponse.json(errorPayload(ERROR_CODES.USER_NOT_AUTHENTICATED), { status: 401 });
+      return errorResponse(undefined, 401, ERROR_CODES.USER_NOT_AUTHENTICATED);
     }
 
     const auth = await authorizeTeamPermission({
@@ -40,14 +41,11 @@ export async function GET(
       requestUserId,
     });
     if (!auth.ok) {
-      return NextResponse.json(
-        errorPayload(authErrorToCode(auth.error), auth.error),
-        { status: auth.status }
-      );
+      return errorResponse(auth.error, auth.status, authErrorToCode(auth.error));
     }
     const team = auth.team;
     if (!team) {
-      return NextResponse.json(errorPayload(ERROR_CODES.TEAM_NOT_FOUND), { status: 404 });
+      return errorResponse(undefined, 404, ERROR_CODES.TEAM_NOT_FOUND);
     }
 
     const members = await getTeamMembersWithUsers(teamId);
@@ -61,16 +59,13 @@ export async function GET(
       companyTeams = await getCompanyTeams(team.companyId);
     }
 
-    return NextResponse.json(
+    return successResponse(
       { members, availableUsers, companyTeams, currentUserId: requestUserId },
-      { status: 200 }
+      200
     );
   } catch (error) {
     console.error("Error listing users:", error);
-    return NextResponse.json(
-      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while listing users"),
-      { status: 500 }
-    );
+    return internalErrorResponse("An error occurred while listing users");
   }
 }
 
@@ -82,12 +77,12 @@ export async function POST(
     const { id } = await params;
     const teamId = parseInt(id, 10);
     if (isNaN(teamId)) {
-      return NextResponse.json(errorPayload(ERROR_CODES.INVALID_TEAM_ID), { status: 400 });
+      return errorResponse(undefined, 400, ERROR_CODES.INVALID_TEAM_ID);
     }
 
     const requestUserId = getUserIdFromRequest(request);
     if (!requestUserId) {
-      return NextResponse.json(errorPayload(ERROR_CODES.USER_NOT_AUTHENTICATED), { status: 401 });
+      return errorResponse(undefined, 401, ERROR_CODES.USER_NOT_AUTHENTICATED);
     }
 
     const auth = await authorizeTeamPermission({
@@ -96,14 +91,11 @@ export async function POST(
       requestUserId,
     });
     if (!auth.ok) {
-      return NextResponse.json(
-        errorPayload(authErrorToCode(auth.error), auth.error),
-        { status: auth.status }
-      );
+      return errorResponse(auth.error, auth.status, authErrorToCode(auth.error));
     }
     const team = auth.team;
     if (!team) {
-      return NextResponse.json(errorPayload(ERROR_CODES.TEAM_NOT_FOUND), { status: 404 });
+      return errorResponse(undefined, 404, ERROR_CODES.TEAM_NOT_FOUND);
     }
 
     const body = await request.json();
@@ -115,16 +107,14 @@ export async function POST(
 
     if (isNaN(userId)) {
       if (!email) {
-        return NextResponse.json(
-          errorPayload(ERROR_CODES.VALIDATION_ERROR, "User ID or email is required"),
-          { status: 400 }
+        return errorResponse(
+          "User ID or email is required",
+          400,
+          ERROR_CODES.VALIDATION_ERROR
         );
       }
       if (!isValidEmail(email)) {
-        return NextResponse.json(
-          errorPayload(ERROR_CODES.INVALID_EMAIL_FORMAT),
-          { status: 400 }
-        );
+        return errorResponse(undefined, 400, ERROR_CODES.INVALID_EMAIL_FORMAT);
       }
 
       const foundUser = await findUserByEmail(email);
@@ -132,12 +122,10 @@ export async function POST(
         userId = foundUser.id;
       } else {
         if (!password || password.length < 6) {
-          return NextResponse.json(
-            errorPayload(
-              ERROR_CODES.PASSWORD_TOO_SHORT,
-              "Password is required with at least 6 characters to create a new user"
-            ),
-            { status: 400 }
+          return errorResponse(
+            "Password is required with at least 6 characters to create a new user",
+            400,
+            ERROR_CODES.PASSWORD_TOO_SHORT
           );
         }
 
@@ -151,7 +139,7 @@ export async function POST(
     }
 
     if (!isUserRole(role)) {
-      return NextResponse.json(errorPayload(ERROR_CODES.INVALID_ROLE), { status: 400 });
+      return errorResponse(undefined, 400, ERROR_CODES.INVALID_ROLE);
     }
 
     let targetTeamIds = [teamId];
@@ -168,20 +156,19 @@ export async function POST(
       await ensureActiveCompanyMember(team.companyId, userId);
       const isCompanyMember = await isActiveCompanyMember(team.companyId, userId);
       if (!isCompanyMember) {
-        return NextResponse.json(
-          errorPayload(ERROR_CODES.FORBIDDEN, "User is not an active member of this company"),
-          { status: 403 }
+        return errorResponse(
+          "User is not an active member of this company",
+          403,
+          ERROR_CODES.FORBIDDEN
         );
       }
 
       const validTeams = await getCompanyTeamsByIds(team.companyId, targetTeamIds);
       if (validTeams.length !== targetTeamIds.length) {
-        return NextResponse.json(
-          errorPayload(
-            ERROR_CODES.VALIDATION_ERROR,
-            "One or more selected teams are invalid for this company"
-          ),
-          { status: 400 }
+        return errorResponse(
+          "One or more selected teams are invalid for this company",
+          400,
+          ERROR_CODES.VALIDATION_ERROR
         );
       }
     }
@@ -194,15 +181,12 @@ export async function POST(
       });
     }
 
-    return NextResponse.json(
+    return successResponse(
       { message: "Team member saved successfully", teamIds: targetTeamIds },
-      { status: 201 }
+      201
     );
   } catch (error) {
     console.error("Error saving team member:", error);
-    return NextResponse.json(
-      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred while saving team member"),
-      { status: 500 }
-    );
+    return internalErrorResponse("An error occurred while saving team member");
   }
 }

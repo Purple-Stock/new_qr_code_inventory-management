@@ -4,6 +4,7 @@ import { getTeamWithStats } from "@/lib/db/teams";
 import { authorizeTeamPermission, getUserIdFromRequest } from "@/lib/permissions";
 import { parseStockTransactionPayload } from "@/lib/validation";
 import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
+import { errorResponse, internalErrorResponse, successResponse } from "@/lib/api-route";
 
 export async function POST(
   request: NextRequest,
@@ -14,28 +15,19 @@ export async function POST(
     const teamId = parseInt(id, 10);
 
     if (isNaN(teamId)) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.VALIDATION_ERROR, "Invalid team ID"),
-        { status: 400 }
-      );
+      return errorResponse("Invalid team ID", 400, ERROR_CODES.VALIDATION_ERROR);
     }
 
     // Verify team exists
     const team = await getTeamWithStats(teamId);
     if (!team) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.TEAM_NOT_FOUND),
-        { status: 404 }
-      );
+      return errorResponse(undefined, 404, ERROR_CODES.TEAM_NOT_FOUND);
     }
 
     const body = await request.json();
     const parsed = parseStockTransactionPayload(body);
     if (!parsed.ok) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.VALIDATION_ERROR, parsed.error),
-        { status: 400 }
-      );
+      return errorResponse(parsed.error, 400, ERROR_CODES.VALIDATION_ERROR);
     }
     const payload = parsed.data;
 
@@ -45,15 +37,10 @@ export async function POST(
       requestUserId: getUserIdFromRequest(request),
     });
     if (!auth.ok) {
-      return NextResponse.json(
-        errorPayload(authErrorToCode(auth.error), auth.error),
-        { status: auth.status }
-      );
+      return errorResponse(auth.error, auth.status, authErrorToCode(auth.error));
     }
     if (!auth.user) {
-      return NextResponse.json(errorPayload(ERROR_CODES.USER_NOT_AUTHENTICATED), {
-        status: 401,
-      });
+      return errorResponse(undefined, 401, ERROR_CODES.USER_NOT_AUTHENTICATED);
     }
 
     // Create transaction
@@ -72,21 +59,17 @@ export async function POST(
         (payload.locationId ?? null),
     });
 
-    return NextResponse.json(
+    return successResponse(
       {
         message: "Stock transaction created successfully",
         transaction,
       },
-      { status: 201 }
+      201
     );
   } catch (error: any) {
     console.error("Error creating stock transaction:", error);
-    return NextResponse.json(
-      errorPayload(
-        ERROR_CODES.INTERNAL_ERROR,
-        error.message || "An error occurred while creating stock transaction"
-      ),
-      { status: 500 }
+    return internalErrorResponse(
+      error.message || "An error occurred while creating stock transaction"
     );
   }
 }

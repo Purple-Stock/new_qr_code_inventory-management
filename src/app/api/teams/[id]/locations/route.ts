@@ -8,6 +8,7 @@ import {
 import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
 import {
   internalErrorResponse,
+  errorResponse,
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
@@ -22,10 +23,7 @@ export async function GET(
     const teamId = parseInt(id, 10);
 
     if (isNaN(teamId)) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.VALIDATION_ERROR, "Invalid team ID"),
-        { status: 400 }
-      );
+      return errorResponse("Invalid team ID", 400, ERROR_CODES.VALIDATION_ERROR);
     }
 
     const auth = await authorizeTeamAccess({
@@ -33,10 +31,7 @@ export async function GET(
       requestUserId: getUserIdFromRequest(request),
     });
     if (!auth.ok) {
-      return NextResponse.json(
-        errorPayload(authErrorToCode(auth.error), auth.error),
-        { status: auth.status }
-      );
+      return errorResponse(auth.error, auth.status, authErrorToCode(auth.error));
     }
 
     const locations = await getTeamLocations(teamId);
@@ -58,10 +53,7 @@ export async function POST(
     const teamId = parseInt(id, 10);
 
     if (isNaN(teamId)) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.VALIDATION_ERROR, "Invalid team ID"),
-        { status: 400 }
-      );
+      return errorResponse("Invalid team ID", 400, ERROR_CODES.VALIDATION_ERROR);
     }
 
     const body = await request.json();

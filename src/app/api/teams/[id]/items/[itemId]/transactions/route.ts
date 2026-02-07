@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getItemStockTransactionsWithDetails } from "@/lib/db/stock-transactions";
 import { getItemById } from "@/lib/db/items";
 import { authorizeTeamAccess, getUserIdFromRequest } from "@/lib/permissions";
+import { errorResponse, internalErrorResponse, successResponse } from "@/lib/api-route";
 
 interface RouteParams {
   params: Promise<{ id: string; itemId: string }>;
@@ -14,10 +15,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const itemId = parseInt(itemIdParam, 10);
 
     if (isNaN(teamId) || isNaN(itemId)) {
-      return NextResponse.json(
-        { error: "Invalid team ID or item ID" },
-        { status: 400 }
-      );
+      return errorResponse("Invalid team ID or item ID", 400);
     }
 
     const auth = await authorizeTeamAccess({
@@ -25,28 +23,22 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       requestUserId: getUserIdFromRequest(request),
     });
     if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return errorResponse(auth.error, auth.status);
     }
 
     const item = await getItemById(itemId);
     if (!item) {
-      return NextResponse.json({ error: "Item not found" }, { status: 404 });
+      return errorResponse("Item not found", 404);
     }
     if (item.teamId !== teamId) {
-      return NextResponse.json(
-        { error: "Item does not belong to this team" },
-        { status: 403 }
-      );
+      return errorResponse("Item does not belong to this team", 403);
     }
 
     const transactions = await getItemStockTransactionsWithDetails(teamId, itemId);
 
-    return NextResponse.json({ transactions }, { status: 200 });
+    return successResponse({ transactions });
   } catch (error) {
     console.error("Error fetching item transactions:", error);
-    return NextResponse.json(
-      { error: "An error occurred while fetching transactions" },
-      { status: 500 }
-    );
+    return internalErrorResponse("An error occurred while fetching transactions");
   }
 }

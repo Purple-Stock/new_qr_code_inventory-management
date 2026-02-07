@@ -4,25 +4,24 @@ import { onboardCompanyOwner } from "@/lib/db/onboarding";
 import { parseSignupPayload } from "@/lib/validation";
 import { setSessionCookie } from "@/lib/session";
 import { ERROR_CODES, errorPayload } from "@/lib/errors";
+import { errorResponse, internalErrorResponse, successResponse } from "@/lib/api-route";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const parsed = parseSignupPayload(body);
     if (!parsed.ok) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.VALIDATION_ERROR, parsed.error),
-        { status: 400 }
-      );
+      return errorResponse(parsed.error, 400, ERROR_CODES.VALIDATION_ERROR);
     }
     const { email: normalizedEmail, password, companyName } = parsed.data;
 
     // Check if user already exists
     const existingUser = await findUserByEmail(normalizedEmail);
     if (existingUser) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.EMAIL_ALREADY_IN_USE, "User with this email already exists"),
-        { status: 409 }
+      return errorResponse(
+        "User with this email already exists",
+        409,
+        ERROR_CODES.EMAIL_ALREADY_IN_USE
       );
     }
 
@@ -35,21 +34,18 @@ export async function POST(request: NextRequest) {
     // Return user without password hash
     const { passwordHash, ...userWithoutPassword } = user;
 
-    const response = NextResponse.json(
+    const response = successResponse(
       {
         message: "User created successfully",
         user: userWithoutPassword,
         company,
       },
-      { status: 201 }
+      201
     );
     setSessionCookie(response, user.id);
     return response;
   } catch (error) {
     console.error("Signup error:", error);
-    return NextResponse.json(
-      errorPayload(ERROR_CODES.INTERNAL_ERROR, "An error occurred during signup"),
-      { status: 500 }
-    );
+    return internalErrorResponse("An error occurred during signup");
   }
 }

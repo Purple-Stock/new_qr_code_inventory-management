@@ -5,6 +5,7 @@ import { getUserIdFromRequest } from "@/lib/permissions";
 import { ERROR_CODES, errorPayload } from "@/lib/errors";
 import {
   internalErrorResponse,
+  errorResponse,
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
@@ -15,10 +16,7 @@ export async function GET(request: NextRequest) {
     const requestUserId = getUserIdFromRequest(request);
 
     if (!requestUserId) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.USER_NOT_AUTHENTICATED),
-        { status: 401 }
-      );
+      return errorResponse(undefined, 401, ERROR_CODES.USER_NOT_AUTHENTICATED);
     }
 
     const teams = await getUserTeamsWithStats(requestUserId);

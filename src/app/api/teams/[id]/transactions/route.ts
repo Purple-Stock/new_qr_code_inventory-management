@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTeamStockTransactionsWithDetails } from "@/lib/db/stock-transactions";
 import { authorizeTeamAccess, getUserIdFromRequest } from "@/lib/permissions";
+import { errorResponse, internalErrorResponse, successResponse } from "@/lib/api-route";
 
 export async function GET(
   request: NextRequest,
@@ -11,10 +12,7 @@ export async function GET(
     const teamId = parseInt(id, 10);
 
     if (isNaN(teamId)) {
-      return NextResponse.json(
-        { error: "Invalid team ID" },
-        { status: 400 }
-      );
+      return errorResponse("Invalid team ID", 400);
     }
 
     const auth = await authorizeTeamAccess({
@@ -22,7 +20,7 @@ export async function GET(
       requestUserId: getUserIdFromRequest(request),
     });
     if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return errorResponse(auth.error, auth.status);
     }
 
     // Get search query from URL params
@@ -35,17 +33,16 @@ export async function GET(
       searchQuery
     );
 
-    return NextResponse.json(
+    return successResponse(
       {
         transactions,
       },
-      { status: 200 }
+      200
     );
   } catch (error: any) {
     console.error("Error fetching transactions:", error);
-    return NextResponse.json(
-      { error: error.message || "An error occurred while fetching transactions" },
-      { status: 500 }
+    return internalErrorResponse(
+      error.message || "An error occurred while fetching transactions"
     );
   }
 }

@@ -10,6 +10,7 @@ import {
 import { ERROR_CODES, authErrorToCode, errorPayload } from "@/lib/errors";
 import {
   internalErrorResponse,
+  errorResponse,
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
@@ -25,9 +26,10 @@ export async function GET(
     const locationId = parseInt(locationIdParam, 10);
 
     if (isNaN(teamId) || isNaN(locationId)) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.VALIDATION_ERROR, "Invalid team ID or location ID"),
-        { status: 400 }
+      return errorResponse(
+        "Invalid team ID or location ID",
+        400,
+        ERROR_CODES.VALIDATION_ERROR
       );
     }
 
@@ -36,26 +38,21 @@ export async function GET(
       requestUserId: getUserIdFromRequest(request),
     });
     if (!auth.ok) {
-      return NextResponse.json(
-        errorPayload(authErrorToCode(auth.error), auth.error),
-        { status: auth.status }
-      );
+      return errorResponse(auth.error, auth.status, authErrorToCode(auth.error));
     }
 
     const location = await getLocationById(locationId);
 
     if (!location) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.LOCATION_NOT_FOUND),
-        { status: 404 }
-      );
+      return errorResponse(undefined, 404, ERROR_CODES.LOCATION_NOT_FOUND);
     }
 
     // Verify location belongs to team
     if (location.teamId !== teamId) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.FORBIDDEN, "Location does not belong to this team"),
-        { status: 403 }
+      return errorResponse(
+        "Location does not belong to this team",
+        403,
+        ERROR_CODES.FORBIDDEN
       );
     }
 
@@ -77,9 +74,10 @@ export async function PUT(
     const locationId = parseInt(locationIdParam, 10);
 
     if (isNaN(teamId) || isNaN(locationId)) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.VALIDATION_ERROR, "Invalid team ID or location ID"),
-        { status: 400 }
+      return errorResponse(
+        "Invalid team ID or location ID",
+        400,
+        ERROR_CODES.VALIDATION_ERROR
       );
     }
 
@@ -118,9 +116,10 @@ export async function DELETE(
     const locationId = parseInt(locationIdParam, 10);
 
     if (isNaN(teamId) || isNaN(locationId)) {
-      return NextResponse.json(
-        errorPayload(ERROR_CODES.VALIDATION_ERROR, "Invalid team ID or location ID"),
-        { status: 400 }
+      return errorResponse(
+        "Invalid team ID or location ID",
+        400,
+        ERROR_CODES.VALIDATION_ERROR
       );
     }
 

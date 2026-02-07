@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTeamReportStats } from "@/lib/db/reports";
 import { authorizeTeamAccess, getUserIdFromRequest } from "@/lib/permissions";
+import { errorResponse, internalErrorResponse, successResponse } from "@/lib/api-route";
 
 // GET - Get report statistics for a team
 export async function GET(
@@ -12,10 +13,7 @@ export async function GET(
     const teamId = parseInt(id, 10);
 
     if (isNaN(teamId)) {
-      return NextResponse.json(
-        { error: "Invalid team ID" },
-        { status: 400 }
-      );
+      return errorResponse("Invalid team ID", 400);
     }
 
     const auth = await authorizeTeamAccess({
@@ -23,7 +21,7 @@ export async function GET(
       requestUserId: getUserIdFromRequest(request),
     });
     if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return errorResponse(auth.error, auth.status);
     }
 
     // Get query parameters for date filtering
@@ -36,12 +34,9 @@ export async function GET(
 
     const stats = await getTeamReportStats(teamId, startDate, endDate);
 
-    return NextResponse.json({ stats }, { status: 200 });
+    return successResponse({ stats });
   } catch (error) {
     console.error("Error fetching report stats:", error);
-    return NextResponse.json(
-      { error: "An error occurred while fetching report statistics" },
-      { status: 500 }
-    );
+    return internalErrorResponse("An error occurred while fetching report statistics");
   }
 }

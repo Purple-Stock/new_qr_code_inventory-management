@@ -133,8 +133,21 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - `src/app/api/teams/route.ts`
   - `src/app/api/teams/[id]/route.ts`
   - `src/app/api/teams/[id]/items/route.ts`
+  - `src/app/api/teams/[id]/items/[itemId]/route.ts`
+  - `src/app/api/teams/[id]/items/[itemId]/transactions/route.ts`
   - `src/app/api/teams/[id]/locations/route.ts`
   - `src/app/api/teams/[id]/locations/[locationId]/route.ts`
+  - `src/app/api/teams/[id]/reports/route.ts`
+  - `src/app/api/teams/[id]/transactions/route.ts`
+  - `src/app/api/teams/[id]/transactions/[transactionId]/route.ts`
+  - `src/app/api/teams/[id]/stock-transactions/route.ts`
+  - `src/app/api/teams/[id]/users/route.ts`
+  - `src/app/api/teams/[id]/users/[userId]/route.ts`
+  - `src/app/api/users/me/password/route.ts`
+  - `src/app/api/auth/login/route.ts`
+  - `src/app/api/auth/signup/route.ts`
+  - `src/app/api/auth/logout/route.ts`
+- Resultado: respostas de sucesso, erro de domínio e erro interno ficaram consistentes em todas as API Routes, reduzindo boilerplate e divergência de contrato HTTP.
 
 ---
 

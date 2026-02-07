@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { deleteStockTransaction } from "@/lib/db/stock-transactions";
 import { getTeamWithStats } from "@/lib/db/teams";
 import { authorizeTeamPermission, getUserIdFromRequest } from "@/lib/permissions";
+import { errorResponse, internalErrorResponse, successResponse } from "@/lib/api-route";
 
 export async function DELETE(
   request: NextRequest,
@@ -13,19 +14,13 @@ export async function DELETE(
     const transactionId = parseInt(transactionIdParam, 10);
 
     if (isNaN(teamId) || isNaN(transactionId)) {
-      return NextResponse.json(
-        { error: "Invalid team ID or transaction ID" },
-        { status: 400 }
-      );
+      return errorResponse("Invalid team ID or transaction ID", 400);
     }
 
     // Verify team exists
     const team = await getTeamWithStats(teamId);
     if (!team) {
-      return NextResponse.json(
-        { error: "Team not found" },
-        { status: 404 }
-      );
+      return errorResponse("Team not found", 404);
     }
 
     const auth = await authorizeTeamPermission({
@@ -34,30 +29,26 @@ export async function DELETE(
       requestUserId: getUserIdFromRequest(request),
     });
     if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return errorResponse(auth.error, auth.status);
     }
 
     // Delete transaction
     const deleted = await deleteStockTransaction(transactionId, teamId);
 
     if (!deleted) {
-      return NextResponse.json(
-        { error: "Transaction not found" },
-        { status: 404 }
-      );
+      return errorResponse("Transaction not found", 404);
     }
 
-    return NextResponse.json(
+    return successResponse(
       {
         message: "Transaction deleted successfully",
       },
-      { status: 200 }
+      200
     );
   } catch (error: any) {
     console.error("Error deleting transaction:", error);
-    return NextResponse.json(
-      { error: error.message || "An error occurred while deleting transaction" },
-      { status: 500 }
+    return internalErrorResponse(
+      error.message || "An error occurred while deleting transaction"
     );
   }
 }
