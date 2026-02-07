@@ -9,11 +9,7 @@ const SERVICE_FILES_EXCLUDED = new Set(["errors.ts", "mappers.ts", "types.ts"]);
 
 // Temporary debt list: existing services without dedicated suite yet.
 // New services must add their own `<service>.service.test.ts`.
-const MISSING_TEST_ALLOWLIST = new Set([
-  "src/lib/services/reports.ts",
-  "src/lib/services/team-dashboard.ts",
-  "src/lib/services/transactions.ts",
-]);
+const MISSING_TEST_ALLOWLIST = new Set([]);
 
 function normalize(filePath) {
   return filePath.replaceAll(path.sep, "/");
