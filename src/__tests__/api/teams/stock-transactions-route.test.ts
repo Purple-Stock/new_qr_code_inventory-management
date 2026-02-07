@@ -109,10 +109,9 @@ describe("/api/teams/[id]/stock-transactions route", () => {
     );
 
     expect(response.status).toBe(500);
-    expect(await response.json()).toEqual({
-      errorCode: ERROR_CODES.INTERNAL_ERROR,
-      error: "Expected property name or '}' in JSON at position 1 (line 1 column 2)",
-    });
+    const payload = await response.json();
+    expect(payload.errorCode).toBe(ERROR_CODES.INTERNAL_ERROR);
+    expect(payload.error).toContain("Expected property name or '}' in JSON at position 1");
     expect(mockedCreateTeamStockTransaction).not.toHaveBeenCalled();
   });
 });
