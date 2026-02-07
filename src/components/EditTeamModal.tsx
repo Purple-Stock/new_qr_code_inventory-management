@@ -82,7 +82,7 @@ export function EditTeamModal({
       if (!response.ok) {
         toast({
           title: t.settings.errorSaving,
-          description: data.error || t.settings.errorSaving,
+          description: t.settings.errorSaving,
           variant: "destructive",
         });
         setIsSaving(false);

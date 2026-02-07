@@ -88,7 +88,7 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
     if (quantity > maxStock) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: t.common.error,
         description: t.stockOut.quantityExceedsStock,
       });
       return;
@@ -108,7 +108,7 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
     if (!selectedLocation) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: t.common.error,
         description: t.stockOut.selectLocationFirst,
       });
       return;
@@ -117,7 +117,7 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
     if (selectedItems.length === 0) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: t.common.error,
         description: t.stockOut.noItemsSelected,
       });
       return;
@@ -127,7 +127,7 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
     if (invalidItem) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: t.common.error,
         description: t.stockOut.quantityRequired,
       });
       return;
@@ -142,7 +142,7 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
     if (exceedsStock) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: t.common.error,
         description: t.stockOut.quantityExceedsStock,
       });
       return;
@@ -166,15 +166,15 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
       if (hasError) {
         toast({
           variant: "destructive",
-          title: "Error",
-          description: "Some items could not be removed. Please try again.",
+          title: t.common.error,
+          description: t.stockOut.partialRemoveError,
         });
         return;
       }
 
       toast({
         variant: "success",
-        title: "Success",
+        title: t.common.success,
         description: t.stockOut.stockRemovedSuccess,
       });
 
@@ -186,8 +186,8 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
       console.error("Error removing stock:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "An error occurred while removing stock",
+        title: t.common.error,
+        description: t.stockOut.removeError,
       });
     } finally {
       setIsSubmitting(false);

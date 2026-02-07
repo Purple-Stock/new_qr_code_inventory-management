@@ -89,7 +89,7 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
     if (quantity > maxStock) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: t.common.error,
         description: t.move.quantityExceedsStock,
       });
       return;
@@ -109,7 +109,7 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
     if (!sourceLocation || !destinationLocation) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: t.common.error,
         description: t.move.selectLocationsFirst,
       });
       return;
@@ -118,7 +118,7 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
     if (sourceLocation === destinationLocation) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: t.common.error,
         description: t.move.sameLocationError,
       });
       return;
@@ -127,7 +127,7 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
     if (selectedItems.length === 0) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: t.common.error,
         description: t.move.noItemsSelected,
       });
       return;
@@ -137,7 +137,7 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
     if (invalidItem) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: t.common.error,
         description: t.move.quantityRequired,
       });
       return;
@@ -152,7 +152,7 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
     if (exceedsStock) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: t.common.error,
         description: t.move.quantityExceedsStock,
       });
       return;
@@ -177,15 +177,15 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
       if (hasError) {
         toast({
           variant: "destructive",
-          title: "Error",
-          description: "Some items could not be moved. Please try again.",
+          title: t.common.error,
+          description: t.move.partialMoveError,
         });
         return;
       }
 
       toast({
         variant: "success",
-        title: "Success",
+        title: t.common.success,
         description: t.move.stockMovedSuccess,
       });
 
@@ -197,8 +197,8 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
       console.error("Error moving stock:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "An error occurred while moving stock",
+        title: t.common.error,
+        description: t.move.moveError,
       });
     } finally {
       setIsSubmitting(false);

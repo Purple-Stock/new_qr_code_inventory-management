@@ -58,7 +58,7 @@ export default function EditItemPage() {
       const res = await fetch(`/api/teams/${teamId}/items/${itemId}`);
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Failed to load item");
+        setError(t.items.failedToLoadItem);
         setIsLoadingData(false);
         return;
       }
@@ -72,7 +72,7 @@ export default function EditItemPage() {
       setBrand(item.brand ?? "");
     } catch (err) {
       console.error("Error fetching item:", err);
-      setError("An error occurred while loading the item");
+      setError(t.itemForm.unexpectedError);
     } finally {
       setIsLoadingData(false);
     }
@@ -141,17 +141,14 @@ export default function EditItemPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "An error occurred while updating the item");
+        setError(t.itemForm.unexpectedError);
         setIsLoading(false);
         return;
       }
 
       setSuccess(t.itemForm.updateSuccess);
-
-      setTimeout(async () => {
-        await router.push(`/teams/${teamId}/items`);
-        router.refresh();
-      }, 1500);
+      await router.push(`/teams/${teamId}/items`);
+      router.refresh();
     } catch (err) {
       setError(t.itemForm.unexpectedError);
       setIsLoading(false);
@@ -219,7 +216,7 @@ export default function EditItemPage() {
                       <Input
                         id="name"
                         type="text"
-                        placeholder="Enter item name"
+                        placeholder={t.itemForm.itemNamePlaceholder}
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         className="w-full pl-10"
@@ -237,7 +234,7 @@ export default function EditItemPage() {
                         <Input
                           id="sku"
                           type="text"
-                          placeholder="Enter SKU"
+                          placeholder={t.itemForm.skuPlaceholder}
                           value={sku}
                           onChange={(e) => setSku(e.target.value)}
                           className="w-full"
@@ -265,7 +262,7 @@ export default function EditItemPage() {
                         <Input
                           id="barcode"
                           type="text"
-                          placeholder="Enter or generate barcode"
+                          placeholder={t.itemForm.barcodePlaceholder}
                           value={barcode}
                           onChange={(e) => setBarcode(e.target.value)}
                           className="w-full"
@@ -334,7 +331,7 @@ export default function EditItemPage() {
                       <Input
                         id="itemType"
                         type="text"
-                        placeholder="Enter item type"
+                        placeholder={t.itemForm.itemTypePlaceholder}
                         value={itemType}
                         onChange={(e) => setItemType(e.target.value)}
                         className="w-full pl-10"
@@ -350,7 +347,7 @@ export default function EditItemPage() {
                       <Input
                         id="brand"
                         type="text"
-                        placeholder="Enter brand name"
+                        placeholder={t.itemForm.brandPlaceholder}
                         value={brand}
                         onChange={(e) => setBrand(e.target.value)}
                         className="w-full pl-10"

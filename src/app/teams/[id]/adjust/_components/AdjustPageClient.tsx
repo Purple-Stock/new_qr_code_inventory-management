@@ -98,7 +98,7 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
     if (!selectedLocation) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: t.common.error,
         description: t.adjust.selectLocationFirst,
       });
       return;
@@ -107,7 +107,7 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
     if (selectedItems.length === 0) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: t.common.error,
         description: t.adjust.noItemsSelected,
       });
       return;
@@ -117,7 +117,7 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
     if (invalidItem) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: t.common.error,
         description: t.adjust.quantityRequired,
       });
       return;
@@ -141,15 +141,15 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
       if (hasError) {
         toast({
           variant: "destructive",
-          title: "Error",
-          description: "Some items could not be adjusted. Please try again.",
+          title: t.common.error,
+          description: t.adjust.partialAdjustError,
         });
         return;
       }
 
       toast({
         variant: "success",
-        title: "Success",
+        title: t.common.success,
         description: t.adjust.stockAdjustedSuccess,
       });
 
@@ -161,8 +161,8 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
       console.error("Error adjusting stock:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "An error occurred while adjusting stock",
+        title: t.common.error,
+        description: t.adjust.adjustError,
       });
     } finally {
       setIsSubmitting(false);

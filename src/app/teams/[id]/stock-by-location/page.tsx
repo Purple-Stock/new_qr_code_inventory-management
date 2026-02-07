@@ -77,11 +77,11 @@ export default function StockByLocationPage() {
       }
 
       if (!teamResponse.ok) {
-        setLoadError(teamData?.error || "Failed to load team data.");
+        setLoadError(t.stockByLocation.failedLoadTeamData);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
-      setLoadError("Failed to load stock by location data.");
+      setLoadError(t.stockByLocation.failedLoadData);
     } finally {
       setIsLoading(false);
     }
@@ -160,7 +160,7 @@ export default function StockByLocationPage() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 flex items-center justify-center p-6">
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-8 text-center max-w-md w-full">
           <p className="text-gray-700 font-medium">
-            {isLoading ? t.stockByLocation.loading : loadError || "Team not found."}
+            {isLoading ? t.stockByLocation.loading : loadError || t.stockByLocation.teamNotFound}
           </p>
         </div>
       </div>

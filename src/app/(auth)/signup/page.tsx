@@ -60,7 +60,7 @@ export default function SignUpPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || t.auth.signup.signupError)
+        setError(t.auth.signup.signupError)
         setIsLoading(false)
         return
       }
@@ -71,11 +71,7 @@ export default function SignUpPage() {
       }
 
       setSuccess(t.auth.signup.accountCreatedRedirecting)
-      
-      // Redirect to login after 2 seconds
-      setTimeout(() => {
-        router.push("/team_selection")
-      }, 2000)
+      router.push("/team_selection")
     } catch (err) {
       setError(t.auth.signup.unexpectedError)
       setIsLoading(false)

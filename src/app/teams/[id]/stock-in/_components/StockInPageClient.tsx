@@ -98,7 +98,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
     if (!selectedLocation) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: t.common.error,
         description: t.stockIn.selectLocationFirst,
       });
       return;
@@ -107,7 +107,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
     if (selectedItems.length === 0) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: t.common.error,
         description: t.stockIn.noItemsSelected,
       });
       return;
@@ -117,7 +117,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
     if (invalidItem) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: t.common.error,
         description: t.stockIn.quantityRequired,
       });
       return;
@@ -141,15 +141,15 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
       if (hasError) {
         toast({
           variant: "destructive",
-          title: "Error",
-          description: "Some items could not be added. Please try again.",
+          title: t.common.error,
+          description: t.stockIn.partialAddError,
         });
         return;
       }
 
       toast({
         variant: "success",
-        title: "Success",
+        title: t.common.success,
         description: t.stockIn.stockAddedSuccess,
       });
 
@@ -161,8 +161,8 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
       console.error("Error adding stock:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "An error occurred while adding stock",
+        title: t.common.error,
+        description: t.stockIn.addError,
       });
     } finally {
       setIsSubmitting(false);

@@ -36,14 +36,16 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
       if (!getRes.ok) {
         toast({
           variant: "destructive",
-          title: "Error",
-          description: getData.error || "Failed to load item",
+          title: t.common.error,
+          description: t.items.failedToLoadItem,
         });
         return;
       }
       const full = getData.item;
       const newBarcode = generateBarcode();
-      const name = (full.name && String(full.name).trim()) ? String(full.name).trim() : "Unnamed Item (copy)";
+      const name = (full.name && String(full.name).trim())
+        ? String(full.name).trim()
+        : t.items.unnamedItemCopy;
       const postRes = await fetch(`/api/teams/${teamId}/items`, {
         method: "POST",
         headers: {
@@ -66,15 +68,15 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
       if (!postRes.ok) {
         toast({
           variant: "destructive",
-          title: "Error",
-          description: postData.error || "Failed to duplicate item",
+          title: t.common.error,
+          description: t.items.failedToDuplicateItem,
         });
         return;
       }
 
       toast({
         variant: "success",
-        title: "Success",
+        title: t.common.success,
         description: t.items.itemDuplicated,
       });
       router.refresh();
@@ -100,8 +102,8 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
       if (!res.ok) {
         toast({
           variant: "destructive",
-          title: "Error",
-          description: data.error || "Failed to delete item",
+          title: t.common.error,
+          description: t.items.failedToDeleteItem,
         });
         setDeletingId(null);
         return;
@@ -109,7 +111,7 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
 
       toast({
         variant: "success",
-        title: "Success",
+        title: t.common.success,
         description: t.items.itemDeleted,
       });
       router.refresh();
@@ -158,7 +160,7 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
             
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
-                {item.itemType || "Type"}
+                {item.itemType || t.items.typeFallback}
               </span>
               <span
                 className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
@@ -294,7 +296,7 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
                   </td>
                   <td className="px-6 py-5 whitespace-nowrap">
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
-                      {item.itemType || "Type"}
+                      {item.itemType || t.items.typeFallback}
                     </span>
                   </td>
                   <td className="px-6 py-5 whitespace-nowrap">

@@ -22,7 +22,7 @@ export function LocationsList({ locations, teamId, t, onDelete }: LocationsListP
   };
 
   const handleDelete = async (id: number, locationName: string) => {
-    if (!confirm(`Are you sure you want to delete "${locationName}"?`)) {
+    if (!confirm(`${t.locations.deleteConfirmPrefix} "${locationName}"?`)) {
       return;
     }
 
@@ -31,16 +31,16 @@ export function LocationsList({ locations, teamId, t, onDelete }: LocationsListP
     if (!result.success) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: result.error || "An error occurred while deleting the location",
+        title: t.common.error,
+        description: t.locations.deleteError,
       });
       return;
     }
 
     toast({
       variant: "success",
-      title: "Location deleted",
-      description: `${locationName} has been deleted successfully.`,
+      title: t.locations.deletedTitle,
+      description: `${locationName} ${t.locations.deletedDescriptionSuffix}`,
     });
 
     onDelete();

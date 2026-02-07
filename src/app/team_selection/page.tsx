@@ -109,7 +109,7 @@ export default function TeamSelectionPage() {
       if (!response.ok) {
         toast({
           title: t.teamSelection.errorDeleting,
-          description: data.error || t.teamSelection.errorDeleting,
+          description: t.teamSelection.errorDeleting,
           variant: "destructive",
         });
         setDeletingTeamId(null);

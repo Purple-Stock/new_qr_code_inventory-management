@@ -57,11 +57,11 @@ export default function EditLocationPage() {
         setName(locationData.location.name);
         setDescription(locationData.location.description || "");
       } else {
-        setError(locationData.error || "Failed to load location");
+        setError(t.locations.failedToLoadLocation);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
-      setError("An error occurred while loading the location");
+      setError(t.locationForm.unexpectedError);
     } finally {
       setIsLoadingData(false);
     }
@@ -97,17 +97,12 @@ export default function EditLocationPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "An error occurred while updating the location");
+        setError(t.locationForm.unexpectedError);
         setIsLoading(false);
         return;
       }
 
-      setSuccess(t.locationForm.updateSuccess);
-
-      // Redirect to locations list after 1.5 seconds
-      setTimeout(() => {
-        router.push(`/teams/${teamId}/locations`);
-      }, 1500);
+      router.push(`/teams/${teamId}/locations`);
     } catch (err) {
       setError(t.locationForm.unexpectedError);
       setIsLoading(false);
@@ -190,7 +185,7 @@ export default function EditLocationPage() {
                     <Input
                       id="name"
                       type="text"
-                      placeholder="Enter location name"
+                      placeholder={t.locationForm.namePlaceholder}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       className="w-full pl-10"
@@ -209,7 +204,7 @@ export default function EditLocationPage() {
                     <FileText className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                     <textarea
                       id="description"
-                      placeholder="Enter location description (optional)"
+                      placeholder={t.locationForm.descriptionPlaceholder}
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 pl-10 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"

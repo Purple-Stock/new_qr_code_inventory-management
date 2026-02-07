@@ -43,7 +43,7 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || t.auth.login.invalidCredentials)
+        setError(t.auth.login.invalidCredentials)
         setIsLoading(false)
         return
       }

@@ -129,18 +129,14 @@ export default function NewItemPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "An error occurred while creating the item");
+        setError(t.itemForm.unexpectedError);
         setIsLoading(false);
         return;
       }
 
       setSuccess(t.itemForm.createSuccess);
-
-      // Redirect to items list and refresh so the new item appears
-      setTimeout(async () => {
-        await router.push(`/teams/${teamId}/items`);
-        router.refresh();
-      }, 1500);
+      await router.push(`/teams/${teamId}/items`);
+      router.refresh();
     } catch (err) {
       setError(t.itemForm.unexpectedError);
       setIsLoading(false);
@@ -219,7 +215,7 @@ export default function NewItemPage() {
                       <Input
                         id="name"
                         type="text"
-                        placeholder="Enter item name"
+                        placeholder={t.itemForm.itemNamePlaceholder}
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         className="w-full pl-10"
@@ -238,7 +234,7 @@ export default function NewItemPage() {
                         <Input
                           id="sku"
                           type="text"
-                          placeholder="Enter SKU"
+                          placeholder={t.itemForm.skuPlaceholder}
                           value={sku}
                           onChange={(e) => setSku(e.target.value)}
                           className="w-full"
@@ -270,7 +266,7 @@ export default function NewItemPage() {
                         <Input
                           id="barcode"
                           type="text"
-                          placeholder="Enter or generate barcode"
+                          placeholder={t.itemForm.barcodePlaceholder}
                           value={barcode}
                           onChange={(e) => setBarcode(e.target.value)}
                           className="w-full"
@@ -349,7 +345,7 @@ export default function NewItemPage() {
                       <Input
                         id="itemType"
                         type="text"
-                        placeholder="Enter item type"
+                        placeholder={t.itemForm.itemTypePlaceholder}
                         value={itemType}
                         onChange={(e) => setItemType(e.target.value)}
                         className="w-full pl-10"
@@ -367,7 +363,7 @@ export default function NewItemPage() {
                       <Input
                         id="brand"
                         type="text"
-                        placeholder="Enter brand name"
+                        placeholder={t.itemForm.brandPlaceholder}
                         value={brand}
                         onChange={(e) => setBrand(e.target.value)}
                         className="w-full pl-10"

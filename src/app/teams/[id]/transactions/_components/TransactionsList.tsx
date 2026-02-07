@@ -28,15 +28,15 @@ export function TransactionsList({ transactions, teamId, onDelete }: Transaction
     if (!result.success) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: result.error || "Failed to delete transaction",
+        title: t.common.error,
+        description: t.transactions.failedToDeleteTransaction,
       });
       return;
     }
 
     toast({
       variant: "success",
-      title: "Success",
+      title: t.common.success,
       description: t.transactions.transactionDeleted,
     });
 

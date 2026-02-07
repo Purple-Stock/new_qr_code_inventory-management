@@ -50,17 +50,13 @@ export default function NewTeamPage() {
           router.push("/");
           return;
         }
-        setError(data.error || "An error occurred while creating the team");
+        setError(t.team.unexpectedError);
         setIsLoading(false);
         return;
       }
 
       setSuccess(t.team.createSuccess);
-
-      // Redirect to team selection after 1.5 seconds
-      setTimeout(() => {
-        router.push("/team_selection");
-      }, 1500);
+      router.push("/team_selection");
     } catch (err) {
       setError(t.team.unexpectedError);
       setIsLoading(false);
@@ -143,7 +139,7 @@ export default function NewTeamPage() {
               <Input
                 id="name"
                 type="text"
-                placeholder="Enter team name"
+                placeholder={t.team.teamNamePlaceholder}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full"

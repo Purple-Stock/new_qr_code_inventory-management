@@ -131,7 +131,7 @@ export default function SettingsPage() {
       if (!response.ok) {
         toast({
           title: t.common.error,
-          description: data.error || t.settings.couldNotUpdateRole,
+          description: t.settings.couldNotUpdateRole,
           variant: "destructive",
         });
         return;
@@ -167,7 +167,7 @@ export default function SettingsPage() {
       if (!response.ok) {
         toast({
           title: t.common.error,
-          description: data.error || t.settings.couldNotRemoveMember,
+          description: t.settings.couldNotRemoveMember,
           variant: "destructive",
         });
         return;
@@ -239,7 +239,7 @@ export default function SettingsPage() {
       if (!response.ok) {
         toast({
           title: t.common.error,
-          description: data.error || t.settings.couldNotCreateUser,
+          description: t.settings.couldNotCreateUser,
           variant: "destructive",
         });
         return;
@@ -318,7 +318,7 @@ export default function SettingsPage() {
         const errorMessage =
           data.error === "Current password is incorrect"
             ? t.settings.currentPasswordIncorrect
-            : data.error || t.settings.couldNotUpdatePassword;
+            : t.settings.couldNotUpdatePassword;
         toast({
           title: t.common.error,
           description: errorMessage,
@@ -403,7 +403,7 @@ export default function SettingsPage() {
         const description =
           data.error === "Email already in use"
             ? t.settings.emailAlreadyInUse
-            : data.error || t.settings.couldNotUpdateUserInfo;
+            : t.settings.couldNotUpdateUserInfo;
         toast({
           title: t.common.error,
           description,
