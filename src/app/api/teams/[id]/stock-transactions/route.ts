@@ -2,12 +2,9 @@ import { NextRequest } from "next/server";
 import { getUserIdFromRequest } from "@/lib/permissions";
 import { ERROR_CODES } from "@/lib/errors";
 import { getErrorMessage } from "@/lib/error-utils";
-import {
-  errorResponse,
-  internalErrorResponse,
-  serviceErrorResponse,
-  successResponse,
-} from "@/lib/api-route";
+import { errorResponse,
+  serviceErrorResponse, successResponse } from "@/lib/api-route";
+import { internalServiceError } from "@/lib/services/errors";
 import { createTeamStockTransaction } from "@/lib/services/stock-transactions";
 
 export async function POST(
@@ -41,8 +38,10 @@ export async function POST(
     );
   } catch (error: unknown) {
     console.error("Error creating stock transaction:", error);
-    return internalErrorResponse(
-      getErrorMessage(error, "An error occurred while creating stock transaction")
+    return serviceErrorResponse(
+      internalServiceError(
+        getErrorMessage(error, "An error occurred while creating stock transaction")
+      )
     );
   }
 }

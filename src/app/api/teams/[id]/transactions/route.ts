@@ -2,12 +2,9 @@ import { NextRequest } from "next/server";
 import { getUserIdFromRequest } from "@/lib/permissions";
 import { getErrorMessage } from "@/lib/error-utils";
 import { ERROR_CODES } from "@/lib/errors";
-import {
-  errorResponse,
-  internalErrorResponse,
-  serviceErrorResponse,
-  successResponse,
-} from "@/lib/api-route";
+import { errorResponse,
+  serviceErrorResponse, successResponse } from "@/lib/api-route";
+import { internalServiceError } from "@/lib/services/errors";
 import { listTeamTransactionsForUser } from "@/lib/services/transactions";
 
 export async function GET(
@@ -43,8 +40,8 @@ export async function GET(
     );
   } catch (error: unknown) {
     console.error("Error fetching transactions:", error);
-    return internalErrorResponse(
-      getErrorMessage(error, "An error occurred while fetching transactions")
+    return serviceErrorResponse(
+      internalServiceError(getErrorMessage(error, "An error occurred while fetching transactions"))
     );
   }
 }

@@ -6,12 +6,11 @@ import {
 } from "@/lib/services/teams";
 import { getUserIdFromRequest } from "@/lib/permissions";
 import { ERROR_CODES } from "@/lib/errors";
-import {
-  internalErrorResponse,
-  errorResponse,
+import {  errorResponse,
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
+import { internalServiceError } from "@/lib/services/errors";
 
 export async function GET(
   request: NextRequest,
@@ -36,7 +35,7 @@ export async function GET(
     return successResponse({ team: result.data.team });
   } catch (error) {
     console.error("Error fetching team:", error);
-    return internalErrorResponse("An error occurred while fetching team");
+    return serviceErrorResponse(internalServiceError("An error occurred while fetching team"));
   }
 }
 
@@ -72,7 +71,7 @@ export async function PUT(
     );
   } catch (error: unknown) {
     console.error("Error updating team:", error);
-    return internalErrorResponse("An error occurred while updating the team");
+    return serviceErrorResponse(internalServiceError("An error occurred while updating the team"));
   }
 }
 
@@ -103,6 +102,6 @@ export async function DELETE(
     );
   } catch (error: unknown) {
     console.error("Error deleting team:", error);
-    return internalErrorResponse("An error occurred while deleting the team");
+    return serviceErrorResponse(internalServiceError("An error occurred while deleting the team"));
   }
 }

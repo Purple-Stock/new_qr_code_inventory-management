@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import { getUserIdFromRequest } from "@/lib/permissions";
 import { updateOwnPassword } from "@/lib/services/users";
-import { internalErrorResponse, serviceErrorResponse, successResponse } from "@/lib/api-route";
+import { serviceErrorResponse, successResponse } from "@/lib/api-route";
+import { internalServiceError } from "@/lib/services/errors";
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -17,6 +18,6 @@ export async function PATCH(request: NextRequest) {
     return successResponse({ messageCode: result.data.messageCode }, 200);
   } catch (error) {
     console.error("Error updating password:", error);
-    return internalErrorResponse("Password update failed");
+    return serviceErrorResponse(internalServiceError("Password update failed"));
   }
 }

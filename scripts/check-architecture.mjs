@@ -8,6 +8,7 @@ const DB_IMPORT_PATTERN = /from\s+["']@\/lib\/db\//;
 const EXPLICIT_ANY_PATTERN = /\b(as\s+any|:\s*any)\b/;
 const TWO_ARG_ERROR_RESPONSE_PATTERN = /errorResponse\s*\(\s*[^,]+,\s*[^,)\n]+\s*\)/;
 const DIRECT_NEXTRESPONSE_JSON_PATTERN = /\bNextResponse\.json\s*\(/;
+const INTERNAL_ERROR_RESPONSE_PATTERN = /\binternalErrorResponse\s*\(/;
 
 const ANY_DEBT_ALLOWLIST = new Set();
 
@@ -82,13 +83,18 @@ const directJsonResponseViolations = scanForPattern(
   allApiFiles,
   DIRECT_NEXTRESPONSE_JSON_PATTERN
 );
+const internalErrorHelperViolations = scanForPattern(
+  allApiFiles,
+  INTERNAL_ERROR_RESPONSE_PATTERN
+);
 
 if (
   uiDbViolations.length > 0 ||
   apiDbViolations.length > 0 ||
   anyViolations.length > 0 ||
   errorResponseViolations.length > 0 ||
-  directJsonResponseViolations.length > 0
+  directJsonResponseViolations.length > 0 ||
+  internalErrorHelperViolations.length > 0
 ) {
   console.error("Architecture check failed.\n");
 
@@ -115,6 +121,11 @@ if (
   printViolations(
     "Rule 5: do not call NextResponse.json directly in API routes (use api-route helpers).",
     directJsonResponseViolations
+  );
+
+  printViolations(
+    "Rule 6: avoid internalErrorResponse in API routes that use services (prefer serviceErrorResponse(internalServiceError(...))).",
+    internalErrorHelperViolations
   );
 
   process.exit(1);

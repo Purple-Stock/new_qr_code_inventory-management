@@ -3,10 +3,10 @@ import { getUserIdFromRequest } from "@/lib/permissions";
 import { ERROR_CODES } from "@/lib/errors";
 import {
   errorResponse,
-  internalErrorResponse,
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
+import { internalServiceError } from "@/lib/services/errors";
 import { getTeamReportStatsForUser } from "@/lib/services/reports";
 
 // GET - Get report statistics for a team
@@ -43,6 +43,6 @@ export async function GET(
     return successResponse({ stats: result.data.stats });
   } catch (error) {
     console.error("Error fetching report stats:", error);
-    return internalErrorResponse("An error occurred while fetching report statistics");
+    return serviceErrorResponse(internalServiceError("An error occurred while fetching report statistics"));
   }
 }

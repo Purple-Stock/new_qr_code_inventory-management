@@ -3,12 +3,11 @@ import { revalidatePath } from "next/cache";
 import { createTeamItem, listTeamItemsForUser } from "@/lib/services/items";
 import { getUserIdFromRequest } from "@/lib/permissions";
 import { ERROR_CODES } from "@/lib/errors";
-import {
-  internalErrorResponse,
-  errorResponse,
+import {  errorResponse,
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
+import { internalServiceError } from "@/lib/services/errors";
 
 // GET - List items for a team
 export async function GET(
@@ -34,7 +33,7 @@ export async function GET(
     return successResponse({ items: result.data.items });
   } catch (error) {
     console.error("Error fetching items:", error);
-    return internalErrorResponse("An error occurred while fetching items");
+    return serviceErrorResponse(internalServiceError("An error occurred while fetching items"));
   }
 }
 
@@ -72,6 +71,6 @@ export async function POST(
     );
   } catch (error: unknown) {
     console.error("Error creating item:", error);
-    return internalErrorResponse("An error occurred while creating the item");
+    return serviceErrorResponse(internalServiceError("An error occurred while creating the item"));
   }
 }

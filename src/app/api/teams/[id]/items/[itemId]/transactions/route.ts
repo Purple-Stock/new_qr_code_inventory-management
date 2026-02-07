@@ -3,10 +3,10 @@ import { getUserIdFromRequest } from "@/lib/permissions";
 import { ERROR_CODES } from "@/lib/errors";
 import {
   errorResponse,
-  internalErrorResponse,
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
+import { internalServiceError } from "@/lib/services/errors";
 import { listItemTransactionsForUser } from "@/lib/services/transactions";
 
 interface RouteParams {
@@ -39,6 +39,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return successResponse({ transactions: result.data.transactions });
   } catch (error) {
     console.error("Error fetching item transactions:", error);
-    return internalErrorResponse("An error occurred while fetching transactions");
+    return serviceErrorResponse(internalServiceError("An error occurred while fetching transactions"));
   }
 }

@@ -4,10 +4,10 @@ import { getUserIdFromRequest } from "@/lib/permissions";
 import { ERROR_CODES } from "@/lib/errors";
 import {
   errorResponse,
-  internalErrorResponse,
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
+import { internalServiceError } from "@/lib/services/errors";
 import {
   deleteTeamItemById,
   getTeamItemDetails,
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return successResponse({ item: result.data.item }, 200);
   } catch (error) {
     console.error("Error fetching item:", error);
-    return internalErrorResponse("An error occurred while fetching the item");
+    return serviceErrorResponse(internalServiceError("An error occurred while fetching the item"));
   }
 }
 
@@ -80,7 +80,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     return successResponse({ message: "Item updated successfully", item: result.data.item }, 200);
   } catch (error: unknown) {
     console.error("Error updating item:", error);
-    return internalErrorResponse("An error occurred while updating the item");
+    return serviceErrorResponse(internalServiceError("An error occurred while updating the item"));
   }
 }
 
@@ -112,6 +112,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     return successResponse({ message: "Item deleted successfully" }, 200);
   } catch (error) {
     console.error("Error deleting item:", error);
-    return internalErrorResponse("An error occurred while deleting the item");
+    return serviceErrorResponse(internalServiceError("An error occurred while deleting the item"));
   }
 }

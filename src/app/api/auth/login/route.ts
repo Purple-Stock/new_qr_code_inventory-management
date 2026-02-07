@@ -1,11 +1,10 @@
 import { NextRequest } from "next/server";
 import { setSessionCookie } from "@/lib/session";
 import { loginUser } from "@/lib/services/auth";
-import {
-  internalErrorResponse,
-  serviceErrorResponse,
+import {  serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
+import { internalServiceError } from "@/lib/services/errors";
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,6 +25,6 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("Login error:", error);
-    return internalErrorResponse("An error occurred during login");
+    return serviceErrorResponse(internalServiceError("An error occurred during login"));
   }
 }

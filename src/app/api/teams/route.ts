@@ -1,11 +1,10 @@
 import { NextRequest } from "next/server";
 import { createTeamForUser, getUserTeamsForUser } from "@/lib/services/teams";
 import { getUserIdFromRequest } from "@/lib/permissions";
-import {
-  internalErrorResponse,
-  serviceErrorResponse,
+import {  serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
+import { internalServiceError } from "@/lib/services/errors";
 
 // GET - List teams for a user
 export async function GET(request: NextRequest) {
@@ -19,7 +18,7 @@ export async function GET(request: NextRequest) {
     return successResponse({ teams: result.data.teams });
   } catch (error) {
     console.error("Error fetching teams:", error);
-    return internalErrorResponse("An error occurred while fetching teams");
+    return serviceErrorResponse(internalServiceError("An error occurred while fetching teams"));
   }
 }
 
@@ -44,6 +43,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error: unknown) {
     console.error("Error creating team:", error);
-    return internalErrorResponse("An error occurred while creating the team");
+    return serviceErrorResponse(internalServiceError("An error occurred while creating the team"));
   }
 }

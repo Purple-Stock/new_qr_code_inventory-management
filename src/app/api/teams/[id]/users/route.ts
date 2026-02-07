@@ -3,10 +3,10 @@ import { getUserIdFromRequest } from "@/lib/permissions";
 import { ERROR_CODES } from "@/lib/errors";
 import {
   errorResponse,
-  internalErrorResponse,
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
+import { internalServiceError } from "@/lib/services/errors";
 import {
   createOrAttachTeamMember,
   getTeamUsersForManagement,
@@ -42,7 +42,7 @@ export async function GET(
     );
   } catch (error) {
     console.error("Error listing users:", error);
-    return internalErrorResponse("An error occurred while listing users");
+    return serviceErrorResponse(internalServiceError("An error occurred while listing users"));
   }
 }
 
@@ -73,6 +73,6 @@ export async function POST(
     );
   } catch (error) {
     console.error("Error saving team member:", error);
-    return internalErrorResponse("An error occurred while saving team member");
+    return serviceErrorResponse(internalServiceError("An error occurred while saving team member"));
   }
 }

@@ -6,12 +6,11 @@ import {
 } from "@/lib/services/locations";
 import { getUserIdFromRequest } from "@/lib/permissions";
 import { ERROR_CODES } from "@/lib/errors";
-import {
-  internalErrorResponse,
-  errorResponse,
+import {  errorResponse,
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
+import { internalServiceError } from "@/lib/services/errors";
 
 // GET - Get a specific location
 export async function GET(
@@ -43,7 +42,7 @@ export async function GET(
     return successResponse({ location: result.data.location });
   } catch (error) {
     console.error("Error fetching location:", error);
-    return internalErrorResponse("An error occurred while fetching location");
+    return serviceErrorResponse(internalServiceError("An error occurred while fetching location"));
   }
 }
 
@@ -85,7 +84,7 @@ export async function PUT(
     );
   } catch (error: unknown) {
     console.error("Error updating location:", error);
-    return internalErrorResponse("An error occurred while updating the location");
+    return serviceErrorResponse(internalServiceError("An error occurred while updating the location"));
   }
 }
 
@@ -122,6 +121,6 @@ export async function DELETE(
     );
   } catch (error) {
     console.error("Error deleting location:", error);
-    return internalErrorResponse("An error occurred while deleting the location");
+    return serviceErrorResponse(internalServiceError("An error occurred while deleting the location"));
   }
 }
