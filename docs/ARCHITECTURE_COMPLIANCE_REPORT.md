@@ -441,22 +441,38 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 - Resultado:
   - `src/app/api/users/me/password/route.ts` em **100%** de statements/branches/functions/lines
 
+### 29. Cobertura inicial de Server Actions da camada `app/*` (Concluído)
+
+- Suíte adicionada:
+  - `src/__tests__/app/server-actions.test.ts`
+- Ações cobertas nesta rodada:
+  - `src/app/teams/[id]/stock-in/_actions/createStockTransaction.ts`
+  - `src/app/teams/[id]/stock-out/_actions/createStockTransaction.ts`
+  - `src/app/teams/[id]/adjust/_actions/createStockTransaction.ts`
+  - `src/app/teams/[id]/move/_actions/createStockTransaction.ts`
+  - `src/app/teams/[id]/transactions/_actions/deleteTransaction.ts`
+  - `src/app/teams/[id]/locations/_actions/deleteLocation.ts`
+  - `src/app/teams/[id]/items/_actions/createItem.ts`
+- Resultado:
+  - cobertura de functions nessas actions em **100%**
+  - avanço real da camada `app/*` com cenários de sucesso, erro de domínio e exceção
+
 ---
 
 ## ✅ Validação Executada
 
 - `npm run build`: **OK**
 - `npm run verify:architecture`: **OK**
-- `npm test -- --runInBand`: **OK** (31 suítes, 153 testes)
-- `npm run test:coverage`: **OK** (Statements: **33.49%**, Branches: **21.55%**, Functions: **27.24%**, Lines: **33.97%**)
+- `npm test -- --runInBand`: **OK** (32 suítes, 161 testes)
+- `npm run test:coverage`: **OK** (Statements: **35.68%**, Branches: **21.80%**, Functions: **28.34%**, Lines: **36.22%**)
 - `npm run check:architecture`: **OK**
 
 ---
 
 ## ⚠️ Pendências Relevantes
 
-1. Elevar cobertura da camada `app/*` (principalmente client pages e actions), hoje com baixo impacto de testes automatizados.
-2. Avaliar objetivo de cobertura por pacote (`api`, `services`, `db`) e transformar em meta gradual de CI.
+1. Continuar expansão de testes de `app/*` para páginas client críticas (`settings`, `items list`, `transactions list`) com foco em fluxos principais.
+2. Avaliar objetivo de cobertura por pacote (`api`, `services`, `app`) e transformar em meta gradual de CI.
 
 ---
 
