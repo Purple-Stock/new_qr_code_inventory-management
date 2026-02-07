@@ -4,13 +4,14 @@ import { getItemById } from "@/lib/db/items";
 import { getTeamWithStats } from "@/lib/db/teams";
 
 interface RouteParams {
-  params: { id: string; itemId: string };
+  params: Promise<{ id: string; itemId: string }>;
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const teamId = parseInt(params.id, 10);
-    const itemId = parseInt(params.itemId, 10);
+    const { id, itemId: itemIdParam } = await params;
+    const teamId = parseInt(id, 10);
+    const itemId = parseInt(itemIdParam, 10);
 
     if (isNaN(teamId) || isNaN(itemId)) {
       return NextResponse.json(

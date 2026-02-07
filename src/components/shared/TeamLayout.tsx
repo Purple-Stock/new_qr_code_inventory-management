@@ -197,6 +197,7 @@ export function TeamLayout({ team, activeMenuItem, children }: TeamLayoutProps) 
       <div className="flex flex-col lg:flex-row">
         {/* Desktop Sidebar */}
         <aside
+          data-tour="tour-sidebar"
           className={`hidden lg:block bg-white min-h-[calc(100vh-73px)] border-r border-gray-200 shadow-sm relative transition-all duration-300 ${
             isSidebarCollapsed ? "w-20" : "w-64"
           }`}

@@ -27,6 +27,7 @@ interface Team {
   createdAt: Date | number;
   itemCount: number;
   transactionCount: number;
+  canDeleteTeam?: boolean;
 }
 
 export default function TeamSelectionPage() {
@@ -87,7 +88,7 @@ export default function TeamSelectionPage() {
 
   const handleDeleteClick = (id: number) => {
     const team = teams.find((t) => t.id === id);
-    if (team) {
+    if (team?.canDeleteTeam) {
       setTeamToDelete(team);
       setDeleteModalOpen(true);
     }
@@ -144,7 +145,19 @@ export default function TeamSelectionPage() {
       <header className="bg-white border-b border-gray-200 shadow-sm px-3 sm:px-4 md:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-4">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#6B21A8] to-[#7C3AED] rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-            <span className="text-white font-bold text-lg sm:text-xl">4</span>
+            <svg
+              className="w-6 h-6 sm:w-7 sm:h-7 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
+            </svg>
           </div>
           <span className="font-bold text-base sm:text-lg md:text-xl text-gray-900 tracking-tight truncate">PURPLE STOCK</span>
         </div>
@@ -306,6 +319,7 @@ export default function TeamSelectionPage() {
                   transactionCount={team.transactionCount}
                   onEdit={handleEdit}
                   onDelete={handleDeleteClick}
+                  canDelete={team.canDeleteTeam}
                   isDeleting={deletingTeamId === team.id}
                 />
               ))}

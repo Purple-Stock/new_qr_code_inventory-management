@@ -11,14 +11,15 @@ import { getTeamWithStats } from "@/lib/db/teams";
 import { authorizeTeamPermission, getUserIdFromRequest } from "@/lib/permissions";
 
 interface RouteParams {
-  params: { id: string; itemId: string };
+  params: Promise<{ id: string; itemId: string }>;
 }
 
 // GET - Get a specific item
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const teamId = parseInt(params.id, 10);
-    const itemId = parseInt(params.itemId, 10);
+    const { id, itemId: itemIdParam } = await params;
+    const teamId = parseInt(id, 10);
+    const itemId = parseInt(itemIdParam, 10);
 
     if (isNaN(teamId) || isNaN(itemId)) {
       return NextResponse.json(
@@ -63,8 +64,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // PUT - Update an item
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const teamId = parseInt(params.id, 10);
-    const itemId = parseInt(params.itemId, 10);
+    const { id, itemId: itemIdParam } = await params;
+    const teamId = parseInt(id, 10);
+    const itemId = parseInt(itemIdParam, 10);
 
     if (isNaN(teamId) || isNaN(itemId)) {
       return NextResponse.json(
@@ -168,8 +170,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 // DELETE - Delete an item
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const teamId = parseInt(params.id, 10);
-    const itemId = parseInt(params.itemId, 10);
+    const { id, itemId: itemIdParam } = await params;
+    const teamId = parseInt(id, 10);
+    const itemId = parseInt(itemIdParam, 10);
 
     if (isNaN(teamId) || isNaN(itemId)) {
       return NextResponse.json(

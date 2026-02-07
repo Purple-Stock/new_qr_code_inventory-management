@@ -5,11 +5,12 @@ import { authorizeTeamPermission, getUserIdFromRequest } from "@/lib/permissions
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; transactionId: string } }
+  { params }: { params: Promise<{ id: string; transactionId: string }> }
 ) {
   try {
-    const teamId = parseInt(params.id, 10);
-    const transactionId = parseInt(params.transactionId, 10);
+    const { id, transactionId: transactionIdParam } = await params;
+    const teamId = parseInt(id, 10);
+    const transactionId = parseInt(transactionIdParam, 10);
 
     if (isNaN(teamId) || isNaN(transactionId)) {
       return NextResponse.json(

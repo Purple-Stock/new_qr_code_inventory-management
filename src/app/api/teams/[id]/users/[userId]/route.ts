@@ -13,11 +13,12 @@ import { isValidEmail, normalizeEmail } from "@/lib/validation";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string; userId: string } }
+  { params }: { params: Promise<{ id: string; userId: string }> }
 ) {
   try {
-    const teamId = parseInt(params.id, 10);
-    const userId = parseInt(params.userId, 10);
+    const { id, userId: userIdParam } = await params;
+    const teamId = parseInt(id, 10);
+    const userId = parseInt(userIdParam, 10);
 
     if (isNaN(teamId) || isNaN(userId)) {
       return NextResponse.json({ error: "Invalid team ID or user ID" }, { status: 400 });
@@ -137,11 +138,12 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; userId: string } }
+  { params }: { params: Promise<{ id: string; userId: string }> }
 ) {
   try {
-    const teamId = parseInt(params.id, 10);
-    const userId = parseInt(params.userId, 10);
+    const { id, userId: userIdParam } = await params;
+    const teamId = parseInt(id, 10);
+    const userId = parseInt(userIdParam, 10);
 
     if (isNaN(teamId) || isNaN(userId)) {
       return NextResponse.json({ error: "Invalid team ID or user ID" }, { status: 400 });

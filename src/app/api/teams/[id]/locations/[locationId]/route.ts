@@ -10,11 +10,12 @@ import { authorizeTeamPermission, getUserIdFromRequest } from "@/lib/permissions
 // GET - Get a specific location
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string; locationId: string } }
+  { params }: { params: Promise<{ id: string; locationId: string }> }
 ) {
   try {
-    const teamId = parseInt(params.id, 10);
-    const locationId = parseInt(params.locationId, 10);
+    const { id, locationId: locationIdParam } = await params;
+    const teamId = parseInt(id, 10);
+    const locationId = parseInt(locationIdParam, 10);
 
     if (isNaN(teamId) || isNaN(locationId)) {
       return NextResponse.json(
@@ -62,11 +63,12 @@ export async function GET(
 // PUT - Update a location
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string; locationId: string } }
+  { params }: { params: Promise<{ id: string; locationId: string }> }
 ) {
   try {
-    const teamId = parseInt(params.id, 10);
-    const locationId = parseInt(params.locationId, 10);
+    const { id, locationId: locationIdParam } = await params;
+    const teamId = parseInt(id, 10);
+    const locationId = parseInt(locationIdParam, 10);
 
     if (isNaN(teamId) || isNaN(locationId)) {
       return NextResponse.json(
@@ -154,11 +156,12 @@ export async function PUT(
 // DELETE - Delete a location
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; locationId: string } }
+  { params }: { params: Promise<{ id: string; locationId: string }> }
 ) {
   try {
-    const teamId = parseInt(params.id, 10);
-    const locationId = parseInt(params.locationId, 10);
+    const { id, locationId: locationIdParam } = await params;
+    const teamId = parseInt(id, 10);
+    const locationId = parseInt(locationIdParam, 10);
 
     if (isNaN(teamId) || isNaN(locationId)) {
       return NextResponse.json(

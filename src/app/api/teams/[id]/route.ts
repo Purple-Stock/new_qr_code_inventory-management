@@ -4,10 +4,11 @@ import { authorizeTeamPermission, getUserIdFromRequest } from "@/lib/permissions
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const teamId = parseInt(params.id, 10);
+    const { id } = await params;
+    const teamId = parseInt(id, 10);
 
     if (isNaN(teamId)) {
       return NextResponse.json(
@@ -38,10 +39,11 @@ export async function GET(
 // PUT - Update a team
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const teamId = parseInt(params.id, 10);
+    const { id } = await params;
+    const teamId = parseInt(id, 10);
 
     if (isNaN(teamId)) {
       return NextResponse.json(
@@ -113,10 +115,11 @@ export async function PUT(
 // DELETE - Delete a team
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const teamId = parseInt(params.id, 10);
+    const { id } = await params;
+    const teamId = parseInt(id, 10);
 
     if (isNaN(teamId)) {
       return NextResponse.json(
@@ -140,6 +143,12 @@ export async function DELETE(
       requestUserId: getUserIdFromRequest(request),
     });
     if (!auth.ok) {
+      if (auth.status === 403) {
+        return NextResponse.json(
+          { error: "Only team admins can delete a team" },
+          { status: 403 }
+        );
+      }
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 

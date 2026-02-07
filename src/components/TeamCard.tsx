@@ -15,6 +15,7 @@ interface TeamCardProps {
   onEdit?: (id: number) => void;
   onDelete?: (id: number) => void;
   isDeleting?: boolean;
+  canDelete?: boolean;
 }
 
 export function TeamCard({
@@ -27,6 +28,7 @@ export function TeamCard({
   onEdit,
   onDelete,
   isDeleting = false,
+  canDelete = true,
 }: TeamCardProps) {
   const { language, t } = useTranslation();
   
@@ -94,18 +96,20 @@ export function TeamCard({
             >
               <Pencil className="h-4 w-4" />
             </button>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onDelete?.(id);
-              }}
-              className="p-2 sm:p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label={t.common.delete}
-              disabled={isDeleting}
-            >
-              <Trash2 className={`h-4 w-4 ${isDeleting ? "animate-pulse" : ""}`} />
-            </button>
+            {canDelete && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onDelete?.(id);
+                }}
+                className="p-2 sm:p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label={t.common.delete}
+                disabled={isDeleting}
+              >
+                <Trash2 className={`h-4 w-4 ${isDeleting ? "animate-pulse" : ""}`} />
+              </button>
+            )}
           </div>
         </div>
       </div>

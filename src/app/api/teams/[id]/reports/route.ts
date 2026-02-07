@@ -5,10 +5,11 @@ import { getTeamWithStats } from "@/lib/db/teams";
 // GET - Get report statistics for a team
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const teamId = parseInt(params.id, 10);
+    const { id } = await params;
+    const teamId = parseInt(id, 10);
 
     if (isNaN(teamId)) {
       return NextResponse.json(

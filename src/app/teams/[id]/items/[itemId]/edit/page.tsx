@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
+import { TeamLayout } from "@/components/shared/TeamLayout";
 
 export default function EditItemPage() {
   const router = useRouter();
@@ -36,6 +37,7 @@ export default function EditItemPage() {
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [team, setTeam] = useState<{ id: number; name: string } | null>(null);
 
   useEffect(() => {
     if (teamId && itemId) {
@@ -45,6 +47,12 @@ export default function EditItemPage() {
 
   const fetchItem = async () => {
     try {
+      const teamRes = await fetch(`/api/teams/${teamId}`);
+      const teamData = await teamRes.json();
+      if (teamRes.ok) {
+        setTeam(teamData.team);
+      }
+
       const res = await fetch(`/api/teams/${teamId}/items/${itemId}`);
       const data = await res.json();
       if (!res.ok) {
@@ -112,12 +120,10 @@ export default function EditItemPage() {
     setIsLoading(true);
 
     try {
-      const userId = localStorage.getItem("userId");
       const response = await fetch(`/api/teams/${teamId}/items/${itemId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": userId || "",
         },
         body: JSON.stringify({
           name: name.trim(),
@@ -158,57 +164,17 @@ export default function EditItemPage() {
     );
   }
 
+  if (!team) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-600">Loading team...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#6B21A8] rounded-lg flex items-center justify-center">
-            <svg
-              className="w-6 h-6 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 10V3L4 14h7v7l9-11h-7z"
-              />
-            </svg>
-          </div>
-          <span className="font-bold text-lg text-gray-900">PURPLE STOCK</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <button className="text-sm text-gray-700 hover:text-[#6B21A8] transition-colors">
-            Subscribe
-          </button>
-          <div className="flex items-center gap-2">
-            <button className="px-2 py-1 text-sm text-[#6B21A8] font-semibold">EN</button>
-            <button className="px-2 py-1 text-sm text-gray-600">PT</button>
-            <button className="px-2 py-1 text-sm text-gray-600">FR</button>
-          </div>
-          <button className="flex items-center gap-2 text-gray-700 hover:text-[#6B21A8] transition-colors">
-            <span className="text-sm">Sign Out</span>
-          </button>
-        </div>
-      </header>
-
-      <div className="flex">
-        <aside className="w-64 bg-white min-h-[calc(100vh-73px)] border-r border-gray-200 p-6">
-          <div className="mb-6 pb-6 border-b border-gray-200">
-            <Link
-              href={`/teams/${teamId}/items`}
-              className="text-xs text-[#6B21A8] hover:underline flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Items
-            </Link>
-          </div>
-        </aside>
-
-        <main className="flex-1 p-8">
-          <div className="max-w-3xl">
+    <TeamLayout team={team} activeMenuItem="items">
+      <div className="max-w-3xl">
             <div className="mb-8 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <Link href={`/teams/${teamId}/items`}>
@@ -411,9 +377,7 @@ export default function EditItemPage() {
                 </Link>
               </div>
             </form>
-          </div>
-        </main>
       </div>
-    </div>
+    </TeamLayout>
   );
 }

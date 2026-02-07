@@ -84,24 +84,36 @@ export default function NewTeamPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 to-purple-200">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center gap-4">
-          <Link
-            href="/team_selection"
-            className="flex items-center gap-2 text-gray-600 hover:text-[#6B21A8] transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span className="text-sm">Back</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#6B21A8] rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">4</span>
-            </div>
-            <span className="font-bold text-lg text-gray-900">PURPLE STOCK</span>
+      <header className="bg-white border-b border-gray-200 shadow-sm px-3 sm:px-4 md:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#6B21A8] to-[#7C3AED] rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+            <svg
+              className="w-6 h-6 sm:w-7 sm:h-7 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
+            </svg>
           </div>
+          <span className="font-bold text-base sm:text-lg md:text-xl text-gray-900 tracking-tight truncate">
+            PURPLE STOCK
+          </span>
         </div>
+        <Link
+          href="/team_selection"
+          className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-gray-700 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all font-medium text-xs sm:text-sm touch-manipulation min-h-[36px] sm:min-h-0"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Back</span>
+        </Link>
       </header>
 
       {/* Main Content */}

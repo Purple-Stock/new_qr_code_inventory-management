@@ -1,7 +1,7 @@
 import { sqlite } from "@/db/client";
 import { teams, items, stockTransactions, locations, teamMembers } from "@/db/schema";
 import { and, eq, count, inArray } from "drizzle-orm";
-import type { Team, NewTeam } from "@/db/schema";
+import type { Team } from "@/db/schema";
 
 /**
  * Get all teams for a user
@@ -91,10 +91,22 @@ export async function getTeamWithStats(teamId: number) {
     .from(stockTransactions)
     .where(eq(stockTransactions.teamId, teamId));
 
+  // Count active team members
+  const [memberCount] = await sqlite
+    .select({ count: count() })
+    .from(teamMembers)
+    .where(
+      and(
+        eq(teamMembers.teamId, teamId),
+        eq(teamMembers.status, "active")
+      )
+    );
+
   return {
     ...team,
     itemCount: itemCount?.count || 0,
     transactionCount: transactionCount?.count || 0,
+    memberCount: memberCount?.count || 0,
   };
 }
 
@@ -102,16 +114,52 @@ export async function getTeamWithStats(teamId: number) {
  * Get all teams for a user with stats
  */
 export async function getUserTeamsWithStats(userId: number) {
-  const userTeams = await getUserTeams(userId);
+  const memberships = await sqlite
+    .select({ teamId: teamMembers.teamId, role: teamMembers.role })
+    .from(teamMembers)
+    .where(
+      and(
+        eq(teamMembers.userId, userId),
+        eq(teamMembers.status, "active")
+      )
+    );
+
+  const memberTeamIds = memberships.map((membership) => membership.teamId);
+  if (memberTeamIds.length === 0) {
+    return [];
+  }
+
+  const teamRoleById = new Map(
+    memberships.map((membership) => [membership.teamId, membership.role])
+  );
+
+  const userTeams = await sqlite
+    .select()
+    .from(teams)
+    .where(inArray(teams.id, memberTeamIds));
 
   const teamsWithStats = await Promise.all(
     userTeams.map(async (team) => {
       const stats = await getTeamWithStats(team.id);
-      return stats || { ...team, itemCount: 0, transactionCount: 0 };
+      return (
+        stats || {
+          ...team,
+          itemCount: 0,
+          transactionCount: 0,
+          memberCount: 0,
+        }
+      );
     })
   );
 
-  return teamsWithStats;
+  return teamsWithStats.map((team) => {
+    const teamRole = teamRoleById.get(team.id);
+    return {
+      ...team,
+      teamRole,
+      canDeleteTeam: teamRole === "admin",
+    };
+  });
 }
 
 /**
