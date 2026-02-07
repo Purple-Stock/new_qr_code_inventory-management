@@ -91,9 +91,35 @@ Aplicação em `http://localhost:3000`.
 - `npm run test:coverage`: cobertura.
 - `npm run db:migrate`: aplica SQLs de `src/db/migrations`.
 - `npm run db:rollback -- --steps=1`: faz rollback das últimas migrações aplicadas (requer arquivos `*.down.sql` correspondentes).
+- `npm run db:new -- <nome>`: cria par de migration `up/down` com próximo prefixo numérico.
 - `npm run verify:architecture`: checks arquiteturais + política de testes + lint de arquitetura + testes de arquitetura.
 - `npm run hooks:install`: ativa `.githooks/pre-push`.
 - `npm run hooks:uninstall`: remove hook local.
+
+## Padrão de migrations (up/down)
+
+Para cada migration `up`, crie um arquivo `down` correspondente no mesmo diretório `src/db/migrations`.
+
+- `NNN_nome_da_migration.sql`: aplica mudança.
+- `NNN_nome_da_migration.down.sql`: desfaz mudança.
+
+Exemplo:
+
+- `004_add_items_status.sql`
+- `004_add_items_status.down.sql`
+
+Para gerar automaticamente o par de arquivos:
+
+```bash
+npm run db:new -- add_items_status
+```
+
+Fluxo recomendado:
+
+1. Criar o `up` com alteração incremental.
+2. Criar o `down` revertendo exatamente a alteração do `up`.
+3. Executar `npm run db:migrate`.
+4. Testar reversão com `npm run db:rollback -- --steps=1`.
 
 Observação: existe script `db:seed` no `package.json`, mas o arquivo `src/db/seed.ts` não está presente no repositório atual.
 

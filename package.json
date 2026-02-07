@@ -5,6 +5,7 @@
   "scripts": {
     "db:migrate": "tsx ./src/db/migrate.ts",
     "db:rollback": "tsx ./src/db/rollback.ts",
+    "db:new": "node ./scripts/new-migration.mjs",
     "db:seed": "tsx ./src/db/seed.ts",
     "dev": "next dev --webpack",
     "check:architecture": "node ./scripts/check-architecture.mjs",
