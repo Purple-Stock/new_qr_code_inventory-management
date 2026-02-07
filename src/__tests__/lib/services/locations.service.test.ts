@@ -1,4 +1,8 @@
-import { createTeamLocation } from "@/lib/services/locations";
+import {
+  createTeamLocation,
+  deleteTeamLocation,
+  updateTeamLocation,
+} from "@/lib/services/locations";
 import { ERROR_CODES } from "@/lib/errors";
 import { getTestDb, cleanupTestDb, clearTestDb } from "../../helpers/test-db";
 import { teamMembers, teams, users } from "@/db/schema";
@@ -97,5 +101,48 @@ describe("locations service", () => {
     if (result.ok) return;
     expect(result.error.status).toBe(404);
     expect(result.error.errorCode).toBe(ERROR_CODES.TEAM_NOT_FOUND);
+  });
+
+  it("updates and deletes a location with valid permission", async () => {
+    const { drizzle } = getTestDb();
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "location-admin-ops@example.com", passwordHash: "hash" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Locations Team Ops", userId: user.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+
+    const created = await createTeamLocation({
+      teamId: team.id,
+      requestUserId: user.id,
+      payload: { name: "Shelf D", description: "D1" },
+    });
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+
+    const updated = await updateTeamLocation({
+      teamId: team.id,
+      locationId: created.data.location.id,
+      requestUserId: user.id,
+      payload: { name: "Shelf D2", description: "D2" },
+    });
+    expect(updated.ok).toBe(true);
+    if (!updated.ok) return;
+    expect(updated.data.location.name).toBe("Shelf D2");
+
+    const removed = await deleteTeamLocation({
+      teamId: team.id,
+      locationId: created.data.location.id,
+      requestUserId: user.id,
+    });
+    expect(removed.ok).toBe(true);
   });
 });

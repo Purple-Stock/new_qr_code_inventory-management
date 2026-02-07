@@ -1,7 +1,11 @@
-import { createTeamForUser } from "@/lib/services/teams";
+import {
+  createTeamForUser,
+  deleteTeamWithAuthorization,
+  updateTeamDetails,
+} from "@/lib/services/teams";
 import { ERROR_CODES } from "@/lib/errors";
 import { getTestDb, cleanupTestDb, clearTestDb } from "../../helpers/test-db";
-import { companies, companyMembers, users } from "@/db/schema";
+import { companies, companyMembers, teamMembers, teams, users } from "@/db/schema";
 
 jest.mock("@/db/client", () => {
   const { getTestDb } = require("../../helpers/test-db");
@@ -74,5 +78,38 @@ describe("teams service", () => {
     if (result.ok) return;
     expect(result.error.status).toBe(403);
     expect(result.error.errorCode).toBe(ERROR_CODES.FORBIDDEN);
+  });
+
+  it("updates and deletes a team when requester is admin member", async () => {
+    const { drizzle } = getTestDb();
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "teams-admin-op@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Team Ops", userId: user.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+
+    const updateResult = await updateTeamDetails({
+      teamId: team.id,
+      requestUserId: user.id,
+      payload: { name: "Team Ops Updated", notes: "n" },
+    });
+    expect(updateResult.ok).toBe(true);
+    if (!updateResult.ok) return;
+    expect(updateResult.data.team.name).toBe("Team Ops Updated");
+
+    const deleteResult = await deleteTeamWithAuthorization({
+      teamId: team.id,
+      requestUserId: user.id,
+    });
+    expect(deleteResult.ok).toBe(true);
   });
 });

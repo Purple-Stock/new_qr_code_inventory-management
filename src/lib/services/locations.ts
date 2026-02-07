@@ -124,12 +124,16 @@ export async function createTeamLocation(params: {
   }
 }
 
-export async function updateTeamLocation(params: {
+export interface UpdateTeamLocationInput {
   teamId: number;
   locationId: number;
   requestUserId: number | null;
   payload: unknown;
-}): Promise<ServiceResult<{ location: Location }>> {
+}
+
+export async function updateTeamLocation(
+  params: UpdateTeamLocationInput
+): Promise<ServiceResult<{ location: Location }>> {
   const team = await getTeamWithStats(params.teamId);
   if (!team) {
     return {
@@ -197,11 +201,15 @@ export async function updateTeamLocation(params: {
   }
 }
 
-export async function deleteTeamLocation(params: {
+export interface DeleteTeamLocationInput {
   teamId: number;
   locationId: number;
   requestUserId: number | null;
-}): Promise<ServiceResult<null>> {
+}
+
+export async function deleteTeamLocation(
+  params: DeleteTeamLocationInput
+): Promise<ServiceResult<null>> {
   const team = await getTeamWithStats(params.teamId);
   if (!team) {
     return {

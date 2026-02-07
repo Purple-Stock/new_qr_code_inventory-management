@@ -134,11 +134,15 @@ export async function getTeamForUser(params: {
   return { ok: true, data: { team } };
 }
 
-export async function updateTeamDetails(params: {
+export interface UpdateTeamDetailsInput {
   teamId: number;
   requestUserId: number | null;
   payload: unknown;
-}): Promise<ServiceResult<{ team: Team }>> {
+}
+
+export async function updateTeamDetails(
+  params: UpdateTeamDetailsInput
+): Promise<ServiceResult<{ team: Team }>> {
   const existingTeam = await getTeamWithStats(params.teamId);
   if (!existingTeam) {
     return {
@@ -185,10 +189,14 @@ export async function updateTeamDetails(params: {
   }
 }
 
-export async function deleteTeamWithAuthorization(params: {
+export interface DeleteTeamWithAuthorizationInput {
   teamId: number;
   requestUserId: number | null;
-}): Promise<ServiceResult<null>> {
+}
+
+export async function deleteTeamWithAuthorization(
+  params: DeleteTeamWithAuthorizationInput
+): Promise<ServiceResult<null>> {
   const existingTeam = await getTeamWithStats(params.teamId);
   if (!existingTeam) {
     return {
