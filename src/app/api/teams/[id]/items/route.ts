@@ -7,6 +7,7 @@ import {
   authorizeTeamPermission,
   getUserIdFromRequest,
 } from "@/lib/permissions";
+import { parseItemPayload } from "@/lib/validation";
 
 // GET - List items for a team
 export async function GET(
@@ -79,37 +80,26 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { name, sku, barcode, cost, price, itemType, brand, locationId, initialQuantity, currentStock, minimumStock } = body;
-
-    // Validation
-    if (!name || !name.trim()) {
-      return NextResponse.json(
-        { error: "Item name is required" },
-        { status: 400 }
-      );
+    const parsed = parseItemPayload(body, "create");
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
-
-    if (!barcode || !barcode.trim()) {
-      return NextResponse.json(
-        { error: "Barcode is required" },
-        { status: 400 }
-      );
-    }
+    const payload = parsed.data;
 
     // Create item
     const item = await createItem({
-      name: name.trim(),
-      sku: sku?.trim() || null,
-      barcode: barcode.trim(),
-      cost: cost ? parseFloat(cost) : null,
-      price: price ? parseFloat(price) : null,
-      itemType: itemType?.trim() || null,
-      brand: brand?.trim() || null,
+      name: payload.name!,
+      sku: payload.sku ?? null,
+      barcode: payload.barcode!,
+      cost: payload.cost ?? null,
+      price: payload.price ?? null,
+      itemType: payload.itemType ?? null,
+      brand: payload.brand ?? null,
       teamId,
-      locationId: locationId ? parseInt(locationId, 10) : null,
-      initialQuantity: initialQuantity ? parseInt(initialQuantity, 10) : 0,
-      currentStock: currentStock ? parseFloat(currentStock) : undefined,
-      minimumStock: minimumStock ? parseFloat(minimumStock) : 0,
+      locationId: payload.locationId ?? null,
+      initialQuantity: payload.initialQuantity ?? 0,
+      currentStock: payload.currentStock ?? undefined,
+      minimumStock: payload.minimumStock ?? 0,
     });
 
     revalidatePath(`/teams/${teamId}/items`);

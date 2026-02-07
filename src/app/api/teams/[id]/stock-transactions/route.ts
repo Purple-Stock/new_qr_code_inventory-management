@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createStockTransaction } from "@/lib/db/stock-transactions";
 import { getTeamWithStats } from "@/lib/db/teams";
 import { authorizeTeamPermission, getUserIdFromRequest } from "@/lib/permissions";
+import { parseStockTransactionPayload } from "@/lib/validation";
 
 export async function POST(
   request: NextRequest,
@@ -28,22 +29,11 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { itemId, transactionType, quantity, notes, locationId, sourceLocationId, destinationLocationId } = body;
-
-    // Validation
-    if (!itemId || !transactionType || !quantity) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+    const parsed = parseStockTransactionPayload(body);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
-
-    if (quantity <= 0) {
-      return NextResponse.json(
-        { error: "Quantity must be greater than 0" },
-        { status: 400 }
-      );
-    }
+    const payload = parsed.data;
 
     const auth = await authorizeTeamPermission({
       permission: "stock:write",
@@ -59,14 +49,18 @@ export async function POST(
 
     // Create transaction
     const transaction = await createStockTransaction({
-      itemId: parseInt(itemId, 10),
+      itemId: payload.itemId,
       teamId,
-      transactionType,
-      quantity: parseFloat(quantity),
-      notes: notes || null,
+      transactionType: payload.transactionType,
+      quantity: payload.quantity,
+      notes: payload.notes,
       userId: auth.user.id,
-      sourceLocationId: sourceLocationId ? parseInt(sourceLocationId, 10) : (transactionType === "move" ? null : null),
-      destinationLocationId: destinationLocationId ? parseInt(destinationLocationId, 10) : (locationId ? parseInt(locationId, 10) : null),
+      sourceLocationId:
+        payload.sourceLocationId ??
+        (payload.transactionType === "move" ? null : null),
+      destinationLocationId:
+        payload.destinationLocationId ??
+        (payload.locationId ?? null),
     });
 
     return NextResponse.json(

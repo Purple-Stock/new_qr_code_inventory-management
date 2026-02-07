@@ -10,6 +10,7 @@ import {
   authorizeTeamPermission,
   getUserIdFromRequest,
 } from "@/lib/permissions";
+import { parseLocationPayload } from "@/lib/validation";
 
 // GET - Get a specific location
 export async function GET(
@@ -115,20 +116,16 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, description } = body;
-
-    // Validation
-    if (!name || !name.trim()) {
-      return NextResponse.json(
-        { error: "Location name is required" },
-        { status: 400 }
-      );
+    const parsed = parseLocationPayload(body);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
+    const { name, description } = parsed.data;
 
     // Update location
     const location = await updateLocation(locationId, {
-      name: name.trim(),
-      description: description?.trim() || null,
+      name,
+      description,
     });
 
     return NextResponse.json(

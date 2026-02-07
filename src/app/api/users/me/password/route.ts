@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserIdFromRequest } from "@/lib/permissions";
 import { verifyPassword } from "@/lib/auth";
 import { findUserById, updateUserPassword } from "@/lib/db/users";
+import { parsePasswordChangePayload } from "@/lib/validation";
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -14,39 +15,11 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const currentPassword =
-      typeof body.currentPassword === "string" ? body.currentPassword : "";
-    const newPassword = typeof body.newPassword === "string" ? body.newPassword : "";
-    const confirmPassword =
-      typeof body.confirmPassword === "string" ? body.confirmPassword : "";
-
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      return NextResponse.json(
-        { errorCode: "PASSWORD_FIELDS_REQUIRED" },
-        { status: 400 }
-      );
+    const parsed = parsePasswordChangePayload(body);
+    if (!parsed.ok) {
+      return NextResponse.json({ errorCode: parsed.error }, { status: 400 });
     }
-
-    if (newPassword.length < 6) {
-      return NextResponse.json(
-        { errorCode: "PASSWORD_TOO_SHORT" },
-        { status: 400 }
-      );
-    }
-
-    if (newPassword !== confirmPassword) {
-      return NextResponse.json(
-        { errorCode: "PASSWORD_CONFIRMATION_MISMATCH" },
-        { status: 400 }
-      );
-    }
-
-    if (currentPassword === newPassword) {
-      return NextResponse.json(
-        { errorCode: "PASSWORD_MUST_DIFFER" },
-        { status: 400 }
-      );
-    }
+    const { currentPassword, newPassword } = parsed.data;
 
     const user = await findUserById(requestUserId);
     if (!user) {

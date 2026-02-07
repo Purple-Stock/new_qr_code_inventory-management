@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { authorizeTeamPermission } from "@/lib/permissions";
 import { cookies } from "next/headers";
 import { getUserIdFromSessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
+import { parseStockActionInput } from "@/lib/validation";
 
 export async function createStockOutAction(
   teamId: number,
@@ -16,6 +17,11 @@ export async function createStockOutAction(
   }
 ) {
   try {
+    const parsed = parseStockActionInput(data, "stock_out");
+    if (!parsed.ok) {
+      return { success: false, error: parsed.error };
+    }
+
     const requestUserId = getUserIdFromSessionToken(
       (await cookies()).get(SESSION_COOKIE_NAME)?.value
     );
@@ -39,13 +45,13 @@ export async function createStockOutAction(
     }
 
     const transaction = await createStockTransaction({
-      itemId: data.itemId,
+      itemId: parsed.data.itemId,
       teamId,
       transactionType: "stock_out",
-      quantity: data.quantity,
-      notes: data.notes,
+      quantity: parsed.data.quantity,
+      notes: parsed.data.notes,
       userId: auth.user.id,
-      sourceLocationId: data.locationId,
+      sourceLocationId: parsed.data.sourceLocationId,
     });
 
     // Revalidate relevant pages

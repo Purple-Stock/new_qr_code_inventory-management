@@ -5,6 +5,7 @@ import {
   authorizeTeamPermission,
   getUserIdFromRequest,
 } from "@/lib/permissions";
+import { parseTeamUpdatePayload } from "@/lib/validation";
 
 export async function GET(
   request: NextRequest,
@@ -74,20 +75,17 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, notes } = body;
-
-    // Validation
-    if (name !== undefined && (!name || !name.trim())) {
-      return NextResponse.json(
-        { error: "Team name is required" },
-        { status: 400 }
-      );
+    const parsed = parseTeamUpdatePayload(body);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
+
+    const { name, notes } = parsed.data;
 
     // Update team
     const team = await updateTeam(teamId, {
-      name: name?.trim(),
-      notes: notes?.trim() || null,
+      name,
+      notes,
     });
 
     return NextResponse.json(

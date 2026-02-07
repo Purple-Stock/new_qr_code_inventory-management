@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { authorizeTeamPermission } from "@/lib/permissions";
 import { cookies } from "next/headers";
 import { getUserIdFromSessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
+import { parseItemPayload } from "@/lib/validation";
 
 export async function createItemAction(
   teamId: number,
@@ -23,6 +24,11 @@ export async function createItemAction(
   }
 ) {
   try {
+    const parsed = parseItemPayload(data, "create");
+    if (!parsed.ok) {
+      return { success: false, error: parsed.error };
+    }
+
     const requestUserId = getUserIdFromSessionToken(
       (await cookies()).get(SESSION_COOKIE_NAME)?.value
     );
@@ -36,7 +42,9 @@ export async function createItemAction(
     }
 
     const item = await createItem({
-      ...data,
+      ...parsed.data,
+      name: parsed.data.name!,
+      barcode: parsed.data.barcode!,
       teamId,
     });
 

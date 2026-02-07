@@ -1,19 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyUserCredentials } from "@/lib/db/users";
 import { setSessionCookie } from "@/lib/session";
+import { parseLoginPayload } from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password } = body;
-
-    // Validation
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: "Email and password are required" },
-        { status: 400 }
-      );
+    const parsed = parseLoginPayload(body);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
+    const { email, password } = parsed.data;
 
     // Verify credentials
     const user = await verifyUserCredentials(email, password);

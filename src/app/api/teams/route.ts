@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserTeamsWithStats, createTeam } from "@/lib/db/teams";
 import { authorizePermission, getUserIdFromRequest } from "@/lib/permissions";
 import { getActiveCompanyIdForUser } from "@/lib/db/companies";
+import { parseTeamCreatePayload } from "@/lib/validation";
 
 // GET - List teams for a user
 export async function GET(request: NextRequest) {
@@ -31,16 +32,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, notes } = body;
-    const requestUserId = getUserIdFromRequest(request);
-
-    // Validation
-    if (!name || !name.trim()) {
-      return NextResponse.json(
-        { error: "Team name is required" },
-        { status: 400 }
-      );
+    const parsed = parseTeamCreatePayload(body);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
+
+    const { name, notes } = parsed.data;
+    const requestUserId = getUserIdFromRequest(request);
 
     if (!requestUserId) {
       return NextResponse.json(
@@ -68,8 +66,8 @@ export async function POST(request: NextRequest) {
 
     // Create team
     const team = await createTeam({
-      name: name.trim(),
-      notes: notes || null,
+      name,
+      notes,
       userId: requestUserId,
       companyId,
     });

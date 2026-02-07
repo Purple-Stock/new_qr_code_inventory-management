@@ -13,6 +13,7 @@ import {
   authorizeTeamPermission,
   getUserIdFromRequest,
 } from "@/lib/permissions";
+import { parseItemPayload } from "@/lib/validation";
 
 interface RouteParams {
   params: Promise<{ id: string; itemId: string }>;
@@ -112,40 +113,21 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     const body = await request.json();
-    const {
-      name,
-      sku,
-      barcode,
-      cost,
-      price,
-      itemType,
-      brand,
-      locationId,
-    } = body;
-
-    if (name !== undefined && (!name || typeof name !== "string" || !name.trim())) {
-      return NextResponse.json(
-        { error: "Item name is required and cannot be empty" },
-        { status: 400 }
-      );
+    const parsed = parseItemPayload(body, "update");
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
-
-    if (barcode !== undefined && (!barcode || typeof barcode !== "string" || !barcode.trim())) {
-      return NextResponse.json(
-        { error: "Barcode is required and cannot be empty" },
-        { status: 400 }
-      );
-    }
+    const payload = parsed.data;
 
     const item = await updateItem(itemId, {
-      name: name !== undefined ? (name as string).trim() : undefined,
-      sku: sku !== undefined ? ((sku as string)?.trim() || null) : undefined,
-      barcode: barcode !== undefined ? (barcode as string).trim() : undefined,
-      cost: cost != null ? parseFloat(cost) : undefined,
-      price: price != null ? parseFloat(price) : undefined,
-      itemType: itemType !== undefined ? ((itemType as string)?.trim() || null) : undefined,
-      brand: brand !== undefined ? ((brand as string)?.trim() || null) : undefined,
-      locationId: locationId != null ? parseInt(String(locationId), 10) : undefined,
+      name: payload.name,
+      sku: payload.sku,
+      barcode: payload.barcode,
+      cost: payload.cost,
+      price: payload.price,
+      itemType: payload.itemType,
+      brand: payload.brand,
+      locationId: payload.locationId,
     });
 
     revalidatePath(`/teams/${teamId}/items`);

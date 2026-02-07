@@ -1,36 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findUserByEmail } from "@/lib/db/users";
 import { onboardCompanyOwner } from "@/lib/db/onboarding";
-import { isValidEmail, normalizeEmail } from "@/lib/validation";
+import { parseSignupPayload } from "@/lib/validation";
 import { setSessionCookie } from "@/lib/session";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, companyName } = body;
-    const normalizedEmail = typeof email === "string" ? normalizeEmail(email) : "";
-
-    // Validation
-    if (!normalizedEmail || !password || !companyName) {
-      return NextResponse.json(
-        { error: "Email, password and company name are required" },
-        { status: 400 }
-      );
+    const parsed = parseSignupPayload(body);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
-
-    if (!isValidEmail(normalizedEmail)) {
-      return NextResponse.json(
-        { error: "Invalid email format" },
-        { status: 400 }
-      );
-    }
-
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
-        { status: 400 }
-      );
-    }
+    const { email: normalizedEmail, password, companyName } = parsed.data;
 
     // Check if user already exists
     const existingUser = await findUserByEmail(normalizedEmail);
