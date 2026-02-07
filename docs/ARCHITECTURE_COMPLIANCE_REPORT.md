@@ -320,6 +320,7 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
   - bloqueia uso de `internalErrorResponse(...)` em `src/app/api/*` quando a rota trabalha com serviços (usar `serviceErrorResponse(internalServiceError(...))`)
   - bloqueia import de `@/lib/contracts/schemas` em `src/app/api/*` (validação de payload fica na camada de serviço)
   - bloqueia chamadas `parse*Payload(...)` em `src/app/api/*` (parser de payload fica na camada de serviço)
+  - bloqueia respostas HTTP manuais em `src/app/api/*` (`Response.json(...)` e `new Response(...)`), exigindo helpers de `api-route`
 - Script adicionado ao `package.json`:
   - `npm run check:architecture`
   - `npm run lint:architecture`
@@ -348,7 +349,7 @@ Este relatório foi atualizado após a implementação dos itens críticos de ar
 
 ## ⚠️ Pendências Relevantes
 
-1. Ativar branch protection no repositório exigindo o status check `architecture` como obrigatório antes de merge.
+1. Expandir gradualmente os guardrails para regras semânticas de domínio (ex.: cobertura mínima de testes para novos serviços), sem aumentar falsos positivos.
 
 ---
 

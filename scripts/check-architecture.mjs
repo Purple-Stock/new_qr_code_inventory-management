@@ -11,6 +11,8 @@ const DIRECT_NEXTRESPONSE_JSON_PATTERN = /\bNextResponse\.json\s*\(/;
 const INTERNAL_ERROR_RESPONSE_PATTERN = /\binternalErrorResponse\s*\(/;
 const CONTRACTS_IMPORT_PATTERN = /from\s+["']@\/lib\/contracts\/schemas["']/;
 const PAYLOAD_PARSER_CALL_PATTERN = /\bparse[A-Za-z0-9_]*Payload\s*\(/;
+const DIRECT_RESPONSE_JSON_PATTERN = /\bResponse\.json\s*\(/;
+const DIRECT_RESPONSE_CONSTRUCTOR_PATTERN = /\bnew\s+Response\s*\(/;
 
 const ANY_DEBT_ALLOWLIST = new Set();
 
@@ -91,6 +93,11 @@ const internalErrorHelperViolations = scanForPattern(
 );
 const contractsImportViolations = scanForPattern(allApiFiles, CONTRACTS_IMPORT_PATTERN);
 const payloadParserCallViolations = scanForPattern(allApiFiles, PAYLOAD_PARSER_CALL_PATTERN);
+const directResponseJsonViolations = scanForPattern(allApiFiles, DIRECT_RESPONSE_JSON_PATTERN);
+const directResponseConstructorViolations = scanForPattern(
+  allApiFiles,
+  DIRECT_RESPONSE_CONSTRUCTOR_PATTERN
+);
 
 if (
   uiDbViolations.length > 0 ||
@@ -100,7 +107,9 @@ if (
   directJsonResponseViolations.length > 0 ||
   internalErrorHelperViolations.length > 0 ||
   contractsImportViolations.length > 0 ||
-  payloadParserCallViolations.length > 0
+  payloadParserCallViolations.length > 0 ||
+  directResponseJsonViolations.length > 0 ||
+  directResponseConstructorViolations.length > 0
 ) {
   console.error("Architecture check failed.\n");
 
@@ -142,6 +151,11 @@ if (
   printViolations(
     "Rule 8: keep payload parser calls out of API routes (no parse*Payload(...)).",
     payloadParserCallViolations
+  );
+
+  printViolations(
+    "Rule 9: do not build manual HTTP responses in API routes (no Response.json(...) or new Response(...)); use api-route helpers.",
+    directResponseJsonViolations.concat(directResponseConstructorViolations)
   );
 
   process.exit(1);

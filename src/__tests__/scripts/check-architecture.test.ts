@@ -120,4 +120,14 @@ describe("scripts/check-architecture.mjs", () => {
     expect(result.ok).toBe(false);
     expect(result.output).toContain("Rule 8");
   });
+
+  it("fails Rule 9 when API builds manual HTTP response", () => {
+    const dir = createTempProject({
+      "src/app/api/test/route.ts":
+        'export function GET(){ return Response.json({ ok: true }); }\n',
+    });
+    const result = runCheckIn(dir);
+    expect(result.ok).toBe(false);
+    expect(result.output).toContain("Rule 9");
+  });
 });
