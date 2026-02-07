@@ -2,7 +2,7 @@ import { sqlite } from "@/db/client";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { hashPassword, verifyPassword } from "@/lib/auth";
-import type { NewUser, User } from "@/db/schema";
+import type { User, UserRole } from "@/db/schema";
 
 /**
  * Create a new user
@@ -10,6 +10,7 @@ import type { NewUser, User } from "@/db/schema";
 export async function createUser(data: {
   email: string;
   password: string;
+  role?: UserRole;
 }): Promise<User> {
   const passwordHash = await hashPassword(data.password);
 
@@ -18,6 +19,7 @@ export async function createUser(data: {
     .values({
       email: data.email,
       passwordHash,
+      role: data.role || "admin",
     })
     .returning();
 
@@ -124,6 +126,33 @@ export async function clearResetPasswordToken(userId: number): Promise<User> {
     })
     .where(eq(users.id, userId))
     .returning();
+
+  return user;
+}
+
+/**
+ * List all users (for admin management)
+ */
+export async function listUsers(): Promise<User[]> {
+  return sqlite.select().from(users);
+}
+
+/**
+ * Update a user role
+ */
+export async function updateUserRole(userId: number, role: UserRole): Promise<User> {
+  const [user] = await sqlite
+    .update(users)
+    .set({
+      role,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, userId))
+    .returning();
+
+  if (!user) {
+    throw new Error("User not found");
+  }
 
   return user;
 }

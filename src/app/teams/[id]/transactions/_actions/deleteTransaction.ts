@@ -2,9 +2,26 @@
 
 import { deleteStockTransaction } from "@/lib/db/stock-transactions";
 import { revalidatePath } from "next/cache";
+import { authorizeTeamPermission } from "@/lib/permissions";
 
-export async function deleteTransactionAction(teamId: number, transactionId: number) {
+export async function deleteTransactionAction(
+  teamId: number,
+  transactionId: number,
+  userId: number
+) {
   try {
+    const auth = await authorizeTeamPermission({
+      permission: "transaction:delete",
+      teamId,
+      requestUserId: userId,
+    });
+    if (!auth.ok) {
+      return {
+        success: false,
+        error: auth.error,
+      };
+    }
+
     const deleted = await deleteStockTransaction(transactionId, teamId);
 
     if (!deleted) {

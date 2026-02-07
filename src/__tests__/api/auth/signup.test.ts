@@ -1,7 +1,7 @@
 import { POST } from "@/app/api/auth/signup/route";
 import { NextRequest } from "next/server";
 import { getTestDb, cleanupTestDb, clearTestDb } from "../../helpers/test-db";
-import { users } from "@/db/schema";
+import { users, companies, companyMembers } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 // Mock the database client before importing the route
@@ -27,6 +27,7 @@ describe("/api/auth/signup", () => {
       const request = new NextRequest("http://localhost:3000/api/auth/signup", {
         method: "POST",
         body: JSON.stringify({
+          companyName: "Acme Inc",
           email: "test@example.com",
           password: "password123",
         }),
@@ -43,12 +44,14 @@ describe("/api/auth/signup", () => {
       expect(data.user).toHaveProperty("email", "test@example.com");
       expect(data.user).not.toHaveProperty("passwordHash");
       expect(data.user).toHaveProperty("id");
+      expect(data.company).toHaveProperty("name", "Acme Inc");
     });
 
-    it("should return 400 if email is missing", async () => {
+    it("should return 400 if company name is missing", async () => {
       const request = new NextRequest("http://localhost:3000/api/auth/signup", {
         method: "POST",
         body: JSON.stringify({
+          email: "test@example.com",
           password: "password123",
         }),
         headers: {
@@ -60,13 +63,33 @@ describe("/api/auth/signup", () => {
       const data = await response.json();
 
       expect(response.status).toBe(400);
-      expect(data.error).toBe("Email and password are required");
+      expect(data.error).toBe("Email, password and company name are required");
+    });
+
+    it("should return 400 if email is missing", async () => {
+      const request = new NextRequest("http://localhost:3000/api/auth/signup", {
+        method: "POST",
+        body: JSON.stringify({
+          companyName: "Acme Inc",
+          password: "password123",
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe("Email, password and company name are required");
     });
 
     it("should return 400 if password is missing", async () => {
       const request = new NextRequest("http://localhost:3000/api/auth/signup", {
         method: "POST",
         body: JSON.stringify({
+          companyName: "Acme Inc",
           email: "test@example.com",
         }),
         headers: {
@@ -78,13 +101,14 @@ describe("/api/auth/signup", () => {
       const data = await response.json();
 
       expect(response.status).toBe(400);
-      expect(data.error).toBe("Email and password are required");
+      expect(data.error).toBe("Email, password and company name are required");
     });
 
     it("should return 400 if password is too short", async () => {
       const request = new NextRequest("http://localhost:3000/api/auth/signup", {
         method: "POST",
         body: JSON.stringify({
+          companyName: "Acme Inc",
           email: "test@example.com",
           password: "12345", // Less than 6 characters
         }),
@@ -111,6 +135,7 @@ describe("/api/auth/signup", () => {
       const request = new NextRequest("http://localhost:3000/api/auth/signup", {
         method: "POST",
         body: JSON.stringify({
+          companyName: "Acme Inc",
           email: "existing@example.com",
           password: "password123",
         }),
@@ -130,6 +155,7 @@ describe("/api/auth/signup", () => {
       const request = new NextRequest("http://localhost:3000/api/auth/signup", {
         method: "POST",
         body: JSON.stringify({
+          companyName: "Acme Inc",
           email: "hashed@example.com",
           password: "password123",
         }),
@@ -153,6 +179,48 @@ describe("/api/auth/signup", () => {
       expect(user?.passwordHash).toBeDefined();
       expect(user?.passwordHash).not.toBe("password123");
       expect(user?.passwordHash.length).toBeGreaterThan(20); // bcrypt hash is long
+    });
+
+    it("should create company and owner membership", async () => {
+      const request = new NextRequest("http://localhost:3000/api/auth/signup", {
+        method: "POST",
+        body: JSON.stringify({
+          companyName: "Purple Tech",
+          email: "owner@example.com",
+          password: "password123",
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const response = await POST(request);
+      expect(response.status).toBe(201);
+
+      const { drizzle: testDrizzle } = getTestDb();
+      const [company] = await testDrizzle
+        .select()
+        .from(companies)
+        .where(eq(companies.name, "Purple Tech"))
+        .limit(1);
+      expect(company).toBeDefined();
+
+      const [user] = await testDrizzle
+        .select()
+        .from(users)
+        .where(eq(users.email, "owner@example.com"))
+        .limit(1);
+      expect(user).toBeDefined();
+
+      const [membership] = await testDrizzle
+        .select()
+        .from(companyMembers)
+        .where(eq(companyMembers.userId, user!.id))
+        .limit(1);
+      expect(membership).toBeDefined();
+      expect(membership?.companyId).toBe(company?.id);
+      expect(membership?.role).toBe("owner");
+      expect(membership?.status).toBe("active");
     });
 
     it("should handle invalid JSON gracefully", async () => {

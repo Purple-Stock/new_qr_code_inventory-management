@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTeamWithStats, updateTeam, deleteTeam } from "@/lib/db/teams";
+import { authorizeTeamPermission, getUserIdFromRequest } from "@/lib/permissions";
 
 export async function GET(
   request: NextRequest,
@@ -56,6 +57,15 @@ export async function PUT(
         { error: "Team not found" },
         { status: 404 }
       );
+    }
+
+    const auth = await authorizeTeamPermission({
+      permission: "team:update",
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     const body = await request.json();
@@ -122,6 +132,15 @@ export async function DELETE(
         { error: "Team not found" },
         { status: 404 }
       );
+    }
+
+    const auth = await authorizeTeamPermission({
+      permission: "team:delete",
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     // Delete team and all related data

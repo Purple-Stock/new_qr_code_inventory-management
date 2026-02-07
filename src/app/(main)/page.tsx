@@ -50,6 +50,7 @@ export default function LoginPage() {
       // Save user ID to localStorage
       if (data.user?.id) {
         localStorage.setItem("userId", data.user.id.toString())
+        localStorage.setItem("userRole", data.user.role || "viewer")
       }
 
       // Redirect to team selection

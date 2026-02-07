@@ -75,6 +75,7 @@ export default function TeamSelectionPage() {
 
   const handleSignOut = () => {
     localStorage.removeItem("userId");
+    localStorage.removeItem("userRole");
     router.push("/");
   };
 
@@ -104,12 +105,17 @@ export default function TeamSelectionPage() {
 
   const handleDeleteConfirm = async () => {
     if (!teamToDelete) return;
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
 
     setDeletingTeamId(teamToDelete.id);
 
     try {
       const response = await fetch(`/api/teams/${teamToDelete.id}`, {
         method: "DELETE",
+        headers: {
+          "x-user-id": userId,
+        },
       });
 
       const data = await response.json();
@@ -131,9 +137,9 @@ export default function TeamSelectionPage() {
       });
 
       // Refresh teams list
-      const userId = localStorage.getItem("userId");
-      if (userId) {
-        fetchTeams(parseInt(userId, 10));
+      const refreshUserId = localStorage.getItem("userId");
+      if (refreshUserId) {
+        fetchTeams(parseInt(refreshUserId, 10));
       }
 
       // Close modal

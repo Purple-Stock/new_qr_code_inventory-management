@@ -88,10 +88,12 @@ export default function NewItemPage() {
     setIsLoading(true);
 
     try {
+      const userId = localStorage.getItem("userId");
       const response = await fetch(`/api/teams/${teamId}/items`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-user-id": userId || "",
         },
         body: JSON.stringify({
           name: name.trim(),

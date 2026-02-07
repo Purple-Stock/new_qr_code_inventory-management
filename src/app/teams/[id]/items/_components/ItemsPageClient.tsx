@@ -29,9 +29,11 @@ import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
 import Link from "next/link";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
+import { useToast } from "@/components/ui/use-toast-simple";
 import { ItemsList } from "./ItemsList";
 import { ItemsSearch } from "./ItemsSearch";
 import { formatPrice } from "../_utils/formatPrice";
+import { itemsToCsv, downloadCsv } from "../_utils/exportItemsCsv";
 import type { Item, Team } from "../_types";
 
 interface ItemsPageClientProps {
@@ -41,12 +43,33 @@ interface ItemsPageClientProps {
 
 export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const { language, setLanguage, t } = useTranslation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [filteredItems, setFilteredItems] = useState<Item[]>(items);
   const teamId = team.id.toString();
+
+  const handleExportCsv = () => {
+    if (filteredItems.length === 0) {
+      toast({ variant: "destructive", title: t.items.exportNoItems, description: "" });
+      return;
+    }
+    const csv = itemsToCsv(filteredItems, {
+      name: t.common.name,
+      sku: t.items.sku,
+      barcode: t.items.csvHeaderBarcode,
+      type: t.items.type,
+      stock: t.items.stock,
+      price: t.items.price,
+      location: t.items.csvHeaderLocation,
+    });
+    const slug = team.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "items";
+    const date = new Date().toISOString().slice(0, 10);
+    downloadCsv(csv, `items-${slug}-${date}.csv`);
+    toast({ variant: "success", title: t.items.exportSuccess, description: "" });
+  };
 
   const tourSteps: TourStep[] = [
     { target: "tour-search", title: t.items.tourSearchTitle, description: t.items.tourSearchDesc },
@@ -64,6 +87,7 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
 
   const handleSignOut = () => {
     localStorage.removeItem("userId");
+    localStorage.removeItem("userRole");
     router.push("/");
   };
 
@@ -359,8 +383,11 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
                 <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
               </Button>
               <Button
+                type="button"
+                onClick={handleExportCsv}
+                disabled={filteredItems.length === 0}
                 data-tour="tour-export"
-                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all h-10 sm:h-11 text-xs sm:text-sm flex-1 sm:flex-initial touch-manipulation min-h-[40px] sm:min-h-0"
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all h-10 sm:h-11 text-xs sm:text-sm flex-1 sm:flex-initial touch-manipulation min-h-[40px] sm:min-h-0 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">{t.items.exportCsv}</span>

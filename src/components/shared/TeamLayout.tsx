@@ -38,6 +38,7 @@ export function TeamLayout({ team, activeMenuItem, children }: TeamLayoutProps) 
 
   const handleSignOut = () => {
     localStorage.removeItem("userId");
+    localStorage.removeItem("userRole");
     router.push("/");
   };
 

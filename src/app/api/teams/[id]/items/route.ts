@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getTeamItems, createItem } from "@/lib/db/items";
 import { getTeamWithStats } from "@/lib/db/teams";
+import { authorizeTeamPermission, getUserIdFromRequest } from "@/lib/permissions";
 
 // GET - List items for a team
 export async function GET(
@@ -61,6 +62,15 @@ export async function POST(
         { error: "Team not found" },
         { status: 404 }
       );
+    }
+
+    const auth = await authorizeTeamPermission({
+      permission: "item:write",
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     const body = await request.json();

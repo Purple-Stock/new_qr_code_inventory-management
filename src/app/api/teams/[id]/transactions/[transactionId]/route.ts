@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { deleteStockTransaction } from "@/lib/db/stock-transactions";
 import { getTeamWithStats } from "@/lib/db/teams";
+import { authorizeTeamPermission, getUserIdFromRequest } from "@/lib/permissions";
 
 export async function DELETE(
   request: NextRequest,
@@ -24,6 +25,15 @@ export async function DELETE(
         { error: "Team not found" },
         { status: 404 }
       );
+    }
+
+    const auth = await authorizeTeamPermission({
+      permission: "transaction:delete",
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     // Delete transaction

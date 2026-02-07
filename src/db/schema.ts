@@ -5,8 +5,14 @@ import {
   real,
   index,
   uniqueIndex,
+  primaryKey,
 } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
+
+export type UserRole = "admin" | "operator" | "viewer";
+export type CompanyMemberRole = "owner" | "admin" | "member";
+export type TeamMemberRole = "admin" | "operator" | "viewer";
+export type MembershipStatus = "active" | "invited" | "suspended";
 
 // Users table - without Devise, using bcrypt for password hashing
 export const users = sqliteTable(
@@ -15,6 +21,7 @@ export const users = sqliteTable(
     id: integer("id").primaryKey({ autoIncrement: true }),
     email: text("email").notNull().unique(),
     passwordHash: text("password_hash").notNull(),
+    role: text("role").$type<UserRole>().notNull().default("admin"),
     resetPasswordToken: text("reset_password_token"),
     resetPasswordSentAt: integer("reset_password_sent_at", { mode: "timestamp" }),
     rememberCreatedAt: integer("remember_created_at", { mode: "timestamp" }),
@@ -33,21 +40,100 @@ export const users = sqliteTable(
   })
 );
 
+// Companies table
+export const companies = sqliteTable(
+  "companies",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    name: text("name").notNull(),
+    slug: text("slug").notNull().unique(),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => ({
+    slugIdx: uniqueIndex("index_companies_on_slug").on(table.slug),
+  })
+);
+
 // Teams table
-export const teams = sqliteTable("teams", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  name: text("name").notNull(),
-  notes: text("notes"),
-  userId: integer("user_id")
-    .notNull()
-    .references(() => users.id),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .$defaultFn(() => new Date()),
-  updatedAt: integer("updated_at", { mode: "timestamp" })
-    .notNull()
-    .$defaultFn(() => new Date()),
-});
+export const teams = sqliteTable(
+  "teams",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    name: text("name").notNull(),
+    notes: text("notes"),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id),
+    companyId: integer("company_id").references(() => companies.id),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => ({
+    userIdIdx: index("index_teams_on_user_id").on(table.userId),
+    companyIdIdx: index("index_teams_on_company_id").on(table.companyId),
+  })
+);
+
+// Company members table
+export const companyMembers = sqliteTable(
+  "company_members",
+  {
+    companyId: integer("company_id")
+      .notNull()
+      .references(() => companies.id),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id),
+    role: text("role").$type<CompanyMemberRole>().notNull().default("member"),
+    status: text("status").$type<MembershipStatus>().notNull().default("active"),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => ({
+    companyUserPk: primaryKey({ columns: [table.companyId, table.userId] }),
+    companyIdIdx: index("index_company_members_on_company_id").on(table.companyId),
+    userIdIdx: index("index_company_members_on_user_id").on(table.userId),
+  })
+);
+
+// Team members table
+export const teamMembers = sqliteTable(
+  "team_members",
+  {
+    teamId: integer("team_id")
+      .notNull()
+      .references(() => teams.id),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id),
+    role: text("role").$type<TeamMemberRole>().notNull().default("viewer"),
+    status: text("status").$type<MembershipStatus>().notNull().default("active"),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => ({
+    teamUserPk: primaryKey({ columns: [table.teamId, table.userId] }),
+    teamIdIdx: index("index_team_members_on_team_id").on(table.teamId),
+    userIdIdx: index("index_team_members_on_user_id").on(table.userId),
+  })
+);
 
 // Locations table
 export const locations = sqliteTable(
@@ -216,6 +302,15 @@ export const webhooks = sqliteTable(
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 
+export type Company = typeof companies.$inferSelect;
+export type NewCompany = typeof companies.$inferInsert;
+
+export type CompanyMember = typeof companyMembers.$inferSelect;
+export type NewCompanyMember = typeof companyMembers.$inferInsert;
+
+export type TeamMember = typeof teamMembers.$inferSelect;
+export type NewTeamMember = typeof teamMembers.$inferInsert;
+
 export type Team = typeof teams.$inferSelect;
 export type NewTeam = typeof teams.$inferInsert;
 
@@ -237,6 +332,8 @@ export type NewWebhook = typeof webhooks.$inferInsert;
 // Relations (optional, for easier querying)
 export const usersRelations = relations(users, ({ many }) => ({
   teams: many(teams),
+  companyMembers: many(companyMembers),
+  teamMembers: many(teamMembers),
   stockTransactions: many(stockTransactions),
   apiKeys: many(apiKeys),
 }));
@@ -246,10 +343,42 @@ export const teamsRelations = relations(teams, ({ one, many }) => ({
     fields: [teams.userId],
     references: [users.id],
   }),
+  company: one(companies, {
+    fields: [teams.companyId],
+    references: [companies.id],
+  }),
+  teamMembers: many(teamMembers),
   items: many(items),
   locations: many(locations),
   stockTransactions: many(stockTransactions),
   webhooks: many(webhooks),
+}));
+
+export const companiesRelations = relations(companies, ({ many }) => ({
+  teams: many(teams),
+  companyMembers: many(companyMembers),
+}));
+
+export const companyMembersRelations = relations(companyMembers, ({ one }) => ({
+  company: one(companies, {
+    fields: [companyMembers.companyId],
+    references: [companies.id],
+  }),
+  user: one(users, {
+    fields: [companyMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
+  team: one(teams, {
+    fields: [teamMembers.teamId],
+    references: [teams.id],
+  }),
+  user: one(users, {
+    fields: [teamMembers.userId],
+    references: [users.id],
+  }),
 }));
 
 export const locationsRelations = relations(locations, ({ one, many }) => ({

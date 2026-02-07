@@ -67,6 +67,9 @@ export async function clearTestDb() {
   testDb.exec("DELETE FROM stock_transactions");
   testDb.exec("DELETE FROM items");
   testDb.exec("DELETE FROM locations");
+  testDb.exec("DELETE FROM team_members");
+  testDb.exec("DELETE FROM company_members");
   testDb.exec("DELETE FROM teams");
+  testDb.exec("DELETE FROM companies");
   testDb.exec("DELETE FROM users");
 }

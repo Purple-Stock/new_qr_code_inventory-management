@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserTeamsWithStats, createTeam } from "@/lib/db/teams";
+import { authorizePermission, getUserIdFromRequest } from "@/lib/permissions";
+import { getActiveCompanyIdForUser } from "@/lib/db/companies";
 
 // GET - List teams for a user
 export async function GET(request: NextRequest) {
@@ -67,11 +69,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const auth = await authorizePermission({
+      permission: "team:create",
+      targetUserId: userIdNum,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
+    const companyId = await getActiveCompanyIdForUser(userIdNum);
+    if (!companyId) {
+      return NextResponse.json(
+        { error: "User is not linked to an active company" },
+        { status: 403 }
+      );
+    }
+
     // Create team
     const team = await createTeam({
       name: name.trim(),
       notes: notes || null,
       userId: userIdNum,
+      companyId,
     });
 
     return NextResponse.json(

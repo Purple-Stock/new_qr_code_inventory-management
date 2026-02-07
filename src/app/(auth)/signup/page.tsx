@@ -18,6 +18,7 @@ import Link from "next/link"
 
 export default function SignUpPage() {
   const router = useRouter()
+  const [companyName, setCompanyName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -52,7 +53,7 @@ export default function SignUpPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ companyName, email, password }),
       })
 
       const data = await response.json()
@@ -185,6 +186,21 @@ export default function SignUpPage() {
 
           {/* Sign Up Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="companyName" className="text-gray-700 font-semibold text-sm">
+                Company Name
+              </Label>
+              <Input
+                id="companyName"
+                type="text"
+                placeholder="Enter your company name"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                className="w-full h-11 border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+                required
+              />
+            </div>
+
             {/* Email Field */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-gray-700 font-semibold text-sm">
@@ -201,7 +217,6 @@ export default function SignUpPage() {
               />
             </div>
 
-            {/* Password Field */}
             <div className="space-y-2">
               <Label htmlFor="password" className="text-gray-700 font-semibold text-sm">
                 Password

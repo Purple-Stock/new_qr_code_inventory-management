@@ -107,6 +107,7 @@ export default function StockByLocationPage() {
 
   const handleSignOut = () => {
     localStorage.removeItem("userId");
+    localStorage.removeItem("userRole");
     router.push("/");
   };
 

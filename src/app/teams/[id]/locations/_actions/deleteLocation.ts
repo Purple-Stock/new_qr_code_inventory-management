@@ -2,9 +2,26 @@
 
 import { deleteLocation } from "@/lib/db/locations";
 import { revalidatePath } from "next/cache";
+import { authorizeTeamPermission } from "@/lib/permissions";
 
-export async function deleteLocationAction(teamId: number, locationId: number) {
+export async function deleteLocationAction(
+  teamId: number,
+  locationId: number,
+  userId: number
+) {
   try {
+    const auth = await authorizeTeamPermission({
+      permission: "location:delete",
+      teamId,
+      requestUserId: userId,
+    });
+    if (!auth.ok) {
+      return {
+        success: false,
+        error: auth.error,
+      };
+    }
+
     await deleteLocation(locationId);
 
     // Revalidate relevant pages

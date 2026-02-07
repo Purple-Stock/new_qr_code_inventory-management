@@ -1,15 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createUser, findUserByEmail } from "@/lib/db/users";
+import { findUserByEmail } from "@/lib/db/users";
+import { onboardCompanyOwner } from "@/lib/db/onboarding";
+import { isValidEmail, normalizeEmail } from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password } = body;
+    const { email, password, companyName } = body;
+    const normalizedEmail = typeof email === "string" ? normalizeEmail(email) : "";
 
     // Validation
-    if (!email || !password) {
+    if (!normalizedEmail || !password || !companyName) {
       return NextResponse.json(
-        { error: "Email and password are required" },
+        { error: "Email, password and company name are required" },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidEmail(normalizedEmail)) {
+      return NextResponse.json(
+        { error: "Invalid email format" },
         { status: 400 }
       );
     }
@@ -22,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists
-    const existingUser = await findUserByEmail(email);
+    const existingUser = await findUserByEmail(normalizedEmail);
     if (existingUser) {
       return NextResponse.json(
         { error: "User with this email already exists" },
@@ -30,8 +40,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create user
-    const user = await createUser({ email, password });
+    const { user, company } = await onboardCompanyOwner({
+      email: normalizedEmail,
+      password,
+      companyName: companyName.trim(),
+    });
 
     // Return user without password hash
     const { passwordHash, ...userWithoutPassword } = user;
@@ -40,6 +53,7 @@ export async function POST(request: NextRequest) {
       {
         message: "User created successfully",
         user: userWithoutPassword,
+        company,
       },
       { status: 201 }
     );

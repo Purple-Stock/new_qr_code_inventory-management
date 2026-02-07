@@ -50,6 +50,7 @@ export default function NewTeamPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-user-id": String(userId),
         },
         body: JSON.stringify({
           name: name.trim(),

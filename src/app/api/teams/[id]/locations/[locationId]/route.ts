@@ -5,6 +5,7 @@ import {
   deleteLocation,
 } from "@/lib/db/locations";
 import { getTeamWithStats } from "@/lib/db/teams";
+import { authorizeTeamPermission, getUserIdFromRequest } from "@/lib/permissions";
 
 // GET - Get a specific location
 export async function GET(
@@ -99,6 +100,15 @@ export async function PUT(
       );
     }
 
+    const auth = await authorizeTeamPermission({
+      permission: "location:write",
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     const body = await request.json();
     const { name, description } = body;
 
@@ -180,6 +190,15 @@ export async function DELETE(
         { error: "Location does not belong to this team" },
         { status: 403 }
       );
+    }
+
+    const auth = await authorizeTeamPermission({
+      permission: "location:delete",
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     // Delete location

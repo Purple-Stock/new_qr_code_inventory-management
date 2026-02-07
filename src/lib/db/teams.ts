@@ -1,18 +1,32 @@
 import { sqlite } from "@/db/client";
-import { teams, items, stockTransactions, locations } from "@/db/schema";
-import { eq, count } from "drizzle-orm";
+import { teams, items, stockTransactions, locations, teamMembers } from "@/db/schema";
+import { and, eq, count, inArray } from "drizzle-orm";
 import type { Team, NewTeam } from "@/db/schema";
 
 /**
  * Get all teams for a user
  */
 export async function getUserTeams(userId: number): Promise<Team[]> {
-  const userTeams = await sqlite
+  const memberships = await sqlite
+    .select({ teamId: teamMembers.teamId })
+    .from(teamMembers)
+    .where(
+      and(
+        eq(teamMembers.userId, userId),
+        eq(teamMembers.status, "active")
+      )
+    );
+
+  const memberTeamIds = memberships.map((membership) => membership.teamId);
+
+  if (memberTeamIds.length === 0) {
+    return [];
+  }
+
+  return sqlite
     .select()
     .from(teams)
-    .where(eq(teams.userId, userId));
-
-  return userTeams;
+    .where(inArray(teams.id, memberTeamIds));
 }
 
 /**
@@ -22,6 +36,7 @@ export async function createTeam(data: {
   name: string;
   notes?: string | null;
   userId: number;
+  companyId: number;
 }): Promise<Team> {
   const [team] = await sqlite
     .insert(teams)
@@ -29,6 +44,7 @@ export async function createTeam(data: {
       name: data.name,
       notes: data.notes || null,
       userId: data.userId,
+      companyId: data.companyId,
     })
     .returning();
 
@@ -37,6 +53,13 @@ export async function createTeam(data: {
     name: "Default Location",
     description: "Default location for all items",
     teamId: team.id,
+  });
+
+  await sqlite.insert(teamMembers).values({
+    teamId: team.id,
+    userId: data.userId,
+    role: "admin",
+    status: "active",
   });
 
   return team;

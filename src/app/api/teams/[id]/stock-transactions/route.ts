@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createStockTransaction } from "@/lib/db/stock-transactions";
 import { getTeamWithStats } from "@/lib/db/teams";
+import { authorizeTeamPermission, getUserIdFromRequest } from "@/lib/permissions";
 
 export async function POST(
   request: NextRequest,
@@ -43,6 +44,23 @@ export async function POST(
       );
     }
 
+    const userIdNum = parseInt(userId, 10);
+    if (isNaN(userIdNum)) {
+      return NextResponse.json(
+        { error: "Invalid user ID" },
+        { status: 400 }
+      );
+    }
+
+    const auth = await authorizeTeamPermission({
+      permission: "stock:write",
+      teamId,
+      requestUserId: getUserIdFromRequest(request) ?? userIdNum,
+    });
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     // Create transaction
     const transaction = await createStockTransaction({
       itemId: parseInt(itemId, 10),
@@ -50,7 +68,7 @@ export async function POST(
       transactionType,
       quantity: parseFloat(quantity),
       notes: notes || null,
-      userId: parseInt(userId, 10),
+      userId: userIdNum,
       sourceLocationId: sourceLocationId ? parseInt(sourceLocationId, 10) : (transactionType === "move" ? null : null),
       destinationLocationId: destinationLocationId ? parseInt(destinationLocationId, 10) : (locationId ? parseInt(locationId, 10) : null),
     });

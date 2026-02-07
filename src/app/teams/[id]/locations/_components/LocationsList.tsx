@@ -26,7 +26,17 @@ export function LocationsList({ locations, teamId, t, onDelete }: LocationsListP
       return;
     }
 
-    const result = await deleteLocationAction(teamId, id);
+    const userId = Number(localStorage.getItem("userId"));
+    if (!userId) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "User not authenticated",
+      });
+      return;
+    }
+
+    const result = await deleteLocationAction(teamId, id, userId);
 
     if (!result.success) {
       toast({

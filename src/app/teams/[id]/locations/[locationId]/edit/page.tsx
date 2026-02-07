@@ -78,12 +78,14 @@ export default function EditLocationPage() {
     setIsLoading(true);
 
     try {
+      const userId = localStorage.getItem("userId");
       const response = await fetch(
         `/api/teams/${teamId}/locations/${locationId}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            "x-user-id": userId || "",
           },
           body: JSON.stringify({
             name: name.trim(),

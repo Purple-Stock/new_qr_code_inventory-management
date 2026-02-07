@@ -42,12 +42,16 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
         return;
       }
       const full = getData.item;
+      const userId = localStorage.getItem("userId");
 
       const newBarcode = generateBarcode();
       const name = (full.name && String(full.name).trim()) ? String(full.name).trim() : "Unnamed Item (copy)";
       const postRes = await fetch(`/api/teams/${teamId}/items`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": userId || "",
+        },
         body: JSON.stringify({
           name,
           sku: full.sku ?? null,
@@ -91,8 +95,12 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
     if (!itemToDelete) return;
     setDeletingId(itemToDelete.id);
     try {
+      const userId = localStorage.getItem("userId");
       const res = await fetch(`/api/teams/${teamId}/items/${itemToDelete.id}`, {
         method: "DELETE",
+        headers: {
+          "x-user-id": userId || "",
+        },
       });
       const data = await res.json();
 

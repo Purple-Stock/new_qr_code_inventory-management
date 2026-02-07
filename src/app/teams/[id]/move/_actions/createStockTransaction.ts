@@ -2,6 +2,7 @@
 
 import { createStockTransaction } from "@/lib/db/stock-transactions";
 import { revalidatePath } from "next/cache";
+import { authorizeTeamPermission } from "@/lib/permissions";
 
 export async function createMoveAction(
   teamId: number,
@@ -15,6 +16,18 @@ export async function createMoveAction(
   }
 ) {
   try {
+    const auth = await authorizeTeamPermission({
+      permission: "stock:write",
+      teamId,
+      requestUserId: data.userId,
+    });
+    if (!auth.ok) {
+      return {
+        success: false,
+        error: auth.error,
+      };
+    }
+
     const transaction = await createStockTransaction({
       itemId: data.itemId,
       teamId,

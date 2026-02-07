@@ -8,6 +8,7 @@ import {
   itemHasTransactions,
 } from "@/lib/db/items";
 import { getTeamWithStats } from "@/lib/db/teams";
+import { authorizeTeamPermission, getUserIdFromRequest } from "@/lib/permissions";
 
 interface RouteParams {
   params: { id: string; itemId: string };
@@ -93,6 +94,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         { error: "Item does not belong to this team" },
         { status: 403 }
       );
+    }
+
+    const auth = await authorizeTeamPermission({
+      permission: "item:write",
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     const body = await request.json();
@@ -189,6 +199,15 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         { error: "Item does not belong to this team" },
         { status: 403 }
       );
+    }
+
+    const auth = await authorizeTeamPermission({
+      permission: "item:delete",
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     const hasTx = await itemHasTransactions(itemId);
