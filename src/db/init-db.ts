@@ -32,9 +32,10 @@ function toSqlStatements(sql: string): string[] {
 }
 
 function createDbClient() {
+  const databaseUrl = getDatabaseUrl();
   return createClient({
-    url: getDatabaseUrl(),
-    authToken: getDatabaseAuthToken(),
+    url: databaseUrl,
+    authToken: getDatabaseAuthToken(databaseUrl),
   });
 }
 
