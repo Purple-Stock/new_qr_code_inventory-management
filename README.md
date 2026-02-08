@@ -9,7 +9,7 @@ Sistema multi-tenant de gestão de estoque com times, localizações, itens, mov
 - Next.js 16 (App Router)
 - React 18 + TypeScript
 - Tailwind CSS + shadcn/ui
-- SQLite (`better-sqlite3`) + Drizzle ORM
+- Turso/libSQL + Drizzle ORM
 - Jest para testes
 
 ## Arquitetura
@@ -68,7 +68,8 @@ src/
 
 ## Variáveis de ambiente
 
-- `DATABASE_URL` (opcional): caminho do SQLite. Padrão: `./src/db.sqlite`.
+- `DATABASE_URL`: URL libSQL (`libsql://...`) para Turso. Em local, use `file:./src/db.sqlite`.
+- `TURSO_AUTH_TOKEN` (obrigatório para Turso remoto): token do banco Turso.
 - `SESSION_SECRET` (obrigatório em produção): segredo para assinatura da sessão.
 - `STRIPE_SECRET_KEY` (obrigatório para billing): chave secreta da Stripe.
 - `STRIPE_PRICE_ID` (obrigatório para billing): `price_id` do plano mensal por time.
@@ -84,6 +85,13 @@ npm run dev
 ```
 
 Aplicação em `http://localhost:3000`.
+
+Para Turso (remoto), configure:
+
+```bash
+DATABASE_URL=libsql://<seu-db>-<org>.turso.io
+TURSO_AUTH_TOKEN=<seu_token_turso>
+```
 
 ## Scripts
 
