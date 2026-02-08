@@ -40,13 +40,13 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const tourSteps: TourStep[] = [
-    { target: "tour-stock-out-tutorial", title: t.common.tutorial, description: t.stockOut.subtitle },
-    { target: "tour-stock-out-location", title: t.stockOut.locationRequired, description: t.stockOut.defaultLocation },
-    { target: "tour-stock-out-items", title: t.stockOut.items, description: t.stockOut.searchItem },
-    { target: "tour-stock-out-table", title: t.stockOut.item, description: t.stockOut.noItemsSelected },
-    { target: "tour-stock-out-notes", title: t.stockOut.notes, description: t.stockOut.notesPlaceholder },
-    { target: "tour-stock-out-submit", title: t.stockOut.removeStock, description: t.stockOut.stockRemovedSuccess },
-    { target: "tour-sidebar", title: t.items.tourSidebarTitle, description: t.items.tourSidebarDesc },
+    { target: "tour-stock-out-tutorial", title: t.stockOut.tourTutorialTitle, description: t.stockOut.tourTutorialDesc },
+    { target: "tour-stock-out-location", title: t.stockOut.tourLocationTitle, description: t.stockOut.tourLocationDesc },
+    { target: "tour-stock-out-items", title: t.stockOut.tourItemsTitle, description: t.stockOut.tourItemsDesc },
+    { target: "tour-stock-out-table", title: t.stockOut.tourTableTitle, description: t.stockOut.tourTableDesc },
+    { target: "tour-stock-out-notes", title: t.stockOut.tourNotesTitle, description: t.stockOut.tourNotesDesc },
+    { target: "tour-stock-out-submit", title: t.stockOut.tourSubmitTitle, description: t.stockOut.tourSubmitDesc },
+    { target: "tour-sidebar", title: t.stockOut.tourSidebarTitle, description: t.stockOut.tourSidebarDesc },
   ];
 
   const filteredItems = items.filter((item) => {

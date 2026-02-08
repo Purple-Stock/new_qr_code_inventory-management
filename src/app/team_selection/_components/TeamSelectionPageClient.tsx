@@ -40,10 +40,10 @@ export default function TeamSelectionPage() {
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const tourSteps: TourStep[] = [
-    { target: "tour-team-selection-tutorial", title: t.common.tutorial, description: t.teamSelection.subtitle },
-    { target: "tour-team-selection-create", title: t.teamSelection.createTeam, description: t.teamSelection.subtitle },
-    { target: "tour-team-selection-list", title: t.teamSelection.title, description: t.teamSelection.noTeamsMessage },
-    { target: "tour-team-selection-sidebar", title: t.common.selectTeam, description: t.common.chooseTeam },
+    { target: "tour-team-selection-tutorial", title: t.teamSelection.tourTutorialTitle, description: t.teamSelection.tourTutorialDesc },
+    { target: "tour-team-selection-create", title: t.teamSelection.tourCreateTitle, description: t.teamSelection.tourCreateDesc },
+    { target: "tour-team-selection-list", title: t.teamSelection.tourListTitle, description: t.teamSelection.tourListDesc },
+    { target: "tour-team-selection-sidebar", title: t.teamSelection.tourSidebarTitle, description: t.teamSelection.tourSidebarDesc },
   ];
 
   useEffect(() => {

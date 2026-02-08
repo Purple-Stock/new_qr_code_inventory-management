@@ -30,11 +30,11 @@ export function TransactionsPageClient({
   const [filteredTransactions, setFilteredTransactions] = useState<TransactionWithDetails[]>(transactions);
   const teamId = team.id.toString();
   const tourSteps: TourStep[] = [
-    { target: "tour-transactions-tutorial", title: t.common.tutorial, description: t.transactions.subtitle },
-    { target: "tour-transactions-search", title: t.common.search, description: t.transactions.searchPlaceholder },
-    { target: "tour-transactions-stockin", title: t.transactions.stockIn, description: t.transactions.subtitle },
-    { target: "tour-transactions-list", title: t.transactions.title, description: t.transactions.subtitle },
-    { target: "tour-sidebar", title: t.items.tourSidebarTitle, description: t.items.tourSidebarDesc },
+    { target: "tour-transactions-tutorial", title: t.transactions.tourTutorialTitle, description: t.transactions.tourTutorialDesc },
+    { target: "tour-transactions-search", title: t.transactions.tourSearchTitle, description: t.transactions.tourSearchDesc },
+    { target: "tour-transactions-stockin", title: t.transactions.tourQuickActionTitle, description: t.transactions.tourQuickActionDesc },
+    { target: "tour-transactions-list", title: t.transactions.tourListTitle, description: t.transactions.tourListDesc },
+    { target: "tour-sidebar", title: t.transactions.tourSidebarTitle, description: t.transactions.tourSidebarDesc },
   ];
 
   const handleRefresh = () => {

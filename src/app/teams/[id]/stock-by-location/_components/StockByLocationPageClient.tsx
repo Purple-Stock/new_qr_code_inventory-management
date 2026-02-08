@@ -55,10 +55,10 @@ export default function StockByLocationPageClient({
   const { language, t } = useTranslation();
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const tourSteps: TourStep[] = [
-    { target: "tour-stock-by-location-tutorial", title: t.common.tutorial, description: t.stockByLocation.subtitle },
-    { target: "tour-stock-by-location-search", title: t.common.search, description: t.stockByLocation.searchPlaceholder },
-    { target: "tour-stock-by-location-list", title: t.stockByLocation.title, description: t.stockByLocation.totalItems },
-    { target: "tour-sidebar", title: t.items.tourSidebarTitle, description: t.items.tourSidebarDesc },
+    { target: "tour-stock-by-location-tutorial", title: t.stockByLocation.tourTutorialTitle, description: t.stockByLocation.tourTutorialDesc },
+    { target: "tour-stock-by-location-search", title: t.stockByLocation.tourSearchTitle, description: t.stockByLocation.tourSearchDesc },
+    { target: "tour-stock-by-location-list", title: t.stockByLocation.tourListTitle, description: t.stockByLocation.tourListDesc },
+    { target: "tour-sidebar", title: t.stockByLocation.tourSidebarTitle, description: t.stockByLocation.tourSidebarDesc },
   ];
 
   const formatPrice = (price: number | null) => {

@@ -28,11 +28,11 @@ export default function NewLocationPageClient({
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const tourSteps: TourStep[] = [
-    { target: "tour-new-location-tutorial", title: t.common.tutorial, description: t.locations.subtitle },
-    { target: "tour-location-name", title: t.common.name, description: t.locationForm.nameRequired },
-    { target: "tour-location-description", title: t.common.description, description: t.locationForm.descriptionPlaceholder },
-    { target: "tour-location-submit", title: t.locationForm.createAction, description: t.locationForm.createSuccess },
-    { target: "tour-sidebar", title: t.items.tourSidebarTitle, description: t.items.tourSidebarDesc },
+    { target: "tour-new-location-tutorial", title: t.locationForm.tourCreateTutorialTitle, description: t.locationForm.tourCreateTutorialDesc },
+    { target: "tour-location-name", title: t.locationForm.tourNameTitle, description: t.locationForm.tourNameDesc },
+    { target: "tour-location-description", title: t.locationForm.tourDescriptionTitle, description: t.locationForm.tourDescriptionDesc },
+    { target: "tour-location-submit", title: t.locationForm.tourCreateSubmitTitle, description: t.locationForm.tourCreateSubmitDesc },
+    { target: "tour-sidebar", title: t.locationForm.tourSidebarTitle, description: t.locationForm.tourSidebarDesc },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {

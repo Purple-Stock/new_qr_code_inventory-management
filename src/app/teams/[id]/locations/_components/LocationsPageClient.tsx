@@ -24,11 +24,11 @@ export function LocationsPageClient({ locations, team }: LocationsPageClientProp
   const [filteredLocations, setFilteredLocations] = useState<Location[]>(locations);
   const teamId = team.id.toString();
   const tourSteps: TourStep[] = [
-    { target: "tour-locations-tutorial", title: t.common.tutorial, description: t.locations.subtitle },
-    { target: "tour-locations-search", title: t.common.search, description: t.locations.searchPlaceholder },
-    { target: "tour-locations-add", title: t.locations.newLocation, description: t.locations.createFirstLocation },
-    { target: "tour-locations-list", title: t.locations.title, description: t.locations.noLocationsMessage },
-    { target: "tour-sidebar", title: t.items.tourSidebarTitle, description: t.items.tourSidebarDesc },
+    { target: "tour-locations-tutorial", title: t.locations.tourTutorialTitle, description: t.locations.tourTutorialDesc },
+    { target: "tour-locations-search", title: t.locations.tourSearchTitle, description: t.locations.tourSearchDesc },
+    { target: "tour-locations-add", title: t.locations.tourAddTitle, description: t.locations.tourAddDesc },
+    { target: "tour-locations-list", title: t.locations.tourListTitle, description: t.locations.tourListDesc },
+    { target: "tour-sidebar", title: t.locations.tourSidebarTitle, description: t.locations.tourSidebarDesc },
   ];
 
   const handleRefresh = () => {

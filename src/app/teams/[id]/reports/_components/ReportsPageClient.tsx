@@ -9,12 +9,14 @@ import {
   AlertTriangle,
   DollarSign,
   Calendar,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/lib/i18n";
 import { fetchApiResult } from "@/lib/api-client";
 import { TeamLayout } from "@/components/shared/TeamLayout";
+import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import type { ReportStats, Team } from "../_types";
 
 interface ReportsPageClientProps {
@@ -34,6 +36,15 @@ export default function ReportsPageClient({
   const { language, t } = useTranslation();
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const tourSteps: TourStep[] = [
+    { target: "tour-reports-tutorial", title: t.common.tutorial, description: t.reports.subtitle },
+    { target: "tour-reports-date-filter", title: t.reports.dateRange, description: t.reports.applyFilter },
+    { target: "tour-reports-overview", title: t.reports.overview, description: t.reports.totalStockValue },
+    { target: "tour-reports-transactions", title: t.reports.recentTransactions, description: t.reports.transactionsByType },
+    { target: "tour-reports-location", title: t.reports.stockByLocation, description: t.reports.totalValue },
+    { target: "tour-sidebar", title: t.items.tourSidebarTitle, description: t.items.tourSidebarDesc },
+  ];
 
   useEffect(() => {
     fetchData();
@@ -132,17 +143,27 @@ export default function ReportsPageClient({
       <main className="p-4 sm:p-6 md:p-8">
 
           {/* Header */}
-          <div className="mb-4 sm:mb-6">
-            <div>
+          <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+            <div className="flex-1">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
                 {t.reports.title}
               </h1>
               <p className="text-sm sm:text-base text-gray-600">{t.reports.subtitle}</p>
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsTutorialOpen(true)}
+              data-tour="tour-reports-tutorial"
+              className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
+            >
+              <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              {t.common.tutorial}
+            </Button>
           </div>
 
           {/* Date Range Filter */}
-          <div className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
+          <div data-tour="tour-reports-date-filter" className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-4">{t.reports.dateRange}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
@@ -186,7 +207,7 @@ export default function ReportsPageClient({
           ) : stats ? (
             <>
               {/* Overview Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6">
+              <div data-tour="tour-reports-overview" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6">
                 <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-sm sm:text-base font-semibold text-gray-600">
@@ -259,7 +280,7 @@ export default function ReportsPageClient({
               </div>
 
               {/* Transactions by Type */}
-              <div className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
+              <div data-tour="tour-reports-transactions" className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
                 <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
                   {t.reports.transactionsByType}
                 </h2>
@@ -292,7 +313,7 @@ export default function ReportsPageClient({
               </div>
 
               {/* Recent Transactions */}
-              <div className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
+              <div data-tour="tour-reports-location" className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
                 <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
                   {t.reports.recentTransactions}
                 </h2>
@@ -455,6 +476,11 @@ export default function ReportsPageClient({
               <p className="text-gray-600">{t.reports.noData}</p>
             </div>
           )}
+          <TutorialTour
+            isOpen={isTutorialOpen}
+            onClose={() => setIsTutorialOpen(false)}
+            steps={tourSteps}
+          />
       </main>
     </TeamLayout>
   );

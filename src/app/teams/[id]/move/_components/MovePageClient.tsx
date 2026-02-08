@@ -41,13 +41,13 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const tourSteps: TourStep[] = [
-    { target: "tour-move-tutorial", title: t.common.tutorial, description: t.move.subtitle },
-    { target: "tour-move-locations", title: t.move.sourceLocationRequired, description: t.move.destinationLocationRequired },
-    { target: "tour-move-items", title: t.move.items, description: t.move.searchItem },
-    { target: "tour-move-table", title: t.move.quantityToMove, description: t.move.noItemsSelected },
-    { target: "tour-move-notes", title: t.move.notes, description: t.move.notesPlaceholder },
-    { target: "tour-move-submit", title: t.move.moveStock, description: t.move.stockMovedSuccess },
-    { target: "tour-sidebar", title: t.items.tourSidebarTitle, description: t.items.tourSidebarDesc },
+    { target: "tour-move-tutorial", title: t.move.tourTutorialTitle, description: t.move.tourTutorialDesc },
+    { target: "tour-move-locations", title: t.move.tourLocationsTitle, description: t.move.tourLocationsDesc },
+    { target: "tour-move-items", title: t.move.tourItemsTitle, description: t.move.tourItemsDesc },
+    { target: "tour-move-table", title: t.move.tourTableTitle, description: t.move.tourTableDesc },
+    { target: "tour-move-notes", title: t.move.tourNotesTitle, description: t.move.tourNotesDesc },
+    { target: "tour-move-submit", title: t.move.tourSubmitTitle, description: t.move.tourSubmitDesc },
+    { target: "tour-sidebar", title: t.move.tourSidebarTitle, description: t.move.tourSidebarDesc },
   ];
 
   const filteredItems = items.filter((item) => {

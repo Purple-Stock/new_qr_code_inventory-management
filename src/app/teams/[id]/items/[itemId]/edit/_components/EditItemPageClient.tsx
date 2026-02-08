@@ -31,14 +31,14 @@ export default function EditItemPageClient({
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const tourSteps: TourStep[] = [
-    { target: "tour-edit-item-tutorial", title: t.common.tutorial, description: t.items.subtitle },
-    { target: "tour-new-item-name", title: t.itemForm.nameLabel, description: t.itemForm.itemNameRequired },
-    { target: "tour-new-item-sku", title: t.itemForm.skuLabel, description: t.itemForm.skuPlaceholder },
-    { target: "tour-new-item-barcode", title: t.itemForm.barcodeLabel, description: t.itemForm.barcodeRequired },
-    { target: "tour-new-item-pricing", title: `${t.itemForm.costLabel} / ${t.itemForm.priceLabel}`, description: t.itemForm.itemInformation },
-    { target: "tour-new-item-attributes", title: t.itemForm.itemAttributes, description: t.itemForm.itemTypePlaceholder },
-    { target: "tour-new-item-submit", title: t.itemForm.updateAction, description: t.itemForm.updateSuccess },
-    { target: "tour-sidebar", title: t.items.tourSidebarTitle, description: t.items.tourSidebarDesc },
+    { target: "tour-edit-item-tutorial", title: t.itemForm.tourEditTutorialTitle, description: t.itemForm.tourEditTutorialDesc },
+    { target: "tour-new-item-name", title: t.itemForm.tourNameTitle, description: t.itemForm.tourNameDesc },
+    { target: "tour-new-item-sku", title: t.itemForm.tourSkuTitle, description: t.itemForm.tourSkuDesc },
+    { target: "tour-new-item-barcode", title: t.itemForm.tourBarcodeTitle, description: t.itemForm.tourBarcodeDesc },
+    { target: "tour-new-item-pricing", title: t.itemForm.tourPricingTitle, description: t.itemForm.tourPricingDesc },
+    { target: "tour-new-item-attributes", title: t.itemForm.tourAttributesTitle, description: t.itemForm.tourAttributesDesc },
+    { target: "tour-new-item-submit", title: t.itemForm.tourEditSubmitTitle, description: t.itemForm.tourEditSubmitDesc },
+    { target: "tour-sidebar", title: t.itemForm.tourSidebarTitle, description: t.itemForm.tourSidebarDesc },
   ];
 
   const updateField = (field: keyof ItemFormValues, value: string) => {

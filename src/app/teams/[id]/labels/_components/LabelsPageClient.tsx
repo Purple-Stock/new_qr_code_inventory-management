@@ -60,12 +60,12 @@ export default function LabelsPageClient({
   const { t } = useTranslation();
   const labelsRef = useRef<HTMLDivElement>(null);
   const tourSteps: TourStep[] = [
-    { target: "tour-labels-tutorial", title: t.common.tutorial, description: t.labels.subtitle },
-    { target: "tour-labels-settings", title: t.labels.selectItems, description: t.labels.labelsPerPage },
-    { target: "tour-labels-search", title: t.common.search, description: t.labels.searchPlaceholder },
-    { target: "tour-labels-actions", title: t.labels.selectAll, description: t.labels.generatePDF },
-    { target: "tour-labels-list", title: t.labels.item, description: t.labels.noItems },
-    { target: "tour-sidebar", title: t.items.tourSidebarTitle, description: t.items.tourSidebarDesc },
+    { target: "tour-labels-tutorial", title: t.labels.tourTutorialTitle, description: t.labels.tourTutorialDesc },
+    { target: "tour-labels-settings", title: t.labels.tourSettingsTitle, description: t.labels.tourSettingsDesc },
+    { target: "tour-labels-search", title: t.labels.tourSearchTitle, description: t.labels.tourSearchDesc },
+    { target: "tour-labels-actions", title: t.labels.tourActionsTitle, description: t.labels.tourActionsDesc },
+    { target: "tour-labels-list", title: t.labels.tourListTitle, description: t.labels.tourListDesc },
+    { target: "tour-sidebar", title: t.labels.tourSidebarTitle, description: t.labels.tourSidebarDesc },
   ];
 
   const filteredItems = items.filter((item) => {

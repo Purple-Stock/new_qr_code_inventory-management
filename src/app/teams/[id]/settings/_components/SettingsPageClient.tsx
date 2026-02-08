@@ -10,6 +10,7 @@ import {
   Eye,
   EyeOff,
   CreditCard,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ import { useToast } from "@/components/ui/use-toast-simple";
 import { isValidEmail } from "@/lib/contracts/schemas";
 import { AddUserToTeamsModal } from "@/components/AddUserToTeamsModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
+import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import { ERROR_CODES } from "@/lib/errors";
 import { fetchApiJsonResult, fetchApiResult } from "@/lib/api-client";
 import type {
@@ -64,6 +66,7 @@ export default function SettingsPageClient({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isPasswordSaving, setIsPasswordSaving] = useState(false);
   const [isBillingLoading, setIsBillingLoading] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -89,6 +92,11 @@ export default function SettingsPageClient({
   const formattedPeriodEnd = billingPeriodEnd
     ? new Date(billingPeriodEnd).toLocaleDateString()
     : null;
+  const tourSteps: TourStep[] = [
+    { target: "tour-settings-tutorial", title: t.common.tutorial, description: t.settings.subtitle },
+    { target: "tour-settings-tabs", title: t.settings.title, description: t.settings.general },
+    { target: "tour-settings-panel", title: t.settings.teamSettings, description: t.settings.subtitle },
+  ];
 
   useEffect(() => {
     fetchManagedUsers().finally(() => setIsLoading(false));
@@ -560,14 +568,26 @@ export default function SettingsPageClient({
       <main className="p-4 sm:p-6 md:p-8">
 
           {/* Header */}
-          <div className="mb-4 sm:mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
-              {t.settings.title}
-            </h1>
-            <p className="text-sm sm:text-base text-gray-600">{t.settings.subtitle}</p>
+          <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+            <div className="flex-1">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
+                {t.settings.title}
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600">{t.settings.subtitle}</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsTutorialOpen(true)}
+              data-tour="tour-settings-tutorial"
+              className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
+            >
+              <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              {t.common.tutorial}
+            </Button>
           </div>
 
-          <div className="mb-4 sm:mb-6 border-b border-gray-200">
+          <div data-tour="tour-settings-tabs" className="mb-4 sm:mb-6 border-b border-gray-200">
             <div className="flex gap-2 sm:gap-3 overflow-x-auto">
               {canManageUsers && !billingRequired ? (
                 <button
@@ -616,7 +636,7 @@ export default function SettingsPageClient({
           ) : (
             <>
               {activeSettingsTab === "billing" ? (
-                <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
+                <div data-tour="tour-settings-panel" className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
                     <CreditCard className="h-5 w-5 text-purple-600" />
                     Assinatura do time
@@ -662,7 +682,7 @@ export default function SettingsPageClient({
               ) : null}
 
               {activeSettingsTab === "users" ? canManageUsers ? (
-                <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
+                <div data-tour="tour-settings-panel" className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
                     {t.settings.usersPermissionsTitle}
                   </h2>
@@ -754,7 +774,7 @@ export default function SettingsPageClient({
                   )}
                 </div>
               ) : (
-                <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
+                <div data-tour="tour-settings-panel" className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
                     {t.settings.usersPermissionsTitle}
                   </h2>
@@ -763,7 +783,7 @@ export default function SettingsPageClient({
                   </p>
                 </div>
               ) : activeSettingsTab === "password" ? (
-                <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
+                <div data-tour="tour-settings-panel" className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
                     <KeyRound className="h-5 w-5 text-purple-600" />
                     {t.settings.changePasswordTitle}
@@ -863,6 +883,12 @@ export default function SettingsPageClient({
               ) : null}
             </>
           )}
+
+          <TutorialTour
+            isOpen={isTutorialOpen}
+            onClose={() => setIsTutorialOpen(false)}
+            steps={tourSteps}
+          />
 
           <AddUserToTeamsModal
             isOpen={isAddUserModalOpen}

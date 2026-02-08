@@ -45,13 +45,13 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const tourSteps: TourStep[] = [
-    { target: "tour-adjust-tutorial", title: t.common.tutorial, description: t.adjust.subtitle },
-    { target: "tour-adjust-location", title: t.adjust.locationRequired, description: t.adjust.defaultLocation },
-    { target: "tour-adjust-items", title: t.adjust.items, description: t.adjust.searchItem },
-    { target: "tour-adjust-table", title: t.adjust.newStock, description: t.adjust.noItemsSelected },
-    { target: "tour-adjust-notes", title: t.adjust.notes, description: t.adjust.notesPlaceholder },
-    { target: "tour-adjust-submit", title: t.adjust.adjustStock, description: t.adjust.stockAdjustedSuccess },
-    { target: "tour-sidebar", title: t.items.tourSidebarTitle, description: t.items.tourSidebarDesc },
+    { target: "tour-adjust-tutorial", title: t.adjust.tourTutorialTitle, description: t.adjust.tourTutorialDesc },
+    { target: "tour-adjust-location", title: t.adjust.tourLocationTitle, description: t.adjust.tourLocationDesc },
+    { target: "tour-adjust-items", title: t.adjust.tourItemsTitle, description: t.adjust.tourItemsDesc },
+    { target: "tour-adjust-table", title: t.adjust.tourTableTitle, description: t.adjust.tourTableDesc },
+    { target: "tour-adjust-notes", title: t.adjust.tourNotesTitle, description: t.adjust.tourNotesDesc },
+    { target: "tour-adjust-submit", title: t.adjust.tourSubmitTitle, description: t.adjust.tourSubmitDesc },
+    { target: "tour-sidebar", title: t.adjust.tourSidebarTitle, description: t.adjust.tourSidebarDesc },
   ];
 
   const filteredItems = items.filter((item) => {
