@@ -17,6 +17,7 @@ import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/ui/use-toast-simple";
 import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
+import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import { createAdjustAction } from "../_actions/createStockTransaction";
 import type { Item, Location, Team } from "../_types";
 
@@ -42,6 +43,16 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const tourSteps: TourStep[] = [
+    { target: "tour-adjust-tutorial", title: t.common.tutorial, description: t.adjust.subtitle },
+    { target: "tour-adjust-location", title: t.adjust.locationRequired, description: t.adjust.defaultLocation },
+    { target: "tour-adjust-items", title: t.adjust.items, description: t.adjust.searchItem },
+    { target: "tour-adjust-table", title: t.adjust.newStock, description: t.adjust.noItemsSelected },
+    { target: "tour-adjust-notes", title: t.adjust.notes, description: t.adjust.notesPlaceholder },
+    { target: "tour-adjust-submit", title: t.adjust.adjustStock, description: t.adjust.stockAdjustedSuccess },
+    { target: "tour-sidebar", title: t.items.tourSidebarTitle, description: t.items.tourSidebarDesc },
+  ];
 
   const filteredItems = items.filter((item) => {
     if (!itemSearch) return false;
@@ -181,6 +192,8 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
         </div>
         <Button
           variant="outline"
+          onClick={() => setIsTutorialOpen(true)}
+          data-tour="tour-adjust-tutorial"
           className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
         >
           <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -189,7 +202,7 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
       </div>
 
       {/* Location Section */}
-      <div className="mb-4 sm:mb-6">
+      <div className="mb-4 sm:mb-6" data-tour="tour-adjust-location">
         <Label htmlFor="location" className="text-sm font-semibold text-gray-700 mb-2 block">
           {t.adjust.locationRequired}
         </Label>
@@ -211,7 +224,7 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
       </div>
 
       {/* Items Section */}
-      <div className="mb-4 sm:mb-6">
+      <div className="mb-4 sm:mb-6" data-tour="tour-adjust-items">
         <Label htmlFor="items" className="text-sm font-semibold text-gray-700 mb-2 block">
           {t.adjust.items}
         </Label>
@@ -261,7 +274,7 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
       </div>
 
       {/* Items Table */}
-      <div className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      <div className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden" data-tour="tour-adjust-table">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
@@ -353,7 +366,7 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
       </div>
 
       {/* Notes Section */}
-      <div className="mb-4 sm:mb-6">
+      <div className="mb-4 sm:mb-6" data-tour="tour-adjust-notes">
         <Label htmlFor="notes" className="text-sm font-semibold text-gray-700 mb-2 block">
           {t.adjust.notes}
         </Label>
@@ -368,7 +381,7 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
       </div>
 
       {/* Submit */}
-      <div className="flex justify-end">
+      <div className="flex justify-end" data-tour="tour-adjust-submit">
         <Button
           onClick={handleSubmit}
           disabled={isSubmitting || selectedItems.length === 0 || !selectedLocation}
@@ -384,6 +397,11 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
         onClose={() => setIsScannerOpen(false)}
         onScan={handleBarcodeScan}
         onManualEnter={handleBarcodeScan}
+      />
+      <TutorialTour
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+        steps={tourSteps}
       />
     </TeamLayout>
   );

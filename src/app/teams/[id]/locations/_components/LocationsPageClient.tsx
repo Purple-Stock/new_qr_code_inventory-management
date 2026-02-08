@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
 import Link from "next/link";
 import { TeamLayout } from "@/components/shared/TeamLayout";
+import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import { LocationsList } from "./LocationsList";
 import { LocationsSearch } from "./LocationsSearch";
 import type { Location, Team } from "../_types";
@@ -19,8 +20,16 @@ interface LocationsPageClientProps {
 export function LocationsPageClient({ locations, team }: LocationsPageClientProps) {
   const router = useRouter();
   const { t } = useTranslation();
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [filteredLocations, setFilteredLocations] = useState<Location[]>(locations);
   const teamId = team.id.toString();
+  const tourSteps: TourStep[] = [
+    { target: "tour-locations-tutorial", title: t.common.tutorial, description: t.locations.subtitle },
+    { target: "tour-locations-search", title: t.common.search, description: t.locations.searchPlaceholder },
+    { target: "tour-locations-add", title: t.locations.newLocation, description: t.locations.createFirstLocation },
+    { target: "tour-locations-list", title: t.locations.title, description: t.locations.noLocationsMessage },
+    { target: "tour-sidebar", title: t.items.tourSidebarTitle, description: t.items.tourSidebarDesc },
+  ];
 
   const handleRefresh = () => {
     router.refresh();
@@ -39,12 +48,14 @@ export function LocationsPageClient({ locations, team }: LocationsPageClientProp
         <div className="flex items-center gap-2 sm:gap-3">
           <Button
             variant="outline"
+            onClick={() => setIsTutorialOpen(true)}
+            data-tour="tour-locations-tutorial"
             className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
           >
             <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
             {t.common.tutorial}
           </Button>
-          <Link href={`/teams/${teamId}/locations/new`} className="w-full sm:w-auto">
+          <Link href={`/teams/${teamId}/locations/new`} className="w-full sm:w-auto" data-tour="tour-locations-add">
             <Button className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white shadow-lg hover:shadow-xl transition-all h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0">
               <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">{t.locations.newLocation}</span>
@@ -55,7 +66,7 @@ export function LocationsPageClient({ locations, team }: LocationsPageClientProp
       </div>
 
       {/* Search Bar */}
-      <div className="mb-4 sm:mb-6">
+      <div className="mb-4 sm:mb-6" data-tour="tour-locations-search">
         <LocationsSearch
           locations={locations}
           onFilteredLocationsChange={setFilteredLocations}
@@ -65,7 +76,7 @@ export function LocationsPageClient({ locations, team }: LocationsPageClientProp
 
       {/* Locations List */}
       {filteredLocations.length === 0 ? (
-        <div className="text-center py-12 sm:py-20 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 px-4 sm:px-6">
+        <div data-tour="tour-locations-list" className="text-center py-12 sm:py-20 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 px-4 sm:px-6">
           <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
             <Building2 className="h-8 w-8 sm:h-10 sm:w-10 text-blue-600" />
           </div>
@@ -83,13 +94,20 @@ export function LocationsPageClient({ locations, team }: LocationsPageClientProp
           </Link>
         </div>
       ) : (
-        <LocationsList
-          locations={filteredLocations}
-          teamId={team.id}
-          t={t}
-          onDelete={handleRefresh}
-        />
+        <div data-tour="tour-locations-list">
+          <LocationsList
+            locations={filteredLocations}
+            teamId={team.id}
+            t={t}
+            onDelete={handleRefresh}
+          />
+        </div>
       )}
+      <TutorialTour
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+        steps={tourSteps}
+      />
     </TeamLayout>
   );
 }

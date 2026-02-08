@@ -17,6 +17,7 @@ import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/ui/use-toast-simple";
 import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
+import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import { createStockInAction } from "../_actions/createStockTransaction";
 import type { Item, Location, Team, SelectedItem } from "../_types";
 
@@ -37,6 +38,16 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const tourSteps: TourStep[] = [
+    { target: "tour-stock-in-tutorial", title: t.common.tutorial, description: t.stockIn.subtitle },
+    { target: "tour-stock-in-location", title: t.stockIn.locationRequired, description: t.stockIn.defaultLocation },
+    { target: "tour-stock-in-items", title: t.stockIn.items, description: t.stockIn.searchItem },
+    { target: "tour-stock-in-table", title: t.stockIn.item, description: t.stockIn.noItemsSelected },
+    { target: "tour-stock-in-notes", title: t.stockIn.notes, description: t.stockIn.notesPlaceholder },
+    { target: "tour-stock-in-submit", title: t.stockIn.addStock, description: t.stockIn.stockAddedSuccess },
+    { target: "tour-sidebar", title: t.items.tourSidebarTitle, description: t.items.tourSidebarDesc },
+  ];
 
   const filteredItems = items.filter((item) => {
     if (!itemSearch) return false;
@@ -181,6 +192,8 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
         </div>
         <Button
           variant="outline"
+          onClick={() => setIsTutorialOpen(true)}
+          data-tour="tour-stock-in-tutorial"
           className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
         >
           <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -189,7 +202,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
       </div>
 
       {/* Location Section */}
-      <div className="mb-4 sm:mb-6">
+      <div className="mb-4 sm:mb-6" data-tour="tour-stock-in-location">
         <Label htmlFor="location" className="text-sm font-semibold text-gray-700 mb-2 block">
           {t.stockIn.locationRequired}
         </Label>
@@ -211,7 +224,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
       </div>
 
       {/* Items Section */}
-      <div className="mb-4 sm:mb-6">
+      <div className="mb-4 sm:mb-6" data-tour="tour-stock-in-items">
         <Label htmlFor="items" className="text-sm font-semibold text-gray-700 mb-2 block">
           {t.stockIn.items}
         </Label>
@@ -261,7 +274,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
       </div>
 
       {/* Items Table */}
-      <div className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      <div className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden" data-tour="tour-stock-in-table">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
@@ -356,7 +369,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
       </div>
 
       {/* Notes Section */}
-      <div className="mb-4 sm:mb-6">
+      <div className="mb-4 sm:mb-6" data-tour="tour-stock-in-notes">
         <Label htmlFor="notes" className="text-sm font-semibold text-gray-700 mb-2 block">
           {t.stockIn.notes}
         </Label>
@@ -371,7 +384,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
       </div>
 
       {/* Summary and Submit */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-gray-200">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-gray-200" data-tour="tour-stock-in-submit">
         <div className="text-sm sm:text-base font-semibold text-gray-700">
           {t.stockIn.totalItemsToAdd}: <span className="text-[#6B21A8]">{totalItems}</span>
         </div>
@@ -390,6 +403,11 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
         onClose={() => setIsScannerOpen(false)}
         onScan={handleBarcodeScan}
         onManualEnter={handleBarcodeScan}
+      />
+      <TutorialTour
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+        steps={tourSteps}
       />
     </TeamLayout>
   );

@@ -9,6 +9,8 @@ interface FormPageShellProps {
   title: string;
   backHref: string;
   tutorialLabel: string;
+  onTutorialClick?: () => void;
+  tutorialTourId?: string;
   success?: string;
   error?: string;
   children: React.ReactNode;
@@ -18,6 +20,8 @@ export function FormPageShell({
   title,
   backHref,
   tutorialLabel,
+  onTutorialClick,
+  tutorialTourId,
   success,
   error,
   children,
@@ -33,7 +37,13 @@ export function FormPageShell({
           </Link>
           <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
         </div>
-        <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onTutorialClick}
+          data-tour={tutorialTourId}
+          className="border-gray-300 text-gray-700 hover:bg-gray-50"
+        >
           <Info className="h-4 w-4 mr-2" />
           {tutorialLabel}
         </Button>

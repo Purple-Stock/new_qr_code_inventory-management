@@ -32,7 +32,7 @@ export function LocationForm({
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="space-y-2 mb-6">
+        <div className="space-y-2 mb-6" data-tour="tour-location-name">
           <Label htmlFor="name" className="text-gray-900">
             Name <span className="text-red-500">*</span>
           </Label>
@@ -51,7 +51,7 @@ export function LocationForm({
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2" data-tour="tour-location-description">
           <Label htmlFor="description" className="text-gray-900">
             Description
           </Label>
@@ -69,7 +69,7 @@ export function LocationForm({
         </div>
       </div>
 
-      <div className="flex items-center gap-4 pt-4">
+      <div className="flex items-center gap-4 pt-4" data-tour="tour-location-submit">
         <Button
           type="submit"
           disabled={isLoading}

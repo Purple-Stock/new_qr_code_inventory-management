@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { FormPageShell } from "@/components/shared/FormPageShell";
+import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import { useTranslation } from "@/lib/i18n";
 import { fetchApiJsonResult } from "@/lib/api-client";
 import { ItemForm, type ItemFormValues } from "../../_components/ItemForm";
@@ -20,6 +21,7 @@ export default function NewItemPageClient({
   const router = useRouter();
   const { t } = useTranslation();
 
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [form, setForm] = useState<ItemFormValues>({
     name: "",
     sku: "",
@@ -32,6 +34,17 @@ export default function NewItemPageClient({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const tourSteps: TourStep[] = [
+    { target: "tour-new-item-tutorial", title: t.itemForm.tourTutorialTitle, description: t.itemForm.tourTutorialDesc },
+    { target: "tour-new-item-name", title: t.itemForm.tourNameTitle, description: t.itemForm.tourNameDesc },
+    { target: "tour-new-item-sku", title: t.itemForm.tourSkuTitle, description: t.itemForm.tourSkuDesc },
+    { target: "tour-new-item-barcode", title: t.itemForm.tourBarcodeTitle, description: t.itemForm.tourBarcodeDesc },
+    { target: "tour-new-item-pricing", title: t.itemForm.tourPricingTitle, description: t.itemForm.tourPricingDesc },
+    { target: "tour-new-item-attributes", title: t.itemForm.tourAttributesTitle, description: t.itemForm.tourAttributesDesc },
+    { target: "tour-new-item-submit", title: t.itemForm.tourSubmitTitle, description: t.itemForm.tourSubmitDesc },
+    { target: "tour-sidebar", title: t.itemForm.tourSidebarTitle, description: t.itemForm.tourSidebarDesc },
+  ];
 
   const updateField = (field: keyof ItemFormValues, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -106,6 +119,8 @@ export default function NewItemPageClient({
           title={t.items.newItem}
           backHref={`/teams/${teamId}/items`}
           tutorialLabel={t.common.tutorial}
+          onTutorialClick={() => setIsTutorialOpen(true)}
+          tutorialTourId="tour-new-item-tutorial"
           success={success}
           error={error}
         >
@@ -122,6 +137,12 @@ export default function NewItemPageClient({
           />
         </FormPageShell>
       </div>
+
+      <TutorialTour
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+        steps={tourSteps}
+      />
     </TeamLayout>
   );
 }

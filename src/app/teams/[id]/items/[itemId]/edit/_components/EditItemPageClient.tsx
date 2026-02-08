@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { FormPageShell } from "@/components/shared/FormPageShell";
+import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import { useTranslation } from "@/lib/i18n";
 import { fetchApiJsonResult } from "@/lib/api-client";
 import { ItemForm, type ItemFormValues } from "../../../_components/ItemForm";
@@ -24,10 +25,21 @@ export default function EditItemPageClient({
   const router = useRouter();
   const { t } = useTranslation();
 
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [form, setForm] = useState<ItemFormValues>(initialForm);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const tourSteps: TourStep[] = [
+    { target: "tour-edit-item-tutorial", title: t.common.tutorial, description: t.items.subtitle },
+    { target: "tour-new-item-name", title: t.itemForm.nameLabel, description: t.itemForm.itemNameRequired },
+    { target: "tour-new-item-sku", title: t.itemForm.skuLabel, description: t.itemForm.skuPlaceholder },
+    { target: "tour-new-item-barcode", title: t.itemForm.barcodeLabel, description: t.itemForm.barcodeRequired },
+    { target: "tour-new-item-pricing", title: `${t.itemForm.costLabel} / ${t.itemForm.priceLabel}`, description: t.itemForm.itemInformation },
+    { target: "tour-new-item-attributes", title: t.itemForm.itemAttributes, description: t.itemForm.itemTypePlaceholder },
+    { target: "tour-new-item-submit", title: t.itemForm.updateAction, description: t.itemForm.updateSuccess },
+    { target: "tour-sidebar", title: t.items.tourSidebarTitle, description: t.items.tourSidebarDesc },
+  ];
 
   const updateField = (field: keyof ItemFormValues, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -102,6 +114,8 @@ export default function EditItemPageClient({
           title={`${t.common.edit} ${t.items.item}`}
           backHref={`/teams/${teamId}/items`}
           tutorialLabel={t.common.tutorial}
+          onTutorialClick={() => setIsTutorialOpen(true)}
+          tutorialTourId="tour-edit-item-tutorial"
           success={success}
           error={error}
         >
@@ -118,6 +132,11 @@ export default function EditItemPageClient({
           />
         </FormPageShell>
       </div>
+      <TutorialTour
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+        steps={tourSteps}
+      />
     </TeamLayout>
   );
 }
