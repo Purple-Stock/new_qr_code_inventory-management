@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { QRCodeDisplay } from "@/components/QRCodeDisplay";
 import { useTranslation } from "@/lib/i18n";
+import { TeamLayout } from "@/components/shared/TeamLayout";
 import { formatPrice } from "../../_utils/formatPrice";
 import {
   getTransactionTypeLabel,
@@ -30,6 +31,7 @@ type ItemWithLocation = ItemDto;
 type TransactionWithDetails = TransactionDto;
 
 interface ItemDetailPageClientProps {
+  team: { id: number; name: string };
   teamId: number;
   itemId: number;
   initialItem: ItemWithLocation;
@@ -37,6 +39,7 @@ interface ItemDetailPageClientProps {
 }
 
 export default function ItemDetailPageClient({
+  team,
   teamId,
   itemId,
   initialItem,
@@ -64,71 +67,71 @@ export default function ItemDetailPageClient({
   const itemName = item.name || t.items.unnamedItem;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Link
-              href={`/teams/${teamId}/items`}
-              className="text-[#6B21A8] hover:underline flex items-center gap-1"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              {t.items.backToList}
-            </Link>
-            <span className="text-gray-400">/</span>
-            <span className="text-gray-900 font-medium truncate">{itemName}</span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Link href={`/teams/${teamId}/stock-in`}>
-              <Button
-                size="sm"
-                className="bg-green-600 hover:bg-green-700 text-white border-0"
+    <TeamLayout team={team} activeMenuItem="items">
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white border border-gray-200 rounded-xl px-4 sm:px-6 py-4 mb-6">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Link
+                href={`/teams/${teamId}/items`}
+                className="text-[#6B21A8] hover:underline flex items-center gap-1"
               >
-                <ArrowUpCircle className="h-4 w-4 mr-1" />
-                {t.menu.stockIn}
-              </Button>
-            </Link>
-            <Link href={`/teams/${teamId}/stock-out`}>
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-red-300 text-red-700 hover:bg-red-50"
-              >
-                <ArrowDownCircle className="h-4 w-4 mr-1" />
-                {t.menu.stockOut}
-              </Button>
-            </Link>
-            <Link href={`/teams/${teamId}/adjust`}>
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-amber-300 text-amber-700 hover:bg-amber-50"
-              >
-                <RotateCcw className="h-4 w-4 mr-1" />
-                {t.menu.adjust}
-              </Button>
-            </Link>
-            <Link href={`/teams/${teamId}/move`}>
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-blue-300 text-blue-700 hover:bg-blue-50"
-              >
-                <Move className="h-4 w-4 mr-1" />
-                {t.menu.move}
-              </Button>
-            </Link>
-            <Link href={`/teams/${teamId}/items/${itemId}/edit`}>
-              <Button size="sm" variant="outline" className="border-gray-300">
-                <Pencil className="h-4 w-4 mr-1" />
-                {t.common.edit}
-              </Button>
-            </Link>
+                <ArrowLeft className="h-4 w-4" />
+                {t.items.backToList}
+              </Link>
+              <span className="text-gray-400">/</span>
+              <span className="text-gray-900 font-medium truncate">{itemName}</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link href={`/teams/${teamId}/stock-in`}>
+                <Button
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700 text-white border-0"
+                >
+                  <ArrowUpCircle className="h-4 w-4 mr-1" />
+                  {t.menu.stockIn}
+                </Button>
+              </Link>
+              <Link href={`/teams/${teamId}/stock-out`}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-red-300 text-red-700 hover:bg-red-50"
+                >
+                  <ArrowDownCircle className="h-4 w-4 mr-1" />
+                  {t.menu.stockOut}
+                </Button>
+              </Link>
+              <Link href={`/teams/${teamId}/adjust`}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                >
+                  <RotateCcw className="h-4 w-4 mr-1" />
+                  {t.menu.adjust}
+                </Button>
+              </Link>
+              <Link href={`/teams/${teamId}/move`}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                >
+                  <Move className="h-4 w-4 mr-1" />
+                  {t.menu.move}
+                </Button>
+              </Link>
+              <Link href={`/teams/${teamId}/items/${itemId}/edit`}>
+                <Button size="sm" variant="outline" className="border-gray-300">
+                  <Pencil className="h-4 w-4 mr-1" />
+                  {t.common.edit}
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
-      </header>
 
-      <main className="p-4 sm:p-6 max-w-6xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 lg:grid-rows-[auto_1fr] gap-6">
           {/* Overview */}
           <div className="lg:col-span-2 lg:row-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -287,7 +290,7 @@ export default function ItemDetailPageClient({
             />
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </TeamLayout>
   );
 }

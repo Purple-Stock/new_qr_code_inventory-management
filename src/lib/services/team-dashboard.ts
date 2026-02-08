@@ -108,17 +108,22 @@ export async function getItemDetailsData(
   ]);
 
   if (!team) {
-    return { item: null, transactions: [], subscriptionRequired: false };
+    return { team: null, item: null, transactions: [], subscriptionRequired: false };
   }
   if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
-    return { item: null, transactions: [], subscriptionRequired: true };
+    return { team: null, item: null, transactions: [], subscriptionRequired: true };
   }
 
   if (!item || item.teamId !== teamId) {
-    return { item: null, transactions: [], subscriptionRequired: false };
+    return { team: toTeamDto(team), item: null, transactions: [], subscriptionRequired: false };
   }
 
-  return { item: toItemDto(item), transactions: transactions.map(toTransactionDto), subscriptionRequired: false };
+  return {
+    team: toTeamDto(team),
+    item: toItemDto(item),
+    transactions: transactions.map(toTransactionDto),
+    subscriptionRequired: false,
+  };
 }
 
 export async function getTeamItemsData(teamId: number, options: TeamDashboardOptions = {}) {

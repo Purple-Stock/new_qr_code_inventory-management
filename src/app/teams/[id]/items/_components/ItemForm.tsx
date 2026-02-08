@@ -44,7 +44,7 @@ export function ItemForm({
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-6">{t.itemForm.itemInformation}</h2>
         <div className="space-y-6">
-          <div className="space-y-2">
+          <div className="space-y-2" data-tour="tour-new-item-name">
             <Label htmlFor="name" className="text-gray-900">
               {t.itemForm.nameLabel} <span className="text-red-500">*</span>
             </Label>
@@ -62,7 +62,7 @@ export function ItemForm({
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2" data-tour="tour-new-item-sku">
             <Label htmlFor="sku" className="text-gray-900">
               {t.itemForm.skuLabel}
             </Label>
@@ -90,7 +90,7 @@ export function ItemForm({
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2" data-tour="tour-new-item-barcode">
             <Label htmlFor="barcode" className="text-gray-900">
               {t.itemForm.barcodeLabel} <span className="text-red-500">*</span>
             </Label>
@@ -119,7 +119,7 @@ export function ItemForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4" data-tour="tour-new-item-pricing">
             <div className="space-y-2">
               <Label htmlFor="cost" className="text-gray-900">
                 {t.itemForm.costLabel}
@@ -156,7 +156,7 @@ export function ItemForm({
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm p-6">
+      <div className="bg-white rounded-lg shadow-sm p-6" data-tour="tour-new-item-attributes">
         <h2 className="text-xl font-semibold text-gray-900 mb-6">{t.itemForm.itemAttributes}</h2>
         <div className="space-y-6">
           <div className="space-y-2">
@@ -194,7 +194,7 @@ export function ItemForm({
         </div>
       </div>
 
-      <div className="flex items-center gap-4 pt-4">
+      <div className="flex items-center gap-4 pt-4" data-tour="tour-new-item-submit">
         <Button
           type="submit"
           disabled={isLoading}
