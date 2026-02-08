@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Info, Download, RefreshCw, Plus } from "lucide-react";
+import { Info, Download, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
 import Link from "next/link";
@@ -49,14 +49,6 @@ export function TransactionsPageClient({
           <p className="text-sm sm:text-base text-gray-600">{t.transactions.subtitle}</p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
-          <Button
-            variant="outline"
-            onClick={handleRefresh}
-            className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0"
-          >
-            <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-            Refresh
-          </Button>
           <Button
             variant="outline"
             className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0"

@@ -1,68 +1,171 @@
-import Database from "better-sqlite3";
+import { createClient } from "@libsql/client";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { getDatabaseAuthToken, getDatabaseUrl } from "./config";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const currentFile = fileURLToPath(import.meta.url);
+const currentDir = path.dirname(currentFile);
+const migrationsDir = path.resolve(currentDir, "migrations");
 
-const databaseUrl = process.env.DATABASE_URL || path.resolve(__dirname, "../db.sqlite");
-const migrationsDir = path.resolve(__dirname, "migrations");
+type MigrationRow = {
+  id?: number | null;
+  filename?: string | null;
+};
 
-// Check if database exists, if not, create it and run migrations
-export function ensureDatabase() {
-  try {
-    const db = new Database(databaseUrl);
-    db.pragma("foreign_keys = ON");
-
-  // Create migrations table if it doesn't exist
-  db.exec(
-    "CREATE TABLE IF NOT EXISTS _migrations (id INTEGER PRIMARY KEY AUTOINCREMENT, filename TEXT NOT NULL UNIQUE, applied_at INTEGER NOT NULL)"
-  );
-
-  // Check if migrations have been run
-  type MigrationRow = { filename: string };
-  const applied = db
-    .prepare("SELECT filename FROM _migrations")
-    .all() as MigrationRow[];
-  const appliedSet = new Set(applied.map((row) => row.filename));
-
-  // Get migration files
-  const migrationFiles = fs
+function listMigrationFiles(): string[] {
+  return fs
     .readdirSync(migrationsDir)
     .filter((file) => file.endsWith(".sql") && !file.endsWith(".down.sql"))
     .sort();
+}
 
+function getDownFilename(filename: string): string {
+  return filename.replace(/\.sql$/i, ".down.sql");
+}
+
+function toSqlStatements(sql: string): string[] {
+  return sql
+    .split(";")
+    .map((statement) => statement.trim())
+    .filter((statement) => statement.length > 0);
+}
+
+function createDbClient() {
+  const databaseUrl = getDatabaseUrl();
+  return createClient({
+    url: databaseUrl,
+    authToken: getDatabaseAuthToken(databaseUrl),
+  });
+}
+
+async function ensureMigrationsTable() {
+  const client = createDbClient();
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS _migrations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      filename TEXT NOT NULL UNIQUE,
+      applied_at INTEGER NOT NULL
+    )
+  `);
+  client.close();
+}
+
+async function getAppliedMigrationFilenames(): Promise<Set<string>> {
+  const client = createDbClient();
+  const result = await client.execute("SELECT filename FROM _migrations");
+  client.close();
+
+  const filenames = result.rows
+    .map((row) => String((row as MigrationRow).filename ?? ""))
+    .filter((filename) => filename.length > 0);
+
+  return new Set(filenames);
+}
+
+export async function ensureDatabase(): Promise<void> {
+  await ensureMigrationsTable();
+
+  const appliedSet = await getAppliedMigrationFilenames();
+  const migrationFiles = listMigrationFiles();
   const now = Math.floor(Date.now() / 1000);
   let hasNewMigrations = false;
 
-  // Run any pending migrations
   for (const file of migrationFiles) {
     if (appliedSet.has(file)) {
       continue;
     }
 
-    hasNewMigrations = true;
     const sql = fs.readFileSync(path.join(migrationsDir, file), "utf8");
-    db.exec(sql);
-    db.prepare("INSERT INTO _migrations (filename, applied_at) VALUES (?, ?)").run(file, now);
+    const statements = toSqlStatements(sql).map((statement) => ({ sql: statement }));
+    const client = createDbClient();
+    try {
+      await client.batch(
+        [
+          { sql: "PRAGMA foreign_keys = ON" },
+          ...statements,
+          {
+            sql: "INSERT INTO _migrations (filename, applied_at) VALUES (?, ?)",
+            args: [file, now],
+          },
+        ],
+        "write"
+      );
+    } finally {
+      client.close();
+    }
+
+    hasNewMigrations = true;
     console.log(`Applied migration: ${file}`);
   }
 
-    if (hasNewMigrations) {
-      console.log("Database initialized successfully.");
-    } else if (migrationFiles.length > 0) {
-      console.log("Database is up to date.");
-    }
-
-    db.close();
-  } catch (error) {
-    console.error("Error initializing database:", error);
-    throw error;
+  if (hasNewMigrations) {
+    console.log("Database initialized successfully.");
+  } else if (migrationFiles.length > 0) {
+    console.log("Database is up to date.");
   }
 }
 
-// Run if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  ensureDatabase();
+export async function rollbackDatabase(steps: number): Promise<void> {
+  await ensureMigrationsTable();
+
+  const client = createDbClient();
+  const appliedResult = await client.execute({
+    sql: "SELECT id, filename FROM _migrations ORDER BY id DESC LIMIT ?",
+    args: [steps],
+  });
+  const applied = appliedResult.rows
+    .map((row) => ({
+      id: Number((row as MigrationRow).id),
+      filename: String((row as MigrationRow).filename ?? ""),
+    }))
+    .filter((row) => Number.isInteger(row.id) && row.id > 0 && row.filename.length > 0);
+  client.close();
+
+  if (applied.length === 0) {
+    console.log("No applied migrations found.");
+    return;
+  }
+
+  const rollbacks = applied.map((migration) => {
+    const downFile = getDownFilename(migration.filename);
+    const downPath = path.join(migrationsDir, downFile);
+
+    if (!fs.existsSync(downPath)) {
+      throw new Error(
+        `Missing rollback file for ${migration.filename}. Expected ${downFile}.`
+      );
+    }
+
+    const sql = fs.readFileSync(downPath, "utf8");
+    return { migration, downFile, sql };
+  });
+
+  for (const rollback of rollbacks) {
+    const statements = toSqlStatements(rollback.sql).map((statement) => ({
+      sql: statement,
+    }));
+    const rollbackClient = createDbClient();
+    try {
+      await rollbackClient.batch(
+        [
+          { sql: "PRAGMA foreign_keys = ON" },
+          ...statements,
+          {
+            sql: "DELETE FROM _migrations WHERE id = ?",
+            args: [rollback.migration.id],
+          },
+        ],
+        "write"
+      );
+    } finally {
+      rollbackClient.close();
+    }
+
+    console.log(
+      `Rolled back ${rollback.migration.filename} using ${rollback.downFile}`
+    );
+  }
+
+  console.log(`Rollback complete. Steps: ${rollbacks.length}.`);
 }

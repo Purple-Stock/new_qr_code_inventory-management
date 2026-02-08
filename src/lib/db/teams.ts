@@ -2,6 +2,7 @@ import { sqlite } from "@/db/client";
 import { teams, items, stockTransactions, locations, teamMembers, webhooks } from "@/db/schema";
 import { and, eq, count, inArray } from "drizzle-orm";
 import type { Team } from "@/db/schema";
+import { hasAffectedRows } from "./mutation-result";
 
 /**
  * Get all teams for a user
@@ -289,6 +290,6 @@ export async function deleteTeam(teamId: number): Promise<boolean> {
     await tx.delete(teamMembers).where(eq(teamMembers.teamId, teamId));
 
     const result = await tx.delete(teams).where(eq(teams.id, teamId));
-    return result.changes > 0;
+    return hasAffectedRows(result);
   });
 }

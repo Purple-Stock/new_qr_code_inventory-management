@@ -1,6 +1,7 @@
 import { sqlite } from "@/db/client";
 import { stockTransactions, items, users, locations } from "@/db/schema";
 import { eq, desc, and, inArray } from "drizzle-orm";
+import { hasAffectedRows } from "./mutation-result";
 import type { StockTransaction, StockTransactionType } from "@/db/schema";
 
 /**
@@ -324,5 +325,5 @@ export async function deleteStockTransaction(
       )
     );
 
-  return result.changes > 0;
+  return hasAffectedRows(result);
 }
