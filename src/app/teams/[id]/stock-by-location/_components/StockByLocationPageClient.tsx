@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/lib/i18n";
 import { TeamLayout } from "@/components/shared/TeamLayout";
+import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 
 interface Item {
   id: number;
@@ -52,6 +53,13 @@ export default function StockByLocationPageClient({
   const [isLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { language, t } = useTranslation();
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const tourSteps: TourStep[] = [
+    { target: "tour-stock-by-location-tutorial", title: t.stockByLocation.tourTutorialTitle, description: t.stockByLocation.tourTutorialDesc },
+    { target: "tour-stock-by-location-search", title: t.stockByLocation.tourSearchTitle, description: t.stockByLocation.tourSearchDesc },
+    { target: "tour-stock-by-location-list", title: t.stockByLocation.tourListTitle, description: t.stockByLocation.tourListDesc },
+    { target: "tour-sidebar", title: t.stockByLocation.tourSidebarTitle, description: t.stockByLocation.tourSidebarDesc },
+  ];
 
   const formatPrice = (price: number | null) => {
     if (!price) return "-";
@@ -134,6 +142,8 @@ export default function StockByLocationPageClient({
         </div>
         <Button
           variant="outline"
+          onClick={() => setIsTutorialOpen(true)}
+          data-tour="tour-stock-by-location-tutorial"
           className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
         >
           <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -141,7 +151,7 @@ export default function StockByLocationPageClient({
         </Button>
       </div>
 
-      <div className="mb-4 sm:mb-6">
+      <div className="mb-4 sm:mb-6" data-tour="tour-stock-by-location-search">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
           <Input
@@ -166,7 +176,7 @@ export default function StockByLocationPageClient({
           </p>
         </div>
       ) : (
-        <div className="space-y-4 sm:space-y-6">
+        <div className="space-y-4 sm:space-y-6" data-tour="tour-stock-by-location-list">
           {stockByLocation.map((locationStock) => (
             <div
               key={locationStock.location.id}
@@ -252,6 +262,11 @@ export default function StockByLocationPageClient({
           ))}
         </div>
       )}
+      <TutorialTour
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+        steps={tourSteps}
+      />
     </TeamLayout>
   );
 }

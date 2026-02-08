@@ -15,16 +15,17 @@ export default async function ItemDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const { item, transactions, subscriptionRequired } = await getItemDetailsData(teamId, itemId);
+  const { team, item, transactions, subscriptionRequired } = await getItemDetailsData(teamId, itemId);
   if (subscriptionRequired) {
     redirect(`/teams/${teamId}/settings?billing=required`);
   }
-  if (!item) {
+  if (!team || !item) {
     notFound();
   }
 
   return (
     <ItemDetailPageClient
+      team={team}
       teamId={teamId}
       itemId={itemId}
       initialItem={item}

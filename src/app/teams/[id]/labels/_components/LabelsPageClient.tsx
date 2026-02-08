@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { useTranslation } from "@/lib/i18n";
 import { QRCodeDisplay } from "@/components/QRCodeDisplay";
 import { TeamLayout } from "@/components/shared/TeamLayout";
+import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
 
@@ -55,8 +56,17 @@ export default function LabelsPageClient({
   const [includeSKU, setIncludeSKU] = useState(true);
   const [includeStock, setIncludeStock] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const { t } = useTranslation();
   const labelsRef = useRef<HTMLDivElement>(null);
+  const tourSteps: TourStep[] = [
+    { target: "tour-labels-tutorial", title: t.labels.tourTutorialTitle, description: t.labels.tourTutorialDesc },
+    { target: "tour-labels-settings", title: t.labels.tourSettingsTitle, description: t.labels.tourSettingsDesc },
+    { target: "tour-labels-search", title: t.labels.tourSearchTitle, description: t.labels.tourSearchDesc },
+    { target: "tour-labels-actions", title: t.labels.tourActionsTitle, description: t.labels.tourActionsDesc },
+    { target: "tour-labels-list", title: t.labels.tourListTitle, description: t.labels.tourListDesc },
+    { target: "tour-sidebar", title: t.labels.tourSidebarTitle, description: t.labels.tourSidebarDesc },
+  ];
 
   const filteredItems = items.filter((item) => {
     if (!searchQuery) return true;
@@ -248,6 +258,8 @@ export default function LabelsPageClient({
             </div>
             <Button
               variant="outline"
+              onClick={() => setIsTutorialOpen(true)}
+              data-tour="tour-labels-tutorial"
               className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
             >
               <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -256,7 +268,7 @@ export default function LabelsPageClient({
           </div>
 
           {/* Settings Panel */}
-          <div className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
+          <div className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6" data-tour="tour-labels-settings">
             <h2 className="text-lg font-bold text-gray-900 mb-4">{t.labels.selectItems}</h2>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
@@ -341,7 +353,7 @@ export default function LabelsPageClient({
           </div>
 
           {/* Search Bar */}
-          <div className="mb-4 sm:mb-6">
+          <div className="mb-4 sm:mb-6" data-tour="tour-labels-search">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
               <Input
@@ -355,7 +367,7 @@ export default function LabelsPageClient({
           </div>
 
           {/* Selection Actions */}
-          <div className="mb-4 sm:mb-6 flex flex-wrap gap-2">
+          <div className="mb-4 sm:mb-6 flex flex-wrap gap-2" data-tour="tour-labels-actions">
             <Button
               variant="outline"
               onClick={selectAll}
@@ -394,7 +406,7 @@ export default function LabelsPageClient({
           </div>
 
           {/* Items List */}
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden" data-tour="tour-labels-list">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
@@ -533,6 +545,11 @@ export default function LabelsPageClient({
               </div>
             </div>
           )}
+          <TutorialTour
+            isOpen={isTutorialOpen}
+            onClose={() => setIsTutorialOpen(false)}
+            steps={tourSteps}
+          />
       </main>
     </TeamLayout>
   );

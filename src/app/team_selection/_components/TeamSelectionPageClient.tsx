@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { TeamCard } from "@/components/TeamCard";
 import { EditTeamModal } from "@/components/EditTeamModal";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
+import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/ui/use-toast-simple";
 import { fetchApiResult } from "@/lib/api-client";
@@ -37,6 +38,13 @@ export default function TeamSelectionPage() {
   const [deletingTeamId, setDeletingTeamId] = useState<number | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const tourSteps: TourStep[] = [
+    { target: "tour-team-selection-tutorial", title: t.teamSelection.tourTutorialTitle, description: t.teamSelection.tourTutorialDesc },
+    { target: "tour-team-selection-create", title: t.teamSelection.tourCreateTitle, description: t.teamSelection.tourCreateDesc },
+    { target: "tour-team-selection-list", title: t.teamSelection.tourListTitle, description: t.teamSelection.tourListDesc },
+    { target: "tour-team-selection-sidebar", title: t.teamSelection.tourSidebarTitle, description: t.teamSelection.tourSidebarDesc },
+  ];
 
   useEffect(() => {
     fetchTeams();
@@ -201,7 +209,7 @@ export default function TeamSelectionPage() {
 
       <div className="flex flex-col lg:flex-row">
         {/* Sidebar */}
-        <aside className={`hidden lg:block bg-white min-h-[calc(100vh-73px)] border-r border-gray-200 relative transition-all duration-300 ${
+        <aside data-tour="tour-team-selection-sidebar" className={`hidden lg:block bg-white min-h-[calc(100vh-73px)] border-r border-gray-200 relative transition-all duration-300 ${
           isSidebarCollapsed ? "w-20" : "w-64"
         }`}>
           <div className={`p-6 transition-all duration-300 ${isSidebarCollapsed ? "px-4" : ""}`}>
@@ -256,7 +264,11 @@ export default function TeamSelectionPage() {
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
                   {t.teamSelection.title}
                 </h1>
-                <button className="flex items-center justify-center sm:justify-start gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm touch-manipulation min-h-[40px] sm:min-h-0 w-full sm:w-auto">
+                <button
+                  onClick={() => setIsTutorialOpen(true)}
+                  data-tour="tour-team-selection-tutorial"
+                  className="flex items-center justify-center sm:justify-start gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm touch-manipulation min-h-[40px] sm:min-h-0 w-full sm:w-auto"
+                >
                   <Info className="h-4 w-4" />
                   {t.common.tutorial}
                 </button>
@@ -267,7 +279,7 @@ export default function TeamSelectionPage() {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              <Link href="/teams/new" className="w-full sm:w-auto">
+              <Link href="/teams/new" className="w-full sm:w-auto" data-tour="tour-team-selection-create">
                 <Button
                   className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white border-0 shadow-lg hover:shadow-xl transition-all w-full sm:w-auto touch-manipulation min-h-[48px] sm:min-h-0"
                 >
@@ -286,7 +298,7 @@ export default function TeamSelectionPage() {
               <p className="text-gray-600 text-base sm:text-lg font-medium">{t.teamSelection.loadingTeams}</p>
             </div>
           ) : teams.length === 0 ? (
-            <div className="text-center py-12 sm:py-20 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 px-4 sm:px-6">
+            <div data-tour="tour-team-selection-list" className="text-center py-12 sm:py-20 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 px-4 sm:px-6">
               <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                 <Users className="h-8 w-8 sm:h-10 sm:w-10 text-purple-600" />
               </div>
@@ -300,7 +312,7 @@ export default function TeamSelectionPage() {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div data-tour="tour-team-selection-list" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {teams.map((team) => (
                 <TeamCard
                   key={team.id}
@@ -320,6 +332,11 @@ export default function TeamSelectionPage() {
           )}
         </main>
       </div>
+      <TutorialTour
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+        steps={tourSteps}
+      />
 
       {/* Edit Team Modal */}
       <EditTeamModal

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
 import Link from "next/link";
 import { TeamLayout } from "@/components/shared/TeamLayout";
+import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import { TransactionsList } from "./TransactionsList";
 import { TransactionsSearch } from "./TransactionsSearch";
 import type { TransactionWithDetails, Team } from "../_types";
@@ -24,9 +25,17 @@ export function TransactionsPageClient({
 }: TransactionsPageClientProps) {
   const router = useRouter();
   const { t } = useTranslation();
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [filteredTransactions, setFilteredTransactions] = useState<TransactionWithDetails[]>(transactions);
   const teamId = team.id.toString();
+  const tourSteps: TourStep[] = [
+    { target: "tour-transactions-tutorial", title: t.transactions.tourTutorialTitle, description: t.transactions.tourTutorialDesc },
+    { target: "tour-transactions-search", title: t.transactions.tourSearchTitle, description: t.transactions.tourSearchDesc },
+    { target: "tour-transactions-stockin", title: t.transactions.tourQuickActionTitle, description: t.transactions.tourQuickActionDesc },
+    { target: "tour-transactions-list", title: t.transactions.tourListTitle, description: t.transactions.tourListDesc },
+    { target: "tour-sidebar", title: t.transactions.tourSidebarTitle, description: t.transactions.tourSidebarDesc },
+  ];
 
   const handleRefresh = () => {
     router.refresh();
@@ -51,12 +60,14 @@ export function TransactionsPageClient({
         <div className="flex items-center gap-2 sm:gap-3">
           <Button
             variant="outline"
+            onClick={() => setIsTutorialOpen(true)}
+            data-tour="tour-transactions-tutorial"
             className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0"
           >
             <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
             {t.common.tutorial}
           </Button>
-          <Link href={`/teams/${teamId}/stock-in`}>
+          <Link href={`/teams/${teamId}/stock-in`} data-tour="tour-transactions-stockin">
             <Button className="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0">
               <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               {t.transactions.stockIn}
@@ -66,7 +77,7 @@ export function TransactionsPageClient({
       </div>
 
       {/* Search Bar */}
-      <div className="mb-4 sm:mb-6">
+      <div className="mb-4 sm:mb-6" data-tour="tour-transactions-search">
         <TransactionsSearch
           transactions={transactions}
           onFilteredTransactionsChange={setFilteredTransactions}
@@ -76,10 +87,17 @@ export function TransactionsPageClient({
       </div>
 
       {/* Transactions List */}
-      <TransactionsList
-        transactions={filteredTransactions}
-        teamId={team.id}
-        onDelete={handleRefresh}
+      <div data-tour="tour-transactions-list">
+        <TransactionsList
+          transactions={filteredTransactions}
+          teamId={team.id}
+          onDelete={handleRefresh}
+        />
+      </div>
+      <TutorialTour
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+        steps={tourSteps}
       />
     </TeamLayout>
   );

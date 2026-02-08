@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { FormPageShell } from "@/components/shared/FormPageShell";
+import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import { useTranslation } from "@/lib/i18n";
 import { fetchApiJsonResult } from "@/lib/api-client";
 import { LocationForm } from "../../_components/LocationForm";
@@ -20,11 +21,19 @@ export default function NewLocationPageClient({
   const router = useRouter();
   const { t } = useTranslation();
 
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const tourSteps: TourStep[] = [
+    { target: "tour-new-location-tutorial", title: t.locationForm.tourCreateTutorialTitle, description: t.locationForm.tourCreateTutorialDesc },
+    { target: "tour-location-name", title: t.locationForm.tourNameTitle, description: t.locationForm.tourNameDesc },
+    { target: "tour-location-description", title: t.locationForm.tourDescriptionTitle, description: t.locationForm.tourDescriptionDesc },
+    { target: "tour-location-submit", title: t.locationForm.tourCreateSubmitTitle, description: t.locationForm.tourCreateSubmitDesc },
+    { target: "tour-sidebar", title: t.locationForm.tourSidebarTitle, description: t.locationForm.tourSidebarDesc },
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +78,8 @@ export default function NewLocationPageClient({
           title={t.locations.newLocation}
           backHref={`/teams/${teamId}/locations`}
           tutorialLabel={t.common.tutorial}
+          onTutorialClick={() => setIsTutorialOpen(true)}
+          tutorialTourId="tour-new-location-tutorial"
           success={success}
           error={error}
         >
@@ -85,6 +96,11 @@ export default function NewLocationPageClient({
           />
         </FormPageShell>
       </div>
+      <TutorialTour
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+        steps={tourSteps}
+      />
     </TeamLayout>
   );
 }

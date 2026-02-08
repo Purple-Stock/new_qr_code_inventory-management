@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
@@ -18,6 +18,7 @@ interface TutorialTourProps {
 }
 
 const PADDING = 8;
+const TOOLTIP_MARGIN = 16;
 
 export function TutorialTour({
   isOpen,
@@ -28,6 +29,8 @@ export function TutorialTour({
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [tooltipBottom, setTooltipBottom] = useState(true);
+  const [tooltipTop, setTooltipTop] = useState(TOOLTIP_MARGIN);
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
 
   const current = steps[step];
   const isFirst = step === 0;
@@ -74,6 +77,34 @@ export function TutorialTour({
     };
   }, [isOpen, step, current?.target, updateTarget]);
 
+  useEffect(() => {
+    if (!isOpen || !current) return;
+
+    const updateTooltipPosition = () => {
+      const tooltipHeight = tooltipRef.current?.offsetHeight ?? 220;
+      const minTop = TOOLTIP_MARGIN;
+      const maxTop = Math.max(minTop, window.innerHeight - tooltipHeight - TOOLTIP_MARGIN);
+
+      if (!rect) {
+        const centeredTop = (window.innerHeight - tooltipHeight) / 2;
+        setTooltipTop(Math.min(maxTop, Math.max(minTop, centeredTop)));
+        return;
+      }
+
+      const preferredTop = tooltipBottom
+        ? rect.bottom + PADDING + 12
+        : rect.top - tooltipHeight - PADDING - 12;
+
+      setTooltipTop(Math.min(maxTop, Math.max(minTop, preferredTop)));
+    };
+
+    updateTooltipPosition();
+    window.addEventListener("resize", updateTooltipPosition);
+    return () => {
+      window.removeEventListener("resize", updateTooltipPosition);
+    };
+  }, [isOpen, current, rect, tooltipBottom, step]);
+
   if (!isOpen) return null;
 
   const handleNext = () => {
@@ -115,14 +146,9 @@ export function TutorialTour({
       {/* Tooltip */}
       {current && (
         <div
+          ref={tooltipRef}
           className="absolute left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-[101] px-4"
-          style={
-            rect
-              ? tooltipBottom
-                ? { top: rect.bottom + PADDING + 12 }
-                : { bottom: window.innerHeight - rect.top + PADDING + 12, top: "auto" }
-              : { top: "50%", transform: "translate(-50%, -50%)" }
-          }
+          style={{ top: tooltipTop }}
         >
           <div className="bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
             <div className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] px-4 py-3 flex items-center justify-between">

@@ -42,11 +42,11 @@ export function ItemForm({
   return (
     <form onSubmit={onSubmit} className="space-y-8">
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">Item Information</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">{t.itemForm.itemInformation}</h2>
         <div className="space-y-6">
-          <div className="space-y-2">
+          <div className="space-y-2" data-tour="tour-new-item-name">
             <Label htmlFor="name" className="text-gray-900">
-              Name <span className="text-red-500">*</span>
+              {t.itemForm.nameLabel} <span className="text-red-500">*</span>
             </Label>
             <div className="relative">
               <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -62,9 +62,9 @@ export function ItemForm({
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2" data-tour="tour-new-item-sku">
             <Label htmlFor="sku" className="text-gray-900">
-              SKU
+              {t.itemForm.skuLabel}
             </Label>
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
@@ -82,7 +82,7 @@ export function ItemForm({
                 onClick={onGenerateSKU}
                 className="text-sm text-[#6B21A8] hover:underline whitespace-nowrap"
               >
-                Generate
+                {t.itemForm.generate}
               </button>
               <button type="button" className="p-2 text-gray-400 hover:text-gray-600">
                 <QrCode className="h-5 w-5" />
@@ -90,9 +90,9 @@ export function ItemForm({
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2" data-tour="tour-new-item-barcode">
             <Label htmlFor="barcode" className="text-gray-900">
-              Barcode <span className="text-red-500">*</span>
+              {t.itemForm.barcodeLabel} <span className="text-red-500">*</span>
             </Label>
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
@@ -111,7 +111,7 @@ export function ItemForm({
                 onClick={onGenerateBarcode}
                 className="text-sm text-[#6B21A8] hover:underline whitespace-nowrap"
               >
-                Generate
+                {t.itemForm.generate}
               </button>
               <button type="button" className="p-2 text-gray-400 hover:text-gray-600">
                 <QrCode className="h-5 w-5" />
@@ -119,10 +119,10 @@ export function ItemForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4" data-tour="tour-new-item-pricing">
             <div className="space-y-2">
               <Label htmlFor="cost" className="text-gray-900">
-                Cost
+                {t.itemForm.costLabel}
               </Label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -138,7 +138,7 @@ export function ItemForm({
             </div>
             <div className="space-y-2">
               <Label htmlFor="price" className="text-gray-900">
-                Price
+                {t.itemForm.priceLabel}
               </Label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -156,12 +156,12 @@ export function ItemForm({
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">Item Attributes</h2>
+      <div className="bg-white rounded-lg shadow-sm p-6" data-tour="tour-new-item-attributes">
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">{t.itemForm.itemAttributes}</h2>
         <div className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="itemType" className="text-gray-900">
-              Type
+              {t.itemForm.typeLabel}
             </Label>
             <div className="relative">
               <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -177,7 +177,7 @@ export function ItemForm({
           </div>
           <div className="space-y-2">
             <Label htmlFor="brand" className="text-gray-900">
-              Brand
+              {t.itemForm.brandLabel}
             </Label>
             <div className="relative">
               <Square className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -194,7 +194,7 @@ export function ItemForm({
         </div>
       </div>
 
-      <div className="flex items-center gap-4 pt-4">
+      <div className="flex items-center gap-4 pt-4" data-tour="tour-new-item-submit">
         <Button
           type="submit"
           disabled={isLoading}
