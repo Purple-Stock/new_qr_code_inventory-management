@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { ensureDatabase } from "./init-db";
 
 ensureDatabase().catch((error) => {

@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { rollbackDatabase } from "./init-db";
 
 function parseSteps(argv: string[]): number {

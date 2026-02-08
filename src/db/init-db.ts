@@ -24,6 +24,13 @@ function getDownFilename(filename: string): string {
   return filename.replace(/\.sql$/i, ".down.sql");
 }
 
+function toSqlStatements(sql: string): string[] {
+  return sql
+    .split(";")
+    .map((statement) => statement.trim())
+    .filter((statement) => statement.length > 0);
+}
+
 function createDbClient() {
   return createClient({
     url: getDatabaseUrl(),
@@ -69,19 +76,20 @@ export async function ensureDatabase(): Promise<void> {
     }
 
     const sql = fs.readFileSync(path.join(migrationsDir, file), "utf8");
+    const statements = toSqlStatements(sql).map((statement) => ({ sql: statement }));
     const client = createDbClient();
     try {
-      await client.execute("BEGIN");
-      await client.execute("PRAGMA foreign_keys = ON");
-      await client.execute(sql);
-      await client.execute({
-        sql: "INSERT INTO _migrations (filename, applied_at) VALUES (?, ?)",
-        args: [file, now],
-      });
-      await client.execute("COMMIT");
-    } catch (error) {
-      await client.execute("ROLLBACK");
-      throw error;
+      await client.batch(
+        [
+          { sql: "PRAGMA foreign_keys = ON" },
+          ...statements,
+          {
+            sql: "INSERT INTO _migrations (filename, applied_at) VALUES (?, ?)",
+            args: [file, now],
+          },
+        ],
+        "write"
+      );
     } finally {
       client.close();
     }
@@ -133,19 +141,22 @@ export async function rollbackDatabase(steps: number): Promise<void> {
   });
 
   for (const rollback of rollbacks) {
+    const statements = toSqlStatements(rollback.sql).map((statement) => ({
+      sql: statement,
+    }));
     const rollbackClient = createDbClient();
     try {
-      await rollbackClient.execute("BEGIN");
-      await rollbackClient.execute("PRAGMA foreign_keys = ON");
-      await rollbackClient.execute(rollback.sql);
-      await rollbackClient.execute({
-        sql: "DELETE FROM _migrations WHERE id = ?",
-        args: [rollback.migration.id],
-      });
-      await rollbackClient.execute("COMMIT");
-    } catch (error) {
-      await rollbackClient.execute("ROLLBACK");
-      throw error;
+      await rollbackClient.batch(
+        [
+          { sql: "PRAGMA foreign_keys = ON" },
+          ...statements,
+          {
+            sql: "DELETE FROM _migrations WHERE id = ?",
+            args: [rollback.migration.id],
+          },
+        ],
+        "write"
+      );
     } finally {
       rollbackClient.close();
     }
