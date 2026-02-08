@@ -632,5 +632,11 @@ export const ptBR = {
     roleViewer: "Visualizador",
     teamFallback: "Time",
     memberIdLabel: "ID",
+    tourTutorialTitle: "Tutorial de configurações",
+    tourTutorialDesc: "Este guia mostra onde ajustar acesso de usuários, senha e assinatura do time.",
+    tourTabsTitle: "Abas de configuração",
+    tourTabsDesc: "Use as abas para alternar entre Usuários e Permissões, Alterar Senha e Assinatura.",
+    tourPanelTitle: "Painel ativo",
+    tourPanelDesc: "Aqui aparecem os controles da aba selecionada. Revise e salve as alterações necessárias.",
   },
 };

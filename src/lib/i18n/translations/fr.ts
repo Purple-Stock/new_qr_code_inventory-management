@@ -636,5 +636,11 @@ export const fr = {
     roleViewer: "Lecteur",
     teamFallback: "Équipe",
     memberIdLabel: "ID",
+    tourTutorialTitle: "Tutoriel des paramètres",
+    tourTutorialDesc: "Ce guide montre où gérer les utilisateurs, le mot de passe et l'abonnement d'équipe.",
+    tourTabsTitle: "Onglets de paramètres",
+    tourTabsDesc: "Utilisez les onglets pour basculer entre Utilisateurs et Permissions, Mot de passe et Abonnement.",
+    tourPanelTitle: "Panneau actif",
+    tourPanelDesc: "Cette zone affiche les options de l'onglet sélectionné. Vérifiez puis enregistrez vos modifications.",
   },
 };

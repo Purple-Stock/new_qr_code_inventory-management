@@ -93,9 +93,9 @@ export default function SettingsPageClient({
     ? new Date(billingPeriodEnd).toLocaleDateString()
     : null;
   const tourSteps: TourStep[] = [
-    { target: "tour-settings-tutorial", title: t.common.tutorial, description: t.settings.subtitle },
-    { target: "tour-settings-tabs", title: t.settings.title, description: t.settings.general },
-    { target: "tour-settings-panel", title: t.settings.teamSettings, description: t.settings.subtitle },
+    { target: "tour-settings-tutorial", title: t.settings.tourTutorialTitle, description: t.settings.tourTutorialDesc },
+    { target: "tour-settings-tabs", title: t.settings.tourTabsTitle, description: t.settings.tourTabsDesc },
+    { target: "tour-settings-panel", title: t.settings.tourPanelTitle, description: t.settings.tourPanelDesc },
   ];
 
   useEffect(() => {

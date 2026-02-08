@@ -632,5 +632,11 @@ export const en = {
     roleViewer: "Viewer",
     teamFallback: "Team",
     memberIdLabel: "ID",
+    tourTutorialTitle: "Settings tutorial",
+    tourTutorialDesc: "This guide shows where to manage users, password, and team subscription.",
+    tourTabsTitle: "Settings tabs",
+    tourTabsDesc: "Use tabs to switch between Users & Permissions, Change Password, and Billing.",
+    tourPanelTitle: "Active panel",
+    tourPanelDesc: "This area displays controls for the selected tab. Review and save your changes here.",
   },
 };
