@@ -78,6 +78,30 @@ function getPriceIdFromSubscription(subscription: Stripe.Subscription): string |
   return item?.price?.id ?? null;
 }
 
+function getEffectiveSubscriptionStatus(subscription: Stripe.Subscription): string {
+  // Stripe can keep status as "active" while cancellation is scheduled/requested.
+  // We persist this as "canceling" to make cancellation visible immediately in the app.
+  if (
+    subscription.cancel_at &&
+    ["active", "trialing"].includes(subscription.status)
+  ) {
+    return "canceling";
+  }
+  if (subscription.cancel_at_period_end && subscription.status === "active") {
+    return "canceling";
+  }
+  if (subscription.cancel_at_period_end && subscription.status === "trialing") {
+    return "canceling";
+  }
+  if (
+    subscription.cancellation_details?.reason === "cancellation_requested" &&
+    ["active", "trialing"].includes(subscription.status)
+  ) {
+    return "canceling";
+  }
+  return subscription.status;
+}
+
 function getCurrentPeriodEndFromSubscription(subscription: Stripe.Subscription): Date | null {
   const item = subscription.items.data[0];
   if (!item?.current_period_end) {
@@ -92,7 +116,7 @@ async function syncSubscriptionInTeam(params: {
 }) {
   await updateTeamStripeSubscription(params.teamId, {
     stripeSubscriptionId: params.subscription.id,
-    stripeSubscriptionStatus: params.subscription.status,
+    stripeSubscriptionStatus: getEffectiveSubscriptionStatus(params.subscription),
     stripePriceId: getPriceIdFromSubscription(params.subscription),
     stripeCurrentPeriodEnd: getCurrentPeriodEndFromSubscription(params.subscription),
   });
@@ -253,7 +277,7 @@ export async function createTeamStripePortalSession(params: {
     const baseUrl = getAppBaseUrl(params.origin);
     const session = await stripe.billingPortal.sessions.create({
       customer: team.stripeCustomerId,
-      return_url: `${baseUrl}/teams/${team.id}/settings`,
+      return_url: `${baseUrl}/teams/${team.id}/settings?billing=portal`,
     });
 
     return { ok: true, data: { url: session.url } };
@@ -335,7 +359,10 @@ export async function syncTeamStripeSubscriptionFromProvider(params: {
 
     return {
       ok: true,
-      data: { synced: true, subscriptionStatus: prioritized.status },
+      data: {
+        synced: true,
+        subscriptionStatus: getEffectiveSubscriptionStatus(prioritized),
+      },
     };
   } catch (error) {
     console.error("Error syncing Stripe subscription from provider:", error);

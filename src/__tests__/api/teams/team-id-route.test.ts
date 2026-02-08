@@ -225,5 +225,28 @@ describe("/api/teams/[id] route", () => {
         error: "Only team admins can delete a team",
       });
     });
+
+    it("returns conflict when team has active subscription", async () => {
+      mockedDeleteTeamWithAuthorization.mockResolvedValue({
+        ok: false,
+        error: {
+          status: 409,
+          errorCode: ERROR_CODES.VALIDATION_ERROR,
+          error: "Cannot delete team while subscription is active",
+        },
+      });
+
+      const response = await DELETE(new NextRequest("http://localhost:3000/api/teams/12", {
+        method: "DELETE",
+      }), {
+        params: Promise.resolve({ id: "12" }),
+      });
+
+      expect(response.status).toBe(409);
+      expect(await response.json()).toEqual({
+        errorCode: ERROR_CODES.VALIDATION_ERROR,
+        error: "Cannot delete team while subscription is active",
+      });
+    });
   });
 });

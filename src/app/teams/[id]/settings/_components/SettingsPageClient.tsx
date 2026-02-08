@@ -33,6 +33,16 @@ interface SettingsPageClientProps {
   initialTeam: Team;
 }
 
+function getBillingStatusLabel(status: string | null): string {
+  if (!status) return "sem assinatura";
+  if (status === "active") return "ativa";
+  if (status === "trialing") return "em período de teste";
+  if (status === "canceling") return "cancelando no fim do ciclo";
+  if (status === "canceled") return "cancelada";
+  if (status === "past_due") return "pagamento pendente";
+  return status;
+}
+
 export default function SettingsPageClient({
   teamId,
   initialTeam,
@@ -73,7 +83,7 @@ export default function SettingsPageClient({
     initialTeam.stripeCurrentPeriodEnd ?? null
   );
   const hasStripeSubscription = Boolean(billingStatus);
-  const hasActiveStripeSubscription = ["active", "trialing", "past_due"].includes(
+  const hasActiveStripeSubscription = ["active", "trialing", "past_due", "canceling"].includes(
     billingStatus ?? ""
   );
   const formattedPeriodEnd = billingPeriodEnd
@@ -86,7 +96,7 @@ export default function SettingsPageClient({
 
   useEffect(() => {
     const billingResult = searchParams.get("billing");
-    if (billingResult !== "success") {
+    if (billingResult !== "success" && billingResult !== "portal") {
       return;
     }
 
@@ -622,9 +632,7 @@ export default function SettingsPageClient({
                   <p className="text-sm text-gray-700 mb-4">
                     Status atual:{" "}
                     <span className="font-semibold">
-                      {hasStripeSubscription
-                        ? (billingStatus ?? "desconhecido")
-                        : "sem assinatura"}
+                      {getBillingStatusLabel(hasStripeSubscription ? billingStatus : null)}
                     </span>
                     {formattedPeriodEnd ? ` • próximo ciclo em ${formattedPeriodEnd}` : ""}
                   </p>

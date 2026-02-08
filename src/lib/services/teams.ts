@@ -16,6 +16,7 @@ import {
 import { parseTeamCreatePayload, parseTeamUpdatePayload } from "@/lib/contracts/schemas";
 import type { ServiceResult, TeamDto } from "@/lib/services/types";
 import {
+  makeServiceError,
   authServiceError,
   conflictValidationServiceError,
   internalServiceError,
@@ -23,6 +24,13 @@ import {
   validationServiceError,
 } from "@/lib/services/errors";
 import { toTeamDto } from "@/lib/services/mappers";
+
+const BLOCKED_TEAM_DELETE_SUBSCRIPTION_STATUSES = new Set([
+  "active",
+  "trialing",
+  "past_due",
+  "canceling",
+]);
 
 export async function createTeamForUser(params: {
   requestUserId: number | null;
@@ -203,6 +211,19 @@ export async function deleteTeamWithAuthorization(
     return {
       ok: false,
       error: notFoundServiceError(ERROR_CODES.TEAM_NOT_FOUND, "Team not found"),
+    };
+  }
+  if (
+    existingTeam.stripeSubscriptionStatus &&
+    BLOCKED_TEAM_DELETE_SUBSCRIPTION_STATUSES.has(existingTeam.stripeSubscriptionStatus)
+  ) {
+    return {
+      ok: false,
+      error: makeServiceError(
+        409,
+        ERROR_CODES.VALIDATION_ERROR,
+        "Cannot delete team while subscription is active"
+      ),
     };
   }
 

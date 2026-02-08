@@ -112,4 +112,37 @@ describe("teams service", () => {
     });
     expect(deleteResult.ok).toBe(true);
   });
+
+  it("blocks delete when team has active subscription", async () => {
+    const { drizzle } = getTestDb();
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "teams-billing-block@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({
+        name: "Team Billing Active",
+        userId: user.id,
+        companyId: null,
+        stripeSubscriptionStatus: "active",
+      })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+
+    const deleteResult = await deleteTeamWithAuthorization({
+      teamId: team.id,
+      requestUserId: user.id,
+    });
+
+    expect(deleteResult.ok).toBe(false);
+    if (deleteResult.ok) return;
+    expect(deleteResult.error.status).toBe(409);
+    expect(deleteResult.error.errorCode).toBe(ERROR_CODES.VALIDATION_ERROR);
+  });
 });

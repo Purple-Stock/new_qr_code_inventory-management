@@ -14,7 +14,7 @@ import {
   toTransactionDto,
 } from "@/lib/services/mappers";
 
-const ACTIVE_SUBSCRIPTION_STATUSES = new Set(["active", "trialing"]);
+const ACTIVE_SUBSCRIPTION_STATUSES = new Set(["active", "trialing", "canceling"]);
 
 function hasActiveSubscription(team: { stripeSubscriptionStatus?: string | null }): boolean {
   return ACTIVE_SUBSCRIPTION_STATUSES.has(team.stripeSubscriptionStatus ?? "");
