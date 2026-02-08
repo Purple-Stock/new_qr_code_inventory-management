@@ -9,7 +9,7 @@ Sistema multi-tenant de gestão de estoque com times, localizações, itens, mov
 - Next.js 16 (App Router)
 - React 18 + TypeScript
 - Tailwind CSS + shadcn/ui
-- Turso/libSQL + Drizzle ORM
+- SQLite/libSQL (`@libsql/client`, Turso em produção) + Drizzle ORM
 - Jest para testes
 
 ## Arquitetura
@@ -107,6 +107,40 @@ TURSO_AUTH_TOKEN=<seu_token_turso>
 - `npm run verify:architecture`: checks arquiteturais + política de testes + lint de arquitetura + testes de arquitetura.
 - `npm run hooks:install`: ativa `.githooks/pre-push`.
 - `npm run hooks:uninstall`: remove hook local.
+
+## Deploy no Amplify (Next SSR + Turso)
+
+Este repositório usa `amplify.yml` para gerar `.env.production` no build do Next.js.
+
+### Variáveis obrigatórias no Amplify
+
+Configure em **Hosting > Environment variables** (obrigatórias para o build SSR):
+
+- `DATABASE_URL`
+- `TURSO_AUTH_TOKEN`
+- `SESSION_SECRET`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `APP_URL`
+- `STRIPE_PRICE_ID`
+- `STRIPE_PUBLISHABLE_KEY`
+
+Observação: mesmo usando **Hosting > Secrets**, o build SSR do Next pode precisar das variáveis em `Environment variables` para coleta de page data.
+
+### Fluxo de deploy recomendado
+
+1. Atualizar variáveis no Amplify.
+2. Executar **Clear cache and redeploy**.
+3. Validar login (`/api/auth/login`) e signup (`/api/auth/signup`).
+
+### Troubleshooting rápido
+
+- Erro `DATABASE_URL must be set in production`:
+  - `DATABASE_URL` não está chegando no build/runtime SSR.
+- Erro `TURSO_AUTH_TOKEN must be set...`:
+  - token ausente no ambiente de produção.
+- Erro `SERVER_ERROR: 401` na conexão Turso:
+  - token inválido/expirado; gere novo token e atualize o ambiente.
 
 ## Padrão de migrations (up/down)
 
