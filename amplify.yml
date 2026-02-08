@@ -4,6 +4,9 @@ frontend:
     preBuild:
       commands:
         - npm ci --cache .npm --prefer-offline
+        - test -n "$DATABASE_URL" || (echo "Missing DATABASE_URL in Amplify Environment variables" && exit 1)
+        - test -n "$TURSO_AUTH_TOKEN" || (echo "Missing TURSO_AUTH_TOKEN in Amplify Environment variables" && exit 1)
+        - test -n "$SESSION_SECRET" || (echo "Missing SESSION_SECRET in Amplify Environment variables" && exit 1)
         - |
           cat > .env.production <<EOF
           DATABASE_URL=$DATABASE_URL
