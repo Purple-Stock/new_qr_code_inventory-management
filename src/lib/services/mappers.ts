@@ -54,6 +54,7 @@ export function toTeamDto(
     stripeSubscriptionStatus: string | null;
     stripePriceId: string | null;
     stripeCurrentPeriodEnd: Date | string | null;
+    manualTrialEndsAt: Date | string | null;
     itemCount: number;
     transactionCount: number;
     memberCount: number;
@@ -74,6 +75,7 @@ export function toTeamDto(
     stripeCurrentPeriodEnd: team.stripeCurrentPeriodEnd
       ? toIsoString(team.stripeCurrentPeriodEnd)
       : null,
+    manualTrialEndsAt: team.manualTrialEndsAt ? toIsoString(team.manualTrialEndsAt) : null,
     itemCount: team.itemCount ?? 0,
     transactionCount: team.transactionCount ?? 0,
     memberCount: team.memberCount ?? 0,

@@ -16,8 +16,20 @@ import {
 
 const ACTIVE_SUBSCRIPTION_STATUSES = new Set(["active", "trialing", "canceling"]);
 
-function hasActiveSubscription(team: { stripeSubscriptionStatus?: string | null }): boolean {
-  return ACTIVE_SUBSCRIPTION_STATUSES.has(team.stripeSubscriptionStatus ?? "");
+function hasActiveSubscription(team: {
+  stripeSubscriptionStatus?: string | null;
+  manualTrialEndsAt?: Date | string | null;
+}): boolean {
+  if (ACTIVE_SUBSCRIPTION_STATUSES.has(team.stripeSubscriptionStatus ?? "")) {
+    return true;
+  }
+
+  if (!team.manualTrialEndsAt) {
+    return false;
+  }
+
+  const manualTrialEndsAt = new Date(team.manualTrialEndsAt);
+  return Number.isFinite(manualTrialEndsAt.getTime()) && manualTrialEndsAt.getTime() > Date.now();
 }
 
 interface TeamDashboardOptions {

@@ -230,6 +230,42 @@ export function parseTeamUpdatePayload(body: unknown): ValidationResult<{
   return { ok: true, data: payload };
 }
 
+export function parseTeamManualTrialPayload(body: unknown): ValidationResult<{
+  durationDays: number;
+  reason: string | null;
+}> {
+  if (!isRecord(body)) {
+    return { ok: false, error: "Invalid request payload" };
+  }
+
+  const durationParsed = parseOptionalInteger(body.durationDays);
+  if (!durationParsed.ok || durationParsed.data === null) {
+    return { ok: false, error: "Duration must be an integer between 1 and 30 days" };
+  }
+
+  const durationDays = durationParsed.data ?? 14;
+  if (!Number.isInteger(durationDays) || durationDays < 1 || durationDays > 30) {
+    return { ok: false, error: "Duration must be an integer between 1 and 30 days" };
+  }
+
+  const reasonParsed = parseOptionalTrimmedString(body.reason);
+  if (!reasonParsed.ok) {
+    return { ok: false, error: "Reason must be a string" };
+  }
+
+  if (reasonParsed.data && reasonParsed.data.length > 200) {
+    return { ok: false, error: "Reason must have at most 200 characters" };
+  }
+
+  return {
+    ok: true,
+    data: {
+      durationDays,
+      reason: reasonParsed.data ?? null,
+    },
+  };
+}
+
 export function parseLocationPayload(
   body: unknown
 ): ValidationResult<{ name: string; description: string | null }> {

@@ -1,6 +1,7 @@
 import type Stripe from "stripe";
 import {
   createTeamStripeCheckoutSession,
+  grantTeamManualTrial,
   processStripeWebhook,
   syncTeamStripeSubscriptionFromProvider,
 } from "@/lib/services/billing";
@@ -11,6 +12,7 @@ jest.mock("@/lib/permissions", () => ({
 }));
 
 jest.mock("@/lib/db/teams", () => ({
+  grantTeamManualTrial: jest.fn(),
   getTeamByStripeCustomerId: jest.fn(),
   getTeamWithStats: jest.fn(),
   updateTeamStripeCustomerId: jest.fn(),
@@ -26,6 +28,7 @@ jest.mock("@/lib/stripe", () => ({
 
 import { authorizeTeamPermission } from "@/lib/permissions";
 import {
+  grantTeamManualTrial as persistTeamManualTrial,
   getTeamByStripeCustomerId,
   getTeamWithStats,
   updateTeamStripeCustomerId,
@@ -39,6 +42,7 @@ import {
 } from "@/lib/stripe";
 
 const mockedAuthorizeTeamPermission = jest.mocked(authorizeTeamPermission);
+const mockedPersistTeamManualTrial = jest.mocked(persistTeamManualTrial);
 const mockedGetTeamByStripeCustomerId = jest.mocked(getTeamByStripeCustomerId);
 const mockedGetTeamWithStats = jest.mocked(getTeamWithStats);
 const mockedUpdateTeamStripeCustomerId = jest.mocked(updateTeamStripeCustomerId);
@@ -215,5 +219,101 @@ describe("billing service", () => {
     expect(result.data.synced).toBe(true);
     expect(result.data.subscriptionStatus).toBe("active");
     expect(mockedUpdateTeamStripeSubscription).toHaveBeenCalled();
+  });
+
+  it("grants manual trial for an authorized admin", async () => {
+    mockedAuthorizeTeamPermission.mockResolvedValue({
+      ok: true,
+      team: {
+        id: 3,
+        name: "Team Trial",
+        manualTrialGrantsCount: 1,
+        manualTrialLastGrantedAt: new Date("2025-01-01T00:00:00.000Z"),
+      },
+      user: { id: 7, email: "owner@example.com" },
+      teamRole: "admin",
+    } as unknown as Awaited<ReturnType<typeof authorizeTeamPermission>>);
+
+    mockedPersistTeamManualTrial.mockResolvedValue({
+      id: 3,
+      manualTrialEndsAt: new Date("2026-04-01T00:00:00.000Z"),
+      manualTrialGrantsCount: 2,
+    } as never);
+
+    const result = await grantTeamManualTrial({
+      teamId: 3,
+      requestUserId: 7,
+      payload: { durationDays: 14, reason: "winback" },
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.manualTrialGrantsCount).toBe(2);
+    expect(result.data.manualTrialEndsAt).toBe("2026-04-01T00:00:00.000Z");
+    expect(mockedPersistTeamManualTrial).toHaveBeenCalled();
+  });
+
+  it("fails manual trial when payload validation fails", async () => {
+    mockedAuthorizeTeamPermission.mockResolvedValue({
+      ok: true,
+      team: { id: 3, manualTrialGrantsCount: 0, manualTrialLastGrantedAt: null },
+      user: { id: 7, email: "owner@example.com" },
+      teamRole: "admin",
+    } as unknown as Awaited<ReturnType<typeof authorizeTeamPermission>>);
+
+    const result = await grantTeamManualTrial({
+      teamId: 3,
+      requestUserId: 7,
+      payload: { durationDays: 0 },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.status).toBe(400);
+    expect(result.error.errorCode).toBe(ERROR_CODES.VALIDATION_ERROR);
+  });
+
+  it("fails manual trial when requester has no permission", async () => {
+    mockedAuthorizeTeamPermission.mockResolvedValue({
+      ok: false,
+      status: 403,
+      error: "Insufficient permissions",
+    });
+
+    const result = await grantTeamManualTrial({
+      teamId: 3,
+      requestUserId: 8,
+      payload: { durationDays: 14 },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.status).toBe(403);
+    expect(result.error.errorCode).toBe(ERROR_CODES.INSUFFICIENT_PERMISSIONS);
+  });
+
+  it("handles unexpected manual trial persistence error", async () => {
+    mockedAuthorizeTeamPermission.mockResolvedValue({
+      ok: true,
+      team: {
+        id: 3,
+        manualTrialGrantsCount: 0,
+        manualTrialLastGrantedAt: new Date("2025-01-01T00:00:00.000Z"),
+      },
+      user: { id: 7, email: "owner@example.com" },
+      teamRole: "admin",
+    } as unknown as Awaited<ReturnType<typeof authorizeTeamPermission>>);
+    mockedPersistTeamManualTrial.mockRejectedValue(new Error("db failed"));
+
+    const result = await grantTeamManualTrial({
+      teamId: 3,
+      requestUserId: 7,
+      payload: { durationDays: 14 },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.status).toBe(500);
+    expect(result.error.errorCode).toBe(ERROR_CODES.INTERNAL_ERROR);
   });
 });

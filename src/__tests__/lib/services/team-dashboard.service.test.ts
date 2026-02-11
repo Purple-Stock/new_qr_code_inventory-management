@@ -151,4 +151,45 @@ describe("team-dashboard service", () => {
     expect(result.locations).toHaveLength(1);
     expect(result.locations[0].name).toBe("Main");
   });
+
+  it("treats manual trial as active access when Stripe is inactive", async () => {
+    mockGetTeamWithStats.mockResolvedValue({
+      id: 1,
+      name: "Team",
+      notes: null,
+      userId: 7,
+      companyId: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      stripeSubscriptionStatus: null,
+      stripePriceId: null,
+      stripeCurrentPeriodEnd: null,
+      manualTrialEndsAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+      manualTrialGrantsCount: 1,
+      manualTrialLastGrantedAt: new Date(),
+      itemCount: 0,
+      transactionCount: 0,
+      memberCount: 1,
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    } as never);
+    mockGetTeamReportStats.mockResolvedValue({
+      totalItems: 0,
+      totalLocations: 0,
+      totalTransactions: 0,
+      totalStockValue: 0,
+      lowStockItems: 0,
+      outOfStockItems: 0,
+      transactionsByType: { stock_in: 0, stock_out: 0, adjust: 0, move: 0 },
+      recentTransactions: [],
+      topItemsByValue: [],
+      stockByLocation: [],
+      transactionsByDate: [],
+    });
+
+    const result = await getTeamReportsData(1);
+
+    expect(result.subscriptionRequired).toBe(false);
+    expect(result.team?.id).toBe(1);
+  });
 });
