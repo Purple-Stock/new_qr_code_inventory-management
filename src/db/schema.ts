@@ -75,6 +75,9 @@ export const teams = sqliteTable(
     stripeSubscriptionStatus: text("stripe_subscription_status"),
     stripePriceId: text("stripe_price_id"),
     stripeCurrentPeriodEnd: integer("stripe_current_period_end", { mode: "timestamp" }),
+    manualTrialEndsAt: integer("manual_trial_ends_at", { mode: "timestamp" }),
+    manualTrialGrantsCount: integer("manual_trial_grants_count").notNull().default(0),
+    manualTrialLastGrantedAt: integer("manual_trial_last_granted_at", { mode: "timestamp" }),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .$defaultFn(() => new Date()),

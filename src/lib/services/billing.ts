@@ -1,11 +1,13 @@
 import type Stripe from "stripe";
 import { ERROR_CODES } from "@/lib/errors";
 import {
+  grantTeamManualTrial as persistTeamManualTrial,
   getTeamByStripeCustomerId,
   getTeamWithStats,
   updateTeamStripeCustomerId,
   updateTeamStripeSubscription,
 } from "@/lib/db/teams";
+import { parseTeamManualTrialPayload } from "@/lib/contracts/schemas";
 import { authorizeTeamPermission } from "@/lib/permissions";
 import type { ServiceResult } from "@/lib/services/types";
 import {
@@ -20,6 +22,11 @@ import {
   getStripeWebhookSecret,
   isStripeConfigured,
 } from "@/lib/stripe";
+
+const MANUAL_TRIAL_DEFAULT_DAYS = 14;
+const MANUAL_TRIAL_MAX_GRANTS = 3;
+const MANUAL_TRIAL_COOLDOWN_DAYS = 90;
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 function getAppBaseUrl(origin: string | null): string {
   return process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || origin || "http://localhost:3000";
@@ -120,6 +127,101 @@ async function syncSubscriptionInTeam(params: {
     stripePriceId: getPriceIdFromSubscription(params.subscription),
     stripeCurrentPeriodEnd: getCurrentPeriodEndFromSubscription(params.subscription),
   });
+}
+
+function toDate(value: Date | string | null | undefined): Date | null {
+  if (!value) return null;
+  return value instanceof Date ? value : new Date(value);
+}
+
+export async function grantTeamManualTrial(params: {
+  teamId: number;
+  requestUserId: number | null;
+  payload: unknown;
+}): Promise<ServiceResult<{ manualTrialEndsAt: string; manualTrialGrantsCount: number }>> {
+  const auth = await authorizeTeamPermission({
+    permission: "team:update",
+    teamId: params.teamId,
+    requestUserId: params.requestUserId,
+  });
+  if (!auth.ok) {
+    return { ok: false, error: authServiceError(auth) };
+  }
+
+  const team = auth.team;
+  if (!team) {
+    return {
+      ok: false,
+      error: internalServiceError("An error occurred while resolving team billing context"),
+    };
+  }
+
+  const parsed = parseTeamManualTrialPayload(params.payload);
+  if (!parsed.ok) {
+    return { ok: false, error: validationServiceError(parsed.error) };
+  }
+
+  const now = new Date();
+  const lastGrantedAt = toDate(team.manualTrialLastGrantedAt);
+  const manualTrialGrantsCount = team.manualTrialGrantsCount ?? 0;
+
+  if (manualTrialGrantsCount >= MANUAL_TRIAL_MAX_GRANTS) {
+    return {
+      ok: false,
+      error: makeServiceError(
+        409,
+        ERROR_CODES.VALIDATION_ERROR,
+        "Manual trial grant limit reached for this team"
+      ),
+    };
+  }
+
+  if (lastGrantedAt) {
+    const nextAllowedAt = new Date(lastGrantedAt.getTime() + MANUAL_TRIAL_COOLDOWN_DAYS * DAY_IN_MS);
+    if (now < nextAllowedAt) {
+      return {
+        ok: false,
+        error: makeServiceError(
+          409,
+          ERROR_CODES.VALIDATION_ERROR,
+          "Manual trial cooldown is still active for this team"
+        ),
+      };
+    }
+  }
+
+  try {
+    const durationDays = parsed.data.durationDays || MANUAL_TRIAL_DEFAULT_DAYS;
+    const manualTrialEndsAt = new Date(now.getTime() + durationDays * DAY_IN_MS);
+
+    const updatedTeam = await persistTeamManualTrial(team.id, {
+      manualTrialEndsAt,
+      manualTrialGrantsCount: manualTrialGrantsCount + 1,
+      manualTrialLastGrantedAt: now,
+    });
+
+    const persistedEndsAt = toDate(updatedTeam.manualTrialEndsAt);
+    if (!persistedEndsAt) {
+      return {
+        ok: false,
+        error: internalServiceError("Failed to persist manual trial end date"),
+      };
+    }
+
+    return {
+      ok: true,
+      data: {
+        manualTrialEndsAt: persistedEndsAt.toISOString(),
+        manualTrialGrantsCount: updatedTeam.manualTrialGrantsCount,
+      },
+    };
+  } catch (error) {
+    console.error("Error granting team manual trial:", error);
+    return {
+      ok: false,
+      error: internalServiceError("Failed to grant manual trial"),
+    };
+  }
 }
 
 export async function createTeamStripeCheckoutSession(params: {

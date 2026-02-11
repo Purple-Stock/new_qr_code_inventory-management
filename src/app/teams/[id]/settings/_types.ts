@@ -7,7 +7,12 @@ import type {
 
 export type Team = Pick<
   TeamDto,
-  "id" | "name" | "notes" | "stripeSubscriptionStatus" | "stripeCurrentPeriodEnd"
+  | "id"
+  | "name"
+  | "notes"
+  | "stripeSubscriptionStatus"
+  | "stripeCurrentPeriodEnd"
+  | "manualTrialEndsAt"
 >;
 
 export type ManagedUser = ManagedUserDto;

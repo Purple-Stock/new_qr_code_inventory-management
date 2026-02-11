@@ -75,7 +75,7 @@ export default function SettingsPageClient({
   const [editUserEmail, setEditUserEmail] = useState("");
   const [editUserPassword, setEditUserPassword] = useState("");
   const [showEditUserPassword, setShowEditUserPassword] = useState(false);
-  const { t } = useTranslation();
+  const { language, t } = useTranslation();
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const billingRequired = searchParams.get("billing") === "required";
@@ -85,12 +85,33 @@ export default function SettingsPageClient({
   const [billingPeriodEnd, setBillingPeriodEnd] = useState<string | null>(
     initialTeam.stripeCurrentPeriodEnd ?? null
   );
+  const [manualTrialEndsAt, setManualTrialEndsAt] = useState<string | null>(
+    initialTeam.manualTrialEndsAt ?? null
+  );
   const hasStripeSubscription = Boolean(billingStatus);
   const hasActiveStripeSubscription = ["active", "trialing", "past_due", "canceling"].includes(
     billingStatus ?? ""
   );
+  const hasActiveManualTrial = Boolean(
+    manualTrialEndsAt && new Date(manualTrialEndsAt).getTime() > Date.now()
+  );
   const formattedPeriodEnd = billingPeriodEnd
     ? new Date(billingPeriodEnd).toLocaleDateString()
+    : null;
+  const formattedManualTrialEnd = manualTrialEndsAt
+    ? (() => {
+        const parsed = new Date(manualTrialEndsAt);
+        if (Number.isNaN(parsed.getTime())) {
+          return null;
+        }
+        if (language === "pt-BR") {
+          const day = String(parsed.getDate()).padStart(2, "0");
+          const month = String(parsed.getMonth() + 1).padStart(2, "0");
+          const year = parsed.getFullYear();
+          return `${day}-${month}-${year}`;
+        }
+        return parsed.toLocaleDateString();
+      })()
     : null;
   const tourSteps: TourStep[] = [
     { target: "tour-settings-tutorial", title: t.settings.tourTutorialTitle, description: t.settings.tourTutorialDesc },
@@ -124,12 +145,16 @@ export default function SettingsPageClient({
         setBillingStatus(syncResult.data.subscriptionStatus ?? null);
 
         const teamResult = await fetchApiResult<{
-          team: { stripeCurrentPeriodEnd?: string | null };
+          team: {
+            stripeCurrentPeriodEnd?: string | null;
+            manualTrialEndsAt?: string | null;
+          };
         }>(`/api/teams/${teamId}`, {
           fallbackError: "Could not refresh team data",
         });
         if (teamResult.ok) {
           setBillingPeriodEnd(teamResult.data.team.stripeCurrentPeriodEnd ?? null);
+          setManualTrialEndsAt(teamResult.data.team.manualTrialEndsAt ?? null);
         }
       } catch (error) {
         console.error("Error syncing billing status:", error);
@@ -652,9 +677,16 @@ export default function SettingsPageClient({
                   <p className="text-sm text-gray-700 mb-4">
                     Status atual:{" "}
                     <span className="font-semibold">
-                      {getBillingStatusLabel(hasStripeSubscription ? billingStatus : null)}
+                      {hasStripeSubscription
+                        ? getBillingStatusLabel(billingStatus)
+                        : hasActiveManualTrial
+                          ? "trial manual ativo"
+                          : "sem assinatura"}
                     </span>
                     {formattedPeriodEnd ? ` • próximo ciclo em ${formattedPeriodEnd}` : ""}
+                    {!hasStripeSubscription && hasActiveManualTrial && formattedManualTrialEnd
+                      ? ` • trial até ${formattedManualTrialEnd}`
+                      : ""}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {!hasActiveStripeSubscription ? (

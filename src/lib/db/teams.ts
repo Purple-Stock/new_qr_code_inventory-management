@@ -272,6 +272,32 @@ export async function updateTeamStripeSubscription(
   return updatedTeam;
 }
 
+export async function grantTeamManualTrial(
+  teamId: number,
+  data: {
+    manualTrialEndsAt: Date;
+    manualTrialGrantsCount: number;
+    manualTrialLastGrantedAt: Date;
+  }
+): Promise<Team> {
+  const [updatedTeam] = await sqlite
+    .update(teams)
+    .set({
+      manualTrialEndsAt: data.manualTrialEndsAt,
+      manualTrialGrantsCount: data.manualTrialGrantsCount,
+      manualTrialLastGrantedAt: data.manualTrialLastGrantedAt,
+      updatedAt: new Date(),
+    })
+    .where(eq(teams.id, teamId))
+    .returning();
+
+  if (!updatedTeam) {
+    throw new Error("Team not found");
+  }
+
+  return updatedTeam;
+}
+
 /**
  * Delete a team and all related data
  */

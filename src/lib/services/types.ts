@@ -41,6 +41,7 @@ export type TeamDto = {
   stripeSubscriptionStatus: string | null;
   stripePriceId: string | null;
   stripeCurrentPeriodEnd: string | null;
+  manualTrialEndsAt: string | null;
   itemCount: number;
   transactionCount: number;
   memberCount: number;
