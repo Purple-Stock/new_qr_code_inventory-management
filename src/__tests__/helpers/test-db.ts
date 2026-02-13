@@ -1,45 +1,32 @@
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import { createClient, type Client } from "@libsql/client";
+import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "@/db/schema";
-import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const testHelpersDir = path.dirname(__filename);
+const testDbPath = path.resolve(testHelpersDir, "../../db.test.sqlite");
 
-let testDb: Database.Database | null = null;
+let testDb: Client | null = null;
 let testDrizzle: ReturnType<typeof drizzle> | null = null;
 
 /**
- * Get or create a test database (in-memory SQLite)
+ * Get or create a test database (libSQL file DB prepared in Jest global setup)
  */
 export function getTestDb(): {
-  db: Database.Database;
+  db: Client;
   drizzle: ReturnType<typeof drizzle>;
 } {
   if (testDb && testDrizzle) {
     return { db: testDb, drizzle: testDrizzle };
   }
 
-  // Use in-memory database for tests
-  testDb = new Database(":memory:");
-  testDb.pragma("foreign_keys = ON");
+  const databaseUrl = process.env.DATABASE_URL?.trim() || `file:${testDbPath}`;
+  testDb = createClient({ url: databaseUrl });
 
   // @ts-ignore - Drizzle types may have issues with schema parameter
   testDrizzle = drizzle(testDb, { schema });
-
-  // Run migrations
-  const migrationsDir = path.resolve(testHelpersDir, "../../db/migrations");
-  const migrationFiles = fs
-    .readdirSync(migrationsDir)
-    .filter((file) => file.endsWith(".sql") && !file.endsWith(".down.sql"))
-    .sort();
-
-  for (const file of migrationFiles) {
-    const sql = fs.readFileSync(path.join(migrationsDir, file), "utf8");
-    testDb.exec(sql);
-  }
 
   return { db: testDb, drizzle: testDrizzle };
 }
@@ -61,15 +48,20 @@ export function cleanupTestDb() {
 export async function clearTestDb() {
   if (!testDb) return;
 
-  // Delete all data from tables (in reverse order of dependencies)
-  testDb.exec("DELETE FROM webhooks");
-  testDb.exec("DELETE FROM api_keys");
-  testDb.exec("DELETE FROM stock_transactions");
-  testDb.exec("DELETE FROM items");
-  testDb.exec("DELETE FROM locations");
-  testDb.exec("DELETE FROM team_members");
-  testDb.exec("DELETE FROM company_members");
-  testDb.exec("DELETE FROM teams");
-  testDb.exec("DELETE FROM companies");
-  testDb.exec("DELETE FROM users");
+  await testDb.batch(
+    [
+      { sql: "PRAGMA foreign_keys = ON" },
+      { sql: "DELETE FROM webhooks" },
+      { sql: "DELETE FROM api_keys" },
+      { sql: "DELETE FROM stock_transactions" },
+      { sql: "DELETE FROM items" },
+      { sql: "DELETE FROM locations" },
+      { sql: "DELETE FROM team_members" },
+      { sql: "DELETE FROM company_members" },
+      { sql: "DELETE FROM teams" },
+      { sql: "DELETE FROM companies" },
+      { sql: "DELETE FROM users" },
+    ],
+    "write"
+  );
 }
