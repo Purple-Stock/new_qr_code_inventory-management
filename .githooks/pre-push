@@ -1,7 +1,7 @@
 #!/bin/sh
 
-echo "Running full pre-push checks (architecture + tests + build)..."
+echo "Running required pre-push checks (architecture + build)..."
 
-npm run prepush:full || exit 1
+npm run prepush:required || exit 1
 
 echo "Pre-push checks passed."

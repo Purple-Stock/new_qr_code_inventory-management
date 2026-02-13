@@ -105,6 +105,7 @@ TURSO_AUTH_TOKEN=<seu_token_turso>
 - `npm run db:rollback -- --steps=1`: faz rollback das últimas migrações aplicadas (requer arquivos `*.down.sql` correspondentes).
 - `npm run db:new -- <nome>`: cria par de migration `up/down` com próximo prefixo numérico.
 - `npm run verify:architecture`: checks arquiteturais + política de testes + lint de arquitetura + testes de arquitetura.
+- `npm run prepush:required`: validação obrigatória pré-push (`verify:architecture` + `build`).
 - `npm run prepush:full`: validação completa pré-push (`verify:architecture` + `test --runInBand` + `build`).
 - `npm run hooks:install`: ativa `.githooks/pre-push`.
 - `npm run hooks:uninstall`: remove hook local.
@@ -191,7 +192,8 @@ Observação: existe script `db:seed` no `package.json`, mas o arquivo `src/db/s
 
 ## Qualidade e CI
 
-- Hook de pre-push executa `npm run prepush:full`.
+- Hook de pre-push executa `npm run prepush:required`.
+- Quando o ambiente local estiver alinhado para testes nativos, rode também `npm run prepush:full` antes do push.
 - GitHub Actions:
   - job `architecture`: `npm ci` + `npm run verify:architecture`.
   - job `validate`: `npm ci` + `npm test -- --runInBand` + `npm run build`.
