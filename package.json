@@ -13,6 +13,7 @@
     "lint:architecture": "eslint src/lib/services src/app/api --max-warnings=0",
     "test:architecture": "jest src/__tests__/scripts/check-architecture.test.ts --runInBand",
     "verify:architecture": "npm run check:architecture && npm run check:test-policy && npm run lint:architecture && npm run test:architecture",
+    "prepush:full": "npm run verify:architecture && npm test -- --runInBand && npm run build",
     "hooks:install": "git config core.hooksPath .githooks",
     "hooks:uninstall": "git config --unset core.hooksPath",
     "build": "next build --webpack",
