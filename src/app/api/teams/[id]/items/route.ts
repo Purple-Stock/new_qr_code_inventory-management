@@ -1,14 +1,15 @@
 import { NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createTeamItem, listTeamItemsForUser } from "@/lib/services/items";
-import { getUserIdFromRequest } from "@/lib/permissions";
+import { authorizeTeamAccess, getUserIdFromRequest } from "@/lib/permissions";
 import { ERROR_CODES } from "@/lib/errors";
 import { errorResponse,
   serviceErrorResponse,
   successResponse,
 } from "@/lib/api-route";
 import { parseRouteParamId } from "@/lib/api-route";
-import { internalServiceError } from "@/lib/services/errors";
+import { authServiceError, internalServiceError, makeServiceError } from "@/lib/services/errors";
+import { hasActiveTeamSubscription } from "@/lib/services/subscription-access";
 
 // GET - List items for a team
 export async function GET(
@@ -23,9 +24,22 @@ export async function GET(
       return errorResponse("Invalid team ID", 400, ERROR_CODES.VALIDATION_ERROR);
     }
 
-    const result = await listTeamItemsForUser({
+    const access = await authorizeTeamAccess({
       teamId,
       requestUserId: getUserIdFromRequest(request),
+    });
+    if (!access.ok) {
+      return serviceErrorResponse(authServiceError(access));
+    }
+    if (!hasActiveTeamSubscription(access.team)) {
+      return serviceErrorResponse(
+        makeServiceError(403, ERROR_CODES.FORBIDDEN, "Active subscription required")
+      );
+    }
+
+    const result = await listTeamItemsForUser({
+      teamId,
+      requestUserId: access.user.id,
     });
     if (!result.ok) {
       return serviceErrorResponse(result.error);
@@ -51,10 +65,23 @@ export async function POST(
       return errorResponse("Invalid team ID", 400, ERROR_CODES.VALIDATION_ERROR);
     }
 
+    const access = await authorizeTeamAccess({
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!access.ok) {
+      return serviceErrorResponse(authServiceError(access));
+    }
+    if (!hasActiveTeamSubscription(access.team)) {
+      return serviceErrorResponse(
+        makeServiceError(403, ERROR_CODES.FORBIDDEN, "Active subscription required")
+      );
+    }
+
     const body = await request.json();
     const result = await createTeamItem({
       teamId,
-      requestUserId: getUserIdFromRequest(request),
+      requestUserId: access.user.id,
       payload: body,
     });
     if (!result.ok) {
