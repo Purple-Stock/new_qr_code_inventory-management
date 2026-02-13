@@ -8,6 +8,7 @@ import { errorResponse,
 import { parseRouteParamId } from "@/lib/api-route";
 import { internalServiceError } from "@/lib/services/errors";
 import { getTeamReportStatsForUser } from "@/lib/services/reports";
+import { ensureTeamHasActiveSubscription } from "@/lib/api-team-subscription";
 
 // GET - Get report statistics for a team
 export async function GET(
@@ -22,6 +23,14 @@ export async function GET(
       return errorResponse("Invalid team ID", 400, ERROR_CODES.VALIDATION_ERROR);
     }
 
+    const access = await ensureTeamHasActiveSubscription({
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!access.ok) {
+      return access.response;
+    }
+
     // Get query parameters for date filtering
     const searchParams = request.nextUrl.searchParams;
     const startDateStr = searchParams.get("startDate");
@@ -32,7 +41,7 @@ export async function GET(
 
     const result = await getTeamReportStatsForUser({
       teamId,
-      requestUserId: getUserIdFromRequest(request),
+      requestUserId: access.requestUserId,
       startDate,
       endDate,
     });

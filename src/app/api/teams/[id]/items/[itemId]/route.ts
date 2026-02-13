@@ -14,6 +14,7 @@ import {
   getTeamItemDetails,
   updateTeamItem,
 } from "@/lib/services/items";
+import { ensureTeamHasActiveSubscription } from "@/lib/api-team-subscription";
 
 interface RouteParams {
   params: Promise<{ id: string; itemId: string }>;
@@ -36,10 +37,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    const access = await ensureTeamHasActiveSubscription({
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!access.ok) {
+      return access.response;
+    }
+
     const result = await getTeamItemDetails({
       teamId,
       itemId,
-      requestUserId: getUserIdFromRequest(request),
+      requestUserId: access.requestUserId,
     });
     if (!result.ok) {
       return serviceErrorResponse(result.error);
@@ -69,11 +78,19 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    const access = await ensureTeamHasActiveSubscription({
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!access.ok) {
+      return access.response;
+    }
+
     const body = await request.json();
     const result = await updateTeamItem({
       teamId,
       itemId,
-      requestUserId: getUserIdFromRequest(request),
+      requestUserId: access.requestUserId,
       payload: body,
     });
     if (!result.ok) {
@@ -106,10 +123,18 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    const access = await ensureTeamHasActiveSubscription({
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!access.ok) {
+      return access.response;
+    }
+
     const result = await deleteTeamItemById({
       teamId,
       itemId,
-      requestUserId: getUserIdFromRequest(request),
+      requestUserId: access.requestUserId,
     });
     if (!result.ok) {
       return serviceErrorResponse(result.error);
