@@ -16,6 +16,15 @@ export async function ensureTeamHasActiveSubscription(params: {
     return { ok: false, response: serviceErrorResponse(authServiceError(access)) };
   }
 
+  if (!access.team || !access.user) {
+    return {
+      ok: false,
+      response: serviceErrorResponse(
+        makeServiceError(500, ERROR_CODES.INTERNAL_ERROR, "Failed to resolve team access context")
+      ),
+    };
+  }
+
   if (!hasActiveTeamSubscription(access.team)) {
     return {
       ok: false,
