@@ -13,21 +13,33 @@ jest.mock("@/lib/services/items", () => ({
 
 jest.mock("@/lib/permissions", () => ({
   getUserIdFromRequest: jest.fn(),
+  authorizeTeamAccess: jest.fn(),
 }));
 
 import { revalidatePath } from "next/cache";
 import { createTeamItem, listTeamItemsForUser } from "@/lib/services/items";
-import { getUserIdFromRequest } from "@/lib/permissions";
+import { authorizeTeamAccess, getUserIdFromRequest } from "@/lib/permissions";
 
 const mockedRevalidatePath = jest.mocked(revalidatePath);
 const mockedCreateTeamItem = jest.mocked(createTeamItem);
 const mockedListTeamItemsForUser = jest.mocked(listTeamItemsForUser);
 const mockedGetUserIdFromRequest = jest.mocked(getUserIdFromRequest);
+const mockedAuthorizeTeamAccess = jest.mocked(authorizeTeamAccess);
 
 describe("/api/teams/[id]/items route", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedGetUserIdFromRequest.mockReturnValue(5);
+    mockedAuthorizeTeamAccess.mockResolvedValue({
+      ok: true,
+      team: {
+        id: 12,
+        stripeSubscriptionStatus: "active",
+        manualTrialEndsAt: null,
+      } as never,
+      user: { id: 5 } as never,
+      teamRole: "admin",
+    });
   });
 
   describe("GET", () => {
@@ -85,6 +97,30 @@ describe("/api/teams/[id]/items route", () => {
         errorCode: ERROR_CODES.FORBIDDEN,
         error: "Forbidden",
       });
+    });
+
+    it("returns 403 when subscription is inactive", async () => {
+      mockedAuthorizeTeamAccess.mockResolvedValue({
+        ok: true,
+        team: {
+          id: 12,
+          stripeSubscriptionStatus: null,
+          manualTrialEndsAt: null,
+        } as never,
+        user: { id: 5 } as never,
+        teamRole: "admin",
+      });
+
+      const response = await GET(new NextRequest("http://localhost:3000/api/teams/12/items"), {
+        params: Promise.resolve({ id: "12" }),
+      });
+
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({
+        errorCode: ERROR_CODES.FORBIDDEN,
+        error: "Active subscription required",
+      });
+      expect(mockedListTeamItemsForUser).not.toHaveBeenCalled();
     });
   });
 
@@ -154,6 +190,37 @@ describe("/api/teams/[id]/items route", () => {
       expect(await response.json()).toEqual({
         errorCode: ERROR_CODES.INTERNAL_ERROR,
         error: "An error occurred while creating the item",
+      });
+      expect(mockedCreateTeamItem).not.toHaveBeenCalled();
+      expect(mockedRevalidatePath).not.toHaveBeenCalled();
+    });
+
+    it("returns 403 when subscription is inactive", async () => {
+      mockedAuthorizeTeamAccess.mockResolvedValue({
+        ok: true,
+        team: {
+          id: 12,
+          stripeSubscriptionStatus: null,
+          manualTrialEndsAt: null,
+        } as never,
+        user: { id: 5 } as never,
+        teamRole: "admin",
+      });
+
+      const request = new NextRequest("http://localhost:3000/api/teams/12/items", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: "Keyboard" }),
+      });
+
+      const response = await POST(request, {
+        params: Promise.resolve({ id: "12" }),
+      });
+
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({
+        errorCode: ERROR_CODES.FORBIDDEN,
+        error: "Active subscription required",
       });
       expect(mockedCreateTeamItem).not.toHaveBeenCalled();
       expect(mockedRevalidatePath).not.toHaveBeenCalled();

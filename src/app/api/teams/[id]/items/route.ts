@@ -9,6 +9,7 @@ import { errorResponse,
 } from "@/lib/api-route";
 import { parseRouteParamId } from "@/lib/api-route";
 import { internalServiceError } from "@/lib/services/errors";
+import { ensureTeamHasActiveSubscription } from "@/lib/api-team-subscription";
 
 // GET - List items for a team
 export async function GET(
@@ -23,9 +24,17 @@ export async function GET(
       return errorResponse("Invalid team ID", 400, ERROR_CODES.VALIDATION_ERROR);
     }
 
-    const result = await listTeamItemsForUser({
+    const access = await ensureTeamHasActiveSubscription({
       teamId,
       requestUserId: getUserIdFromRequest(request),
+    });
+    if (!access.ok) {
+      return access.response;
+    }
+
+    const result = await listTeamItemsForUser({
+      teamId,
+      requestUserId: access.requestUserId,
     });
     if (!result.ok) {
       return serviceErrorResponse(result.error);
@@ -51,10 +60,18 @@ export async function POST(
       return errorResponse("Invalid team ID", 400, ERROR_CODES.VALIDATION_ERROR);
     }
 
+    const access = await ensureTeamHasActiveSubscription({
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!access.ok) {
+      return access.response;
+    }
+
     const body = await request.json();
     const result = await createTeamItem({
       teamId,
-      requestUserId: getUserIdFromRequest(request),
+      requestUserId: access.requestUserId,
       payload: body,
     });
     if (!result.ok) {

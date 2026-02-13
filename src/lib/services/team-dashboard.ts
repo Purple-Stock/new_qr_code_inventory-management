@@ -13,24 +13,7 @@ import {
   toTeamDto,
   toTransactionDto,
 } from "@/lib/services/mappers";
-
-const ACTIVE_SUBSCRIPTION_STATUSES = new Set(["active", "trialing", "canceling"]);
-
-function hasActiveSubscription(team: {
-  stripeSubscriptionStatus?: string | null;
-  manualTrialEndsAt?: Date | string | null;
-}): boolean {
-  if (ACTIVE_SUBSCRIPTION_STATUSES.has(team.stripeSubscriptionStatus ?? "")) {
-    return true;
-  }
-
-  if (!team.manualTrialEndsAt) {
-    return false;
-  }
-
-  const manualTrialEndsAt = new Date(team.manualTrialEndsAt);
-  return Number.isFinite(manualTrialEndsAt.getTime()) && manualTrialEndsAt.getTime() > Date.now();
-}
+import { hasActiveTeamSubscription } from "@/lib/services/subscription-access";
 
 interface TeamDashboardOptions {
   allowInactiveSubscription?: boolean;
@@ -50,7 +33,7 @@ export async function getTeamReportsData(
   if (!team) {
     return { team: null, stats: toReportStatsDto(stats), subscriptionRequired: false };
   }
-  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+  if (!options.allowInactiveSubscription && !hasActiveTeamSubscription(team)) {
     return { team: null, stats: toReportStatsDto(stats), subscriptionRequired: true };
   }
 
@@ -75,7 +58,7 @@ export async function getTeamStockByLocationData(
       subscriptionRequired: false,
     };
   }
-  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+  if (!options.allowInactiveSubscription && !hasActiveTeamSubscription(team)) {
     return {
       team: null,
       locations: [],
@@ -101,7 +84,7 @@ export async function getTeamLabelsData(teamId: number, options: TeamDashboardOp
   if (!team) {
     return { team: null, items: items.map((item) => toItemDto(item)), subscriptionRequired: false };
   }
-  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+  if (!options.allowInactiveSubscription && !hasActiveTeamSubscription(team)) {
     return { team: null, items: [], subscriptionRequired: true };
   }
 
@@ -122,7 +105,7 @@ export async function getItemDetailsData(
   if (!team) {
     return { team: null, item: null, transactions: [], subscriptionRequired: false };
   }
-  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+  if (!options.allowInactiveSubscription && !hasActiveTeamSubscription(team)) {
     return { team: null, item: null, transactions: [], subscriptionRequired: true };
   }
 
@@ -147,7 +130,7 @@ export async function getTeamItemsData(teamId: number, options: TeamDashboardOpt
       subscriptionRequired: false,
     };
   }
-  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+  if (!options.allowInactiveSubscription && !hasActiveTeamSubscription(team)) {
     return {
       team: null,
       items: [],
@@ -170,7 +153,7 @@ export async function getTeamLocationsData(teamId: number, options: TeamDashboar
       subscriptionRequired: false,
     };
   }
-  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+  if (!options.allowInactiveSubscription && !hasActiveTeamSubscription(team)) {
     return {
       team: null,
       locations: [],
@@ -200,7 +183,7 @@ export async function getTeamTransactionsData(
       subscriptionRequired: false,
     };
   }
-  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+  if (!options.allowInactiveSubscription && !hasActiveTeamSubscription(team)) {
     return {
       team: null,
       transactions: [],
@@ -232,7 +215,7 @@ export async function getTeamStockOperationData(
       subscriptionRequired: false,
     };
   }
-  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+  if (!options.allowInactiveSubscription && !hasActiveTeamSubscription(team)) {
     return {
       team: null,
       locations: [],
@@ -254,7 +237,7 @@ export async function getTeamBasicData(teamId: number, options: TeamDashboardOpt
   if (!team) {
     return { team: null, subscriptionRequired: false };
   }
-  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+  if (!options.allowInactiveSubscription && !hasActiveTeamSubscription(team)) {
     return { team: null, subscriptionRequired: true };
   }
   return { team: toTeamDto(team), subscriptionRequired: false };
@@ -269,7 +252,7 @@ export async function getTeamItemEditData(
   if (!team) {
     return { team: null, item: null, subscriptionRequired: false };
   }
-  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+  if (!options.allowInactiveSubscription && !hasActiveTeamSubscription(team)) {
     return { team: null, item: null, subscriptionRequired: true };
   }
   if (!team || !item || item.teamId !== teamId) {
@@ -287,7 +270,7 @@ export async function getTeamLocationEditData(
   if (!team) {
     return { team: null, location: null, subscriptionRequired: false };
   }
-  if (!options.allowInactiveSubscription && !hasActiveSubscription(team)) {
+  if (!options.allowInactiveSubscription && !hasActiveTeamSubscription(team)) {
     return { team: null, location: null, subscriptionRequired: true };
   }
   if (!team || !location || location.teamId !== teamId) {

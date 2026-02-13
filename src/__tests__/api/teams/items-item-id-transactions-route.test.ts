@@ -8,18 +8,30 @@ jest.mock("@/lib/services/transactions", () => ({
 
 jest.mock("@/lib/permissions", () => ({
   getUserIdFromRequest: jest.fn(),
+  authorizeTeamAccess: jest.fn(),
 }));
 
 import { listItemTransactionsForUser } from "@/lib/services/transactions";
-import { getUserIdFromRequest } from "@/lib/permissions";
+import { authorizeTeamAccess, getUserIdFromRequest } from "@/lib/permissions";
 
 const mockedListItemTransactionsForUser = jest.mocked(listItemTransactionsForUser);
 const mockedGetUserIdFromRequest = jest.mocked(getUserIdFromRequest);
+const mockedAuthorizeTeamAccess = jest.mocked(authorizeTeamAccess);
 
 describe("/api/teams/[id]/items/[itemId]/transactions route", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedGetUserIdFromRequest.mockReturnValue(31);
+    mockedAuthorizeTeamAccess.mockResolvedValue({
+      ok: true,
+      team: {
+        id: 12,
+        stripeSubscriptionStatus: "active",
+        manualTrialEndsAt: null,
+      } as never,
+      user: { id: 31 } as never,
+      teamRole: "admin",
+    });
   });
 
   it("returns 400 for invalid route ids", async () => {

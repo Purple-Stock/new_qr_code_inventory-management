@@ -10,6 +10,7 @@ import {
 import { internalServiceError } from "@/lib/services/errors";
 import { deleteTeamTransaction } from "@/lib/services/stock-transactions";
 import { ERROR_CODES } from "@/lib/errors";
+import { ensureTeamHasActiveSubscription } from "@/lib/api-team-subscription";
 
 export async function DELETE(
   request: NextRequest,
@@ -30,9 +31,17 @@ export async function DELETE(
       );
     }
 
-    const result = await deleteTeamTransaction({
+    const access = await ensureTeamHasActiveSubscription({
       teamId,
       requestUserId: getUserIdFromRequest(request),
+    });
+    if (!access.ok) {
+      return access.response;
+    }
+
+    const result = await deleteTeamTransaction({
+      teamId,
+      requestUserId: access.requestUserId,
       transactionId,
     });
     if (!result.ok) {

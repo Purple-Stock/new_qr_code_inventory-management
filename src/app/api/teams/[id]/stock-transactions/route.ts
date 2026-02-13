@@ -7,6 +7,7 @@ import { errorResponse,
 import { parseRouteParamId } from "@/lib/api-route";
 import { internalServiceError } from "@/lib/services/errors";
 import { createTeamStockTransaction } from "@/lib/services/stock-transactions";
+import { ensureTeamHasActiveSubscription } from "@/lib/api-team-subscription";
 
 export async function POST(
   request: NextRequest,
@@ -20,10 +21,18 @@ export async function POST(
       return errorResponse("Invalid team ID", 400, ERROR_CODES.VALIDATION_ERROR);
     }
 
+    const access = await ensureTeamHasActiveSubscription({
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!access.ok) {
+      return access.response;
+    }
+
     const body = await request.json();
     const result = await createTeamStockTransaction({
       teamId,
-      requestUserId: getUserIdFromRequest(request),
+      requestUserId: access.requestUserId,
       payload: body,
     });
     if (!result.ok) {

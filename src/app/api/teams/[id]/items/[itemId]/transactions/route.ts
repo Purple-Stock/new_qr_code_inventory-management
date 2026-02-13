@@ -9,6 +9,7 @@ import {
 } from "@/lib/api-route";
 import { internalServiceError } from "@/lib/services/errors";
 import { listItemTransactionsForUser } from "@/lib/services/transactions";
+import { ensureTeamHasActiveSubscription } from "@/lib/api-team-subscription";
 
 interface RouteParams {
   params: Promise<{ id: string; itemId: string }>;
@@ -30,10 +31,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    const access = await ensureTeamHasActiveSubscription({
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!access.ok) {
+      return access.response;
+    }
+
     const result = await listItemTransactionsForUser({
       teamId,
       itemId,
-      requestUserId: getUserIdFromRequest(request),
+      requestUserId: access.requestUserId,
     });
     if (!result.ok) {
       return serviceErrorResponse(result.error);

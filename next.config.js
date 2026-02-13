@@ -29,7 +29,7 @@ const nextConfig = {
     ];
   },
   webpack: (config, { isServer }) => {
-    // Exclude better-sqlite3 and other Node.js modules from client bundle
+    // Exclude Node.js modules from client bundle
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -42,10 +42,6 @@ const nextConfig = {
         stream: false,
         util: false,
       };
-      config.externals = config.externals || [];
-      config.externals.push({
-        'better-sqlite3': 'commonjs better-sqlite3',
-      });
     }
     return config;
   },

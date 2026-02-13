@@ -8,18 +8,30 @@ jest.mock("@/lib/services/stock-transactions", () => ({
 
 jest.mock("@/lib/permissions", () => ({
   getUserIdFromRequest: jest.fn(),
+  authorizeTeamAccess: jest.fn(),
 }));
 
 import { createTeamStockTransaction } from "@/lib/services/stock-transactions";
-import { getUserIdFromRequest } from "@/lib/permissions";
+import { authorizeTeamAccess, getUserIdFromRequest } from "@/lib/permissions";
 
 const mockedCreateTeamStockTransaction = jest.mocked(createTeamStockTransaction);
 const mockedGetUserIdFromRequest = jest.mocked(getUserIdFromRequest);
+const mockedAuthorizeTeamAccess = jest.mocked(authorizeTeamAccess);
 
 describe("/api/teams/[id]/stock-transactions route", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedGetUserIdFromRequest.mockReturnValue(31);
+    mockedAuthorizeTeamAccess.mockResolvedValue({
+      ok: true,
+      team: {
+        id: 12,
+        stripeSubscriptionStatus: "active",
+        manualTrialEndsAt: null,
+      } as never,
+      user: { id: 31 } as never,
+      teamRole: "admin",
+    });
   });
 
   it("returns 400 for invalid team id", async () => {
