@@ -7,6 +7,7 @@ import { errorResponse,
 import { parseRouteParamId } from "@/lib/api-route";
 import { internalServiceError } from "@/lib/services/errors";
 import { listTeamTransactionsForUser } from "@/lib/services/transactions";
+import { ensureTeamHasActiveSubscription } from "@/lib/api-team-subscription";
 
 export async function GET(
   request: NextRequest,
@@ -20,13 +21,21 @@ export async function GET(
       return errorResponse("Invalid team ID", 400, ERROR_CODES.VALIDATION_ERROR);
     }
 
+    const access = await ensureTeamHasActiveSubscription({
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!access.ok) {
+      return access.response;
+    }
+
     // Get search query from URL params
     const searchParams = request.nextUrl.searchParams;
     const searchQuery = searchParams.get("search") || undefined;
 
     const result = await listTeamTransactionsForUser({
       teamId,
-      requestUserId: getUserIdFromRequest(request),
+      requestUserId: access.requestUserId,
       searchQuery,
     });
     if (!result.ok) {

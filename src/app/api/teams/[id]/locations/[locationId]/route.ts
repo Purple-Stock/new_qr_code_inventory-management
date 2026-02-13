@@ -13,6 +13,7 @@ import {
   successResponse,
 } from "@/lib/api-route";
 import { internalServiceError } from "@/lib/services/errors";
+import { ensureTeamHasActiveSubscription } from "@/lib/api-team-subscription";
 
 // GET - Get a specific location
 export async function GET(
@@ -34,10 +35,18 @@ export async function GET(
       );
     }
 
+    const access = await ensureTeamHasActiveSubscription({
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!access.ok) {
+      return access.response;
+    }
+
     const result = await getTeamLocationDetailsForUser({
       teamId,
       locationId,
-      requestUserId: getUserIdFromRequest(request),
+      requestUserId: access.requestUserId,
     });
     if (!result.ok) {
       return serviceErrorResponse(result.error);
@@ -70,10 +79,18 @@ export async function PUT(
       );
     }
 
+    const access = await ensureTeamHasActiveSubscription({
+      teamId,
+      requestUserId: getUserIdFromRequest(request),
+    });
+    if (!access.ok) {
+      return access.response;
+    }
+
     const body = await request.json();
     const result = await updateTeamLocation({
       teamId,
-      requestUserId: getUserIdFromRequest(request),
+      requestUserId: access.requestUserId,
       locationId,
       payload: body,
     });
@@ -114,9 +131,17 @@ export async function DELETE(
       );
     }
 
-    const result = await deleteTeamLocation({
+    const access = await ensureTeamHasActiveSubscription({
       teamId,
       requestUserId: getUserIdFromRequest(request),
+    });
+    if (!access.ok) {
+      return access.response;
+    }
+
+    const result = await deleteTeamLocation({
+      teamId,
+      requestUserId: access.requestUserId,
       locationId,
     });
     if (!result.ok) {

@@ -14,22 +14,34 @@ jest.mock("@/lib/services/items", () => ({
 
 jest.mock("@/lib/permissions", () => ({
   getUserIdFromRequest: jest.fn(),
+  authorizeTeamAccess: jest.fn(),
 }));
 
 import { revalidatePath } from "next/cache";
 import { deleteTeamItemById, getTeamItemDetails, updateTeamItem } from "@/lib/services/items";
-import { getUserIdFromRequest } from "@/lib/permissions";
+import { authorizeTeamAccess, getUserIdFromRequest } from "@/lib/permissions";
 
 const mockedRevalidatePath = jest.mocked(revalidatePath);
 const mockedDeleteTeamItemById = jest.mocked(deleteTeamItemById);
 const mockedGetTeamItemDetails = jest.mocked(getTeamItemDetails);
 const mockedUpdateTeamItem = jest.mocked(updateTeamItem);
 const mockedGetUserIdFromRequest = jest.mocked(getUserIdFromRequest);
+const mockedAuthorizeTeamAccess = jest.mocked(authorizeTeamAccess);
 
 describe("/api/teams/[id]/items/[itemId] route", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedGetUserIdFromRequest.mockReturnValue(5);
+    mockedAuthorizeTeamAccess.mockResolvedValue({
+      ok: true,
+      team: {
+        id: 12,
+        stripeSubscriptionStatus: "active",
+        manualTrialEndsAt: null,
+      } as never,
+      user: { id: 5 } as never,
+      teamRole: "admin",
+    });
   });
 
   describe("GET", () => {
