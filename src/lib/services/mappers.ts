@@ -46,6 +46,7 @@ export function toTeamDto(
     notes: string | null;
     userId: number;
     companyId: number | null;
+    companyName?: string | null;
     createdAt: Date | string;
     updatedAt: Date | string;
   } & Partial<{
@@ -68,6 +69,7 @@ export function toTeamDto(
     notes: team.notes,
     userId: team.userId,
     companyId: team.companyId,
+    companyName: team.companyName ?? null,
     stripeCustomerId: team.stripeCustomerId ?? null,
     stripeSubscriptionId: team.stripeSubscriptionId ?? null,
     stripeSubscriptionStatus: team.stripeSubscriptionStatus ?? null,

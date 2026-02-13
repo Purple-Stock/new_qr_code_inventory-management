@@ -36,6 +36,7 @@ export type TeamDto = {
   notes: string | null;
   userId: number;
   companyId: number | null;
+  companyName: string | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   stripeSubscriptionStatus: string | null;

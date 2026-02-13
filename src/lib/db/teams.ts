@@ -1,5 +1,13 @@
 import { sqlite } from "@/db/client";
-import { teams, items, stockTransactions, locations, teamMembers, webhooks } from "@/db/schema";
+import {
+  teams,
+  items,
+  stockTransactions,
+  locations,
+  teamMembers,
+  webhooks,
+  companies,
+} from "@/db/schema";
 import { and, eq, count, inArray } from "drizzle-orm";
 import type { Team } from "@/db/schema";
 import { hasAffectedRows } from "./mutation-result";
@@ -71,15 +79,21 @@ export async function createTeam(data: {
  * Get team with item and transaction counts
  */
 export async function getTeamWithStats(teamId: number) {
-  const [team] = await sqlite
-    .select()
+  const [teamRow] = await sqlite
+    .select({
+      team: teams,
+      companyName: companies.name,
+    })
     .from(teams)
+    .leftJoin(companies, eq(teams.companyId, companies.id))
     .where(eq(teams.id, teamId))
     .limit(1);
 
-  if (!team) {
+  if (!teamRow) {
     return null;
   }
+
+  const team = teamRow.team;
 
   // Count items
   const [itemCount] = await sqlite
@@ -106,6 +120,7 @@ export async function getTeamWithStats(teamId: number) {
 
   return {
     ...team,
+    companyName: teamRow.companyName ?? null,
     itemCount: itemCount?.count || 0,
     transactionCount: transactionCount?.count || 0,
     memberCount: memberCount?.count || 0,
@@ -136,11 +151,15 @@ export async function getUserTeamsWithStats(userId: number) {
   );
 
   const userTeams = await sqlite
-    .select()
+    .select({
+      team: teams,
+      companyName: companies.name,
+    })
     .from(teams)
+    .leftJoin(companies, eq(teams.companyId, companies.id))
     .where(inArray(teams.id, memberTeamIds));
 
-  const teamIds = userTeams.map((team) => team.id);
+  const teamIds = userTeams.map(({ team }) => team.id);
 
   const [itemCounts, transactionCounts, memberCounts] = await Promise.all([
     sqlite
@@ -171,8 +190,9 @@ export async function getUserTeamsWithStats(userId: number) {
   );
   const memberCountByTeam = new Map(memberCounts.map((row) => [row.teamId, row.count]));
 
-  const teamsWithStats = userTeams.map((team) => ({
+  const teamsWithStats = userTeams.map(({ team, companyName }) => ({
     ...team,
+    companyName: companyName ?? null,
     itemCount: itemCountByTeam.get(team.id) || 0,
     transactionCount: transactionCountByTeam.get(team.id) || 0,
     memberCount: memberCountByTeam.get(team.id) || 0,

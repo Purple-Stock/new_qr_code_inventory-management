@@ -9,7 +9,7 @@ import {
 } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 
-export type UserRole = "admin" | "operator" | "viewer";
+export type UserRole = "admin" | "operator" | "viewer" | "super_admin";
 export type CompanyMemberRole = "owner" | "admin" | "member";
 export type TeamMemberRole = "admin" | "operator" | "viewer";
 export type MembershipStatus = "active" | "invited" | "suspended";
@@ -146,6 +146,24 @@ export const teamMembers = sqliteTable(
     teamUserPk: primaryKey({ columns: [table.teamId, table.userId] }),
     teamIdIdx: index("index_team_members_on_team_id").on(table.teamId),
     userIdIdx: index("index_team_members_on_user_id").on(table.userId),
+  })
+);
+
+export const superAdminUsers = sqliteTable(
+  "super_admin_users",
+  {
+    userId: integer("user_id")
+      .primaryKey()
+      .references(() => users.id),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => ({
+    userIdIdx: uniqueIndex("index_super_admin_users_on_user_id").on(table.userId),
   })
 );
 
@@ -325,6 +343,9 @@ export type NewCompanyMember = typeof companyMembers.$inferInsert;
 export type TeamMember = typeof teamMembers.$inferSelect;
 export type NewTeamMember = typeof teamMembers.$inferInsert;
 
+export type SuperAdminUser = typeof superAdminUsers.$inferSelect;
+export type NewSuperAdminUser = typeof superAdminUsers.$inferInsert;
+
 export type Team = typeof teams.$inferSelect;
 export type NewTeam = typeof teams.$inferInsert;
 
@@ -391,6 +412,13 @@ export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
   }),
   user: one(users, {
     fields: [teamMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const superAdminUsersRelations = relations(superAdminUsers, ({ one }) => ({
+  user: one(users, {
+    fields: [superAdminUsers.userId],
     references: [users.id],
   }),
 }));

@@ -44,10 +44,22 @@ const teamPermissionMatrix: Record<TeamPermission, TeamMemberRole[]> = {
 };
 
 export function isUserRole(value: unknown): value is UserRole {
+  return (
+    value === "admin" ||
+    value === "operator" ||
+    value === "viewer" ||
+    value === "super_admin"
+  );
+}
+
+export function isTeamMemberRole(value: unknown): value is TeamMemberRole {
   return value === "admin" || value === "operator" || value === "viewer";
 }
 
 export function can(role: UserRole, permission: Permission) {
+  if (role === "super_admin") {
+    return true;
+  }
   return permissionMatrix[permission].includes(role);
 }
 
