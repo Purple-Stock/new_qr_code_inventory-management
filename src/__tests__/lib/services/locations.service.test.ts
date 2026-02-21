@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import {
   createTeamLocation,
   deleteTeamLocation,
@@ -7,11 +8,11 @@ import { ERROR_CODES } from "@/lib/errors";
 import { getTestDb, cleanupTestDb, clearTestDb } from "../../helpers/test-db";
 import { teamMembers, teams, users } from "@/db/schema";
 
-jest.mock("@/db/client", () => {
-  const { getTestDb } = require("../../helpers/test-db");
-  const { drizzle } = getTestDb();
-  return { sqlite: drizzle };
-});
+const { drizzle } = getTestDb();
+
+vi.doMock("@/db/client", () => ({
+  sqlite: drizzle,
+}));
 
 describe("locations service", () => {
   beforeEach(async () => {

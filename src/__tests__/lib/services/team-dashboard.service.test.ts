@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import {
   getItemDetailsData,
   getTeamLocationsData,
@@ -13,45 +14,45 @@ import {
   getTeamStockTransactionsWithDetails,
 } from "@/lib/db/stock-transactions";
 
-jest.mock("@/lib/db/teams", () => ({
-  getTeamWithStats: jest.fn(),
+vi.mock("@/lib/db/teams", () => ({
+  getTeamWithStats: vi.fn(),
 }));
-jest.mock("@/lib/db/items", () => ({
-  getTeamItems: jest.fn(),
-  getItemByIdWithLocation: jest.fn(),
+vi.mock("@/lib/db/items", () => ({
+  getTeamItems: vi.fn(),
+  getItemByIdWithLocation: vi.fn(),
 }));
-jest.mock("@/lib/db/locations", () => ({
-  getLocationById: jest.fn(),
-  getTeamLocations: jest.fn(),
+vi.mock("@/lib/db/locations", () => ({
+  getLocationById: vi.fn(),
+  getTeamLocations: vi.fn(),
 }));
-jest.mock("@/lib/db/reports", () => ({
-  getTeamReportStats: jest.fn(),
+vi.mock("@/lib/db/reports", () => ({
+  getTeamReportStats: vi.fn(),
 }));
-jest.mock("@/lib/db/stock-transactions", () => ({
-  getItemStockTransactionsWithDetails: jest.fn(),
-  getTeamStockTransactionsWithDetails: jest.fn(),
+vi.mock("@/lib/db/stock-transactions", () => ({
+  getItemStockTransactionsWithDetails: vi.fn(),
+  getTeamStockTransactionsWithDetails: vi.fn(),
 }));
 
-const mockGetTeamWithStats = getTeamWithStats as jest.MockedFunction<typeof getTeamWithStats>;
-const mockGetTeamItems = getTeamItems as jest.MockedFunction<typeof getTeamItems>;
-const mockGetItemByIdWithLocation = getItemByIdWithLocation as jest.MockedFunction<
+const mockGetTeamWithStats = getTeamWithStats as vi.MockedFunction<typeof getTeamWithStats>;
+const mockGetTeamItems = getTeamItems as vi.MockedFunction<typeof getTeamItems>;
+const mockGetItemByIdWithLocation = getItemByIdWithLocation as vi.MockedFunction<
   typeof getItemByIdWithLocation
 >;
-const mockGetLocationById = getLocationById as jest.MockedFunction<typeof getLocationById>;
-const mockGetTeamLocations = getTeamLocations as jest.MockedFunction<typeof getTeamLocations>;
-const mockGetTeamReportStats = getTeamReportStats as jest.MockedFunction<typeof getTeamReportStats>;
+const mockGetLocationById = getLocationById as vi.MockedFunction<typeof getLocationById>;
+const mockGetTeamLocations = getTeamLocations as vi.MockedFunction<typeof getTeamLocations>;
+const mockGetTeamReportStats = getTeamReportStats as vi.MockedFunction<typeof getTeamReportStats>;
 const mockGetItemTransactions =
-  getItemStockTransactionsWithDetails as jest.MockedFunction<
+  getItemStockTransactionsWithDetails as vi.MockedFunction<
     typeof getItemStockTransactionsWithDetails
   >;
 const mockGetTeamTransactions =
-  getTeamStockTransactionsWithDetails as jest.MockedFunction<
+  getTeamStockTransactionsWithDetails as vi.MockedFunction<
     typeof getTeamStockTransactionsWithDetails
   >;
 
 describe("team-dashboard service", () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     mockGetTeamWithStats.mockResolvedValue({
       id: 1,
       name: "Team",

@@ -1,17 +1,15 @@
+import { vi } from "vitest";
 import { POST } from "@/app/api/auth/signup/route";
 import { NextRequest } from "next/server";
 import { getTestDb, cleanupTestDb, clearTestDb } from "../../helpers/test-db";
 import { users, companies, companyMembers } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-// Mock the database client before importing the route
-jest.mock("@/db/client", () => {
-  const { getTestDb } = require("../../helpers/test-db");
-  const { drizzle } = getTestDb();
-  return {
-    sqlite: drizzle,
-  };
-});
+const { drizzle } = getTestDb();
+
+vi.doMock("@/db/client", () => ({
+  sqlite: drizzle,
+}));
 
 describe("/api/auth/signup", () => {
   beforeEach(async () => {

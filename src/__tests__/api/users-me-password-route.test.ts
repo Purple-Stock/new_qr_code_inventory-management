@@ -1,24 +1,25 @@
+import { vi } from "vitest";
 import { NextRequest } from "next/server";
 import { PATCH } from "@/app/api/users/me/password/route";
 import { ERROR_CODES } from "@/lib/errors";
 
-jest.mock("@/lib/services/users", () => ({
-  updateOwnPassword: jest.fn(),
+vi.mock("@/lib/services/users", () => ({
+  updateOwnPassword: vi.fn(),
 }));
 
-jest.mock("@/lib/permissions", () => ({
-  getUserIdFromRequest: jest.fn(),
+vi.mock("@/lib/permissions", () => ({
+  getUserIdFromRequest: vi.fn(),
 }));
 
 import { updateOwnPassword } from "@/lib/services/users";
 import { getUserIdFromRequest } from "@/lib/permissions";
 
-const mockedUpdateOwnPassword = jest.mocked(updateOwnPassword);
-const mockedGetUserIdFromRequest = jest.mocked(getUserIdFromRequest);
+const mockedUpdateOwnPassword = vi.mocked(updateOwnPassword);
+const mockedGetUserIdFromRequest = vi.mocked(getUserIdFromRequest);
 
 describe("/api/users/me/password route", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockedGetUserIdFromRequest.mockReturnValue(44);
   });
 

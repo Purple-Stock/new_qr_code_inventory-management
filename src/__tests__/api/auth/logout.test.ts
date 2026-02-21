@@ -1,16 +1,17 @@
+import { vi } from "vitest";
 import { POST } from "@/app/api/auth/logout/route";
 
-jest.mock("@/lib/session", () => ({
-  clearSessionCookie: jest.fn(),
+vi.mock("@/lib/session", () => ({
+  clearSessionCookie: vi.fn(),
 }));
 
 import { clearSessionCookie } from "@/lib/session";
 
-const mockedClearSessionCookie = jest.mocked(clearSessionCookie);
+const mockedClearSessionCookie = vi.mocked(clearSessionCookie);
 
 describe("/api/auth/logout", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("returns success and clears session cookie", async () => {
