@@ -1,7 +1,66 @@
 import { describe, expect, it } from "vitest";
-import { uploadItemImageToS3 } from "@/lib/services/item-images";
+import { buildItemImageS3Key, uploadItemImageToS3 } from "@/lib/services/item-images";
 
 describe("item-images service", () => {
+  it("builds S3 key with default folders", () => {
+    const backup = {
+      S3_ROOT_FOLDER: process.env.S3_ROOT_FOLDER,
+      S3_ITEM_IMAGES_FOLDER: process.env.S3_ITEM_IMAGES_FOLDER,
+      S3_ENV_FOLDER: process.env.S3_ENV_FOLDER,
+      NODE_ENV: process.env.NODE_ENV,
+    };
+
+    delete process.env.S3_ROOT_FOLDER;
+    delete process.env.S3_ITEM_IMAGES_FOLDER;
+    delete process.env.S3_ENV_FOLDER;
+    process.env.NODE_ENV = "test";
+
+    try {
+      const key = buildItemImageS3Key({
+        teamId: 8,
+        extension: "png",
+        now: new Date("2026-02-22T12:34:56.000Z"),
+        randomToken: "abc123",
+      });
+
+      expect(key).toContain("purplestock/test/teams/8/item-images/2026/02/22/");
+      expect(key.endsWith(".png")).toBe(true);
+    } finally {
+      process.env.S3_ROOT_FOLDER = backup.S3_ROOT_FOLDER;
+      process.env.S3_ITEM_IMAGES_FOLDER = backup.S3_ITEM_IMAGES_FOLDER;
+      process.env.S3_ENV_FOLDER = backup.S3_ENV_FOLDER;
+      process.env.NODE_ENV = backup.NODE_ENV;
+    }
+  });
+
+  it("builds S3 key with custom folder settings", () => {
+    const backup = {
+      S3_ROOT_FOLDER: process.env.S3_ROOT_FOLDER,
+      S3_ITEM_IMAGES_FOLDER: process.env.S3_ITEM_IMAGES_FOLDER,
+      S3_ENV_FOLDER: process.env.S3_ENV_FOLDER,
+    };
+
+    process.env.S3_ROOT_FOLDER = "my-root";
+    process.env.S3_ITEM_IMAGES_FOLDER = "products/photos";
+    process.env.S3_ENV_FOLDER = "production";
+
+    try {
+      const key = buildItemImageS3Key({
+        teamId: 99,
+        extension: ".webp",
+        now: new Date("2026-02-22T00:00:00.000Z"),
+        randomToken: "token",
+      });
+
+      expect(key.startsWith("my-root/production/teams/99/products/photos/")).toBe(true);
+      expect(key.endsWith(".webp")).toBe(true);
+    } finally {
+      process.env.S3_ROOT_FOLDER = backup.S3_ROOT_FOLDER;
+      process.env.S3_ITEM_IMAGES_FOLDER = backup.S3_ITEM_IMAGES_FOLDER;
+      process.env.S3_ENV_FOLDER = backup.S3_ENV_FOLDER;
+    }
+  });
+
   it("returns original data URL when S3 is not configured", async () => {
     const backup = {
       S3_BUCKET: process.env.S3_BUCKET,

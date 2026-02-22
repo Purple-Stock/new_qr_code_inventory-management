@@ -46,6 +46,50 @@ function shouldUseS3(): boolean {
   );
 }
 
+function normalizeFolderSegment(value: string): string {
+  return value
+    .trim()
+    .replace(/^\/+|\/+$/g, "")
+    .replace(/\s+/g, "-");
+}
+
+export function buildItemImageS3Key(params: {
+  teamId: number;
+  extension: string;
+  now?: Date;
+  randomToken?: string;
+}): string {
+  const rootFolder = normalizeFolderSegment(
+    process.env.S3_ROOT_FOLDER?.trim() || "purplestock"
+  );
+  const itemImagesFolder = normalizeFolderSegment(
+    process.env.S3_ITEM_IMAGES_FOLDER?.trim() || "item-images"
+  );
+  const envFolder = normalizeFolderSegment(
+    process.env.S3_ENV_FOLDER?.trim() || process.env.NODE_ENV || "dev"
+  );
+
+  const now = params.now ?? new Date();
+  const year = String(now.getUTCFullYear());
+  const month = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(now.getUTCDate()).padStart(2, "0");
+  const timestamp = now.getTime();
+  const randomToken = (params.randomToken || Math.random().toString(36).slice(2)).slice(0, 12);
+  const extension = params.extension.replace(/^\./, "");
+
+  return [
+    rootFolder,
+    envFolder,
+    "teams",
+    String(params.teamId),
+    itemImagesFolder,
+    year,
+    month,
+    day,
+    `${timestamp}-${randomToken}.${extension}`,
+  ].join("/");
+}
+
 export async function uploadItemImageToS3(input: UploadInput): Promise<string> {
   if (!shouldUseS3()) {
     return input.dataUrl;
@@ -58,9 +102,10 @@ export async function uploadItemImageToS3(input: UploadInput): Promise<string> {
 
   const { mimeType, bytes, extension } = parseDataUrl(input.dataUrl);
 
-  const key = `teams/${input.teamId}/items/${Date.now()}-${Math.random()
-    .toString(36)
-    .slice(2)}.${extension}`;
+  const key = buildItemImageS3Key({
+    teamId: input.teamId,
+    extension,
+  });
 
   const s3 = new S3Client({
     region,
