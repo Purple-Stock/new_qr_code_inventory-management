@@ -164,7 +164,7 @@ function resolveEnv(key: string, runtimeHost?: string | null): string | undefine
     return direct;
   }
 
-  const branch = resolveAmplifyBranchName() || resolveHostBranchName(runtimeHost);
+  const branch = resolveHostBranchName(runtimeHost) || resolveAmplifyBranchName();
   if (!branch) {
     return undefined;
   }
