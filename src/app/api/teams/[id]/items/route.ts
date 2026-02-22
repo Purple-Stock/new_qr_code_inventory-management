@@ -73,7 +73,7 @@ export async function POST(
       teamId,
       requestUserId: access.requestUserId,
       payload: body,
-      requestHost: request.headers.get("host"),
+      requestHost: request.headers.get("x-forwarded-host") || request.headers.get("host"),
     });
     if (!result.ok) {
       return serviceErrorResponse(result.error);

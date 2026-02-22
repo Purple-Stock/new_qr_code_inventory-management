@@ -158,6 +158,38 @@ function resolveHostBranchName(runtimeHost?: string | null): string {
   return "";
 }
 
+function resolveHostedDefaultByDomain(
+  key: string,
+  runtimeHost?: string | null
+): string | undefined {
+  const branch = resolveHostBranchName(runtimeHost);
+  if (branch === "DEVELOP") {
+    const defaults: Record<string, string> = {
+      S3_BUCKET: "purplestock-staging-840298254452",
+      S3_PUBLIC_BASE_URL:
+        "https://purplestock-staging-840298254452.s3.us-east-1.amazonaws.com",
+      S3_ROOT_FOLDER: "purplestock",
+      S3_ENV_FOLDER: "staging",
+      S3_ITEM_IMAGES_FOLDER: "item-images",
+      S3_TEAM_LABEL_LOGOS_FOLDER: "team-label-logos",
+    };
+    return defaults[key];
+  }
+  if (branch === "MAIN") {
+    const defaults: Record<string, string> = {
+      S3_BUCKET: "purplestock-prod-840298254452",
+      S3_PUBLIC_BASE_URL:
+        "https://purplestock-prod-840298254452.s3.us-east-1.amazonaws.com",
+      S3_ROOT_FOLDER: "purplestock",
+      S3_ENV_FOLDER: "prod",
+      S3_ITEM_IMAGES_FOLDER: "item-images",
+      S3_TEAM_LABEL_LOGOS_FOLDER: "team-label-logos",
+    };
+    return defaults[key];
+  }
+  return undefined;
+}
+
 function resolveEnv(key: string, runtimeHost?: string | null): string | undefined {
   const direct = process.env[key]?.trim();
   if (direct) {
@@ -181,7 +213,7 @@ function resolveEnv(key: string, runtimeHost?: string | null): string | undefine
     return process.env[`${key}_PROD`]?.trim() || undefined;
   }
 
-  return undefined;
+  return resolveHostedDefaultByDomain(key, runtimeHost);
 }
 
 function deriveBucketFromPublicBaseUrl(runtimeHost?: string | null): string | undefined {
