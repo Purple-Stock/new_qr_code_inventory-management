@@ -482,6 +482,7 @@ export const ptBR = {
     noItemsSearch: "Nenhum item encontrado correspondente à sua busca",
     labelsGenerated: "Etiquetas geradas com sucesso",
     labelsPerPage: "Etiquetas por página",
+    quantityPerItem: "Qtd. por item",
     labelSize: "Tamanho da etiqueta",
     default10x5: "Padrão (10 x 5 cm)",
     customSize: "Custom",

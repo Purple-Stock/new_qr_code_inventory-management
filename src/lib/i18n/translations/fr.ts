@@ -482,6 +482,7 @@ export const fr = {
     noItemsSearch: "Aucun article trouvé correspondant à votre recherche",
     labelsGenerated: "Étiquettes générées avec succès",
     labelsPerPage: "Étiquettes par page",
+    quantityPerItem: "Qté par article",
     labelSize: "Taille de l'étiquettes",
     default10x5: "Par défaut (10 x 5 cm)",
     customSize: "Personnalisé",
