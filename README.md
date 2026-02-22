@@ -33,6 +33,7 @@ Guardrails automáticos (CI e hook) impedem violações arquiteturais.
 ## Funcionalidades principais
 
 - Autenticação por cookie assinado (`ps_session`).
+- Role global `super_admin` para visão administrativa cross-tenant.
 - Multi-tenancy por time e membership ativo.
 - CRUD de times, usuários do time, itens e localizações.
 - Upload de foto para itens.
@@ -191,6 +192,7 @@ Observação: existe script `db:seed` no `package.json`, mas o arquivo `src/db/s
 - `POST /api/teams/:id/billing/checkout`
 - `POST /api/teams/:id/billing/portal`
 - `POST /api/stripe/webhook`
+- `GET /api/admin/teams` (somente `super_admin`, com paginação e busca)
 
 ## Qualidade e CI
 

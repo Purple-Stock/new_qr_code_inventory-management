@@ -58,6 +58,7 @@ export async function clearTestDb() {
       { sql: "DELETE FROM locations" },
       { sql: "DELETE FROM team_members" },
       { sql: "DELETE FROM company_members" },
+      { sql: "DELETE FROM super_admin_users" },
       { sql: "DELETE FROM teams" },
       { sql: "DELETE FROM companies" },
       { sql: "DELETE FROM users" },

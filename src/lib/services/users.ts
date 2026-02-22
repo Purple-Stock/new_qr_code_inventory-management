@@ -20,7 +20,7 @@ import {
 } from "@/lib/db/team-members";
 import { ERROR_CODES } from "@/lib/errors";
 import { verifyPassword } from "@/lib/auth";
-import { authorizeTeamPermission, isUserRole } from "@/lib/permissions";
+import { authorizeTeamPermission, isTeamMemberRole, isUserRole } from "@/lib/permissions";
 import { isValidEmail, normalizeEmail } from "@/lib/contracts/schemas";
 import type {
   AvailableUserDto,
@@ -191,7 +191,7 @@ export async function createOrAttachTeamMember(params: {
       }
     }
 
-    if (!isUserRole(role)) {
+    if (!isTeamMemberRole(role)) {
       return {
         ok: false,
         error: validationServiceError("Invalid role"),
@@ -290,7 +290,7 @@ export async function updateManagedTeamMember(params: {
     const email = normalizeEmail(rawEmail);
     const newPassword = typeof body.newPassword === "string" ? body.newPassword : "";
 
-    if (role !== undefined && !isUserRole(role)) {
+    if (role !== undefined && !isTeamMemberRole(role)) {
       return { ok: false, error: validationServiceError("Invalid role") };
     }
 

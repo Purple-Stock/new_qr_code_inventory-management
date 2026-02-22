@@ -79,7 +79,7 @@ export async function createTeam(data: {
  * Get team with item and transaction counts
  */
 export async function getTeamWithStats(teamId: number) {
-  const [team] = await sqlite
+  const [teamRow] = await sqlite
     .select({
       team: teams,
       companyName: companies.name,
@@ -89,9 +89,11 @@ export async function getTeamWithStats(teamId: number) {
     .where(eq(teams.id, teamId))
     .limit(1);
 
-  if (!team?.team) {
+  if (!teamRow) {
     return null;
   }
+
+  const team = teamRow.team;
 
   // Count items
   const [itemCount] = await sqlite
@@ -117,8 +119,8 @@ export async function getTeamWithStats(teamId: number) {
     );
 
   return {
-    ...team.team,
-    companyName: team.companyName ?? null,
+    ...team,
+    companyName: teamRow.companyName ?? null,
     itemCount: itemCount?.count || 0,
     transactionCount: transactionCount?.count || 0,
     memberCount: memberCount?.count || 0,
@@ -157,7 +159,7 @@ export async function getUserTeamsWithStats(userId: number) {
     .leftJoin(companies, eq(teams.companyId, companies.id))
     .where(inArray(teams.id, memberTeamIds));
 
-  const teamIds = userTeams.map((row) => row.team.id);
+  const teamIds = userTeams.map(({ team }) => team.id);
 
   const [itemCounts, transactionCounts, memberCounts] = await Promise.all([
     sqlite
@@ -188,12 +190,12 @@ export async function getUserTeamsWithStats(userId: number) {
   );
   const memberCountByTeam = new Map(memberCounts.map((row) => [row.teamId, row.count]));
 
-  const teamsWithStats = userTeams.map((row) => ({
-    ...row.team,
-    companyName: row.companyName ?? null,
-    itemCount: itemCountByTeam.get(row.team.id) || 0,
-    transactionCount: transactionCountByTeam.get(row.team.id) || 0,
-    memberCount: memberCountByTeam.get(row.team.id) || 0,
+  const teamsWithStats = userTeams.map(({ team, companyName }) => ({
+    ...team,
+    companyName: companyName ?? null,
+    itemCount: itemCountByTeam.get(team.id) || 0,
+    transactionCount: transactionCountByTeam.get(team.id) || 0,
+    memberCount: memberCountByTeam.get(team.id) || 0,
   }));
 
   return teamsWithStats.map((team) => {

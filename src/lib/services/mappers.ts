@@ -47,6 +47,7 @@ export function toTeamDto(
     notes: string | null;
     userId: number;
     companyId: number | null;
+    companyName?: string | null;
     createdAt: Date | string;
     updatedAt: Date | string;
   } & Partial<{
