@@ -8,20 +8,26 @@ interface DeleteConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
+  onSecondaryConfirm?: () => void;
   title?: string;
   description?: string;
   itemName?: string;
   isDeleting?: boolean;
+  secondaryConfirmLabel?: string;
+  isSecondaryDeleting?: boolean;
 }
 
 export function DeleteConfirmModal({
   isOpen,
   onClose,
   onConfirm,
+  onSecondaryConfirm,
   title,
   description,
   itemName,
   isDeleting = false,
+  secondaryConfirmLabel,
+  isSecondaryDeleting = false,
 }: DeleteConfirmModalProps) {
   const { t } = useTranslation();
 
@@ -86,11 +92,22 @@ export function DeleteConfirmModal({
 
         {/* Footer */}
         <div className="px-4 sm:px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+          {onSecondaryConfirm && secondaryConfirmLabel ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onSecondaryConfirm}
+              disabled={isDeleting || isSecondaryDeleting}
+              className="border-red-300 text-red-700 hover:bg-red-50"
+            >
+              {isSecondaryDeleting ? t.common.loading : secondaryConfirmLabel}
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="ghost"
             onClick={onClose}
-            disabled={isDeleting}
+            disabled={isDeleting || isSecondaryDeleting}
             className="text-gray-700 hover:bg-gray-100"
           >
             {t.common.cancel}
@@ -98,7 +115,7 @@ export function DeleteConfirmModal({
           <Button
             type="button"
             onClick={handleConfirm}
-            disabled={isDeleting}
+            disabled={isDeleting || isSecondaryDeleting}
             className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
           >
             {isDeleting ? (

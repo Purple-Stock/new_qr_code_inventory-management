@@ -166,8 +166,29 @@ describe("/api/teams/[id]/items/[itemId] route", () => {
         teamId: 12,
         itemId: 7,
         requestUserId: 5,
+        forceDeleteWithTransactions: false,
       });
       expect(mockedRevalidatePath).toHaveBeenCalledWith("/teams/12/items");
+    });
+
+    it("passes force delete flag from querystring", async () => {
+      mockedDeleteTeamItemById.mockResolvedValue({ ok: true, data: null } as any);
+
+      const request = new NextRequest("http://localhost:3000/api/teams/12/items/7?force=true", {
+        method: "DELETE",
+      });
+
+      const response = await DELETE(request, {
+        params: Promise.resolve({ id: "12", itemId: "7" }),
+      });
+
+      expect(response.status).toBe(200);
+      expect(mockedDeleteTeamItemById).toHaveBeenCalledWith({
+        teamId: 12,
+        itemId: 7,
+        requestUserId: 5,
+        forceDeleteWithTransactions: true,
+      });
     });
 
     it("maps service errors", async () => {

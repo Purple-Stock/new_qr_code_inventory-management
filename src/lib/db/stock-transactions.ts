@@ -335,3 +335,12 @@ export async function deleteStockTransaction(
 
   return hasAffectedRows(result);
 }
+
+export async function deleteItemStockTransactions(
+  teamId: number,
+  itemId: number
+): Promise<void> {
+  await sqlite
+    .delete(stockTransactions)
+    .where(and(eq(stockTransactions.teamId, teamId), eq(stockTransactions.itemId, itemId)));
+}

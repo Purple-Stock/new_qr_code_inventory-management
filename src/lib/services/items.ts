@@ -7,6 +7,7 @@ import {
   itemHasTransactions,
   updateItem,
 } from "@/lib/db/items";
+import { deleteItemStockTransactions } from "@/lib/db/stock-transactions";
 import { ERROR_CODES } from "@/lib/errors";
 import { isUniqueConstraintError } from "@/lib/error-utils";
 import { authorizeTeamAccess, authorizeTeamPermission } from "@/lib/permissions";
@@ -302,6 +303,7 @@ export interface DeleteTeamItemInput {
   teamId: number;
   itemId: number;
   requestUserId: number | null;
+  forceDeleteWithTransactions?: boolean;
 }
 
 export async function deleteTeamItemById(
@@ -332,14 +334,25 @@ export async function deleteTeamItemById(
 
   const hasTx = await itemHasTransactions(params.itemId);
   if (hasTx) {
-    return {
-      ok: false,
-      error: makeServiceError(
-        409,
-        ERROR_CODES.VALIDATION_ERROR,
-        "Não é possível excluir o item: ele possui histórico de transações de estoque. Remova ou ajuste as transações primeiro."
-      ),
-    };
+    if (params.forceDeleteWithTransactions) {
+      try {
+        await deleteItemStockTransactions(params.teamId, params.itemId);
+      } catch {
+        return {
+          ok: false,
+          error: internalServiceError("An error occurred while deleting item transactions"),
+        };
+      }
+    } else {
+      return {
+        ok: false,
+        error: makeServiceError(
+          409,
+          ERROR_CODES.VALIDATION_ERROR,
+          "Não é possível excluir o item: ele possui histórico de transações de estoque. Remova ou ajuste as transações primeiro."
+        ),
+      };
+    }
   }
 
   try {
