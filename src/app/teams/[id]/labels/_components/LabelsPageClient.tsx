@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Search,
   Info,
@@ -27,11 +27,13 @@ interface Item {
   currentStock: number | null;
   price: number | null;
   locationName?: string | null;
+  customFields?: Record<string, string> | null;
 }
 
 interface Team {
   id: number;
   name: string;
+  itemCustomFieldSchema?: { key: string; label: string; active: boolean }[] | null;
 }
 
 interface LabelsPageClientProps {
@@ -48,13 +50,39 @@ export default function LabelsPageClient({
   const [isLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
-  const [labelsPerPage, setLabelsPerPage] = useState(12);
-  const [labelSize, setLabelSize] = useState<"small" | "medium" | "large">("medium");
+  const [labelSizeMode, setLabelSizeMode] = useState<"default" | "custom">("default");
+  const [customWidthCm, setCustomWidthCm] = useState("10");
+  const [customHeightCm, setCustomHeightCm] = useState("5");
   const [includeQRCode, setIncludeQRCode] = useState(true);
   const [includeBarcode, setIncludeBarcode] = useState(true);
   const [includeItemName, setIncludeItemName] = useState(true);
   const [includeSKU, setIncludeSKU] = useState(true);
   const [includeStock, setIncludeStock] = useState(false);
+  const customFieldOptions = useMemo(() => {
+    if (team.itemCustomFieldSchema && team.itemCustomFieldSchema.length > 0) {
+      return team.itemCustomFieldSchema;
+    }
+    const discovered = new Set<string>();
+    for (const item of items) {
+      for (const key of Object.keys(item.customFields ?? {})) {
+        discovered.add(key);
+      }
+    }
+    return Array.from(discovered).map((key) => ({ key, label: key, active: true }));
+  }, [items, team.itemCustomFieldSchema]);
+  const customFieldLabelByKey = useMemo(
+    () =>
+      new Map(
+        customFieldOptions.map((field) => [
+          field.key,
+          field.label || field.key,
+        ])
+      ),
+    [customFieldOptions]
+  );
+  const [includeCustomFieldKeys, setIncludeCustomFieldKeys] = useState<Record<string, boolean>>(
+    () => Object.fromEntries(customFieldOptions.map((field) => [field.key, field.active]))
+  );
   const [isGenerating, setIsGenerating] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const { t } = useTranslation();
@@ -62,11 +90,18 @@ export default function LabelsPageClient({
   const tourSteps: TourStep[] = [
     { target: "tour-labels-tutorial", title: t.labels.tourTutorialTitle, description: t.labels.tourTutorialDesc },
     { target: "tour-labels-settings", title: t.labels.tourSettingsTitle, description: t.labels.tourSettingsDesc },
+    { target: "tour-labels-size", title: t.labels.tourSizeTitle, description: t.labels.tourSizeDesc },
     { target: "tour-labels-search", title: t.labels.tourSearchTitle, description: t.labels.tourSearchDesc },
     { target: "tour-labels-actions", title: t.labels.tourActionsTitle, description: t.labels.tourActionsDesc },
     { target: "tour-labels-list", title: t.labels.tourListTitle, description: t.labels.tourListDesc },
     { target: "tour-sidebar", title: t.labels.tourSidebarTitle, description: t.labels.tourSidebarDesc },
   ];
+
+  useEffect(() => {
+    setIncludeCustomFieldKeys(
+      Object.fromEntries(customFieldOptions.map((field) => [field.key, field.active]))
+    );
+  }, [customFieldOptions]);
 
   const filteredItems = items.filter((item) => {
     if (!searchQuery) return true;
@@ -100,6 +135,22 @@ export default function LabelsPageClient({
     return items.filter((item) => selectedItems.has(item.id));
   };
 
+  const parseCm = (value: string, fallback: number) => {
+    const parsed = Number(value.replace(",", "."));
+    if (!Number.isFinite(parsed)) return fallback;
+    return parsed;
+  };
+
+  const getLabelDimensionsCm = () => {
+    if (labelSizeMode === "default") {
+      return { widthCm: 10, heightCm: 5 };
+    }
+
+    const widthCm = Math.min(Math.max(parseCm(customWidthCm, 10), 3), 18);
+    const heightCm = Math.min(Math.max(parseCm(customHeightCm, 5), 2), 12);
+    return { widthCm, heightCm };
+  };
+
   const generatePDF = async () => {
     if (selectedItems.size === 0) {
       return;
@@ -114,23 +165,13 @@ export default function LabelsPageClient({
       const margin = 10;
       const availableWidth = pageWidth - 2 * margin;
       const availableHeight = pageHeight - 2 * margin;
-
-      // Calculate label dimensions based on labelsPerPage
-      let cols = 3;
-      let rows = 4;
-      if (labelsPerPage === 6) {
-        cols = 2;
-        rows = 3;
-      } else if (labelsPerPage === 20) {
-        cols = 4;
-        rows = 5;
-      } else if (labelsPerPage === 30) {
-        cols = 5;
-        rows = 6;
-      }
-
-      const labelWidth = availableWidth / cols;
-      const labelHeight = availableHeight / rows;
+      const { widthCm, heightCm } = getLabelDimensionsCm();
+      const labelWidth = widthCm * 10;
+      const labelHeight = heightCm * 10;
+      const horizontalGap = 2;
+      const verticalGap = 2;
+      const cols = Math.max(1, Math.floor((availableWidth + horizontalGap) / (labelWidth + horizontalGap)));
+      const rows = Math.max(1, Math.floor((availableHeight + verticalGap) / (labelHeight + verticalGap)));
 
       let currentPage = 0;
       let currentRow = 0;
@@ -147,25 +188,17 @@ export default function LabelsPageClient({
           currentCol = 0;
         }
 
-        const x = margin + currentCol * labelWidth;
-        const y = margin + currentRow * labelHeight;
+        const x = margin + currentCol * (labelWidth + horizontalGap);
+        const y = margin + currentRow * (labelHeight + verticalGap);
 
         // Draw border
         pdf.setDrawColor(200, 200, 200);
-        pdf.rect(x, y, labelWidth - 2, labelHeight - 2);
+        pdf.rect(x, y, labelWidth, labelHeight);
 
-        // Calculate sizes based on labelSize
-        let qrSize = 20;
-        let fontSize = 8;
-        if (labelSize === "small") {
-          qrSize = 15;
-          fontSize = 6;
-        } else if (labelSize === "large") {
-          qrSize = 30;
-          fontSize = 10;
-        }
+        const qrSize = Math.max(10, Math.min(24, labelHeight * 0.42, labelWidth * 0.38));
+        const fontSize = Math.max(6, Math.min(12, labelHeight * 0.09));
 
-        let currentY = y + 2;
+        let currentY = y + 3;
 
         // Generate QR code as image
         if (includeQRCode && item.barcode) {
@@ -189,7 +222,7 @@ export default function LabelsPageClient({
         if (includeItemName && item.name) {
           pdf.setFontSize(fontSize);
           pdf.setTextColor(0, 0, 0);
-          pdf.text(item.name.substring(0, 20), x + 2, currentY, {
+          pdf.text(item.name.substring(0, 28), x + 2, currentY, {
             maxWidth: labelWidth - 4,
           });
           currentY += fontSize + 1;
@@ -212,15 +245,36 @@ export default function LabelsPageClient({
           pdf.text(item.barcode, x + 2, currentY, {
             maxWidth: labelWidth - 4,
           });
+          currentY += fontSize;
         }
 
         // Add stock
         if (includeStock && item.currentStock !== null) {
           pdf.setFontSize(fontSize - 1);
           pdf.setTextColor(100, 100, 100);
-          pdf.text(`Stock: ${item.currentStock}`, x + 2, currentY + fontSize, {
+          pdf.text(`Stock: ${item.currentStock}`, x + 2, currentY, {
             maxWidth: labelWidth - 4,
           });
+          currentY += fontSize;
+        }
+
+        for (const field of customFieldOptions) {
+          if (!includeCustomFieldKeys[field.key]) {
+            continue;
+          }
+
+          const fieldValue = item.customFields?.[field.key];
+          if (!fieldValue) {
+            continue;
+          }
+
+          pdf.setFontSize(fontSize - 1);
+          pdf.setTextColor(80, 80, 80);
+          const fieldLabel = customFieldLabelByKey.get(field.key) ?? field.key;
+          pdf.text(`${fieldLabel}: ${fieldValue}`, x + 2, currentY, {
+            maxWidth: labelWidth - 4,
+          });
+          currentY += fontSize;
         }
 
         // Move to next position
@@ -271,35 +325,48 @@ export default function LabelsPageClient({
           <div className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6" data-tour="tour-labels-settings">
             <h2 className="text-lg font-bold text-gray-900 mb-4">{t.labels.selectItems}</h2>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-              <div>
-                <Label className="text-sm font-semibold text-gray-700 mb-2 block">
-                  {t.labels.labelsPerPage}
-                </Label>
-                <select
-                  value={labelsPerPage}
-                  onChange={(e) => setLabelsPerPage(parseInt(e.target.value))}
-                  className="w-full h-11 text-base border border-gray-300 rounded-md px-3 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
-                >
-                  <option value={6}>6</option>
-                  <option value={12}>12</option>
-                  <option value={20}>20</option>
-                  <option value={30}>30</option>
-                </select>
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4" data-tour="tour-labels-size">
               <div>
                 <Label className="text-sm font-semibold text-gray-700 mb-2 block">
                   {t.labels.labelSize}
                 </Label>
                 <select
-                  value={labelSize}
-                  onChange={(e) => setLabelSize(e.target.value as "small" | "medium" | "large")}
+                  value={labelSizeMode}
+                  onChange={(e) => setLabelSizeMode(e.target.value as "default" | "custom")}
                   className="w-full h-11 text-base border border-gray-300 rounded-md px-3 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
                 >
-                  <option value="small">{t.labels.small}</option>
-                  <option value="medium">{t.labels.medium}</option>
-                  <option value="large">{t.labels.large}</option>
+                  <option value="default">{t.labels.default10x5}</option>
+                  <option value="custom">{t.labels.customSize}</option>
                 </select>
+              </div>
+              <div>
+                <Label className="text-sm font-semibold text-gray-700 mb-2 block">
+                  {t.labels.widthCm}
+                </Label>
+                <Input
+                  type="text"
+                  value={labelSizeMode === "default" ? "10" : customWidthCm}
+                  onChange={(e) => setCustomWidthCm(e.target.value)}
+                  disabled={labelSizeMode === "default"}
+                  className="h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-semibold text-gray-700 mb-2 block">
+                  {t.labels.heightCm}
+                </Label>
+                <Input
+                  type="text"
+                  value={labelSizeMode === "default" ? "5" : customHeightCm}
+                  onChange={(e) => setCustomHeightCm(e.target.value)}
+                  disabled={labelSizeMode === "default"}
+                  className="h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+                />
+              </div>
+              <div className="flex items-end">
+                <div className="text-xs text-gray-600">
+                  {labelSizeMode === "default" ? "10 x 5 cm" : `${getLabelDimensionsCm().widthCm} x ${getLabelDimensionsCm().heightCm} cm`}
+                </div>
               </div>
             </div>
 
@@ -349,6 +416,24 @@ export default function LabelsPageClient({
                 />
                 <span className="text-sm text-gray-700">{t.labels.includeStock}</span>
               </label>
+              {customFieldOptions.map((field) => (
+                <label key={field.key} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(includeCustomFieldKeys[field.key])}
+                    onChange={(e) =>
+                      setIncludeCustomFieldKeys((prev) => ({
+                        ...prev,
+                        [field.key]: e.target.checked,
+                      }))
+                    }
+                    className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
+                  />
+                  <span className="text-sm text-gray-700">
+                    {t.labels.includeCustomField}: {field.label}
+                  </span>
+                </label>
+              ))}
             </div>
           </div>
 

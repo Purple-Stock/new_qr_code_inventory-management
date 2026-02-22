@@ -31,6 +31,7 @@ export function toItemDto(item: Item & { locationName?: string | null }): ItemDt
     initialQuantity: item.initialQuantity,
     currentStock: item.currentStock,
     minimumStock: item.minimumStock,
+    customFields: item.customFields ?? null,
     teamId: item.teamId,
     locationId: item.locationId,
     locationName: item.locationName ?? null,
@@ -55,6 +56,7 @@ export function toTeamDto(
     stripePriceId: string | null;
     stripeCurrentPeriodEnd: Date | string | null;
     manualTrialEndsAt: Date | string | null;
+    itemCustomFieldSchema: { key: string; label: string; active: boolean }[] | null;
     itemCount: number;
     transactionCount: number;
     memberCount: number;
@@ -76,6 +78,7 @@ export function toTeamDto(
       ? toIsoString(team.stripeCurrentPeriodEnd)
       : null,
     manualTrialEndsAt: team.manualTrialEndsAt ? toIsoString(team.manualTrialEndsAt) : null,
+    itemCustomFieldSchema: team.itemCustomFieldSchema ?? null,
     itemCount: team.itemCount ?? 0,
     transactionCount: team.transactionCount ?? 0,
     memberCount: team.memberCount ?? 0,

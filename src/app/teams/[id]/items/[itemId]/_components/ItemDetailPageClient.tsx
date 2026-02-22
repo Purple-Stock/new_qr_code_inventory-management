@@ -55,6 +55,9 @@ export default function ItemDetailPageClient({
     txFilter === "all"
       ? transactions
       : transactions.filter((t) => t.transactionType === txFilter);
+  const customFieldEntries = Object.entries(item.customFields ?? {}).filter(
+    ([, value]) => Boolean(value)
+  );
 
   const filters: { value: TransactionTypeFilter; label: string }[] = [
     { value: "all", label: t.transactions.all },
@@ -207,6 +210,12 @@ export default function ItemDetailPageClient({
                   {item.locationName || t.reports.noLocation}
                 </p>
               </div>
+              {customFieldEntries.map(([key, value]) => (
+                <div key={key}>
+                  <p className="text-xs text-gray-500 uppercase mb-0.5">{key}</p>
+                  <p className="font-medium text-gray-900">{value}</p>
+                </div>
+              ))}
             </div>
           </div>
 

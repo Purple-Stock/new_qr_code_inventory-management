@@ -11,7 +11,11 @@ import { ItemForm, type ItemFormValues } from "../../_components/ItemForm";
 
 interface NewItemPageClientProps {
   teamId: number;
-  initialTeam: { id: number; name: string };
+  initialTeam: {
+    id: number;
+    name: string;
+    itemCustomFieldSchema?: { key: string; label: string; active: boolean }[] | null;
+  };
 }
 
 export default function NewItemPageClient({
@@ -30,6 +34,7 @@ export default function NewItemPageClient({
     price: "",
     itemType: "",
     brand: "",
+    customFields: {},
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -42,12 +47,20 @@ export default function NewItemPageClient({
     { target: "tour-new-item-barcode", title: t.itemForm.tourBarcodeTitle, description: t.itemForm.tourBarcodeDesc },
     { target: "tour-new-item-pricing", title: t.itemForm.tourPricingTitle, description: t.itemForm.tourPricingDesc },
     { target: "tour-new-item-attributes", title: t.itemForm.tourAttributesTitle, description: t.itemForm.tourAttributesDesc },
+    { target: "tour-new-item-custom-fields", title: t.itemForm.tourCustomFieldsTitle, description: t.itemForm.tourCustomFieldsDesc },
     { target: "tour-new-item-submit", title: t.itemForm.tourSubmitTitle, description: t.itemForm.tourSubmitDesc },
     { target: "tour-sidebar", title: t.itemForm.tourSidebarTitle, description: t.itemForm.tourSidebarDesc },
   ];
 
   const updateField = (field: keyof ItemFormValues, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const updateCustomField = (fieldKey: string, value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      customFields: { ...prev.customFields, [fieldKey]: value },
+    }));
   };
 
   const generateSKU = () => {
@@ -83,6 +96,12 @@ export default function NewItemPageClient({
     setIsLoading(true);
 
     try {
+      const customFields = Object.fromEntries(
+        Object.entries(form.customFields)
+          .map(([key, value]) => [key, value.trim()])
+          .filter(([, value]) => value.length > 0)
+      );
+
       const result = await fetchApiJsonResult(`/api/teams/${teamId}/items`, {
         method: "POST",
         body: {
@@ -93,6 +112,7 @@ export default function NewItemPageClient({
           price: form.price ? parseFloat(form.price) : null,
           itemType: form.itemType.trim() || null,
           brand: form.brand.trim() || null,
+          customFields: Object.keys(customFields).length > 0 ? customFields : null,
         },
         fallbackError: t.itemForm.unexpectedError,
       });
@@ -127,11 +147,13 @@ export default function NewItemPageClient({
           <ItemForm
             t={t}
             values={form}
+            customFieldSchema={initialTeam.itemCustomFieldSchema ?? []}
             isLoading={isLoading}
             cancelHref={`/teams/${teamId}/items`}
             mode="create"
             onSubmit={handleSubmit}
             onValueChange={updateField}
+            onCustomFieldChange={updateCustomField}
             onGenerateSKU={generateSKU}
             onGenerateBarcode={generateBarcode}
           />

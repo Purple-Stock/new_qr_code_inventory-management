@@ -299,6 +299,42 @@ describe("teams service", () => {
     expect(result.data.team.name).toBe("Updated Name");
   });
 
+  it("updates team custom field schema", async () => {
+    const { drizzle } = getTestDb();
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "teams-update-schema@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Schema Team", userId: user.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+
+    const result = await updateTeamDetails({
+      teamId: team.id,
+      requestUserId: user.id,
+      payload: {
+        itemCustomFieldSchema: [
+          { key: "medidor_total", label: "Medidor total", active: true },
+          { key: "medidor_color", label: "Medidor color", active: false },
+        ],
+      },
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect((result.data.team as any).itemCustomFieldSchema).toEqual([
+      { key: "medidor_total", label: "Medidor total", active: true },
+      { key: "medidor_color", label: "Medidor color", active: false },
+    ]);
+  });
+
   it("returns error for updateTeamDetails when not authenticated", async () => {
     const result = await updateTeamDetails({
       teamId: 1,

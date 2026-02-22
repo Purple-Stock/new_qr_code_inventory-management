@@ -12,7 +12,11 @@ import { ItemForm, type ItemFormValues } from "../../../_components/ItemForm";
 interface EditItemPageClientProps {
   teamId: number;
   itemId: number;
-  initialTeam: { id: number; name: string };
+  initialTeam: {
+    id: number;
+    name: string;
+    itemCustomFieldSchema?: { key: string; label: string; active: boolean }[] | null;
+  };
   initialForm: ItemFormValues;
 }
 
@@ -37,12 +41,20 @@ export default function EditItemPageClient({
     { target: "tour-new-item-barcode", title: t.itemForm.tourBarcodeTitle, description: t.itemForm.tourBarcodeDesc },
     { target: "tour-new-item-pricing", title: t.itemForm.tourPricingTitle, description: t.itemForm.tourPricingDesc },
     { target: "tour-new-item-attributes", title: t.itemForm.tourAttributesTitle, description: t.itemForm.tourAttributesDesc },
+    { target: "tour-new-item-custom-fields", title: t.itemForm.tourCustomFieldsTitle, description: t.itemForm.tourCustomFieldsDesc },
     { target: "tour-new-item-submit", title: t.itemForm.tourEditSubmitTitle, description: t.itemForm.tourEditSubmitDesc },
     { target: "tour-sidebar", title: t.itemForm.tourSidebarTitle, description: t.itemForm.tourSidebarDesc },
   ];
 
   const updateField = (field: keyof ItemFormValues, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const updateCustomField = (fieldKey: string, value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      customFields: { ...prev.customFields, [fieldKey]: value },
+    }));
   };
 
   const generateSKU = () => {
@@ -78,6 +90,12 @@ export default function EditItemPageClient({
     setIsLoading(true);
 
     try {
+      const customFields = Object.fromEntries(
+        Object.entries(form.customFields)
+          .map(([key, value]) => [key, value.trim()])
+          .filter(([, value]) => value.length > 0)
+      );
+
       const result = await fetchApiJsonResult(`/api/teams/${teamId}/items/${itemId}`, {
         method: "PUT",
         body: {
@@ -88,6 +106,7 @@ export default function EditItemPageClient({
           price: form.price ? parseFloat(form.price) : null,
           itemType: form.itemType.trim() || null,
           brand: form.brand.trim() || null,
+          customFields: Object.keys(customFields).length > 0 ? customFields : null,
         },
         fallbackError: t.itemForm.unexpectedError,
       });
@@ -122,11 +141,13 @@ export default function EditItemPageClient({
           <ItemForm
             t={t}
             values={form}
+            customFieldSchema={initialTeam.itemCustomFieldSchema ?? []}
             isLoading={isLoading}
             cancelHref={`/teams/${teamId}/items`}
             mode="edit"
             onSubmit={handleSubmit}
             onValueChange={updateField}
+            onCustomFieldChange={updateCustomField}
             onGenerateSKU={generateSKU}
             onGenerateBarcode={generateBarcode}
           />
