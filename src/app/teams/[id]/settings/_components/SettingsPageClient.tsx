@@ -986,7 +986,7 @@ export default function SettingsPageClient({
                       ) : (
                         itemCustomFieldSchema.map((field, index) => (
                           <div
-                            key={`${field.key}-${index}`}
+                            key={`custom-field-row-${index}`}
                             className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center"
                           >
                             <Input
