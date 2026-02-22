@@ -1,13 +1,14 @@
+import { vi } from "vitest";
 import { createStockTransaction } from "@/lib/db/stock-transactions";
 import { getTestDb, cleanupTestDb, clearTestDb } from "../helpers/test-db";
 import { users, teams, teamMembers, locations, items, stockTransactions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-jest.mock("@/db/client", () => {
-  const { getTestDb } = require("../helpers/test-db");
-  const { drizzle } = getTestDb();
-  return { sqlite: drizzle };
-});
+const { drizzle } = getTestDb();
+
+vi.doMock("@/db/client", () => ({
+  sqlite: drizzle,
+}));
 
 describe("createStockTransaction atomicity", () => {
   beforeEach(async () => {

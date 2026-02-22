@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import {
   createTeamStockTransaction,
   deleteTeamTransaction,
@@ -6,11 +7,11 @@ import { ERROR_CODES } from "@/lib/errors";
 import { getTestDb, cleanupTestDb, clearTestDb } from "../../helpers/test-db";
 import { items, locations, stockTransactions, teamMembers, teams, users } from "@/db/schema";
 
-jest.mock("@/db/client", () => {
-  const { getTestDb } = require("../../helpers/test-db");
-  const { drizzle } = getTestDb();
-  return { sqlite: drizzle };
-});
+const { drizzle } = getTestDb();
+
+vi.doMock("@/db/client", () => ({
+  sqlite: drizzle,
+}));
 
 describe("stock-transactions service", () => {
   beforeEach(async () => {

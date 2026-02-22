@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import {
   listItemTransactionsForUser,
   listTeamTransactionsForUser,
@@ -10,33 +11,33 @@ import {
 } from "@/lib/db/stock-transactions";
 import { getItemById } from "@/lib/db/items";
 
-jest.mock("@/lib/permissions", () => ({
-  authorizeTeamAccess: jest.fn(),
+vi.mock("@/lib/permissions", () => ({
+  authorizeTeamAccess: vi.fn(),
 }));
 
-jest.mock("@/lib/db/stock-transactions", () => ({
-  getItemStockTransactionsWithDetails: jest.fn(),
-  getTeamStockTransactionsWithDetails: jest.fn(),
+vi.mock("@/lib/db/stock-transactions", () => ({
+  getItemStockTransactionsWithDetails: vi.fn(),
+  getTeamStockTransactionsWithDetails: vi.fn(),
 }));
 
-jest.mock("@/lib/db/items", () => ({
-  getItemById: jest.fn(),
+vi.mock("@/lib/db/items", () => ({
+  getItemById: vi.fn(),
 }));
 
-const mockAuthorizeTeamAccess = authorizeTeamAccess as jest.MockedFunction<
+const mockAuthorizeTeamAccess = authorizeTeamAccess as vi.MockedFunction<
   typeof authorizeTeamAccess
 >;
-const mockGetTeamTransactions = getTeamStockTransactionsWithDetails as jest.MockedFunction<
+const mockGetTeamTransactions = getTeamStockTransactionsWithDetails as vi.MockedFunction<
   typeof getTeamStockTransactionsWithDetails
 >;
-const mockGetItemTransactions = getItemStockTransactionsWithDetails as jest.MockedFunction<
+const mockGetItemTransactions = getItemStockTransactionsWithDetails as vi.MockedFunction<
   typeof getItemStockTransactionsWithDetails
 >;
-const mockGetItemById = getItemById as jest.MockedFunction<typeof getItemById>;
+const mockGetItemById = getItemById as vi.MockedFunction<typeof getItemById>;
 
 describe("transactions service", () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   it("returns auth error when team access fails", async () => {

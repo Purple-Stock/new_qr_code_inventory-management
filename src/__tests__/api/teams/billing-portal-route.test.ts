@@ -1,24 +1,25 @@
+import { vi } from "vitest";
 import { NextRequest } from "next/server";
 import { POST } from "@/app/api/teams/[id]/billing/portal/route";
 import { ERROR_CODES } from "@/lib/errors";
 
-jest.mock("@/lib/services/billing", () => ({
-  createTeamStripePortalSession: jest.fn(),
+vi.mock("@/lib/services/billing", () => ({
+  createTeamStripePortalSession: vi.fn(),
 }));
 
-jest.mock("@/lib/permissions", () => ({
-  getUserIdFromRequest: jest.fn(),
+vi.mock("@/lib/permissions", () => ({
+  getUserIdFromRequest: vi.fn(),
 }));
 
 import { createTeamStripePortalSession } from "@/lib/services/billing";
 import { getUserIdFromRequest } from "@/lib/permissions";
 
-const mockedCreateTeamStripePortalSession = jest.mocked(createTeamStripePortalSession);
-const mockedGetUserIdFromRequest = jest.mocked(getUserIdFromRequest);
+const mockedCreateTeamStripePortalSession = vi.mocked(createTeamStripePortalSession);
+const mockedGetUserIdFromRequest = vi.mocked(getUserIdFromRequest);
 
 describe("/api/teams/[id]/billing/portal route", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockedGetUserIdFromRequest.mockReturnValue(15);
   });
 

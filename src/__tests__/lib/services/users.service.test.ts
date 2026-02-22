@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import {
   createOrAttachTeamMember,
   getTeamUsersForManagement,
@@ -10,11 +11,11 @@ import { getTestDb, cleanupTestDb, clearTestDb } from "../../helpers/test-db";
 import { teamMembers, teams, users } from "@/db/schema";
 import { createUser } from "@/lib/db/users";
 
-jest.mock("@/db/client", () => {
-  const { getTestDb } = require("../../helpers/test-db");
-  const { drizzle } = getTestDb();
-  return { sqlite: drizzle };
-});
+const { drizzle } = getTestDb();
+
+vi.doMock("@/db/client", () => ({
+  sqlite: drizzle,
+}));
 
 describe("users service", () => {
   beforeEach(async () => {

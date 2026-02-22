@@ -1,14 +1,15 @@
+import { vi } from "vitest";
 import { NextRequest } from "next/server";
 import { GET as getReports } from "@/app/api/teams/[id]/reports/route";
 import { createSessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
 import { getTestDb, cleanupTestDb, clearTestDb } from "../../helpers/test-db";
 import { users, teams, teamMembers } from "@/db/schema";
 
-jest.mock("@/db/client", () => {
-  const { getTestDb } = require("../../helpers/test-db");
-  const { drizzle } = getTestDb();
-  return { sqlite: drizzle };
-});
+const { drizzle } = getTestDb();
+
+vi.doMock("@/db/client", () => ({
+  sqlite: drizzle,
+}));
 
 describe("/api/teams/[id]/reports authorization", () => {
   beforeEach(async () => {
