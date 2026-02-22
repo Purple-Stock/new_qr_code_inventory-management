@@ -496,6 +496,7 @@ export const ptBR = {
     includeItemName: "Incluir Nome do Item",
     includeSKU: "Incluir SKU",
     includeStock: "Incluir Estoque",
+    includeCompanyInfo: "Incluir dados da empresa",
     includeCustomField: "Incluir campo customizável",
     tourTutorialTitle: "Tutorial de etiquetas",
     tourTutorialDesc: "Gere etiquetas para impressão com dados de QR code e código de barras.",

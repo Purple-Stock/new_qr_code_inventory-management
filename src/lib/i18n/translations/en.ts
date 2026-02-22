@@ -496,6 +496,7 @@ export const en = {
     includeItemName: "Include Item Name",
     includeSKU: "Include SKU",
     includeStock: "Include Stock",
+    includeCompanyInfo: "Include Company Info",
     includeCustomField: "Include custom field",
     tourTutorialTitle: "Labels tutorial",
     tourTutorialDesc: "Generate printable labels with QR and barcode data.",

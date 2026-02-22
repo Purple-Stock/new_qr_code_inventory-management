@@ -496,6 +496,7 @@ export const fr = {
     includeItemName: "Inclure le nom de l'article",
     includeSKU: "Inclure le SKU",
     includeStock: "Inclure le stock",
+    includeCompanyInfo: "Inclure les infos entreprise",
     includeCustomField: "Inclure le champ personnalisé",
     tourTutorialTitle: "Tutoriel des étiquettes",
     tourTutorialDesc: "Générez des étiquettes imprimables avec QR code et code-barres.",
