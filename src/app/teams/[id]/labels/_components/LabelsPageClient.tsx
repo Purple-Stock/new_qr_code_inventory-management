@@ -337,15 +337,17 @@ export default function LabelsPageClient({
         }
 
         if (includeBarcode && item.barcode) {
-          const availableLines = Math.max(1, Math.floor((innerBottom - currentY) / lineStep));
-          const used = addCenteredText(item.barcode, {
+          const barcodeText = `BARCODE: ${item.barcode}`;
+          const requestedY = currentY + lineStep;
+          const safeY = Math.min(requestedY, innerBottom - 0.8);
+          const used = addCenteredText(barcodeText, {
             fontSize: metaFont,
             maxWidth: innerW,
-            maxLines: Math.min(2, availableLines),
-            color: [55, 65, 81],
-            y: currentY + lineStep,
+            maxLines: 1,
+            color: [30, 41, 59],
+            y: safeY,
           });
-          currentY += Math.max(lineStep, used * lineStep);
+          currentY = Math.max(currentY, safeY + Math.max(lineStep, used * lineStep));
         }
 
         if (includeStock && item.currentStock !== null && currentY + lineStep <= innerBottom) {
