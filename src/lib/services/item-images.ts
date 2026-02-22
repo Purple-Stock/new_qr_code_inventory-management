@@ -169,8 +169,36 @@ function resolveEnv(key: string): string | undefined {
   return undefined;
 }
 
+function deriveBucketFromPublicBaseUrl(): string | undefined {
+  const baseUrl = resolveEnv("S3_PUBLIC_BASE_URL");
+  if (!baseUrl) {
+    return undefined;
+  }
+
+  try {
+    const url = new URL(baseUrl);
+    const hostMatch = url.hostname.match(/^([^.]+)\.s3[.-]/i);
+    if (hostMatch?.[1]) {
+      return hostMatch[1];
+    }
+
+    const firstPathSegment = url.pathname.split("/").filter(Boolean)[0];
+    if (firstPathSegment) {
+      return firstPathSegment;
+    }
+  } catch {
+    return undefined;
+  }
+
+  return undefined;
+}
+
+function resolveBucketName(): string | undefined {
+  return resolveEnv("S3_BUCKET") || deriveBucketFromPublicBaseUrl();
+}
+
 function shouldUseS3(): boolean {
-  return Boolean(resolveEnv("S3_BUCKET"));
+  return Boolean(resolveBucketName());
 }
 
 function normalizeFolderSegment(value: string): string {
@@ -273,7 +301,7 @@ async function uploadTeamImageToS3(params: {
 
   await validateImageDimensions(bytes);
 
-  const bucket = resolveEnv("S3_BUCKET")!;
+  const bucket = resolveBucketName()!;
   const region = resolveAwsRegion();
   const endpoint =
     process.env.S3_ENDPOINT?.trim() || process.env.AWS_S3_ENDPOINT?.trim() || undefined;

@@ -101,7 +101,7 @@ export default function NewItemPageClient({
       });
 
       if (!result.ok) {
-        setError(t.itemForm.unexpectedError);
+        setError(result.error.error || t.itemForm.unexpectedError);
         setIsLoading(false);
         return;
       }
@@ -109,7 +109,7 @@ export default function NewItemPageClient({
       setSuccess(t.itemForm.createSuccess);
       await router.push(`/teams/${teamId}/items`);
       router.refresh();
-    } catch (err) {
+    } catch {
       setError(t.itemForm.unexpectedError);
       setIsLoading(false);
     }
