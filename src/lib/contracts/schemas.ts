@@ -205,6 +205,9 @@ export function parseTeamCreatePayload(body: unknown): ValidationResult<{
 export function parseTeamUpdatePayload(body: unknown): ValidationResult<{
   name?: string;
   notes?: string | null;
+  companyName?: string | null;
+  labelCompanyInfo?: string | null;
+  labelLogoUrl?: string | null;
   itemCustomFieldSchema?: TeamItemCustomFieldSchemaEntry[] | null;
 }> {
   if (!isRecord(body)) {
@@ -214,6 +217,9 @@ export function parseTeamUpdatePayload(body: unknown): ValidationResult<{
   const payload: {
     name?: string;
     notes?: string | null;
+    companyName?: string | null;
+    labelCompanyInfo?: string | null;
+    labelLogoUrl?: string | null;
     itemCustomFieldSchema?: TeamItemCustomFieldSchemaEntry[] | null;
   } = {};
 
@@ -231,6 +237,38 @@ export function parseTeamUpdatePayload(body: unknown): ValidationResult<{
       return { ok: false, error: "Notes must be a string" };
     }
     payload.notes = notesParsed.data ?? null;
+  }
+
+  if (body.companyName !== undefined) {
+    const companyNameParsed = parseOptionalTrimmedString(body.companyName);
+    if (!companyNameParsed.ok) {
+      return { ok: false, error: "Company name must be a string" };
+    }
+    payload.companyName = companyNameParsed.data ?? null;
+  }
+
+  if (body.labelCompanyInfo !== undefined) {
+    const labelCompanyInfoParsed = parseOptionalTrimmedString(body.labelCompanyInfo);
+    if (!labelCompanyInfoParsed.ok) {
+      return { ok: false, error: "Label company info must be a string" };
+    }
+    payload.labelCompanyInfo = labelCompanyInfoParsed.data ?? null;
+  }
+
+  if (body.labelLogoUrl !== undefined) {
+    const labelLogoUrlParsed = parseOptionalTrimmedString(body.labelLogoUrl);
+    if (!labelLogoUrlParsed.ok) {
+      return { ok: false, error: "Label logo URL must be a string" };
+    }
+
+    const labelLogoUrl = labelLogoUrlParsed.data ?? null;
+    const isDataUrl = labelLogoUrl ? labelLogoUrl.startsWith("data:image/") : false;
+    const isHttpUrl = labelLogoUrl ? /^https?:\/\//i.test(labelLogoUrl) : false;
+    if (labelLogoUrl && !isDataUrl && !isHttpUrl) {
+      return { ok: false, error: "Label logo URL must be a valid URL or data image" };
+    }
+
+    payload.labelLogoUrl = labelLogoUrl;
   }
 
   if (body.itemCustomFieldSchema !== undefined) {
