@@ -1,4 +1,5 @@
 import { vi } from "vitest";
+import { eq } from "drizzle-orm";
 import {
   deleteTeamItemById,
   updateTeamItem,
@@ -8,7 +9,7 @@ import {
 } from "@/lib/services/items";
 import { ERROR_CODES } from "@/lib/errors";
 import { getTestDb, cleanupTestDb, clearTestDb } from "../../helpers/test-db";
-import { items, teamMembers, teams, users } from "@/db/schema";
+import { items, stockTransactions, teamMembers, teams, users } from "@/db/schema";
 
 const { drizzle } = getTestDb();
 
@@ -85,6 +86,98 @@ describe("items service", () => {
     if (result.ok) return;
     expect(result.error.status).toBe(404);
     expect(result.error.errorCode).toBe(ERROR_CODES.ITEM_NOT_FOUND);
+  });
+
+  it("blocks delete when item has stock transactions and force flag is false", async () => {
+    const { drizzle } = getTestDb();
+    const [admin] = await drizzle
+      .insert(users)
+      .values({ email: "items-admin-has-tx@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Items Team Tx", userId: admin.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: admin.id,
+      role: "admin",
+      status: "active",
+    });
+    const [item] = await drizzle
+      .insert(items)
+      .values({ name: "Item Tx", barcode: "barcode-item-tx", teamId: team.id })
+      .returning();
+    await drizzle.insert(stockTransactions).values({
+      itemId: item.id,
+      teamId: team.id,
+      transactionType: "stock_in",
+      quantity: 1,
+      notes: null,
+      userId: admin.id,
+      sourceLocationId: null,
+      destinationLocationId: null,
+    });
+
+    const result = await deleteTeamItemById({
+      teamId: team.id,
+      itemId: item.id,
+      requestUserId: admin.id,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.status).toBe(409);
+    expect(result.error.errorCode).toBe(ERROR_CODES.VALIDATION_ERROR);
+    expect(result.error.error).toContain("histórico de transações de estoque");
+  });
+
+  it("force deletes item by deleting its stock transactions first", async () => {
+    const { drizzle } = getTestDb();
+    const [admin] = await drizzle
+      .insert(users)
+      .values({ email: "items-admin-force-delete@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Items Team Force", userId: admin.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: admin.id,
+      role: "admin",
+      status: "active",
+    });
+    const [item] = await drizzle
+      .insert(items)
+      .values({ name: "Item Force", barcode: "barcode-item-force", teamId: team.id })
+      .returning();
+    await drizzle.insert(stockTransactions).values({
+      itemId: item.id,
+      teamId: team.id,
+      transactionType: "stock_in",
+      quantity: 2,
+      notes: null,
+      userId: admin.id,
+      sourceLocationId: null,
+      destinationLocationId: null,
+    });
+
+    const result = await deleteTeamItemById({
+      teamId: team.id,
+      itemId: item.id,
+      requestUserId: admin.id,
+      forceDeleteWithTransactions: true,
+    });
+
+    expect(result.ok).toBe(true);
+    const deletedItem = await drizzle.select().from(items).where(eq(items.id, item.id));
+    const deletedTransactions = await drizzle
+      .select()
+      .from(stockTransactions)
+      .where(eq(stockTransactions.itemId, item.id));
+    expect(deletedItem).toHaveLength(0);
+    expect(deletedTransactions).toHaveLength(0);
   });
 
   it("returns auth error when user not in team for listTeamItemsForUser", async () => {
@@ -266,15 +359,15 @@ describe("items service", () => {
     expect(result.data.item.name).toBe("New Item");
   });
 
-  it("creates item with photo data when authorized", async () => {
+  it("creates item with custom fields when authorized", async () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "items-create-photo@example.com", passwordHash: "hash", role: "admin" })
+      .values({ email: "items-create-custom@example.com", passwordHash: "hash", role: "admin" })
       .returning();
     const [team] = await drizzle
       .insert(teams)
-      .values({ name: "Items Photo Team", userId: admin.id, companyId: null })
+      .values({ name: "Items Custom Team", userId: admin.id, companyId: null })
       .returning();
     await drizzle.insert(teamMembers).values({
       teamId: team.id,
@@ -288,14 +381,151 @@ describe("items service", () => {
       requestUserId: admin.id,
       payload: {
         name: "Printer",
-        barcode: "barcode-photo-item",
-        photoData: "data:image/png;base64,AAAA",
+        barcode: "barcode-printer-custom",
+        customFields: {
+          medidor_total: "10234",
+          medidor_pb: "8300",
+        },
       },
     });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect((result.data.item as any).photoData).toBe("data:image/png;base64,AAAA");
+    expect((result.data.item as any).customFields).toEqual({
+      medidor_total: "10234",
+      medidor_pb: "8300",
+    });
+  });
+
+  it("rejects item custom fields not present in active team schema on create", async () => {
+    const { drizzle } = getTestDb();
+    const [admin] = await drizzle
+      .insert(users)
+      .values({ email: "items-create-custom-schema@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({
+        name: "Items Custom Schema Team",
+        userId: admin.id,
+        companyId: null,
+        itemCustomFieldSchema: [{ key: "medidor_total", label: "Medidor total", active: true }],
+      })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: admin.id,
+      role: "admin",
+      status: "active",
+    });
+
+    const result = await createTeamItem({
+      teamId: team.id,
+      requestUserId: admin.id,
+      payload: {
+        name: "Printer",
+        barcode: "barcode-printer-schema-invalid",
+        customFields: {
+          medidor_total: "10234",
+          medidor_pb: "8300",
+        },
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.status).toBe(400);
+    expect(result.error.error).toContain("custom fields");
+  });
+
+  it("rejects item custom fields not present in active team schema on update", async () => {
+    const { drizzle } = getTestDb();
+    const [admin] = await drizzle
+      .insert(users)
+      .values({ email: "items-update-custom-schema@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({
+        name: "Items Update Schema Team",
+        userId: admin.id,
+        companyId: null,
+        itemCustomFieldSchema: [{ key: "medidor_total", label: "Medidor total", active: true }],
+      })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: admin.id,
+      role: "admin",
+      status: "active",
+    });
+    const [item] = await drizzle
+      .insert(items)
+      .values({ name: "Printer", barcode: "barcode-printer-schema-update", teamId: team.id })
+      .returning();
+
+    const result = await updateTeamItem({
+      teamId: team.id,
+      itemId: item.id,
+      requestUserId: admin.id,
+      payload: {
+        customFields: {
+          medidor_pb: "8300",
+        },
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.status).toBe(400);
+    expect(result.error.error).toContain("custom fields");
+  });
+
+  it("allows legacy custom field keys on update when they already exist on the item", async () => {
+    const { drizzle } = getTestDb();
+    const [admin] = await drizzle
+      .insert(users)
+      .values({ email: "items-update-legacy-custom@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({
+        name: "Items Legacy Schema Team",
+        userId: admin.id,
+        companyId: null,
+        itemCustomFieldSchema: [{ key: "contador_total", label: "Contador total", active: true }],
+      })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: admin.id,
+      role: "admin",
+      status: "active",
+    });
+    const [item] = await drizzle
+      .insert(items)
+      .values({
+        name: "Printer",
+        barcode: "barcode-printer-legacy-key",
+        teamId: team.id,
+        customFields: { medidor_total: "1234" },
+      })
+      .returning();
+
+    const result = await updateTeamItem({
+      teamId: team.id,
+      itemId: item.id,
+      requestUserId: admin.id,
+      payload: {
+        customFields: {
+          medidor_total: "9999",
+        },
+      },
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect((result.data.item as any).customFields).toEqual({ medidor_total: "9999" });
   });
 
   it("returns validation error for invalid payload", async () => {

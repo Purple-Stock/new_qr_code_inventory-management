@@ -166,8 +166,29 @@ describe("/api/teams/[id]/items/[itemId] route", () => {
         teamId: 12,
         itemId: 7,
         requestUserId: 5,
+        forceDeleteWithTransactions: false,
       });
       expect(mockedRevalidatePath).toHaveBeenCalledWith("/teams/12/items");
+    });
+
+    it("passes force delete flag from querystring", async () => {
+      mockedDeleteTeamItemById.mockResolvedValue({ ok: true, data: null } as any);
+
+      const request = new NextRequest("http://localhost:3000/api/teams/12/items/7?force=true", {
+        method: "DELETE",
+      });
+
+      const response = await DELETE(request, {
+        params: Promise.resolve({ id: "12", itemId: "7" }),
+      });
+
+      expect(response.status).toBe(200);
+      expect(mockedDeleteTeamItemById).toHaveBeenCalledWith({
+        teamId: 12,
+        itemId: 7,
+        requestUserId: 5,
+        forceDeleteWithTransactions: true,
+      });
     });
 
     it("maps service errors", async () => {
@@ -176,7 +197,7 @@ describe("/api/teams/[id]/items/[itemId] route", () => {
         error: {
           status: 409,
           errorCode: ERROR_CODES.VALIDATION_ERROR,
-          error: "Cannot delete item: it has stock transaction history. Remove or adjust transactions first.",
+          error: "Não é possível excluir o item: ele possui histórico de transações de estoque. Remova ou ajuste as transações primeiro.",
         },
       });
 
@@ -189,7 +210,7 @@ describe("/api/teams/[id]/items/[itemId] route", () => {
       expect(response.status).toBe(409);
       expect(await response.json()).toEqual({
         errorCode: ERROR_CODES.VALIDATION_ERROR,
-        error: "Cannot delete item: it has stock transaction history. Remove or adjust transactions first.",
+        error: "Não é possível excluir o item: ele possui histórico de transações de estoque. Remova ou ajuste as transações primeiro.",
       });
     });
   });

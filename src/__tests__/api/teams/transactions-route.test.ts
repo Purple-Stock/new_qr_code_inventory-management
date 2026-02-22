@@ -68,8 +68,29 @@ describe("/api/teams/[id]/transactions route", () => {
       teamId: 12,
       requestUserId: 15,
       searchQuery: "mouse",
+      skuQuery: undefined,
     });
     expect(mockedGetUserIdFromRequest).toHaveBeenCalledWith(request);
+  });
+
+  it("passes sku query to service when present", async () => {
+    mockedListTeamTransactionsForUser.mockResolvedValue({
+      ok: true,
+      data: { transactions: [] },
+    } as any);
+
+    const response = await GET(
+      new NextRequest("http://localhost:3000/api/teams/12/transactions?search=mouse&sku=abc-123"),
+      { params: Promise.resolve({ id: "12" }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockedListTeamTransactionsForUser).toHaveBeenCalledWith({
+      teamId: 12,
+      requestUserId: 15,
+      searchQuery: "mouse",
+      skuQuery: "abc-123",
+    });
   });
 
   it("passes undefined search query when absent", async () => {
@@ -88,6 +109,7 @@ describe("/api/teams/[id]/transactions route", () => {
       teamId: 12,
       requestUserId: 15,
       searchQuery: undefined,
+      skuQuery: undefined,
     });
   });
 

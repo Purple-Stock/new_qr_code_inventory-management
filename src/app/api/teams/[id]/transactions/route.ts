@@ -32,11 +32,13 @@ export async function GET(
     // Get search query from URL params
     const searchParams = request.nextUrl.searchParams;
     const searchQuery = searchParams.get("search") || undefined;
+    const skuQuery = searchParams.get("sku") || undefined;
 
     const result = await listTeamTransactionsForUser({
       teamId,
       requestUserId: access.requestUserId,
       searchQuery,
+      skuQuery,
     });
     if (!result.ok) {
       return serviceErrorResponse(result.error);

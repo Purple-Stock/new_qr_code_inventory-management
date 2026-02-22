@@ -8,6 +8,7 @@ import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { MapPin, Edit, Copy, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast-simple";
 import { fetchApiJsonResult, fetchApiResult } from "@/lib/api-client";
+import { ERROR_CODES } from "@/lib/errors";
 import type { Item } from "../_types";
 
 interface ItemsListProps {
@@ -15,6 +16,7 @@ interface ItemsListProps {
   teamId: string;
   formatPrice: (price: number | null) => string;
   t: any;
+  onItemDeleted?: (itemId: number) => void;
 }
 
 interface ItemDetails extends Item {
@@ -27,11 +29,13 @@ function generateBarcode(): string {
   return Math.floor(1000000000000 + Math.random() * 9000000000000).toString();
 }
 
-export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
+export function ItemsList({ items, teamId, formatPrice, t, onItemDeleted }: ItemsListProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [copyingId, setCopyingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [isForceDeleting, setIsForceDeleting] = useState(false);
+  const [showForceDeleteAction, setShowForceDeleteAction] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
 
@@ -92,6 +96,7 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
 
   const handleDeleteClick = (item: Item) => {
     setItemToDelete(item);
+    setShowForceDeleteAction(false);
     setDeleteModalOpen(true);
   };
 
@@ -104,11 +109,31 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
         fallbackError: t.items.failedToDeleteItem,
       });
       if (!result.ok) {
+        if (result.error.errorCode === ERROR_CODES.ITEM_NOT_FOUND) {
+          // Idempotent delete: if item is already gone, close modal and refresh list.
+          onItemDeleted?.(itemToDelete.id);
+          toast({
+            variant: "success",
+            title: t.common.success,
+            description: t.items.itemDeleted,
+          });
+          router.refresh();
+          setDeleteModalOpen(false);
+          setItemToDelete(null);
+          return;
+        }
         toast({
           variant: "destructive",
           title: t.common.error,
-          description: t.items.failedToDeleteItem,
+          description: result.error.error || t.items.failedToDeleteItem,
         });
+        if (
+          result.error.status === 409 &&
+          result.error.errorCode === ERROR_CODES.VALIDATION_ERROR &&
+          result.error.error.toLowerCase().includes("histórico de transações")
+        ) {
+          setShowForceDeleteAction(true);
+        }
         setDeletingId(null);
         return;
       }
@@ -118,11 +143,44 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
         title: t.common.success,
         description: t.items.itemDeleted,
       });
+      onItemDeleted?.(itemToDelete.id);
       router.refresh();
       setDeleteModalOpen(false);
       setItemToDelete(null);
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleForceDeleteConfirm = async () => {
+    if (!itemToDelete) return;
+    setIsForceDeleting(true);
+    try {
+      const result = await fetchApiResult(`/api/teams/${teamId}/items/${itemToDelete.id}?force=true`, {
+        method: "DELETE",
+        fallbackError: t.items.failedToDeleteItem,
+      });
+      if (!result.ok) {
+        toast({
+          variant: "destructive",
+          title: t.common.error,
+          description: result.error.error || t.items.failedToDeleteItem,
+        });
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: t.common.success,
+        description: t.items.itemDeleted,
+      });
+      onItemDeleted?.(itemToDelete.id);
+      router.refresh();
+      setDeleteModalOpen(false);
+      setItemToDelete(null);
+      setShowForceDeleteAction(false);
+    } finally {
+      setIsForceDeleting(false);
     }
   };
 
@@ -373,12 +431,16 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
         onClose={() => {
           setDeleteModalOpen(false);
           setItemToDelete(null);
+          setShowForceDeleteAction(false);
         }}
         onConfirm={handleDeleteConfirm}
+        onSecondaryConfirm={showForceDeleteAction ? handleForceDeleteConfirm : undefined}
+        secondaryConfirmLabel={showForceDeleteAction ? "Excluir forçado" : undefined}
         title={t.common.delete}
         description={t.items.deleteConfirm}
         itemName={itemToDelete ? (itemToDelete.name || t.items.unnamedItem) : undefined}
         isDeleting={deletingId !== null}
+        isSecondaryDeleting={isForceDeleting}
       />
     </>
   );

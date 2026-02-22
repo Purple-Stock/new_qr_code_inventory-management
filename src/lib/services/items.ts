@@ -7,6 +7,7 @@ import {
   itemHasTransactions,
   updateItem,
 } from "@/lib/db/items";
+import { deleteItemStockTransactions } from "@/lib/db/stock-transactions";
 import { ERROR_CODES } from "@/lib/errors";
 import { isUniqueConstraintError } from "@/lib/error-utils";
 import { authorizeTeamAccess, authorizeTeamPermission } from "@/lib/permissions";
@@ -22,6 +23,7 @@ import {
   validationServiceError,
 } from "@/lib/services/errors";
 import { toItemDto } from "@/lib/services/mappers";
+import type { ItemCustomFields, TeamItemCustomFieldSchemaEntry } from "@/db/schema";
 
 function mapImageUploadError(error: unknown): string {
   const message = error instanceof Error ? error.message : "Image upload failed";
@@ -29,6 +31,32 @@ function mapImageUploadError(error: unknown): string {
     return "Image upload failed: S3 permission denied";
   }
   return message || "Image upload failed";
+}
+
+function validateCustomFieldsAgainstActiveSchema(params: {
+  customFields: ItemCustomFields | null | undefined;
+  schema: TeamItemCustomFieldSchemaEntry[] | null | undefined;
+  allowedLegacyKeys?: string[];
+}): string | null {
+  if (params.customFields === undefined || params.customFields === null) {
+    return null;
+  }
+
+  const schema = params.schema ?? null;
+  if (!schema || schema.length === 0) {
+    return null;
+  }
+
+  const activeKeys = new Set(schema.filter((entry) => entry.active).map((entry) => entry.key));
+  const legacyKeys = new Set((params.allowedLegacyKeys ?? []).filter(Boolean));
+  const invalidKeys = Object.keys(params.customFields).filter(
+    (key) => !activeKeys.has(key) && !legacyKeys.has(key)
+  );
+  if (invalidKeys.length === 0) {
+    return null;
+  }
+
+  return `Item custom fields contain keys that are not active in team schema: ${invalidKeys.join(", ")}`;
 }
 
 export async function getTeamItemDetails(params: {
@@ -113,6 +141,17 @@ export async function createTeamItem(params: {
 
   try {
     const payload = parsed.data;
+    const customFieldsValidationError = validateCustomFieldsAgainstActiveSchema({
+      customFields: payload.customFields,
+      schema: auth.team?.itemCustomFieldSchema ?? null,
+    });
+    if (customFieldsValidationError) {
+      return {
+        ok: false,
+        error: validationServiceError(customFieldsValidationError),
+      };
+    }
+
     let photoData = payload.photoData ?? null;
     if (payload.photoData && payload.photoData.startsWith("data:image/")) {
       try {
@@ -143,6 +182,7 @@ export async function createTeamItem(params: {
       initialQuantity: payload.initialQuantity ?? 0,
       currentStock: payload.currentStock ?? undefined,
       minimumStock: payload.minimumStock ?? 0,
+      customFields: payload.customFields ?? null,
     });
 
     return { ok: true, data: { item: toItemDto(item) } };
@@ -202,6 +242,17 @@ export async function updateTeamItem(
     return { ok: false, error: validationServiceError(parsed.error) };
   }
   const payload = parsed.data;
+  const customFieldsValidationError = validateCustomFieldsAgainstActiveSchema({
+    customFields: payload.customFields,
+    schema: auth.team?.itemCustomFieldSchema ?? null,
+    allowedLegacyKeys: Object.keys(existingItem.customFields ?? {}),
+  });
+  if (customFieldsValidationError) {
+    return {
+      ok: false,
+      error: validationServiceError(customFieldsValidationError),
+    };
+  }
 
   try {
     let photoData = payload.photoData;
@@ -230,6 +281,7 @@ export async function updateTeamItem(
       brand: payload.brand,
       photoData,
       locationId: payload.locationId,
+      customFields: payload.customFields,
     });
 
     return { ok: true, data: { item: toItemDto(item) } };
@@ -251,6 +303,7 @@ export interface DeleteTeamItemInput {
   teamId: number;
   itemId: number;
   requestUserId: number | null;
+  forceDeleteWithTransactions?: boolean;
 }
 
 export async function deleteTeamItemById(
@@ -281,14 +334,25 @@ export async function deleteTeamItemById(
 
   const hasTx = await itemHasTransactions(params.itemId);
   if (hasTx) {
-    return {
-      ok: false,
-      error: makeServiceError(
-        409,
-        ERROR_CODES.VALIDATION_ERROR,
-        "Cannot delete item: it has stock transaction history. Remove or adjust transactions first."
-      ),
-    };
+    if (params.forceDeleteWithTransactions) {
+      try {
+        await deleteItemStockTransactions(params.teamId, params.itemId);
+      } catch {
+        return {
+          ok: false,
+          error: internalServiceError("An error occurred while deleting item transactions"),
+        };
+      }
+    } else {
+      return {
+        ok: false,
+        error: makeServiceError(
+          409,
+          ERROR_CODES.VALIDATION_ERROR,
+          "Não é possível excluir o item: ele possui histórico de transações de estoque. Remova ou ajuste as transações primeiro."
+        ),
+      };
+    }
   }
 
   try {

@@ -216,8 +216,7 @@ export async function updateTeam(
   data: {
     name?: string;
     notes?: string | null;
-    labelCompanyInfo?: string | null;
-    labelLogoUrl?: string | null;
+    itemCustomFieldSchema?: { key: string; label: string; active: boolean }[] | null;
   }
 ): Promise<Team> {
   const [updatedTeam] = await sqlite

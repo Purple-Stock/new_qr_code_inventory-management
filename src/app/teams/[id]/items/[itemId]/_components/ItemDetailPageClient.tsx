@@ -70,6 +70,9 @@ export default function ItemDetailPageClient({
     txFilter === "all"
       ? transactions
       : transactions.filter((t) => t.transactionType === txFilter);
+  const customFieldEntries = Object.entries(item.customFields ?? {}).filter(
+    ([, value]) => Boolean(value)
+  );
 
   const filters: { value: TransactionTypeFilter; label: string }[] = [
     { value: "all", label: t.transactions.all },
@@ -222,27 +225,12 @@ export default function ItemDetailPageClient({
                   {item.locationName || t.reports.noLocation}
                 </p>
               </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase mb-0.5">
-                  {t.itemForm.photoLabel}
-                </p>
-                {item.photoData ? (
-                  <button
-                    type="button"
-                    onClick={() => setIsPhotoModalOpen(true)}
-                    className="inline-block rounded-md focus:outline-none focus:ring-2 focus:ring-[#6B21A8] focus:ring-offset-2"
-                    aria-label={`${t.itemForm.photoLabel} - ampliar`}
-                  >
-                    <img
-                      src={item.photoData}
-                      alt={itemName}
-                      className="h-20 w-20 object-cover rounded-md border border-gray-200 cursor-zoom-in"
-                    />
-                  </button>
-                ) : (
-                  <p className="font-medium text-gray-900">-</p>
-                )}
-              </div>
+              {customFieldEntries.map(([key, value]) => (
+                <div key={key}>
+                  <p className="text-xs text-gray-500 uppercase mb-0.5">{key}</p>
+                  <p className="font-medium text-gray-900">{value}</p>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -334,7 +322,7 @@ export default function ItemDetailPageClient({
           onClick={() => setIsPhotoModalOpen(false)}
           role="dialog"
           aria-modal="true"
-          aria-label={t.itemForm.photoLabel}
+          aria-label={t.itemForm.tourPhotoTitle}
         >
           <button
             type="button"

@@ -1,4 +1,5 @@
 import type { StockTransactionType } from "@/db/schema";
+import type { ItemCustomFields, TeamItemCustomFieldSchemaEntry } from "@/db/schema";
 
 export type ValidationResult<T> =
   | { ok: true; data: T }
@@ -204,9 +205,10 @@ export function parseTeamCreatePayload(body: unknown): ValidationResult<{
 export function parseTeamUpdatePayload(body: unknown): ValidationResult<{
   name?: string;
   notes?: string | null;
-  companyName?: string;
+  companyName?: string | null;
   labelCompanyInfo?: string | null;
   labelLogoUrl?: string | null;
+  itemCustomFieldSchema?: TeamItemCustomFieldSchemaEntry[] | null;
 }> {
   if (!isRecord(body)) {
     return { ok: false, error: "Invalid request payload" };
@@ -215,9 +217,10 @@ export function parseTeamUpdatePayload(body: unknown): ValidationResult<{
   const payload: {
     name?: string;
     notes?: string | null;
-    companyName?: string;
+    companyName?: string | null;
     labelCompanyInfo?: string | null;
     labelLogoUrl?: string | null;
+    itemCustomFieldSchema?: TeamItemCustomFieldSchemaEntry[] | null;
   } = {};
 
   if (body.name !== undefined) {
@@ -237,11 +240,11 @@ export function parseTeamUpdatePayload(body: unknown): ValidationResult<{
   }
 
   if (body.companyName !== undefined) {
-    const companyNameParsed = parseRequiredTrimmedString(body.companyName, "Company name");
+    const companyNameParsed = parseOptionalTrimmedString(body.companyName);
     if (!companyNameParsed.ok) {
-      return { ok: false, error: "Company name is required" };
+      return { ok: false, error: "Company name must be a string" };
     }
-    payload.companyName = companyNameParsed.data;
+    payload.companyName = companyNameParsed.data ?? null;
   }
 
   if (body.labelCompanyInfo !== undefined) {
@@ -255,17 +258,52 @@ export function parseTeamUpdatePayload(body: unknown): ValidationResult<{
   if (body.labelLogoUrl !== undefined) {
     const labelLogoUrlParsed = parseOptionalTrimmedString(body.labelLogoUrl);
     if (!labelLogoUrlParsed.ok) {
-      return { ok: false, error: "Label logo must be a string" };
+      return { ok: false, error: "Label logo URL must be a string" };
     }
 
     const labelLogoUrl = labelLogoUrlParsed.data ?? null;
     const isDataUrl = labelLogoUrl ? labelLogoUrl.startsWith("data:image/") : false;
     const isHttpUrl = labelLogoUrl ? /^https?:\/\//i.test(labelLogoUrl) : false;
     if (labelLogoUrl && !isDataUrl && !isHttpUrl) {
-      return { ok: false, error: "Label logo must be an image data URL or HTTP URL" };
+      return { ok: false, error: "Label logo URL must be a valid URL or data image" };
     }
 
     payload.labelLogoUrl = labelLogoUrl;
+  }
+
+  if (body.itemCustomFieldSchema !== undefined) {
+    if (body.itemCustomFieldSchema === null) {
+      payload.itemCustomFieldSchema = null;
+    } else if (!Array.isArray(body.itemCustomFieldSchema)) {
+      return { ok: false, error: "Invalid custom field schema format" };
+    } else {
+      const parsedSchema: TeamItemCustomFieldSchemaEntry[] = [];
+      const seenKeys = new Set<string>();
+
+      for (const entry of body.itemCustomFieldSchema) {
+        if (!isRecord(entry)) {
+          return { ok: false, error: "Invalid custom field schema format" };
+        }
+
+        const keyParsed = parseRequiredTrimmedString(entry.key, "Custom field key");
+        const labelParsed = parseRequiredTrimmedString(entry.label, "Custom field label");
+        if (!keyParsed.ok || !labelParsed.ok || typeof entry.active !== "boolean") {
+          return { ok: false, error: "Invalid custom field schema entry" };
+        }
+        if (seenKeys.has(keyParsed.data)) {
+          return { ok: false, error: "Custom field schema contains duplicate keys" };
+        }
+
+        seenKeys.add(keyParsed.data);
+        parsedSchema.push({
+          key: keyParsed.data,
+          label: labelParsed.data,
+          active: entry.active,
+        });
+      }
+
+      payload.itemCustomFieldSchema = parsedSchema;
+    }
   }
 
   return { ok: true, data: payload };
@@ -346,6 +384,7 @@ export type ItemWritePayload = {
   initialQuantity?: number;
   currentStock?: number;
   minimumStock?: number;
+  customFields?: ItemCustomFields | null;
 };
 
 export function parseItemPayload(
@@ -444,6 +483,24 @@ export function parseItemPayload(
   }
   if (body.minimumStock !== undefined) {
     payload.minimumStock = minimumStockParsed.data ?? 0;
+  }
+
+  if (body.customFields !== undefined) {
+    if (body.customFields === null) {
+      payload.customFields = null;
+    } else if (!isRecord(body.customFields)) {
+      return { ok: false, error: "Item custom fields must be an object" };
+    } else {
+      const parsedCustomFields: ItemCustomFields = {};
+      for (const [key, value] of Object.entries(body.customFields)) {
+        const normalizedKey = key.trim();
+        if (!normalizedKey || typeof value !== "string") {
+          return { ok: false, error: "Item custom fields must contain only string values" };
+        }
+        parsedCustomFields[normalizedKey] = value.trim();
+      }
+      payload.customFields = parsedCustomFields;
+    }
   }
 
   return { ok: true, data: payload };
