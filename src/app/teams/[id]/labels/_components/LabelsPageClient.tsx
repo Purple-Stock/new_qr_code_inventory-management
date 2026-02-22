@@ -44,6 +44,25 @@ interface LabelsPageClientProps {
   initialItems: Item[];
 }
 
+type LabelSizePreset =
+  | "default_10x5"
+  | "custom"
+  | "zebra_100x150"
+  | "zebra_60x40"
+  | "zebra_110x64"
+  | "zebra_170x64";
+
+const LABEL_SIZE_PRESETS: Record<
+  Exclude<LabelSizePreset, "custom">,
+  { widthCm: number; heightCm: number; label: string; zebra: boolean }
+> = {
+  default_10x5: { widthCm: 10, heightCm: 5, label: "Padrão (10 x 5 cm)", zebra: false },
+  zebra_100x150: { widthCm: 10, heightCm: 15, label: "Zebra 100 x 150 mm", zebra: true },
+  zebra_60x40: { widthCm: 6, heightCm: 4, label: "Zebra 60 x 40 mm", zebra: true },
+  zebra_110x64: { widthCm: 11, heightCm: 6.4, label: "Zebra 110 x 64 mm", zebra: true },
+  zebra_170x64: { widthCm: 17, heightCm: 6.4, label: "Zebra 170 x 64 mm", zebra: true },
+};
+
 export default function LabelsPageClient({
   initialTeam,
   initialItems,
@@ -53,7 +72,7 @@ export default function LabelsPageClient({
   const [isLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
-  const [labelSizeMode, setLabelSizeMode] = useState<"default" | "custom">("default");
+  const [labelSizePreset, setLabelSizePreset] = useState<LabelSizePreset>("zebra_100x150");
   const [customWidthCm, setCustomWidthCm] = useState("10");
   const [customHeightCm, setCustomHeightCm] = useState("5");
   const [labelQuantityByItem, setLabelQuantityByItem] = useState<Record<number, number>>({});
@@ -164,8 +183,9 @@ export default function LabelsPageClient({
   };
 
   const getLabelDimensionsCm = () => {
-    if (labelSizeMode === "default") {
-      return { widthCm: 10, heightCm: 5 };
+    if (labelSizePreset !== "custom") {
+      const preset = LABEL_SIZE_PRESETS[labelSizePreset];
+      return { widthCm: preset.widthCm, heightCm: preset.heightCm };
     }
 
     const widthCm = Math.min(Math.max(parseCm(customWidthCm, 10), 3), 18);
@@ -201,20 +221,32 @@ export default function LabelsPageClient({
       const labelsToPrint = selectedItemsList.flatMap((item) =>
         Array.from({ length: getItemQuantity(item.id) }, () => item)
       );
-      const pdf = new jsPDF("p", "mm", "a4");
       const companyLogoDataUrl = await resolveLogoDataUrl();
+      const { widthCm, heightCm } = getLabelDimensionsCm();
+      const isZebraLayout = labelSizePreset !== "custom" && LABEL_SIZE_PRESETS[labelSizePreset].zebra;
+      const pdf = isZebraLayout
+        ? new jsPDF({
+            orientation: heightCm >= widthCm ? "p" : "l",
+            unit: "mm",
+            format: [widthCm * 10, heightCm * 10],
+          })
+        : new jsPDF("p", "mm", "a4");
+
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10;
+      const margin = isZebraLayout ? 2 : 10;
       const availableWidth = pageWidth - 2 * margin;
       const availableHeight = pageHeight - 2 * margin;
-      const { widthCm, heightCm } = getLabelDimensionsCm();
-      const labelWidth = widthCm * 10;
-      const labelHeight = heightCm * 10;
-      const horizontalGap = 2;
-      const verticalGap = 2;
-      const cols = Math.max(1, Math.floor((availableWidth + horizontalGap) / (labelWidth + horizontalGap)));
-      const rows = Math.max(1, Math.floor((availableHeight + verticalGap) / (labelHeight + verticalGap)));
+      const labelWidth = isZebraLayout ? availableWidth : widthCm * 10;
+      const labelHeight = isZebraLayout ? availableHeight : heightCm * 10;
+      const horizontalGap = isZebraLayout ? 0 : 2;
+      const verticalGap = isZebraLayout ? 0 : 2;
+      const cols = isZebraLayout
+        ? 1
+        : Math.max(1, Math.floor((availableWidth + horizontalGap) / (labelWidth + horizontalGap)));
+      const rows = isZebraLayout
+        ? 1
+        : Math.max(1, Math.floor((availableHeight + verticalGap) / (labelHeight + verticalGap)));
       let currentPage = 0;
       let currentRow = 0;
       let currentCol = 0;
@@ -293,6 +325,83 @@ export default function LabelsPageClient({
           return lines.length;
         };
 
+        const normalizeToEan13 = (raw: string): string | null => {
+          const digits = raw.replace(/\D/g, "");
+          if (digits.length !== 12 && digits.length !== 13) {
+            return null;
+          }
+
+          const base12 = digits.slice(0, 12);
+          const expectedCheck = (() => {
+            let sum = 0;
+            for (let idx = 0; idx < base12.length; idx++) {
+              const num = Number(base12[idx]);
+              sum += idx % 2 === 0 ? num : num * 3;
+            }
+            return (10 - (sum % 10)) % 10;
+          })();
+
+          if (digits.length === 13) {
+            const providedCheck = Number(digits[12]);
+            if (providedCheck !== expectedCheck) {
+              return null;
+            }
+            return digits;
+          }
+
+          return `${base12}${expectedCheck}`;
+        };
+
+        const drawEan13Barcode = (ean13: string, options: {
+          centerX: number;
+          y: number;
+          maxWidth: number;
+          height: number;
+        }): { renderedWidth: number } => {
+          const leftOdd = ["0001101", "0011001", "0010011", "0111101", "0100011", "0110001", "0101111", "0111011", "0110111", "0001011"];
+          const leftEven = ["0100111", "0110011", "0011011", "0100001", "0011101", "0111001", "0000101", "0010001", "0001001", "0010111"];
+          const right = ["1110010", "1100110", "1101100", "1000010", "1011100", "1001110", "1010000", "1000100", "1001000", "1110100"];
+          const parity = ["AAAAAA", "AABABB", "AABBAB", "AABBBA", "ABAABB", "ABBAAB", "ABBBAA", "ABABAB", "ABABBA", "ABBABA"];
+
+          const firstDigit = Number(ean13[0]);
+          const leftDigits = ean13.slice(1, 7).split("").map(Number);
+          const rightDigits = ean13.slice(7).split("").map(Number);
+
+          let pattern = "101";
+          const leftParity = parity[firstDigit];
+          for (let i = 0; i < 6; i++) {
+            pattern += leftParity[i] === "A" ? leftOdd[leftDigits[i]] : leftEven[leftDigits[i]];
+          }
+          pattern += "01010";
+          for (let i = 0; i < 6; i++) {
+            pattern += right[rightDigits[i]];
+          }
+          pattern += "101";
+
+          const patternModules = pattern.length; // 95 modules (EAN-13 bars only)
+          const quietModules = 7;
+          const totalModules = patternModules + quietModules * 2; // 109 with quiet zones
+          // Keep proper EAN proportions to avoid stretched appearance.
+          let moduleWidth = Math.max(0.22, Math.min(0.45, options.height / 18));
+          moduleWidth = Math.min(moduleWidth, options.maxWidth / totalModules);
+          const renderedWidth = totalModules * moduleWidth;
+          const startX = options.centerX - renderedWidth / 2 + quietModules * moduleWidth;
+          const guardHeight = options.height * 1.08;
+          let cursorX = startX;
+          pdf.setFillColor(0, 0, 0);
+          for (let i = 0; i < pattern.length; i++) {
+            if (pattern[i] === "1") {
+              const isGuard =
+                i < 3 ||
+                (i >= 45 && i < 50) ||
+                i >= pattern.length - 3;
+              pdf.rect(cursorX, options.y, moduleWidth, isGuard ? guardHeight : options.height, "F");
+            }
+            cursorX += moduleWidth;
+          }
+          return { renderedWidth };
+        };
+
         // MAIN block: centered and stacked
         if (includeQRCode && item.barcode) {
           try {
@@ -337,17 +446,50 @@ export default function LabelsPageClient({
         }
 
         if (includeBarcode && item.barcode) {
-          const barcodeText = `BARCODE: ${item.barcode}`;
-          const requestedY = currentY + lineStep;
-          const safeY = Math.min(requestedY, innerBottom - 0.8);
-          const used = addCenteredText(barcodeText, {
-            fontSize: metaFont,
-            maxWidth: innerW,
-            maxLines: 1,
-            color: [30, 41, 59],
-            y: safeY,
-          });
-          currentY = Math.max(currentY, safeY + Math.max(lineStep, used * lineStep));
+          const ean13 = normalizeToEan13(item.barcode);
+          if (!ean13) {
+            const safeY = Math.min(currentY + lineStep, innerBottom - 0.8);
+            addCenteredText(item.barcode, {
+              fontSize: metaFont,
+              maxWidth: innerW,
+              maxLines: 1,
+              color: [30, 41, 59],
+              y: safeY,
+            });
+            currentY = Math.max(currentY, safeY + lineStep);
+          } else {
+            const barcodeHeight = Math.max(4, lineStep * 1.6);
+            const barcodeMaxWidth = innerW * 0.9;
+            const barcodeY = currentY + 1;
+            const barcodeTextY = barcodeY + barcodeHeight + Math.max(1.2, lineStep * 0.75);
+
+            if (barcodeTextY + 0.5 <= innerBottom) {
+              const rendered = drawEan13Barcode(ean13, {
+                centerX,
+                y: barcodeY,
+                maxWidth: barcodeMaxWidth,
+                height: barcodeHeight,
+              });
+              addCenteredText(ean13, {
+                fontSize: Math.max(4.8, metaFont - 0.5),
+                maxWidth: Math.max(rendered.renderedWidth, innerW * 0.45),
+                maxLines: 1,
+                color: [30, 41, 59],
+                y: barcodeTextY,
+              });
+              currentY = barcodeTextY + 0.8;
+            } else {
+              const safeY = Math.min(currentY + lineStep, innerBottom - 0.8);
+              addCenteredText(ean13, {
+                fontSize: metaFont,
+                maxWidth: innerW,
+                maxLines: 1,
+                color: [30, 41, 59],
+                y: safeY,
+              });
+              currentY = Math.max(currentY, safeY + lineStep);
+            }
+          }
         }
 
         if (includeStock && item.currentStock !== null && currentY + lineStep <= innerBottom) {
@@ -482,11 +624,15 @@ export default function LabelsPageClient({
                   {t.labels.labelSize}
                 </Label>
                 <select
-                  value={labelSizeMode}
-                  onChange={(e) => setLabelSizeMode(e.target.value as "default" | "custom")}
+                  value={labelSizePreset}
+                  onChange={(e) => setLabelSizePreset(e.target.value as LabelSizePreset)}
                   className="w-full h-11 text-base border border-gray-300 rounded-md px-3 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
                 >
-                  <option value="default">{t.labels.default10x5}</option>
+                  <option value="default_10x5">{t.labels.default10x5}</option>
+                  <option value="zebra_100x150">Zebra 100 x 150 mm</option>
+                  <option value="zebra_60x40">Zebra 60 x 40 mm</option>
+                  <option value="zebra_110x64">Zebra 110 x 64 mm</option>
+                  <option value="zebra_170x64">Zebra 170 x 64 mm</option>
                   <option value="custom">{t.labels.customSize}</option>
                 </select>
               </div>
@@ -496,9 +642,9 @@ export default function LabelsPageClient({
                 </Label>
                 <Input
                   type="text"
-                  value={labelSizeMode === "default" ? "10" : customWidthCm}
+                  value={labelSizePreset === "custom" ? customWidthCm : String(getLabelDimensionsCm().widthCm)}
                   onChange={(e) => setCustomWidthCm(e.target.value)}
-                  disabled={labelSizeMode === "default"}
+                  disabled={labelSizePreset !== "custom"}
                   className="h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
                 />
               </div>
@@ -508,20 +654,20 @@ export default function LabelsPageClient({
                 </Label>
                 <Input
                   type="text"
-                  value={labelSizeMode === "default" ? "5" : customHeightCm}
+                  value={labelSizePreset === "custom" ? customHeightCm : String(getLabelDimensionsCm().heightCm)}
                   onChange={(e) => setCustomHeightCm(e.target.value)}
-                  disabled={labelSizeMode === "default"}
+                  disabled={labelSizePreset !== "custom"}
                   className="h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
                 />
               </div>
               <div className="flex items-end">
                 <div className="text-xs text-gray-600">
-                  {labelSizeMode === "default" ? "10 x 5 cm" : `${getLabelDimensionsCm().widthCm} x ${getLabelDimensionsCm().heightCm} cm`}
+                  {`${getLabelDimensionsCm().widthCm} x ${getLabelDimensionsCm().heightCm} cm`}
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -578,7 +724,7 @@ export default function LabelsPageClient({
               </label>
               {customFieldOptions.length > 0 ? (
                 <div
-                  className="col-span-2 sm:col-span-3 lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+                  className="col-span-2 sm:col-span-3 lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
                   data-tour="tour-labels-custom-fields"
                 >
                   {customFieldOptions.map((field) => (
