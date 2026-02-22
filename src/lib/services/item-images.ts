@@ -344,7 +344,17 @@ async function uploadTeamImageToS3(params: {
 
   if (!shouldUseS3(params.runtimeHost)) {
     if (process.env.NODE_ENV === "production") {
-      throw new Error("S3_BUCKET is required in production for image uploads");
+      const diagnostics = {
+        runtimeHost: params.runtimeHost || "",
+        awsBranch: process.env.AWS_BRANCH || "",
+        amplifyBranch: process.env.AMPLIFY_BRANCH || "",
+        hasS3Bucket: Boolean(process.env.S3_BUCKET),
+        hasS3BucketDevelop: Boolean(process.env.S3_BUCKET_DEVELOP),
+        hasS3BucketMain: Boolean(process.env.S3_BUCKET_MAIN),
+      };
+      throw new Error(
+        `S3_BUCKET is required in production for image uploads | diagnostics=${JSON.stringify(diagnostics)}`
+      );
     }
     return params.dataUrl;
   }
