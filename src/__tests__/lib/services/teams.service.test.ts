@@ -1,5 +1,4 @@
 import { vi } from "vitest";
-import { eq } from "drizzle-orm";
 import {
   createTeamForUser,
   deleteTeamWithAuthorization,
@@ -9,7 +8,7 @@ import {
 } from "@/lib/services/teams";
 import { ERROR_CODES } from "@/lib/errors";
 import { getTestDb, cleanupTestDb, clearTestDb } from "../../helpers/test-db";
-import { companies, companyMembers, items, teamMembers, teams, users } from "@/db/schema";
+import { companies, companyMembers, teamMembers, teams, users } from "@/db/schema";
 import * as itemImagesService from "@/lib/services/item-images";
 
 const { drizzle } = getTestDb();
@@ -337,7 +336,7 @@ describe("teams service", () => {
     ]);
   });
 
-  it("migrates existing item custom fields when schema key is renamed", async () => {
+  it("rejects in-place custom field key rename", async () => {
     const { drizzle } = getTestDb();
     const [user] = await drizzle
       .insert(users)
@@ -358,16 +357,6 @@ describe("teams service", () => {
       role: "admin",
       status: "active",
     });
-    const [item] = await drizzle
-      .insert(items)
-      .values({
-        teamId: team.id,
-        name: "Printer",
-        barcode: "schema-rename-item-barcode",
-        customFields: { medidor_total: "1234" },
-      })
-      .returning();
-
     const result = await updateTeamDetails({
       teamId: team.id,
       requestUserId: user.id,
@@ -376,11 +365,11 @@ describe("teams service", () => {
       },
     });
 
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-
-    const [updatedItem] = await drizzle.select().from(items).where(eq(items.id, item.id));
-    expect(updatedItem?.customFields).toEqual({ contador_total: "1234" });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.status).toBe(400);
+    expect(result.error.errorCode).toBe(ERROR_CODES.VALIDATION_ERROR);
+    expect(result.error.error).toContain("rename is not supported");
   });
 
   it("returns error for updateTeamDetails when not authenticated", async () => {

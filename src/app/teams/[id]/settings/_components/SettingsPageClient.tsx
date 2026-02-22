@@ -37,6 +37,10 @@ type TeamCustomFieldSchemaEntry = {
   active: boolean;
 };
 
+type TeamCustomFieldSchemaRow = TeamCustomFieldSchemaEntry & {
+  isExisting: boolean;
+};
+
 interface SettingsPageClientProps {
   teamId: number;
   initialTeam: Team;
@@ -92,8 +96,8 @@ export default function SettingsPageClient({
   const [billingStatus, setBillingStatus] = useState<string | null>(
     initialTeam.stripeSubscriptionStatus ?? null
   );
-  const [itemCustomFieldSchema, setItemCustomFieldSchema] = useState<TeamCustomFieldSchemaEntry[]>(
-    initialTeam.itemCustomFieldSchema ?? []
+  const [itemCustomFieldSchema, setItemCustomFieldSchema] = useState<TeamCustomFieldSchemaRow[]>(
+    (initialTeam.itemCustomFieldSchema ?? []).map((entry) => ({ ...entry, isExisting: true }))
   );
   const [billingPeriodEnd, setBillingPeriodEnd] = useState<string | null>(
     initialTeam.stripeCurrentPeriodEnd ?? null
@@ -666,12 +670,15 @@ export default function SettingsPageClient({
   };
 
   const addCustomFieldSchemaRow = () => {
-    setItemCustomFieldSchema((prev) => [...prev, { key: "", label: "", active: true }]);
+    setItemCustomFieldSchema((prev) => [
+      ...prev,
+      { key: "", label: "", active: true, isExisting: false },
+    ]);
   };
 
   const updateCustomFieldSchemaRow = (
     index: number,
-    patch: Partial<TeamCustomFieldSchemaEntry>
+    patch: Partial<TeamCustomFieldSchemaRow>
   ) => {
     setItemCustomFieldSchema((prev) =>
       prev.map((row, currentIndex) =>
@@ -728,7 +735,12 @@ export default function SettingsPageClient({
         return;
       }
 
-      setItemCustomFieldSchema(result.data.team.itemCustomFieldSchema ?? []);
+      setItemCustomFieldSchema(
+        (result.data.team.itemCustomFieldSchema ?? []).map((entry) => ({
+          ...entry,
+          isExisting: true,
+        }))
+      );
       toast({
         title: t.common.success,
         description: t.settings.customFieldSchemaSaved,
@@ -996,6 +1008,7 @@ export default function SettingsPageClient({
                               }
                               placeholder={t.settings.customFieldKeyPlaceholder}
                               className="sm:col-span-4 h-9"
+                              disabled={field.isExisting}
                             />
                             <Input
                               value={field.label}
