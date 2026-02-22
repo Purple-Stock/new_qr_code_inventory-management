@@ -142,6 +142,7 @@ describe("/api/teams/[id] route", () => {
         teamId: 12,
         requestUserId: 11,
         payload: { name: "Renamed Team" },
+        requestHost: null,
       });
     });
 
