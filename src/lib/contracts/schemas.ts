@@ -366,8 +366,10 @@ export function parseItemPayload(
   }
   if (body.photoData !== undefined) {
     const photoData = photoDataParsed.data ?? null;
-    if (photoData && !photoData.startsWith("data:image/")) {
-      return { ok: false, error: "Photo data must be a valid image data URL" };
+    const isDataUrl = photoData ? photoData.startsWith("data:image/") : false;
+    const isHttpUrl = photoData ? /^https?:\/\//i.test(photoData) : false;
+    if (photoData && !isDataUrl && !isHttpUrl) {
+      return { ok: false, error: "Photo data must be an image data URL or HTTP URL" };
     }
     payload.photoData = photoData;
   }
