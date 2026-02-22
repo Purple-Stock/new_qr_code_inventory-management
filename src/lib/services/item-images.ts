@@ -119,7 +119,7 @@ function resolvePublicUrl(params: {
   endpoint?: string;
   key: string;
 }): string {
-  const baseUrlFromEnv = process.env.S3_PUBLIC_BASE_URL?.trim();
+  const baseUrlFromEnv = resolveEnv("S3_PUBLIC_BASE_URL");
   if (baseUrlFromEnv) {
     return `${baseUrlFromEnv.replace(/\/$/, "")}/${params.key}`;
   }
@@ -139,8 +139,38 @@ function resolveAwsRegion(): string {
   );
 }
 
+function resolveAmplifyBranchName(): string {
+  return (process.env.AWS_BRANCH || process.env.AMPLIFY_BRANCH || "").trim().toUpperCase();
+}
+
+function resolveEnv(key: string): string | undefined {
+  const direct = process.env[key]?.trim();
+  if (direct) {
+    return direct;
+  }
+
+  const branch = resolveAmplifyBranchName();
+  if (!branch) {
+    return undefined;
+  }
+
+  const branchScoped = process.env[`${key}_${branch}`]?.trim();
+  if (branchScoped) {
+    return branchScoped;
+  }
+
+  if (branch === "DEVELOP") {
+    return process.env[`${key}_STAGING`]?.trim() || undefined;
+  }
+  if (branch === "MAIN") {
+    return process.env[`${key}_PROD`]?.trim() || undefined;
+  }
+
+  return undefined;
+}
+
 function shouldUseS3(): boolean {
-  return Boolean(process.env.S3_BUCKET?.trim());
+  return Boolean(resolveEnv("S3_BUCKET"));
 }
 
 function normalizeFolderSegment(value: string): string {
@@ -157,13 +187,13 @@ export function buildItemImageS3Key(params: {
   randomToken?: string;
 }): string {
   const rootFolder = normalizeFolderSegment(
-    process.env.S3_ROOT_FOLDER?.trim() || "purplestock"
+    resolveEnv("S3_ROOT_FOLDER") || "purplestock"
   );
   const itemImagesFolder = normalizeFolderSegment(
-    process.env.S3_ITEM_IMAGES_FOLDER?.trim() || "item-images"
+    resolveEnv("S3_ITEM_IMAGES_FOLDER") || "item-images"
   );
   const envFolder = normalizeFolderSegment(
-    process.env.S3_ENV_FOLDER?.trim() || process.env.NODE_ENV || "dev"
+    resolveEnv("S3_ENV_FOLDER") || process.env.NODE_ENV || "dev"
   );
 
   const now = params.now ?? new Date();
@@ -194,13 +224,13 @@ export function buildTeamLabelLogoS3Key(params: {
   randomToken?: string;
 }): string {
   const rootFolder = normalizeFolderSegment(
-    process.env.S3_ROOT_FOLDER?.trim() || "purplestock"
+    resolveEnv("S3_ROOT_FOLDER") || "purplestock"
   );
   const teamLogosFolder = normalizeFolderSegment(
-    process.env.S3_TEAM_LABEL_LOGOS_FOLDER?.trim() || "team-label-logos"
+    resolveEnv("S3_TEAM_LABEL_LOGOS_FOLDER") || "team-label-logos"
   );
   const envFolder = normalizeFolderSegment(
-    process.env.S3_ENV_FOLDER?.trim() || process.env.NODE_ENV || "dev"
+    resolveEnv("S3_ENV_FOLDER") || process.env.NODE_ENV || "dev"
   );
 
   const now = params.now ?? new Date();
@@ -243,7 +273,7 @@ async function uploadTeamImageToS3(params: {
 
   await validateImageDimensions(bytes);
 
-  const bucket = process.env.S3_BUCKET!.trim();
+  const bucket = resolveEnv("S3_BUCKET")!;
   const region = resolveAwsRegion();
   const endpoint =
     process.env.S3_ENDPOINT?.trim() || process.env.AWS_S3_ENDPOINT?.trim() || undefined;
