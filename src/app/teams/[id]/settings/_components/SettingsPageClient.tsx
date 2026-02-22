@@ -70,7 +70,7 @@ export default function SettingsPageClient({
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [canManageUsers, setCanManageUsers] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState<
-    "users" | "password" | "billing" | "labels"
+    "users" | "password" | "billing" | "labels" | "customFields"
   >(
     "users"
   );
@@ -140,7 +140,7 @@ export default function SettingsPageClient({
     { target: "tour-settings-tutorial", title: t.settings.tourTutorialTitle, description: t.settings.tourTutorialDesc },
     { target: "tour-settings-tabs", title: t.settings.tourTabsTitle, description: t.settings.tourTabsDesc },
     { target: "tour-settings-panel", title: t.settings.tourPanelTitle, description: t.settings.tourPanelDesc },
-    { target: "tour-settings-custom-fields", title: t.settings.tourCustomFieldsTitle, description: t.settings.tourCustomFieldsDesc },
+    { target: "tour-settings-custom-fields-tab", title: t.settings.tourCustomFieldsTitle, description: t.settings.tourCustomFieldsDesc },
   ];
 
   useEffect(() => {
@@ -814,6 +814,20 @@ export default function SettingsPageClient({
               {!billingRequired ? (
               <button
                 type="button"
+                onClick={() => setActiveSettingsTab("customFields")}
+                data-tour="tour-settings-custom-fields-tab"
+                className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  activeSettingsTab === "customFields"
+                    ? "border-purple-600 text-purple-700"
+                    : "border-transparent text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                {t.settings.customFieldsTab}
+              </button>
+              ) : null}
+              {!billingRequired ? (
+              <button
+                type="button"
                 onClick={() => setActiveSettingsTab("labels")}
                 className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeSettingsTab === "labels"
@@ -959,17 +973,13 @@ export default function SettingsPageClient({
                 </div>
               ) : null}
 
-              {activeSettingsTab === "users" ? canManageUsers ? (
-                <div data-tour="tour-settings-panel" className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
-                    {t.settings.usersPermissionsTitle}
-                  </h2>
-                  <p className="text-sm text-gray-600 mb-4 sm:mb-6">
-                    {t.settings.usersPermissionsSubtitle}
-                  </p>
-
+              {activeSettingsTab === "customFields" ? (
+                <div
+                  data-tour="tour-settings-panel"
+                  className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6"
+                >
                   <div
-                    className="mb-6 rounded-lg border border-gray-200 p-4"
+                    className="rounded-lg border border-gray-200 p-4"
                     data-tour="tour-settings-custom-fields"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
@@ -986,11 +996,18 @@ export default function SettingsPageClient({
                         variant="outline"
                         onClick={addCustomFieldSchemaRow}
                         className="border-gray-300"
+                        disabled={!canManageUsers}
                       >
                         <Plus className="h-4 w-4 mr-1" />
                         {t.settings.addCustomField}
                       </Button>
                     </div>
+
+                    {!canManageUsers ? (
+                      <p className="text-xs text-amber-700 mb-3">
+                        {t.settings.noPermissionManageCustomFields}
+                      </p>
+                    ) : null}
 
                     <div className="space-y-2">
                       {itemCustomFieldSchema.length === 0 ? (
@@ -1008,7 +1025,7 @@ export default function SettingsPageClient({
                               }
                               placeholder={t.settings.customFieldKeyPlaceholder}
                               className="sm:col-span-4 h-9"
-                              disabled={field.isExisting}
+                              disabled={field.isExisting || !canManageUsers}
                             />
                             <Input
                               value={field.label}
@@ -1017,6 +1034,7 @@ export default function SettingsPageClient({
                               }
                               placeholder={t.settings.customFieldLabelPlaceholder}
                               className="sm:col-span-5 h-9"
+                              disabled={!canManageUsers}
                             />
                             <label className="sm:col-span-2 flex items-center gap-2 text-xs text-gray-700">
                               <input
@@ -1026,6 +1044,7 @@ export default function SettingsPageClient({
                                   updateCustomFieldSchemaRow(index, { active: e.target.checked })
                                 }
                                 className="w-4 h-4"
+                                disabled={!canManageUsers}
                               />
                               {t.settings.customFieldActive}
                             </label>
@@ -1034,6 +1053,7 @@ export default function SettingsPageClient({
                               variant="outline"
                               onClick={() => removeCustomFieldSchemaRow(index)}
                               className="sm:col-span-1 border-red-200 text-red-600 hover:bg-red-50 h-9"
+                              disabled={!canManageUsers}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -1046,13 +1066,24 @@ export default function SettingsPageClient({
                       <Button
                         type="button"
                         onClick={handleSaveCustomFieldSchema}
-                        disabled={isCustomSchemaSaving}
+                        disabled={isCustomSchemaSaving || !canManageUsers}
                         className="bg-purple-600 hover:bg-purple-700 text-white"
                       >
                         {isCustomSchemaSaving ? t.settings.modalSaving : t.settings.saveCustomFieldSchema}
                       </Button>
                     </div>
                   </div>
+                </div>
+              ) : null}
+
+              {activeSettingsTab === "users" ? canManageUsers ? (
+                <div data-tour="tour-settings-panel" className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+                    {t.settings.usersPermissionsTitle}
+                  </h2>
+                  <p className="text-sm text-gray-600 mb-4 sm:mb-6">
+                    {t.settings.usersPermissionsSubtitle}
+                  </p>
 
                   <div className="mb-4 flex justify-end">
                     <Button
