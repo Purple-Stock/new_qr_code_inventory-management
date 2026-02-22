@@ -122,7 +122,7 @@ export function ItemsList({ items, teamId, formatPrice, t, onItemDeleted }: Item
         toast({
           variant: "destructive",
           title: t.common.error,
-          description: t.items.failedToDeleteItem,
+          description: result.error.error || t.items.failedToDeleteItem,
         });
         setDeletingId(null);
         return;
