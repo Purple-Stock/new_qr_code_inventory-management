@@ -9,6 +9,7 @@ import {
 import { ERROR_CODES } from "@/lib/errors";
 import { getTestDb, cleanupTestDb, clearTestDb } from "../../helpers/test-db";
 import { companies, companyMembers, teamMembers, teams, users } from "@/db/schema";
+import * as itemImagesService from "@/lib/services/item-images";
 
 const { drizzle } = getTestDb();
 
@@ -353,6 +354,42 @@ describe("teams service", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect((result.data.team as any).labelLogoUrl).toBe("https://cdn.example.com/logo.png");
+  });
+
+  it("returns validation error when uploading label logo to S3 fails", async () => {
+    const { drizzle } = getTestDb();
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "teams-update-label-logo-error@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Team Label Logo Error", userId: user.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+
+    const uploadSpy = vi
+      .spyOn(itemImagesService, "uploadTeamLabelLogoToS3")
+      .mockRejectedValue(new Error("AccessDenied"));
+
+    const result = await updateTeamDetails({
+      teamId: team.id,
+      requestUserId: user.id,
+      payload: { labelLogoUrl: "data:image/png;base64,iVBORw0KGgo=" },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.status).toBe(400);
+    expect(result.error.errorCode).toBe(ERROR_CODES.VALIDATION_ERROR);
+    expect(result.error.error).toBe("Image upload failed: S3 permission denied");
+
+    uploadSpy.mockRestore();
   });
 
   it("updates company name through team settings", async () => {

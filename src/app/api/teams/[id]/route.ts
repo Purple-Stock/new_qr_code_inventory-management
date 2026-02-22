@@ -57,6 +57,7 @@ export async function PUT(
       teamId,
       requestUserId: getUserIdFromRequest(request),
       payload: body,
+      requestHost: request.headers.get("x-forwarded-host") || request.headers.get("host"),
     });
     if (!result.ok) {
       return serviceErrorResponse(result.error);

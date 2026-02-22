@@ -34,6 +34,14 @@ const BLOCKED_TEAM_DELETE_SUBSCRIPTION_STATUSES = new Set([
   "canceling",
 ]);
 
+function mapImageUploadError(error: unknown): string {
+  const message = error instanceof Error ? error.message : "Image upload failed";
+  if (/accessdenied|forbidden|not authorized/i.test(message)) {
+    return "Image upload failed: S3 permission denied";
+  }
+  return message || "Image upload failed";
+}
+
 export async function createTeamForUser(params: {
   requestUserId: number | null;
   payload: unknown;
@@ -149,6 +157,7 @@ export interface UpdateTeamDetailsInput {
   teamId: number;
   requestUserId: number | null;
   payload: unknown;
+  requestHost?: string | null;
 }
 
 export async function updateTeamDetails(
@@ -187,10 +196,18 @@ export async function updateTeamDetails(
 
     let logoUrl = teamOnlyFields.labelLogoUrl;
     if (typeof logoUrl === "string" && logoUrl.startsWith("data:image/")) {
-      logoUrl = await uploadTeamLabelLogoToS3({
-        teamId: params.teamId,
-        dataUrl: logoUrl,
-      });
+      try {
+        logoUrl = await uploadTeamLabelLogoToS3({
+          teamId: params.teamId,
+          dataUrl: logoUrl,
+          runtimeHost: params.requestHost,
+        });
+      } catch (error) {
+        return {
+          ok: false,
+          error: validationServiceError(mapImageUploadError(error)),
+        };
+      }
     }
 
     const payloadWithLogo = {
