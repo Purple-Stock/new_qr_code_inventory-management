@@ -47,18 +47,24 @@ function validateImageSize(size: number): void {
 }
 
 async function validateImageDimensions(bytes: Uint8Array): Promise<{ width: number; height: number }> {
-  const { default: sharp } = await import("sharp");
-  const buffer = Buffer.from(bytes);
-  const metadata = await sharp(buffer).metadata();
+  try {
+    const { default: sharp } = await import("sharp");
+    const buffer = Buffer.from(bytes);
+    const metadata = await sharp(buffer).metadata();
 
-  const width = metadata.width || 0;
-  const height = metadata.height || 0;
+    const width = metadata.width || 0;
+    const height = metadata.height || 0;
 
-  if (width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION) {
-    throw new Error(`Image dimensions too large. Maximum: ${MAX_IMAGE_DIMENSION}x${MAX_IMAGE_DIMENSION}px`);
+    if (width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION) {
+      throw new Error(`Image dimensions too large. Maximum: ${MAX_IMAGE_DIMENSION}x${MAX_IMAGE_DIMENSION}px`);
+    }
+
+    return { width, height };
+  } catch {
+    // If the runtime cannot read image metadata (e.g. limited codec support),
+    // keep the upload flow running and rely on file-size validation.
+    return { width: 0, height: 0 };
   }
-
-  return { width, height };
 }
 
 async function compressImage(

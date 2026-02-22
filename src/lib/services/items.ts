@@ -23,6 +23,14 @@ import {
 } from "@/lib/services/errors";
 import { toItemDto } from "@/lib/services/mappers";
 
+function mapImageUploadError(error: unknown): string {
+  const message = error instanceof Error ? error.message : "Image upload failed";
+  if (/accessdenied|forbidden|not authorized/i.test(message)) {
+    return "Image upload failed: S3 permission denied";
+  }
+  return message || "Image upload failed";
+}
+
 export async function getTeamItemDetails(params: {
   teamId: number;
   itemId: number;
@@ -104,10 +112,20 @@ export async function createTeamItem(params: {
 
   try {
     const payload = parsed.data;
-    const photoData =
-      payload.photoData && payload.photoData.startsWith("data:image/")
-        ? await uploadItemImageToS3({ teamId: params.teamId, dataUrl: payload.photoData })
-        : payload.photoData ?? null;
+    let photoData = payload.photoData ?? null;
+    if (payload.photoData && payload.photoData.startsWith("data:image/")) {
+      try {
+        photoData = await uploadItemImageToS3({
+          teamId: params.teamId,
+          dataUrl: payload.photoData,
+        });
+      } catch (error) {
+        return {
+          ok: false,
+          error: validationServiceError(mapImageUploadError(error)),
+        };
+      }
+    }
 
     const item = await createItem({
       name: payload.name!,
@@ -183,10 +201,20 @@ export async function updateTeamItem(
   const payload = parsed.data;
 
   try {
-    const photoData =
-      payload.photoData && payload.photoData.startsWith("data:image/")
-        ? await uploadItemImageToS3({ teamId: params.teamId, dataUrl: payload.photoData })
-        : payload.photoData;
+    let photoData = payload.photoData;
+    if (payload.photoData && payload.photoData.startsWith("data:image/")) {
+      try {
+        photoData = await uploadItemImageToS3({
+          teamId: params.teamId,
+          dataUrl: payload.photoData,
+        });
+      } catch (error) {
+        return {
+          ok: false,
+          error: validationServiceError(mapImageUploadError(error)),
+        };
+      }
+    }
 
     const item = await updateItem(params.itemId, {
       name: payload.name,
