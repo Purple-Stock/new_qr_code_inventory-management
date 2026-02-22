@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import { createTeamForUser } from "@/lib/services/teams";
 import { createTeamLocation } from "@/lib/services/locations";
 import { createTeamItem } from "@/lib/services/items";
@@ -7,11 +8,11 @@ import { getTeamReportStatsForUser } from "@/lib/services/reports";
 import { getTestDb, cleanupTestDb, clearTestDb } from "../../helpers/test-db";
 import { companies, companyMembers, teamMembers, teams, users } from "@/db/schema";
 
-jest.mock("@/db/client", () => {
-  const { getTestDb } = require("../../helpers/test-db");
-  const { drizzle } = getTestDb();
-  return { sqlite: drizzle };
-});
+const { drizzle } = getTestDb();
+
+vi.doMock("@/db/client", () => ({
+  sqlite: drizzle,
+}));
 
 function expectIsoDateString(value: unknown) {
   expect(typeof value).toBe("string");

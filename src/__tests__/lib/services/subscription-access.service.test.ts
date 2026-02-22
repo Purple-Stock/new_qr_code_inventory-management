@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import { hasActiveTeamSubscription } from "@/lib/services/subscription-access";
 
 describe("subscription-access service", () => {

@@ -1,26 +1,27 @@
+import { vi } from "vitest";
 import { NextRequest } from "next/server";
 import { POST } from "@/app/api/teams/[id]/billing/sync/route";
 import { ERROR_CODES } from "@/lib/errors";
 
-jest.mock("@/lib/services/billing", () => ({
-  syncTeamStripeSubscriptionFromProvider: jest.fn(),
+vi.mock("@/lib/services/billing", () => ({
+  syncTeamStripeSubscriptionFromProvider: vi.fn(),
 }));
 
-jest.mock("@/lib/permissions", () => ({
-  getUserIdFromRequest: jest.fn(),
+vi.mock("@/lib/permissions", () => ({
+  getUserIdFromRequest: vi.fn(),
 }));
 
 import { syncTeamStripeSubscriptionFromProvider } from "@/lib/services/billing";
 import { getUserIdFromRequest } from "@/lib/permissions";
 
-const mockedSyncTeamStripeSubscriptionFromProvider = jest.mocked(
+const mockedSyncTeamStripeSubscriptionFromProvider = vi.mocked(
   syncTeamStripeSubscriptionFromProvider
 );
-const mockedGetUserIdFromRequest = jest.mocked(getUserIdFromRequest);
+const mockedGetUserIdFromRequest = vi.mocked(getUserIdFromRequest);
 
 describe("/api/teams/[id]/billing/sync route", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockedGetUserIdFromRequest.mockReturnValue(12);
   });
 

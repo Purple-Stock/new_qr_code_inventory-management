@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { ERROR_CODES } from "@/lib/errors";
@@ -16,39 +17,39 @@ import { deleteTransactionAction } from "@/app/teams/[id]/transactions/_actions/
 import { deleteLocationAction } from "@/app/teams/[id]/locations/_actions/deleteLocation";
 import { createItemAction } from "@/app/teams/[id]/items/_actions/createItem";
 
-jest.mock("next/cache", () => ({
-  revalidatePath: jest.fn(),
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
 }));
 
-jest.mock("next/headers", () => ({
-  cookies: jest.fn(),
+vi.mock("next/headers", () => ({
+  cookies: vi.fn(),
 }));
 
-jest.mock("@/lib/session", () => ({
+vi.mock("@/lib/session", () => ({
   SESSION_COOKIE_NAME: "session",
-  getUserIdFromSessionToken: jest.fn(),
+  getUserIdFromSessionToken: vi.fn(),
 }));
 
-jest.mock("@/lib/services/stock-transactions", () => ({
-  createTeamStockTransaction: jest.fn(),
-  deleteTeamTransaction: jest.fn(),
+vi.mock("@/lib/services/stock-transactions", () => ({
+  createTeamStockTransaction: vi.fn(),
+  deleteTeamTransaction: vi.fn(),
 }));
 
-jest.mock("@/lib/services/locations", () => ({
-  deleteTeamLocation: jest.fn(),
+vi.mock("@/lib/services/locations", () => ({
+  deleteTeamLocation: vi.fn(),
 }));
 
-jest.mock("@/lib/services/items", () => ({
-  createTeamItem: jest.fn(),
+vi.mock("@/lib/services/items", () => ({
+  createTeamItem: vi.fn(),
 }));
 
-const mockedRevalidatePath = jest.mocked(revalidatePath);
-const mockedCookies = jest.mocked(cookies);
-const mockedGetUserIdFromSessionToken = jest.mocked(getUserIdFromSessionToken);
-const mockedCreateTeamStockTransaction = jest.mocked(createTeamStockTransaction);
-const mockedDeleteTeamTransaction = jest.mocked(deleteTeamTransaction);
-const mockedDeleteTeamLocation = jest.mocked(deleteTeamLocation);
-const mockedCreateTeamItem = jest.mocked(createTeamItem);
+const mockedRevalidatePath = vi.mocked(revalidatePath);
+const mockedCookies = vi.mocked(cookies);
+const mockedGetUserIdFromSessionToken = vi.mocked(getUserIdFromSessionToken);
+const mockedCreateTeamStockTransaction = vi.mocked(createTeamStockTransaction);
+const mockedDeleteTeamTransaction = vi.mocked(deleteTeamTransaction);
+const mockedDeleteTeamLocation = vi.mocked(deleteTeamLocation);
+const mockedCreateTeamItem = vi.mocked(createTeamItem);
 
 const STOCK_BASE_PAYLOAD = {
   itemId: 1,
@@ -59,9 +60,9 @@ const STOCK_BASE_PAYLOAD = {
 
 describe("server actions", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockedCookies.mockResolvedValue({
-      get: jest.fn().mockReturnValue({ value: "token-123" }),
+      get: vi.fn().mockReturnValue({ value: "token-123" }),
     } as any);
     mockedGetUserIdFromSessionToken.mockReturnValue(77);
   });

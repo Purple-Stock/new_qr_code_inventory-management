@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import { getErrorMessage, isUniqueConstraintError } from "@/lib/error-utils";
 
 describe("error-utils", () => {

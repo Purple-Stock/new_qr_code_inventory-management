@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import type Stripe from "stripe";
 import {
   createTeamStripeCheckoutSession,
@@ -7,23 +8,23 @@ import {
 } from "@/lib/services/billing";
 import { ERROR_CODES } from "@/lib/errors";
 
-jest.mock("@/lib/permissions", () => ({
-  authorizeTeamPermission: jest.fn(),
+vi.mock("@/lib/permissions", () => ({
+  authorizeTeamPermission: vi.fn(),
 }));
 
-jest.mock("@/lib/db/teams", () => ({
-  grantTeamManualTrial: jest.fn(),
-  getTeamByStripeCustomerId: jest.fn(),
-  getTeamWithStats: jest.fn(),
-  updateTeamStripeCustomerId: jest.fn(),
-  updateTeamStripeSubscription: jest.fn(),
+vi.mock("@/lib/db/teams", () => ({
+  grantTeamManualTrial: vi.fn(),
+  getTeamByStripeCustomerId: vi.fn(),
+  getTeamWithStats: vi.fn(),
+  updateTeamStripeCustomerId: vi.fn(),
+  updateTeamStripeSubscription: vi.fn(),
 }));
 
-jest.mock("@/lib/stripe", () => ({
-  getStripeClient: jest.fn(),
-  getStripePriceId: jest.fn(),
-  getStripeWebhookSecret: jest.fn(),
-  isStripeConfigured: jest.fn(),
+vi.mock("@/lib/stripe", () => ({
+  getStripeClient: vi.fn(),
+  getStripePriceId: vi.fn(),
+  getStripeWebhookSecret: vi.fn(),
+  isStripeConfigured: vi.fn(),
 }));
 
 import { authorizeTeamPermission } from "@/lib/permissions";
@@ -41,28 +42,28 @@ import {
   isStripeConfigured,
 } from "@/lib/stripe";
 
-const mockedAuthorizeTeamPermission = jest.mocked(authorizeTeamPermission);
-const mockedPersistTeamManualTrial = jest.mocked(persistTeamManualTrial);
-const mockedGetTeamByStripeCustomerId = jest.mocked(getTeamByStripeCustomerId);
-const mockedGetTeamWithStats = jest.mocked(getTeamWithStats);
-const mockedUpdateTeamStripeCustomerId = jest.mocked(updateTeamStripeCustomerId);
-const mockedUpdateTeamStripeSubscription = jest.mocked(updateTeamStripeSubscription);
-const mockedGetStripeClient = jest.mocked(getStripeClient);
-const mockedGetStripePriceId = jest.mocked(getStripePriceId);
-const mockedGetStripeWebhookSecret = jest.mocked(getStripeWebhookSecret);
-const mockedIsStripeConfigured = jest.mocked(isStripeConfigured);
+const mockedAuthorizeTeamPermission = vi.mocked(authorizeTeamPermission);
+const mockedPersistTeamManualTrial = vi.mocked(persistTeamManualTrial);
+const mockedGetTeamByStripeCustomerId = vi.mocked(getTeamByStripeCustomerId);
+const mockedGetTeamWithStats = vi.mocked(getTeamWithStats);
+const mockedUpdateTeamStripeCustomerId = vi.mocked(updateTeamStripeCustomerId);
+const mockedUpdateTeamStripeSubscription = vi.mocked(updateTeamStripeSubscription);
+const mockedGetStripeClient = vi.mocked(getStripeClient);
+const mockedGetStripePriceId = vi.mocked(getStripePriceId);
+const mockedGetStripeWebhookSecret = vi.mocked(getStripeWebhookSecret);
+const mockedIsStripeConfigured = vi.mocked(isStripeConfigured);
 
 describe("billing service", () => {
   const stripeClientMock = {
-    customers: { create: jest.fn() },
-    checkout: { sessions: { create: jest.fn() } },
-    billingPortal: { sessions: { create: jest.fn() } },
-    webhooks: { constructEvent: jest.fn() },
-    subscriptions: { retrieve: jest.fn(), list: jest.fn() },
+    customers: { create: vi.fn() },
+    checkout: { sessions: { create: vi.fn() } },
+    billingPortal: { sessions: { create: vi.fn() } },
+    webhooks: { constructEvent: vi.fn() },
+    subscriptions: { retrieve: vi.fn(), list: vi.fn() },
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     mockedIsStripeConfigured.mockReturnValue(true);
     mockedGetStripePriceId.mockReturnValue("price_123");

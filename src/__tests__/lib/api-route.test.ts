@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import { parseRouteParamId, parseRouteParamIds } from "@/lib/api-route";
 
 describe("api-route utils", () => {

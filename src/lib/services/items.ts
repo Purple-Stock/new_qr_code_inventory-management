@@ -11,6 +11,7 @@ import { ERROR_CODES } from "@/lib/errors";
 import { isUniqueConstraintError } from "@/lib/error-utils";
 import { authorizeTeamAccess, authorizeTeamPermission } from "@/lib/permissions";
 import { parseItemPayload } from "@/lib/contracts/schemas";
+import { uploadItemImageToS3 } from "@/lib/services/item-images";
 import type { ItemDto, ServiceResult } from "@/lib/services/types";
 import {
   authServiceError,
@@ -21,6 +22,14 @@ import {
   validationServiceError,
 } from "@/lib/services/errors";
 import { toItemDto } from "@/lib/services/mappers";
+
+function mapImageUploadError(error: unknown): string {
+  const message = error instanceof Error ? error.message : "Image upload failed";
+  if (/accessdenied|forbidden|not authorized/i.test(message)) {
+    return "Image upload failed: S3 permission denied";
+  }
+  return message || "Image upload failed";
+}
 
 export async function getTeamItemDetails(params: {
   teamId: number;
@@ -80,6 +89,7 @@ export async function createTeamItem(params: {
   teamId: number;
   requestUserId: number | null;
   payload: unknown;
+  requestHost?: string | null;
 }): Promise<ServiceResult<{ item: ItemDto }>> {
   const parsed = parseItemPayload(params.payload, "create");
   if (!parsed.ok) {
@@ -103,6 +113,22 @@ export async function createTeamItem(params: {
 
   try {
     const payload = parsed.data;
+    let photoData = payload.photoData ?? null;
+    if (payload.photoData && payload.photoData.startsWith("data:image/")) {
+      try {
+        photoData = await uploadItemImageToS3({
+          teamId: params.teamId,
+          dataUrl: payload.photoData,
+          runtimeHost: params.requestHost,
+        });
+      } catch (error) {
+        return {
+          ok: false,
+          error: validationServiceError(mapImageUploadError(error)),
+        };
+      }
+    }
+
     const item = await createItem({
       name: payload.name!,
       sku: payload.sku ?? null,
@@ -111,6 +137,7 @@ export async function createTeamItem(params: {
       price: payload.price ?? null,
       itemType: payload.itemType ?? null,
       brand: payload.brand ?? null,
+      photoData,
       teamId: params.teamId,
       locationId: payload.locationId ?? null,
       initialQuantity: payload.initialQuantity ?? 0,
@@ -141,6 +168,7 @@ export interface UpdateTeamItemInput {
   itemId: number;
   requestUserId: number | null;
   payload: unknown;
+  requestHost?: string | null;
 }
 
 export async function updateTeamItem(
@@ -176,6 +204,22 @@ export async function updateTeamItem(
   const payload = parsed.data;
 
   try {
+    let photoData = payload.photoData;
+    if (payload.photoData && payload.photoData.startsWith("data:image/")) {
+      try {
+        photoData = await uploadItemImageToS3({
+          teamId: params.teamId,
+          dataUrl: payload.photoData,
+          runtimeHost: params.requestHost,
+        });
+      } catch (error) {
+        return {
+          ok: false,
+          error: validationServiceError(mapImageUploadError(error)),
+        };
+      }
+    }
+
     const item = await updateItem(params.itemId, {
       name: payload.name,
       sku: payload.sku,
@@ -184,6 +228,7 @@ export async function updateTeamItem(
       price: payload.price,
       itemType: payload.itemType,
       brand: payload.brand,
+      photoData,
       locationId: payload.locationId,
     });
 

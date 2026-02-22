@@ -24,6 +24,8 @@ export const ERROR_CODES = {
   BILLING_NOT_CONFIGURED: "BILLING_NOT_CONFIGURED",
   BILLING_CUSTOMER_NOT_FOUND: "BILLING_CUSTOMER_NOT_FOUND",
   BILLING_PROVIDER_ERROR: "BILLING_PROVIDER_ERROR",
+  LABEL_LOGO_NOT_FOUND: "LABEL_LOGO_NOT_FOUND",
+  LABEL_LOGO_FETCH_FAILED: "LABEL_LOGO_FETCH_FAILED",
   INTERNAL_ERROR: "INTERNAL_ERROR",
 } as const;
 
@@ -55,6 +57,8 @@ const ERROR_MESSAGES: Record<ErrorCode, string> = {
   BILLING_NOT_CONFIGURED: "Billing is not configured",
   BILLING_CUSTOMER_NOT_FOUND: "Billing customer not found",
   BILLING_PROVIDER_ERROR: "Billing provider error",
+  LABEL_LOGO_NOT_FOUND: "Label logo not found",
+  LABEL_LOGO_FETCH_FAILED: "Failed to fetch label logo",
   INTERNAL_ERROR: "An internal error occurred",
 };
 

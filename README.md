@@ -10,7 +10,7 @@ Sistema multi-tenant de gestão de estoque com times, localizações, itens, mov
 - React 18 + TypeScript
 - Tailwind CSS + shadcn/ui
 - SQLite/libSQL (`@libsql/client`, Turso em produção) + Drizzle ORM
-- Jest para testes
+- Vitest para testes
 
 ## Arquitetura
 
@@ -36,8 +36,10 @@ Guardrails automáticos (CI e hook) impedem violações arquiteturais.
 - Role global `super_admin` para visão administrativa cross-tenant.
 - Multi-tenancy por time e membership ativo.
 - CRUD de times, usuários do time, itens e localizações.
+- Upload de foto para itens.
 - Movimentações de estoque (`stock_in`, `stock_out`, `adjust`, `move`, `count`) com atomicidade.
 - Relatórios consolidados por time.
+- Etiquetas QR Code personalizáveis com info da empresa.
 - PWA com `manifest.json` e service worker.
 - i18n local (`pt-BR`, `en`, `fr`).
 

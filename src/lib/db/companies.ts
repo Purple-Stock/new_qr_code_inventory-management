@@ -1,5 +1,5 @@
 import { sqlite } from "@/db/client";
-import { companyMembers } from "@/db/schema";
+import { companies, companyMembers } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 
 export async function getActiveCompanyIdForUser(userId: number): Promise<number | null> {
@@ -17,3 +17,19 @@ export async function getActiveCompanyIdForUser(userId: number): Promise<number 
   return membership?.companyId ?? null;
 }
 
+export async function updateCompanyName(companyId: number, name: string) {
+  const [updated] = await sqlite
+    .update(companies)
+    .set({
+      name,
+      updatedAt: new Date(),
+    })
+    .where(eq(companies.id, companyId))
+    .returning();
+
+  if (!updated) {
+    throw new Error("Company not found");
+  }
+
+  return updated;
+}

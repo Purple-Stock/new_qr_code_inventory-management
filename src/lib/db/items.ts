@@ -69,6 +69,7 @@ export async function createItem(data: {
   price?: number | null;
   itemType?: string | null;
   brand?: string | null;
+  photoData?: string | null;
   teamId: number;
   locationId?: number | null;
   initialQuantity?: number;
@@ -85,6 +86,7 @@ export async function createItem(data: {
       price: data.price || null,
       itemType: data.itemType || null,
       brand: data.brand || null,
+      photoData: data.photoData || null,
       teamId: data.teamId,
       locationId: data.locationId || null,
       initialQuantity: data.initialQuantity || 0,
@@ -109,6 +111,7 @@ export async function updateItem(
     price?: number | null;
     itemType?: string | null;
     brand?: string | null;
+    photoData?: string | null;
     locationId?: number | null;
   }
 ): Promise<Item> {
@@ -122,6 +125,7 @@ export async function updateItem(
       ...(data.price !== undefined && { price: data.price ?? null }),
       ...(data.itemType !== undefined && { itemType: data.itemType ?? null }),
       ...(data.brand !== undefined && { brand: data.brand ?? null }),
+      ...(data.photoData !== undefined && { photoData: data.photoData ?? null }),
       ...(data.locationId !== undefined && { locationId: data.locationId ?? null }),
       updatedAt: new Date(),
     })

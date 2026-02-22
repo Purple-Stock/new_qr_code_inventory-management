@@ -30,6 +30,7 @@ export default function NewItemPageClient({
     price: "",
     itemType: "",
     brand: "",
+    photoData: "",
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -40,6 +41,7 @@ export default function NewItemPageClient({
     { target: "tour-new-item-name", title: t.itemForm.tourNameTitle, description: t.itemForm.tourNameDesc },
     { target: "tour-new-item-sku", title: t.itemForm.tourSkuTitle, description: t.itemForm.tourSkuDesc },
     { target: "tour-new-item-barcode", title: t.itemForm.tourBarcodeTitle, description: t.itemForm.tourBarcodeDesc },
+    { target: "tour-new-item-photo", title: t.itemForm.tourPhotoTitle, description: t.itemForm.tourPhotoDesc },
     { target: "tour-new-item-pricing", title: t.itemForm.tourPricingTitle, description: t.itemForm.tourPricingDesc },
     { target: "tour-new-item-attributes", title: t.itemForm.tourAttributesTitle, description: t.itemForm.tourAttributesDesc },
     { target: "tour-new-item-submit", title: t.itemForm.tourSubmitTitle, description: t.itemForm.tourSubmitDesc },
@@ -93,12 +95,13 @@ export default function NewItemPageClient({
           price: form.price ? parseFloat(form.price) : null,
           itemType: form.itemType.trim() || null,
           brand: form.brand.trim() || null,
+          photoData: form.photoData || null,
         },
         fallbackError: t.itemForm.unexpectedError,
       });
 
       if (!result.ok) {
-        setError(t.itemForm.unexpectedError);
+        setError(result.error.error || t.itemForm.unexpectedError);
         setIsLoading(false);
         return;
       }
@@ -106,7 +109,7 @@ export default function NewItemPageClient({
       setSuccess(t.itemForm.createSuccess);
       await router.push(`/teams/${teamId}/items`);
       router.refresh();
-    } catch (err) {
+    } catch {
       setError(t.itemForm.unexpectedError);
       setIsLoading(false);
     }

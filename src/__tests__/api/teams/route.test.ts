@@ -1,26 +1,27 @@
+import { vi } from "vitest";
 import { NextRequest } from "next/server";
 import { GET, POST } from "@/app/api/teams/route";
 import { ERROR_CODES } from "@/lib/errors";
 
-jest.mock("@/lib/services/teams", () => ({
-  createTeamForUser: jest.fn(),
-  getUserTeamsForUser: jest.fn(),
+vi.mock("@/lib/services/teams", () => ({
+  createTeamForUser: vi.fn(),
+  getUserTeamsForUser: vi.fn(),
 }));
 
-jest.mock("@/lib/permissions", () => ({
-  getUserIdFromRequest: jest.fn(),
+vi.mock("@/lib/permissions", () => ({
+  getUserIdFromRequest: vi.fn(),
 }));
 
 import { createTeamForUser, getUserTeamsForUser } from "@/lib/services/teams";
 import { getUserIdFromRequest } from "@/lib/permissions";
 
-const mockedCreateTeamForUser = jest.mocked(createTeamForUser);
-const mockedGetUserTeamsForUser = jest.mocked(getUserTeamsForUser);
-const mockedGetUserIdFromRequest = jest.mocked(getUserIdFromRequest);
+const mockedCreateTeamForUser = vi.mocked(createTeamForUser);
+const mockedGetUserTeamsForUser = vi.mocked(getUserTeamsForUser);
+const mockedGetUserIdFromRequest = vi.mocked(getUserIdFromRequest);
 
 describe("/api/teams route", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockedGetUserIdFromRequest.mockReturnValue(7);
   });
 

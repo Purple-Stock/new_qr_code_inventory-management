@@ -38,6 +38,7 @@ export default async function EditItemPage({ params }: PageProps) {
         price: item.price != null ? String(item.price) : "",
         itemType: item.itemType ?? "",
         brand: item.brand ?? "",
+        photoData: item.photoData ?? "",
       }}
     />
   );
