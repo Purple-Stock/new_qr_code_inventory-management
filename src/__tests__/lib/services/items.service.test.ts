@@ -388,6 +388,53 @@ describe("items service", () => {
     expect(result.error.error).toContain("custom fields");
   });
 
+  it("allows legacy custom field keys on update when they already exist on the item", async () => {
+    const { drizzle } = getTestDb();
+    const [admin] = await drizzle
+      .insert(users)
+      .values({ email: "items-update-legacy-custom@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({
+        name: "Items Legacy Schema Team",
+        userId: admin.id,
+        companyId: null,
+        itemCustomFieldSchema: [{ key: "contador_total", label: "Contador total", active: true }],
+      })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: admin.id,
+      role: "admin",
+      status: "active",
+    });
+    const [item] = await drizzle
+      .insert(items)
+      .values({
+        name: "Printer",
+        barcode: "barcode-printer-legacy-key",
+        teamId: team.id,
+        customFields: { medidor_total: "1234" },
+      })
+      .returning();
+
+    const result = await updateTeamItem({
+      teamId: team.id,
+      itemId: item.id,
+      requestUserId: admin.id,
+      payload: {
+        customFields: {
+          medidor_total: "9999",
+        },
+      },
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect((result.data.item as any).customFields).toEqual({ medidor_total: "9999" });
+  });
+
   it("returns validation error for invalid payload", async () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle

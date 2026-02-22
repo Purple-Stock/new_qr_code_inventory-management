@@ -35,6 +35,7 @@ function mapImageUploadError(error: unknown): string {
 function validateCustomFieldsAgainstActiveSchema(params: {
   customFields: ItemCustomFields | null | undefined;
   schema: TeamItemCustomFieldSchemaEntry[] | null | undefined;
+  allowedLegacyKeys?: string[];
 }): string | null {
   if (params.customFields === undefined || params.customFields === null) {
     return null;
@@ -46,7 +47,10 @@ function validateCustomFieldsAgainstActiveSchema(params: {
   }
 
   const activeKeys = new Set(schema.filter((entry) => entry.active).map((entry) => entry.key));
-  const invalidKeys = Object.keys(params.customFields).filter((key) => !activeKeys.has(key));
+  const legacyKeys = new Set((params.allowedLegacyKeys ?? []).filter(Boolean));
+  const invalidKeys = Object.keys(params.customFields).filter(
+    (key) => !activeKeys.has(key) && !legacyKeys.has(key)
+  );
   if (invalidKeys.length === 0) {
     return null;
   }
@@ -240,6 +244,7 @@ export async function updateTeamItem(
   const customFieldsValidationError = validateCustomFieldsAgainstActiveSchema({
     customFields: payload.customFields,
     schema: auth.team?.itemCustomFieldSchema ?? null,
+    allowedLegacyKeys: Object.keys(existingItem.customFields ?? {}),
   });
   if (customFieldsValidationError) {
     return {
