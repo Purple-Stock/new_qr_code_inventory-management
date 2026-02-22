@@ -473,6 +473,7 @@ export const en = {
     noItemsSearch: "No items found matching your search",
     labelsGenerated: "Labels generated successfully",
     labelsPerPage: "Labels per page",
+    quantityPerItem: "Qty per item",
     labelSize: "Label size",
     small: "Small",
     medium: "Medium",

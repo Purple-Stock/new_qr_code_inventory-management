@@ -51,6 +51,7 @@ export default function LabelsPageClient({
   const [isLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
+  const [labelQuantityByItem, setLabelQuantityByItem] = useState<Record<number, number>>({});
   const [labelsPerPage, setLabelsPerPage] = useState(12);
   const [labelSize, setLabelSize] = useState<"small" | "medium" | "large">("medium");
   const [includeQRCode, setIncludeQRCode] = useState(true);
@@ -88,11 +89,19 @@ export default function LabelsPageClient({
       newSelected.delete(itemId);
     } else {
       newSelected.add(itemId);
+      setLabelQuantityByItem((prev) => (prev[itemId] ? prev : { ...prev, [itemId]: 1 }));
     }
     setSelectedItems(newSelected);
   };
 
   const selectAll = () => {
+    setLabelQuantityByItem((prev) => {
+      const next = { ...prev };
+      for (const item of filteredItems) {
+        if (!next[item.id] || next[item.id] < 1) next[item.id] = 1;
+      }
+      return next;
+    });
     setSelectedItems(new Set(filteredItems.map((item) => item.id)));
   };
 
@@ -102,6 +111,14 @@ export default function LabelsPageClient({
 
   const getSelectedItemsList = () => {
     return items.filter((item) => selectedItems.has(item.id));
+  };
+
+  const getItemQuantity = (itemId: number) => Math.max(1, labelQuantityByItem[itemId] ?? 1);
+
+  const updateItemQuantity = (itemId: number, rawValue: string) => {
+    const parsed = Number.parseInt(rawValue, 10);
+    const normalized = Number.isFinite(parsed) ? Math.max(1, parsed) : 1;
+    setLabelQuantityByItem((prev) => ({ ...prev, [itemId]: normalized }));
   };
 
   const resolveLogoDataUrl = async (): Promise<string | null> => {
@@ -129,6 +146,9 @@ export default function LabelsPageClient({
     setIsGenerating(true);
     try {
       const selectedItemsList = getSelectedItemsList();
+      const labelsToPrint = selectedItemsList.flatMap((item) =>
+        Array.from({ length: getItemQuantity(item.id) }, () => item)
+      );
       const pdf = new jsPDF("p", "mm", "a4");
       const companyLogoDataUrl = await resolveLogoDataUrl();
       const pageWidth = pdf.internal.pageSize.getWidth();
@@ -159,8 +179,8 @@ export default function LabelsPageClient({
       let currentRow = 0;
       let currentCol = 0;
 
-      for (let i = 0; i < selectedItemsList.length; i++) {
-        const item = selectedItemsList[i];
+      for (let i = 0; i < labelsToPrint.length; i++) {
+        const item = labelsToPrint[i];
 
         // Check if we need a new page
         if (currentRow >= rows) {
@@ -391,7 +411,7 @@ export default function LabelsPageClient({
           <div className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6" data-tour="tour-labels-settings">
             <h2 className="text-lg font-bold text-gray-900 mb-4">{t.labels.selectItems}</h2>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
                 <Label className="text-sm font-semibold text-gray-700 mb-2 block">
                   {t.labels.labelsPerPage}
@@ -569,18 +589,21 @@ export default function LabelsPageClient({
                     <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden md:table-cell">
                       {t.labels.stock}
                     </th>
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      {t.labels.quantityPerItem}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
                   {isLoading ? (
                     <tr>
-                      <td colSpan={6} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
+                      <td colSpan={7} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
                         {t.common.loading}
                       </td>
                     </tr>
                   ) : filteredItems.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
+                      <td colSpan={7} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
                         {searchQuery ? t.labels.noItemsSearch : t.labels.noItems}
                       </td>
                     </tr>
@@ -638,6 +661,19 @@ export default function LabelsPageClient({
                           <span className="text-sm font-semibold text-gray-900">
                             {item.currentStock?.toFixed(1) || "0.0"}
                           </span>
+                        </td>
+                        <td className="px-4 sm:px-6 py-4">
+                          <Input
+                            type="number"
+                            min={1}
+                            step={1}
+                            value={getItemQuantity(item.id)}
+                            onChange={(e) => updateItemQuantity(item.id, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-9 w-20 text-sm"
+                            disabled={!selectedItems.has(item.id)}
+                            aria-label={`${t.labels.quantityPerItem} ${item.name || item.sku || item.id}`}
+                          />
                         </td>
                       </tr>
                     ))
