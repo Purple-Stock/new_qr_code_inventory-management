@@ -1,5 +1,9 @@
 import type { ErrorCode } from "@/lib/errors";
-import type { StockTransactionType } from "@/db/schema";
+import type {
+  ItemCustomFields,
+  StockTransactionType,
+  TeamItemCustomFieldSchemaEntry,
+} from "@/db/schema";
 
 export type ServiceError = {
   status: number;
@@ -23,6 +27,7 @@ export type ItemDto = {
   initialQuantity: number | null;
   currentStock: number | null;
   minimumStock: number | null;
+  customFields?: ItemCustomFields | null;
   teamId: number;
   locationId: number | null;
   locationName?: string | null;
@@ -42,6 +47,7 @@ export type TeamDto = {
   stripePriceId: string | null;
   stripeCurrentPeriodEnd: string | null;
   manualTrialEndsAt: string | null;
+  itemCustomFieldSchema?: TeamItemCustomFieldSchemaEntry[] | null;
   itemCount: number;
   transactionCount: number;
   memberCount: number;

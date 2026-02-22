@@ -266,6 +266,44 @@ describe("items service", () => {
     expect(result.data.item.name).toBe("New Item");
   });
 
+  it("creates item with custom fields when authorized", async () => {
+    const { drizzle } = getTestDb();
+    const [admin] = await drizzle
+      .insert(users)
+      .values({ email: "items-create-custom@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Items Custom Team", userId: admin.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: admin.id,
+      role: "admin",
+      status: "active",
+    });
+
+    const result = await createTeamItem({
+      teamId: team.id,
+      requestUserId: admin.id,
+      payload: {
+        name: "Printer",
+        barcode: "barcode-printer-custom",
+        customFields: {
+          medidor_total: "10234",
+          medidor_pb: "8300",
+        },
+      },
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect((result.data.item as any).customFields).toEqual({
+      medidor_total: "10234",
+      medidor_pb: "8300",
+    });
+  });
+
   it("returns validation error for invalid payload", async () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle

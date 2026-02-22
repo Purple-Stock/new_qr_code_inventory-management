@@ -11,6 +11,7 @@ import {
   EyeOff,
   CreditCard,
   Info,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,12 @@ import type {
   ManagedUserRole,
   Team,
 } from "../_types";
+
+type TeamCustomFieldSchemaEntry = {
+  key: string;
+  label: string;
+  active: boolean;
+};
 
 interface SettingsPageClientProps {
   teamId: number;
@@ -67,6 +74,7 @@ export default function SettingsPageClient({
   const [isPasswordSaving, setIsPasswordSaving] = useState(false);
   const [isBillingLoading, setIsBillingLoading] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [isCustomSchemaSaving, setIsCustomSchemaSaving] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -81,6 +89,9 @@ export default function SettingsPageClient({
   const billingRequired = searchParams.get("billing") === "required";
   const [billingStatus, setBillingStatus] = useState<string | null>(
     initialTeam.stripeSubscriptionStatus ?? null
+  );
+  const [itemCustomFieldSchema, setItemCustomFieldSchema] = useState<TeamCustomFieldSchemaEntry[]>(
+    initialTeam.itemCustomFieldSchema ?? []
   );
   const [billingPeriodEnd, setBillingPeriodEnd] = useState<string | null>(
     initialTeam.stripeCurrentPeriodEnd ?? null
@@ -117,6 +128,7 @@ export default function SettingsPageClient({
     { target: "tour-settings-tutorial", title: t.settings.tourTutorialTitle, description: t.settings.tourTutorialDesc },
     { target: "tour-settings-tabs", title: t.settings.tourTabsTitle, description: t.settings.tourTabsDesc },
     { target: "tour-settings-panel", title: t.settings.tourPanelTitle, description: t.settings.tourPanelDesc },
+    { target: "tour-settings-custom-fields", title: t.settings.tourCustomFieldsTitle, description: t.settings.tourCustomFieldsDesc },
   ];
 
   useEffect(() => {
@@ -585,6 +597,85 @@ export default function SettingsPageClient({
     }
   };
 
+  const addCustomFieldSchemaRow = () => {
+    setItemCustomFieldSchema((prev) => [...prev, { key: "", label: "", active: true }]);
+  };
+
+  const updateCustomFieldSchemaRow = (
+    index: number,
+    patch: Partial<TeamCustomFieldSchemaEntry>
+  ) => {
+    setItemCustomFieldSchema((prev) =>
+      prev.map((row, currentIndex) =>
+        currentIndex === index ? { ...row, ...patch } : row
+      )
+    );
+  };
+
+  const removeCustomFieldSchemaRow = (index: number) => {
+    setItemCustomFieldSchema((prev) => prev.filter((_, currentIndex) => currentIndex !== index));
+  };
+
+  const handleSaveCustomFieldSchema = async () => {
+    const normalized = itemCustomFieldSchema.map((entry) => ({
+      key: entry.key.trim(),
+      label: entry.label.trim(),
+      active: entry.active,
+    }));
+    if (normalized.some((entry) => !entry.key || !entry.label)) {
+      toast({
+        title: t.common.error,
+        description: t.settings.customFieldRequired,
+        variant: "destructive",
+      });
+      return;
+    }
+    const uniqueKeys = new Set(normalized.map((entry) => entry.key));
+    if (uniqueKeys.size !== normalized.length) {
+      toast({
+        title: t.common.error,
+        description: t.settings.customFieldDuplicate,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCustomSchemaSaving(true);
+    try {
+      const result = await fetchApiJsonResult<{
+        team: { itemCustomFieldSchema?: TeamCustomFieldSchemaEntry[] | null };
+      }>(`/api/teams/${teamId}`, {
+        method: "PUT",
+        body: {
+          itemCustomFieldSchema: normalized,
+        },
+        fallbackError: t.settings.errorSaving,
+      });
+      if (!result.ok) {
+        toast({
+          title: t.common.error,
+          description: t.settings.errorSaving,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setItemCustomFieldSchema(result.data.team.itemCustomFieldSchema ?? []);
+      toast({
+        title: t.common.success,
+        description: t.settings.customFieldSchemaSaved,
+      });
+    } catch {
+      toast({
+        title: t.common.error,
+        description: t.settings.errorSaving,
+        variant: "destructive",
+      });
+    } finally {
+      setIsCustomSchemaSaving(false);
+    }
+  };
+
   return (
     <TeamLayout
       team={initialTeam}
@@ -721,6 +812,91 @@ export default function SettingsPageClient({
                   <p className="text-sm text-gray-600 mb-4 sm:mb-6">
                     {t.settings.usersPermissionsSubtitle}
                   </p>
+
+                  <div
+                    className="mb-6 rounded-lg border border-gray-200 p-4"
+                    data-tour="tour-settings-custom-fields"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-900">
+                          {t.settings.customFieldsTitle}
+                        </h3>
+                        <p className="text-xs text-gray-600">
+                          {t.settings.customFieldsSubtitle}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={addCustomFieldSchemaRow}
+                        className="border-gray-300"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        {t.settings.addCustomField}
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {itemCustomFieldSchema.length === 0 ? (
+                        <p className="text-xs text-gray-500">{t.settings.noCustomFields}</p>
+                      ) : (
+                        itemCustomFieldSchema.map((field, index) => (
+                          <div
+                            key={`${field.key}-${index}`}
+                            className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center"
+                          >
+                            <Input
+                              value={field.key}
+                              onChange={(e) =>
+                                updateCustomFieldSchemaRow(index, { key: e.target.value })
+                              }
+                              placeholder={t.settings.customFieldKeyPlaceholder}
+                              className="sm:col-span-4 h-9"
+                            />
+                            <Input
+                              value={field.label}
+                              onChange={(e) =>
+                                updateCustomFieldSchemaRow(index, { label: e.target.value })
+                              }
+                              placeholder={t.settings.customFieldLabelPlaceholder}
+                              className="sm:col-span-5 h-9"
+                            />
+                            <label className="sm:col-span-2 flex items-center gap-2 text-xs text-gray-700">
+                              <input
+                                type="checkbox"
+                                checked={field.active}
+                                onChange={(e) =>
+                                  updateCustomFieldSchemaRow(index, { active: e.target.checked })
+                                }
+                                className="w-4 h-4"
+                              />
+                              {t.settings.customFieldActive}
+                            </label>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => removeCustomFieldSchemaRow(index)}
+                              className="sm:col-span-1 border-red-200 text-red-600 hover:bg-red-50 h-9"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="mt-3">
+                      <Button
+                        type="button"
+                        onClick={handleSaveCustomFieldSchema}
+                        disabled={isCustomSchemaSaving}
+                        className="bg-purple-600 hover:bg-purple-700 text-white"
+                      >
+                        {isCustomSchemaSaving ? t.settings.modalSaving : t.settings.saveCustomFieldSchema}
+                      </Button>
+                    </div>
+                  </div>
 
                   <div className="mb-4 flex justify-end">
                     <Button

@@ -196,6 +196,7 @@ export async function updateTeam(
   data: {
     name?: string;
     notes?: string | null;
+    itemCustomFieldSchema?: { key: string; label: string; active: boolean }[] | null;
   }
 ): Promise<Team> {
   const [updatedTeam] = await sqlite

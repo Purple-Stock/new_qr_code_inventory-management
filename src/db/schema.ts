@@ -13,6 +13,12 @@ export type UserRole = "admin" | "operator" | "viewer";
 export type CompanyMemberRole = "owner" | "admin" | "member";
 export type TeamMemberRole = "admin" | "operator" | "viewer";
 export type MembershipStatus = "active" | "invited" | "suspended";
+export type TeamItemCustomFieldSchemaEntry = {
+  key: string;
+  label: string;
+  active: boolean;
+};
+export type ItemCustomFields = Record<string, string>;
 
 // Users table - without Devise, using bcrypt for password hashing
 export const users = sqliteTable(
@@ -78,6 +84,9 @@ export const teams = sqliteTable(
     manualTrialEndsAt: integer("manual_trial_ends_at", { mode: "timestamp" }),
     manualTrialGrantsCount: integer("manual_trial_grants_count").notNull().default(0),
     manualTrialLastGrantedAt: integer("manual_trial_last_granted_at", { mode: "timestamp" }),
+    itemCustomFieldSchema: text("item_custom_field_schema", { mode: "json" })
+      .$type<TeamItemCustomFieldSchemaEntry[] | null>()
+      .default(null),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .$defaultFn(() => new Date()),
@@ -190,6 +199,9 @@ export const items = sqliteTable(
     initialQuantity: integer("initial_quantity").default(0),
     currentStock: real("current_stock").default(0.0), // decimal(10, 2) -> real
     minimumStock: real("minimum_stock").default(0.0), // decimal(10, 2) -> real
+    customFields: text("custom_fields", { mode: "json" })
+      .$type<ItemCustomFields | null>()
+      .default(null),
     teamId: integer("team_id")
       .notNull()
       .references(() => teams.id),

@@ -14,16 +14,25 @@ export interface ItemFormValues {
   price: string;
   itemType: string;
   brand: string;
+  customFields: Record<string, string>;
+}
+
+export interface CustomFieldSchemaEntry {
+  key: string;
+  label: string;
+  active: boolean;
 }
 
 interface ItemFormProps {
   t: any;
   values: ItemFormValues;
+  customFieldSchema: CustomFieldSchemaEntry[];
   isLoading: boolean;
   cancelHref: string;
   mode: "create" | "edit";
   onSubmit: (e: React.FormEvent) => void;
   onValueChange: (field: keyof ItemFormValues, value: string) => void;
+  onCustomFieldChange: (fieldKey: string, value: string) => void;
   onGenerateSKU: () => void;
   onGenerateBarcode: () => void;
 }
@@ -31,14 +40,18 @@ interface ItemFormProps {
 export function ItemForm({
   t,
   values,
+  customFieldSchema,
   isLoading,
   cancelHref,
   mode,
   onSubmit,
   onValueChange,
+  onCustomFieldChange,
   onGenerateSKU,
   onGenerateBarcode,
 }: ItemFormProps) {
+  const activeCustomFieldSchema = customFieldSchema.filter((field) => field.active);
+
   return (
     <form onSubmit={onSubmit} className="space-y-8">
       <div className="bg-white rounded-lg shadow-sm p-6">
@@ -193,6 +206,31 @@ export function ItemForm({
           </div>
         </div>
       </div>
+
+      {activeCustomFieldSchema.length > 0 ? (
+        <div className="bg-white rounded-lg shadow-sm p-6" data-tour="tour-new-item-custom-fields">
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+            {t.itemForm.customFieldsTitle}
+          </h2>
+          <div className="space-y-4">
+            {activeCustomFieldSchema.map((field) => (
+              <div key={field.key} className="space-y-2">
+                <Label htmlFor={`custom-field-${field.key}`} className="text-gray-900">
+                  {field.label}
+                </Label>
+                <Input
+                  id={`custom-field-${field.key}`}
+                  type="text"
+                  placeholder={t.itemForm.customFieldPlaceholder}
+                  value={values.customFields[field.key] ?? ""}
+                  onChange={(e) => onCustomFieldChange(field.key, e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex items-center gap-4 pt-4" data-tour="tour-new-item-submit">
         <Button
