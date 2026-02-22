@@ -229,6 +229,9 @@ async function uploadTeamImageToS3(params: {
   validateImageSize(originalSize);
 
   if (!shouldUseS3()) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("S3_BUCKET is required in production for image uploads");
+    }
     return params.dataUrl;
   }
 
