@@ -1,10 +1,11 @@
+import { vi } from "vitest";
 import { companies, companyMembers, superAdminUsers, teamMembers, teams, users } from "@/db/schema";
 import { ERROR_CODES } from "@/lib/errors";
 import { getAllTeamsForSuperAdmin } from "@/lib/services/admin";
 import { cleanupTestDb, clearTestDb, getTestDb } from "../../helpers/test-db";
 
-jest.mock("@/db/client", () => {
-  const { getTestDb } = require("../../helpers/test-db");
+vi.mock("@/db/client", async () => {
+  const { getTestDb } = await import("../../helpers/test-db");
   const { drizzle } = getTestDb();
   return { sqlite: drizzle };
 });

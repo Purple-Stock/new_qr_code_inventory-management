@@ -171,6 +171,7 @@ describe("/api/teams/[id]/items route", () => {
       expect(mockedCreateTeamItem).toHaveBeenCalledWith({
         teamId: 12,
         requestUserId: 5,
+        requestHost: null,
         payload: { name: "Keyboard" },
       });
       expect(mockedRevalidatePath).toHaveBeenCalledWith("/teams/12/items");

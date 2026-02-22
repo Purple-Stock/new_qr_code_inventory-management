@@ -107,6 +107,7 @@ describe("/api/teams/[id]/items/[itemId] route", () => {
         teamId: 12,
         itemId: 7,
         requestUserId: 5,
+        requestHost: null,
         payload: { name: "Mouse Pro" },
       });
       expect(mockedRevalidatePath).toHaveBeenCalledWith("/teams/12/items");
