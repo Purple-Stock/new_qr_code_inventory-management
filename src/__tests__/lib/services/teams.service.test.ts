@@ -299,6 +299,94 @@ describe("teams service", () => {
     expect(result.data.team.name).toBe("Updated Name");
   });
 
+  it("updates team label company info", async () => {
+    const { drizzle } = getTestDb();
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "teams-update-label-info@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Team Label Info", userId: user.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+
+    const result = await updateTeamDetails({
+      teamId: team.id,
+      requestUserId: user.id,
+      payload: { labelCompanyInfo: "CNPJ 00.000.000/0001-00" },
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect((result.data.team as any).labelCompanyInfo).toBe("CNPJ 00.000.000/0001-00");
+  });
+
+  it("updates team label logo url", async () => {
+    const { drizzle } = getTestDb();
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "teams-update-label-logo@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Team Label Logo", userId: user.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+
+    const result = await updateTeamDetails({
+      teamId: team.id,
+      requestUserId: user.id,
+      payload: { labelLogoUrl: "https://cdn.example.com/logo.png" },
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect((result.data.team as any).labelLogoUrl).toBe("https://cdn.example.com/logo.png");
+  });
+
+  it("updates company name through team settings", async () => {
+    const { drizzle } = getTestDb();
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "teams-update-company-name@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [company] = await drizzle
+      .insert(companies)
+      .values({ name: "Company Old Name", slug: "company-old-name" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Team Company Name", userId: user.id, companyId: company.id })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+
+    const result = await updateTeamDetails({
+      teamId: team.id,
+      requestUserId: user.id,
+      payload: { companyName: "Company New Name" },
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.team.companyName).toBe("Company New Name");
+  });
+
   it("returns error for updateTeamDetails when not authenticated", async () => {
     const result = await updateTeamDetails({
       teamId: 1,

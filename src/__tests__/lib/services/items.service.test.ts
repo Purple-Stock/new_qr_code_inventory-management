@@ -266,6 +266,38 @@ describe("items service", () => {
     expect(result.data.item.name).toBe("New Item");
   });
 
+  it("creates item with photo data when authorized", async () => {
+    const { drizzle } = getTestDb();
+    const [admin] = await drizzle
+      .insert(users)
+      .values({ email: "items-create-photo@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Items Photo Team", userId: admin.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: admin.id,
+      role: "admin",
+      status: "active",
+    });
+
+    const result = await createTeamItem({
+      teamId: team.id,
+      requestUserId: admin.id,
+      payload: {
+        name: "Printer",
+        barcode: "barcode-photo-item",
+        photoData: "data:image/png;base64,AAAA",
+      },
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect((result.data.item as any).photoData).toBe("data:image/png;base64,AAAA");
+  });
+
   it("returns validation error for invalid payload", async () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle

@@ -4,8 +4,9 @@ import {
   getTeamWithStats,
   getUserTeamsWithStats,
   updateTeam,
+  updateTeamAndCompanyLabelSettings,
 } from "@/lib/db/teams";
-import { getActiveCompanyIdForUser } from "@/lib/db/companies";
+import { getActiveCompanyIdForUser, updateCompanyName } from "@/lib/db/companies";
 import { ERROR_CODES } from "@/lib/errors";
 import { isUniqueConstraintError } from "@/lib/error-utils";
 import {
@@ -14,6 +15,7 @@ import {
   authorizeTeamPermission,
 } from "@/lib/permissions";
 import { parseTeamCreatePayload, parseTeamUpdatePayload } from "@/lib/contracts/schemas";
+import { uploadTeamLabelLogoToS3 } from "@/lib/services/item-images";
 import type { ServiceResult, TeamDto } from "@/lib/services/types";
 import {
   makeServiceError,
@@ -181,8 +183,46 @@ export async function updateTeamDetails(
   }
 
   try {
-    const team = await updateTeam(params.teamId, parsed.data);
-    return { ok: true, data: { team: toTeamDto(team) } };
+    const { companyName: _companyName, ...teamOnlyFields } = parsed.data;
+
+    let logoUrl = teamOnlyFields.labelLogoUrl;
+    if (typeof logoUrl === "string" && logoUrl.startsWith("data:image/")) {
+      logoUrl = await uploadTeamLabelLogoToS3({
+        teamId: params.teamId,
+        dataUrl: logoUrl,
+      });
+    }
+
+    const payloadWithLogo = {
+      ...teamOnlyFields,
+      ...(logoUrl !== undefined ? { labelLogoUrl: logoUrl } : {}),
+    };
+
+    if (parsed.data.companyName !== undefined) {
+      if (!existingTeam.companyId) {
+        return {
+          ok: false,
+          error: validationServiceError("Team is not linked to a company"),
+        };
+      }
+
+      await updateTeamAndCompanyLabelSettings(params.teamId, existingTeam.companyId, {
+        companyName: parsed.data.companyName,
+        team: payloadWithLogo,
+      });
+    } else if (Object.keys(payloadWithLogo).length > 0) {
+      await updateTeam(params.teamId, payloadWithLogo);
+    }
+
+    const updatedWithStats = await getTeamWithStats(params.teamId);
+    if (!updatedWithStats) {
+      return {
+        ok: false,
+        error: notFoundServiceError(ERROR_CODES.TEAM_NOT_FOUND, "Team not found"),
+      };
+    }
+
+    return { ok: true, data: { team: toTeamDto(updatedWithStats) } };
   } catch (error: unknown) {
     if (isUniqueConstraintError(error)) {
       return {

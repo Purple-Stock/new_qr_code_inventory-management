@@ -204,12 +204,21 @@ export function parseTeamCreatePayload(body: unknown): ValidationResult<{
 export function parseTeamUpdatePayload(body: unknown): ValidationResult<{
   name?: string;
   notes?: string | null;
+  companyName?: string;
+  labelCompanyInfo?: string | null;
+  labelLogoUrl?: string | null;
 }> {
   if (!isRecord(body)) {
     return { ok: false, error: "Invalid request payload" };
   }
 
-  const payload: { name?: string; notes?: string | null } = {};
+  const payload: {
+    name?: string;
+    notes?: string | null;
+    companyName?: string;
+    labelCompanyInfo?: string | null;
+    labelLogoUrl?: string | null;
+  } = {};
 
   if (body.name !== undefined) {
     const nameParsed = parseRequiredTrimmedString(body.name, "Team name");
@@ -225,6 +234,38 @@ export function parseTeamUpdatePayload(body: unknown): ValidationResult<{
       return { ok: false, error: "Notes must be a string" };
     }
     payload.notes = notesParsed.data ?? null;
+  }
+
+  if (body.companyName !== undefined) {
+    const companyNameParsed = parseRequiredTrimmedString(body.companyName, "Company name");
+    if (!companyNameParsed.ok) {
+      return { ok: false, error: "Company name is required" };
+    }
+    payload.companyName = companyNameParsed.data;
+  }
+
+  if (body.labelCompanyInfo !== undefined) {
+    const labelCompanyInfoParsed = parseOptionalTrimmedString(body.labelCompanyInfo);
+    if (!labelCompanyInfoParsed.ok) {
+      return { ok: false, error: "Label company info must be a string" };
+    }
+    payload.labelCompanyInfo = labelCompanyInfoParsed.data ?? null;
+  }
+
+  if (body.labelLogoUrl !== undefined) {
+    const labelLogoUrlParsed = parseOptionalTrimmedString(body.labelLogoUrl);
+    if (!labelLogoUrlParsed.ok) {
+      return { ok: false, error: "Label logo must be a string" };
+    }
+
+    const labelLogoUrl = labelLogoUrlParsed.data ?? null;
+    const isDataUrl = labelLogoUrl ? labelLogoUrl.startsWith("data:image/") : false;
+    const isHttpUrl = labelLogoUrl ? /^https?:\/\//i.test(labelLogoUrl) : false;
+    if (labelLogoUrl && !isDataUrl && !isHttpUrl) {
+      return { ok: false, error: "Label logo must be an image data URL or HTTP URL" };
+    }
+
+    payload.labelLogoUrl = labelLogoUrl;
   }
 
   return { ok: true, data: payload };
@@ -300,6 +341,7 @@ export type ItemWritePayload = {
   price?: number | null;
   itemType?: string | null;
   brand?: string | null;
+  photoData?: string | null;
   locationId?: number | null;
   initialQuantity?: number;
   currentStock?: number;
@@ -349,6 +391,20 @@ export function parseItemPayload(
     return { ok: false, error: "Brand must be a string" };
   }
   if (body.brand !== undefined) payload.brand = brandParsed.data ?? null;
+
+  const photoDataParsed = parseOptionalTrimmedString(body.photoData);
+  if (!photoDataParsed.ok) {
+    return { ok: false, error: "Photo data must be a string" };
+  }
+  if (body.photoData !== undefined) {
+    const photoData = photoDataParsed.data ?? null;
+    const isDataUrl = photoData ? photoData.startsWith("data:image/") : false;
+    const isHttpUrl = photoData ? /^https?:\/\//i.test(photoData) : false;
+    if (photoData && !isDataUrl && !isHttpUrl) {
+      return { ok: false, error: "Photo data must be an image data URL or HTTP URL" };
+    }
+    payload.photoData = photoData;
+  }
 
   const costParsed = parseNullableNumber(body.cost);
   if (!costParsed.ok) {

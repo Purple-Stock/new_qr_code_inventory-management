@@ -11,6 +11,7 @@ import { ERROR_CODES } from "@/lib/errors";
 import { isUniqueConstraintError } from "@/lib/error-utils";
 import { authorizeTeamAccess, authorizeTeamPermission } from "@/lib/permissions";
 import { parseItemPayload } from "@/lib/contracts/schemas";
+import { uploadItemImageToS3 } from "@/lib/services/item-images";
 import type { ItemDto, ServiceResult } from "@/lib/services/types";
 import {
   authServiceError,
@@ -103,6 +104,11 @@ export async function createTeamItem(params: {
 
   try {
     const payload = parsed.data;
+    const photoData =
+      payload.photoData && payload.photoData.startsWith("data:image/")
+        ? await uploadItemImageToS3({ teamId: params.teamId, dataUrl: payload.photoData })
+        : payload.photoData ?? null;
+
     const item = await createItem({
       name: payload.name!,
       sku: payload.sku ?? null,
@@ -111,6 +117,7 @@ export async function createTeamItem(params: {
       price: payload.price ?? null,
       itemType: payload.itemType ?? null,
       brand: payload.brand ?? null,
+      photoData,
       teamId: params.teamId,
       locationId: payload.locationId ?? null,
       initialQuantity: payload.initialQuantity ?? 0,
@@ -176,6 +183,11 @@ export async function updateTeamItem(
   const payload = parsed.data;
 
   try {
+    const photoData =
+      payload.photoData && payload.photoData.startsWith("data:image/")
+        ? await uploadItemImageToS3({ teamId: params.teamId, dataUrl: payload.photoData })
+        : payload.photoData;
+
     const item = await updateItem(params.itemId, {
       name: payload.name,
       sku: payload.sku,
@@ -184,6 +196,7 @@ export async function updateTeamItem(
       price: payload.price,
       itemType: payload.itemType,
       brand: payload.brand,
+      photoData,
       locationId: payload.locationId,
     });
 
