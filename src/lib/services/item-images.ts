@@ -17,6 +17,7 @@ const UPLOAD_RETRY_DELAY_MS = 500;
 type UploadInput = {
   teamId: number;
   dataUrl: string;
+  runtimeHost?: string | null;
 };
 
 function parseDataUrl(dataUrl: string): { mimeType: string; bytes: Uint8Array; extension: string; originalSize: number } {
@@ -143,13 +144,27 @@ function resolveAmplifyBranchName(): string {
   return (process.env.AWS_BRANCH || process.env.AMPLIFY_BRANCH || "").trim().toUpperCase();
 }
 
-function resolveEnv(key: string): string | undefined {
+function resolveHostBranchName(runtimeHost?: string | null): string {
+  const host = (runtimeHost || "").trim().toLowerCase();
+  if (!host) {
+    return "";
+  }
+  if (host.includes("staging.")) {
+    return "DEVELOP";
+  }
+  if (host.includes("app.")) {
+    return "MAIN";
+  }
+  return "";
+}
+
+function resolveEnv(key: string, runtimeHost?: string | null): string | undefined {
   const direct = process.env[key]?.trim();
   if (direct) {
     return direct;
   }
 
-  const branch = resolveAmplifyBranchName();
+  const branch = resolveAmplifyBranchName() || resolveHostBranchName(runtimeHost);
   if (!branch) {
     return undefined;
   }
@@ -169,8 +184,8 @@ function resolveEnv(key: string): string | undefined {
   return undefined;
 }
 
-function deriveBucketFromPublicBaseUrl(): string | undefined {
-  const baseUrl = resolveEnv("S3_PUBLIC_BASE_URL");
+function deriveBucketFromPublicBaseUrl(runtimeHost?: string | null): string | undefined {
+  const baseUrl = resolveEnv("S3_PUBLIC_BASE_URL", runtimeHost);
   if (!baseUrl) {
     return undefined;
   }
@@ -193,12 +208,12 @@ function deriveBucketFromPublicBaseUrl(): string | undefined {
   return undefined;
 }
 
-function resolveBucketName(): string | undefined {
-  return resolveEnv("S3_BUCKET") || deriveBucketFromPublicBaseUrl();
+function resolveBucketName(runtimeHost?: string | null): string | undefined {
+  return resolveEnv("S3_BUCKET", runtimeHost) || deriveBucketFromPublicBaseUrl(runtimeHost);
 }
 
-function shouldUseS3(): boolean {
-  return Boolean(resolveBucketName());
+function shouldUseS3(runtimeHost?: string | null): boolean {
+  return Boolean(resolveBucketName(runtimeHost));
 }
 
 function normalizeFolderSegment(value: string): string {
@@ -211,17 +226,18 @@ function normalizeFolderSegment(value: string): string {
 export function buildItemImageS3Key(params: {
   teamId: number;
   extension: string;
+  runtimeHost?: string | null;
   now?: Date;
   randomToken?: string;
 }): string {
   const rootFolder = normalizeFolderSegment(
-    resolveEnv("S3_ROOT_FOLDER") || "purplestock"
+    resolveEnv("S3_ROOT_FOLDER", params.runtimeHost) || "purplestock"
   );
   const itemImagesFolder = normalizeFolderSegment(
-    resolveEnv("S3_ITEM_IMAGES_FOLDER") || "item-images"
+    resolveEnv("S3_ITEM_IMAGES_FOLDER", params.runtimeHost) || "item-images"
   );
   const envFolder = normalizeFolderSegment(
-    resolveEnv("S3_ENV_FOLDER") || process.env.NODE_ENV || "dev"
+    resolveEnv("S3_ENV_FOLDER", params.runtimeHost) || process.env.NODE_ENV || "dev"
   );
 
   const now = params.now ?? new Date();
@@ -248,17 +264,18 @@ export function buildItemImageS3Key(params: {
 export function buildTeamLabelLogoS3Key(params: {
   teamId: number;
   extension: string;
+  runtimeHost?: string | null;
   now?: Date;
   randomToken?: string;
 }): string {
   const rootFolder = normalizeFolderSegment(
-    resolveEnv("S3_ROOT_FOLDER") || "purplestock"
+    resolveEnv("S3_ROOT_FOLDER", params.runtimeHost) || "purplestock"
   );
   const teamLogosFolder = normalizeFolderSegment(
-    resolveEnv("S3_TEAM_LABEL_LOGOS_FOLDER") || "team-label-logos"
+    resolveEnv("S3_TEAM_LABEL_LOGOS_FOLDER", params.runtimeHost) || "team-label-logos"
   );
   const envFolder = normalizeFolderSegment(
-    resolveEnv("S3_ENV_FOLDER") || process.env.NODE_ENV || "dev"
+    resolveEnv("S3_ENV_FOLDER", params.runtimeHost) || process.env.NODE_ENV || "dev"
   );
 
   const now = params.now ?? new Date();
@@ -285,14 +302,15 @@ export function buildTeamLabelLogoS3Key(params: {
 async function uploadTeamImageToS3(params: {
   teamId: number;
   dataUrl: string;
-  keyBuilder: (args: { teamId: number; extension: string }) => string;
+  runtimeHost?: string | null;
+  keyBuilder: (args: { teamId: number; extension: string; runtimeHost?: string | null }) => string;
 }): Promise<string> {
   const { mimeType, bytes, extension, originalSize } = parseDataUrl(params.dataUrl);
 
   validateImageType(mimeType);
   validateImageSize(originalSize);
 
-  if (!shouldUseS3()) {
+  if (!shouldUseS3(params.runtimeHost)) {
     if (process.env.NODE_ENV === "production") {
       throw new Error("S3_BUCKET is required in production for image uploads");
     }
@@ -301,7 +319,7 @@ async function uploadTeamImageToS3(params: {
 
   await validateImageDimensions(bytes);
 
-  const bucket = resolveBucketName()!;
+  const bucket = resolveBucketName(params.runtimeHost)!;
   const region = resolveAwsRegion();
   const endpoint =
     process.env.S3_ENDPOINT?.trim() || process.env.AWS_S3_ENDPOINT?.trim() || undefined;
@@ -316,6 +334,7 @@ async function uploadTeamImageToS3(params: {
   const key = params.keyBuilder({
     teamId: params.teamId,
     extension,
+    runtimeHost: params.runtimeHost,
   });
 
   const s3 = new S3Client({
@@ -351,6 +370,7 @@ export async function uploadItemImageToS3(input: UploadInput): Promise<string> {
   return uploadTeamImageToS3({
     teamId: input.teamId,
     dataUrl: input.dataUrl,
+    runtimeHost: input.runtimeHost,
     keyBuilder: buildItemImageS3Key,
   });
 }
@@ -359,6 +379,7 @@ export async function uploadTeamLabelLogoToS3(input: UploadInput): Promise<strin
   return uploadTeamImageToS3({
     teamId: input.teamId,
     dataUrl: input.dataUrl,
+    runtimeHost: input.runtimeHost,
     keyBuilder: buildTeamLabelLogoS3Key,
   });
 }

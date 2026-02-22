@@ -89,6 +89,7 @@ export async function createTeamItem(params: {
   teamId: number;
   requestUserId: number | null;
   payload: unknown;
+  requestHost?: string | null;
 }): Promise<ServiceResult<{ item: ItemDto }>> {
   const parsed = parseItemPayload(params.payload, "create");
   if (!parsed.ok) {
@@ -118,6 +119,7 @@ export async function createTeamItem(params: {
         photoData = await uploadItemImageToS3({
           teamId: params.teamId,
           dataUrl: payload.photoData,
+          runtimeHost: params.requestHost,
         });
       } catch (error) {
         return {
@@ -166,6 +168,7 @@ export interface UpdateTeamItemInput {
   itemId: number;
   requestUserId: number | null;
   payload: unknown;
+  requestHost?: string | null;
 }
 
 export async function updateTeamItem(
@@ -207,6 +210,7 @@ export async function updateTeamItem(
         photoData = await uploadItemImageToS3({
           teamId: params.teamId,
           dataUrl: payload.photoData,
+          runtimeHost: params.requestHost,
         });
       } catch (error) {
         return {
