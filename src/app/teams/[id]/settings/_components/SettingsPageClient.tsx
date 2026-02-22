@@ -71,7 +71,6 @@ export default function SettingsPageClient({
   const [companyTeams, setCompanyTeams] = useState<CompanyTeam[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [canManageUsers, setCanManageUsers] = useState(false);
-  const [activeSettingsTab, setActiveSettingsTab] = useState<SettingsTab>("users");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -165,6 +164,18 @@ export default function SettingsPageClient({
     return availableTabs[0] ?? "billing";
   };
 
+  const updateUrlTab = (tab: SettingsTab) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (params.get("tab") === tab) {
+      return;
+    }
+    params.set("tab", tab);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const tabFromUrl = searchParams.get("tab");
+  const activeSettingsTab = resolveTab(tabFromUrl);
+
   useEffect(() => {
     fetchManagedUsers().finally(() => setIsLoading(false));
   }, [teamId]);
@@ -211,26 +222,14 @@ export default function SettingsPageClient({
   }, [searchParams, teamId]);
 
   useEffect(() => {
-    const nextTab = resolveTab(searchParams.get("tab"));
-    if (activeSettingsTab !== nextTab) {
-      setActiveSettingsTab(nextTab);
+    if (tabFromUrl !== activeSettingsTab) {
+      updateUrlTab(activeSettingsTab);
     }
-  }, [searchParams, availableTabs, activeSettingsTab]);
-
-  useEffect(() => {
-    const currentTabInUrl = searchParams.get("tab");
-    if (currentTabInUrl === activeSettingsTab) {
-      return;
-    }
-
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("tab", activeSettingsTab);
-    router.replace(`${pathname}?${params.toString()}`);
-  }, [activeSettingsTab, searchParams, router, pathname]);
+  }, [tabFromUrl, activeSettingsTab, searchParams, pathname, router, availableTabs]);
 
   const handleTabChange = (tab: SettingsTab) => {
     const nextTab = resolveTab(tab);
-    setActiveSettingsTab(nextTab);
+    updateUrlTab(nextTab);
   };
 
   const fetchManagedUsers = async () => {
