@@ -20,6 +20,7 @@ export type ItemDto = {
   price: number | null;
   itemType: string | null;
   brand: string | null;
+  photoData: string | null;
   initialQuantity: number | null;
   currentStock: number | null;
   minimumStock: number | null;
@@ -36,6 +37,8 @@ export type TeamDto = {
   notes: string | null;
   userId: number;
   companyId: number | null;
+  companyName?: string | null;
+  labelCompanyInfo?: string | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   stripeSubscriptionStatus: string | null;

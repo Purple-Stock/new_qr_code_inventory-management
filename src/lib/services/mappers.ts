@@ -28,6 +28,7 @@ export function toItemDto(item: Item & { locationName?: string | null }): ItemDt
     price: item.price,
     itemType: item.itemType,
     brand: item.brand,
+    photoData: item.photoData,
     initialQuantity: item.initialQuantity,
     currentStock: item.currentStock,
     minimumStock: item.minimumStock,
@@ -49,6 +50,8 @@ export function toTeamDto(
     createdAt: Date | string;
     updatedAt: Date | string;
   } & Partial<{
+    companyName: string | null;
+    labelCompanyInfo: string | null;
     stripeCustomerId: string | null;
     stripeSubscriptionId: string | null;
     stripeSubscriptionStatus: string | null;
@@ -68,6 +71,8 @@ export function toTeamDto(
     notes: team.notes,
     userId: team.userId,
     companyId: team.companyId,
+    companyName: team.companyName ?? null,
+    labelCompanyInfo: team.labelCompanyInfo ?? null,
     stripeCustomerId: team.stripeCustomerId ?? null,
     stripeSubscriptionId: team.stripeSubscriptionId ?? null,
     stripeSubscriptionStatus: team.stripeSubscriptionStatus ?? null,

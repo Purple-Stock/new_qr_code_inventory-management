@@ -204,12 +204,13 @@ export function parseTeamCreatePayload(body: unknown): ValidationResult<{
 export function parseTeamUpdatePayload(body: unknown): ValidationResult<{
   name?: string;
   notes?: string | null;
+  labelCompanyInfo?: string | null;
 }> {
   if (!isRecord(body)) {
     return { ok: false, error: "Invalid request payload" };
   }
 
-  const payload: { name?: string; notes?: string | null } = {};
+  const payload: { name?: string; notes?: string | null; labelCompanyInfo?: string | null } = {};
 
   if (body.name !== undefined) {
     const nameParsed = parseRequiredTrimmedString(body.name, "Team name");
@@ -225,6 +226,14 @@ export function parseTeamUpdatePayload(body: unknown): ValidationResult<{
       return { ok: false, error: "Notes must be a string" };
     }
     payload.notes = notesParsed.data ?? null;
+  }
+
+  if (body.labelCompanyInfo !== undefined) {
+    const labelCompanyInfoParsed = parseOptionalTrimmedString(body.labelCompanyInfo);
+    if (!labelCompanyInfoParsed.ok) {
+      return { ok: false, error: "Label company info must be a string" };
+    }
+    payload.labelCompanyInfo = labelCompanyInfoParsed.data ?? null;
   }
 
   return { ok: true, data: payload };
@@ -300,6 +309,7 @@ export type ItemWritePayload = {
   price?: number | null;
   itemType?: string | null;
   brand?: string | null;
+  photoData?: string | null;
   locationId?: number | null;
   initialQuantity?: number;
   currentStock?: number;
@@ -349,6 +359,18 @@ export function parseItemPayload(
     return { ok: false, error: "Brand must be a string" };
   }
   if (body.brand !== undefined) payload.brand = brandParsed.data ?? null;
+
+  const photoDataParsed = parseOptionalTrimmedString(body.photoData);
+  if (!photoDataParsed.ok) {
+    return { ok: false, error: "Photo data must be a string" };
+  }
+  if (body.photoData !== undefined) {
+    const photoData = photoDataParsed.data ?? null;
+    if (photoData && !photoData.startsWith("data:image/")) {
+      return { ok: false, error: "Photo data must be a valid image data URL" };
+    }
+    payload.photoData = photoData;
+  }
 
   const costParsed = parseNullableNumber(body.cost);
   if (!costParsed.ok) {

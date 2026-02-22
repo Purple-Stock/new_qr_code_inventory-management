@@ -111,6 +111,7 @@ export async function createTeamItem(params: {
       price: payload.price ?? null,
       itemType: payload.itemType ?? null,
       brand: payload.brand ?? null,
+      photoData: payload.photoData ?? null,
       teamId: params.teamId,
       locationId: payload.locationId ?? null,
       initialQuantity: payload.initialQuantity ?? 0,
@@ -184,6 +185,7 @@ export async function updateTeamItem(
       price: payload.price,
       itemType: payload.itemType,
       brand: payload.brand,
+      photoData: payload.photoData,
       locationId: payload.locationId,
     });
 

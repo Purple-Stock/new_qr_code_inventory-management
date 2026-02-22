@@ -85,6 +85,10 @@ export default function SettingsPageClient({
   const [billingPeriodEnd, setBillingPeriodEnd] = useState<string | null>(
     initialTeam.stripeCurrentPeriodEnd ?? null
   );
+  const [labelCompanyInfo, setLabelCompanyInfo] = useState(
+    initialTeam.labelCompanyInfo ?? ""
+  );
+  const [isLabelCompanyInfoSaving, setIsLabelCompanyInfoSaving] = useState(false);
   const [manualTrialEndsAt, setManualTrialEndsAt] = useState<string | null>(
     initialTeam.manualTrialEndsAt ?? null
   );
@@ -585,6 +589,44 @@ export default function SettingsPageClient({
     }
   };
 
+  const handleSaveLabelCompanyInfo = async () => {
+    setIsLabelCompanyInfoSaving(true);
+    try {
+      const parsed = await fetchApiJsonResult<{ team: { labelCompanyInfo?: string | null } }>(
+        `/api/teams/${teamId}`,
+        {
+          method: "PUT",
+          body: {
+            labelCompanyInfo: labelCompanyInfo.trim() || null,
+          },
+          fallbackError: t.settings.errorSaving,
+        }
+      );
+      if (!parsed.ok) {
+        toast({
+          title: t.common.error,
+          description: t.settings.errorSaving,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setLabelCompanyInfo(parsed.data.team.labelCompanyInfo ?? "");
+      toast({
+        title: t.common.success,
+        description: t.settings.changesSaved,
+      });
+    } catch {
+      toast({
+        title: t.common.error,
+        description: t.settings.errorSaving,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLabelCompanyInfoSaving(false);
+    }
+  };
+
   return (
     <TeamLayout
       team={initialTeam}
@@ -709,6 +751,33 @@ export default function SettingsPageClient({
                         {isBillingLoading ? "Carregando..." : "Gerenciar assinatura"}
                       </Button>
                     ) : null}
+                  </div>
+                  <div className="mt-6 border-t border-gray-200 pt-4">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-1">
+                      {t.settings.labelCompanyInfoTitle}
+                    </h3>
+                    <p className="text-xs text-gray-600 mb-2">
+                      {t.settings.labelCompanyInfoDesc}
+                    </p>
+                    {initialTeam.companyName ? (
+                      <p className="text-xs text-gray-700 mb-2">
+                        {t.settings.companyName}: <strong>{initialTeam.companyName}</strong>
+                      </p>
+                    ) : null}
+                    <Input
+                      value={labelCompanyInfo}
+                      onChange={(e) => setLabelCompanyInfo(e.target.value)}
+                      placeholder={t.settings.labelCompanyInfoPlaceholder}
+                      className="max-w-xl"
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleSaveLabelCompanyInfo}
+                      disabled={isLabelCompanyInfoSaving}
+                      className="mt-3 bg-purple-600 hover:bg-purple-700 text-white"
+                    >
+                      {isLabelCompanyInfoSaving ? t.settings.modalSaving : t.settings.saveChanges}
+                    </Button>
                   </div>
                 </div>
               ) : null}

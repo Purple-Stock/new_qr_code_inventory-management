@@ -10,6 +10,8 @@ export type Team = Pick<
   | "id"
   | "name"
   | "notes"
+  | "labelCompanyInfo"
+  | "companyName"
   | "stripeSubscriptionStatus"
   | "stripeCurrentPeriodEnd"
   | "manualTrialEndsAt"

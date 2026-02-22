@@ -78,6 +78,7 @@ export const teams = sqliteTable(
     manualTrialEndsAt: integer("manual_trial_ends_at", { mode: "timestamp" }),
     manualTrialGrantsCount: integer("manual_trial_grants_count").notNull().default(0),
     manualTrialLastGrantedAt: integer("manual_trial_last_granted_at", { mode: "timestamp" }),
+    labelCompanyInfo: text("label_company_info"),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .$defaultFn(() => new Date()),
@@ -187,6 +188,7 @@ export const items = sqliteTable(
     price: real("price"), // decimal(10, 2) -> real in SQLite
     itemType: text("item_type"),
     brand: text("brand"),
+    photoData: text("photo_data"),
     initialQuantity: integer("initial_quantity").default(0),
     currentStock: real("current_stock").default(0.0), // decimal(10, 2) -> real
     minimumStock: real("minimum_stock").default(0.0), // decimal(10, 2) -> real

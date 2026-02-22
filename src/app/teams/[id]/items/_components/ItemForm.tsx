@@ -14,6 +14,7 @@ export interface ItemFormValues {
   price: string;
   itemType: string;
   brand: string;
+  photoData: string;
 }
 
 interface ItemFormProps {
@@ -39,6 +40,20 @@ export function ItemForm({
   onGenerateSKU,
   onGenerateBarcode,
 }: ItemFormProps) {
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result === "string") {
+        onValueChange("photoData", result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <form onSubmit={onSubmit} className="space-y-8">
       <div className="bg-white rounded-lg shadow-sm p-6">
@@ -117,6 +132,35 @@ export function ItemForm({
                 <QrCode className="h-5 w-5" />
               </button>
             </div>
+          </div>
+
+          <div className="space-y-2" data-tour="tour-new-item-photo">
+            <Label htmlFor="photo" className="text-gray-900">
+              {t.itemForm.photoLabel}
+            </Label>
+            <Input
+              id="photo"
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoChange}
+              className="w-full"
+            />
+            {values.photoData ? (
+              <div className="mt-2">
+                <img
+                  src={values.photoData}
+                  alt="Item preview"
+                  className="h-24 w-24 object-cover rounded-md border border-gray-200"
+                />
+                <button
+                  type="button"
+                  onClick={() => onValueChange("photoData", "")}
+                  className="mt-2 text-sm text-red-600 hover:underline"
+                >
+                  {t.itemForm.removePhoto}
+                </button>
+              </div>
+            ) : null}
           </div>
 
           <div className="grid grid-cols-2 gap-4" data-tour="tour-new-item-pricing">

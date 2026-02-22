@@ -1,5 +1,13 @@
 import { sqlite } from "@/db/client";
-import { teams, items, stockTransactions, locations, teamMembers, webhooks } from "@/db/schema";
+import {
+  teams,
+  items,
+  stockTransactions,
+  locations,
+  teamMembers,
+  webhooks,
+  companies,
+} from "@/db/schema";
 import { and, eq, count, inArray } from "drizzle-orm";
 import type { Team } from "@/db/schema";
 import { hasAffectedRows } from "./mutation-result";
@@ -72,12 +80,16 @@ export async function createTeam(data: {
  */
 export async function getTeamWithStats(teamId: number) {
   const [team] = await sqlite
-    .select()
+    .select({
+      team: teams,
+      companyName: companies.name,
+    })
     .from(teams)
+    .leftJoin(companies, eq(teams.companyId, companies.id))
     .where(eq(teams.id, teamId))
     .limit(1);
 
-  if (!team) {
+  if (!team?.team) {
     return null;
   }
 
@@ -105,7 +117,8 @@ export async function getTeamWithStats(teamId: number) {
     );
 
   return {
-    ...team,
+    ...team.team,
+    companyName: team.companyName ?? null,
     itemCount: itemCount?.count || 0,
     transactionCount: transactionCount?.count || 0,
     memberCount: memberCount?.count || 0,
@@ -136,11 +149,15 @@ export async function getUserTeamsWithStats(userId: number) {
   );
 
   const userTeams = await sqlite
-    .select()
+    .select({
+      team: teams,
+      companyName: companies.name,
+    })
     .from(teams)
+    .leftJoin(companies, eq(teams.companyId, companies.id))
     .where(inArray(teams.id, memberTeamIds));
 
-  const teamIds = userTeams.map((team) => team.id);
+  const teamIds = userTeams.map((row) => row.team.id);
 
   const [itemCounts, transactionCounts, memberCounts] = await Promise.all([
     sqlite
@@ -171,11 +188,12 @@ export async function getUserTeamsWithStats(userId: number) {
   );
   const memberCountByTeam = new Map(memberCounts.map((row) => [row.teamId, row.count]));
 
-  const teamsWithStats = userTeams.map((team) => ({
-    ...team,
-    itemCount: itemCountByTeam.get(team.id) || 0,
-    transactionCount: transactionCountByTeam.get(team.id) || 0,
-    memberCount: memberCountByTeam.get(team.id) || 0,
+  const teamsWithStats = userTeams.map((row) => ({
+    ...row.team,
+    companyName: row.companyName ?? null,
+    itemCount: itemCountByTeam.get(row.team.id) || 0,
+    transactionCount: transactionCountByTeam.get(row.team.id) || 0,
+    memberCount: memberCountByTeam.get(row.team.id) || 0,
   }));
 
   return teamsWithStats.map((team) => {
@@ -196,6 +214,7 @@ export async function updateTeam(
   data: {
     name?: string;
     notes?: string | null;
+    labelCompanyInfo?: string | null;
   }
 ): Promise<Team> {
   const [updatedTeam] = await sqlite

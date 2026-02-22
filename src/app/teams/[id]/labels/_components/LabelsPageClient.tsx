@@ -32,6 +32,8 @@ interface Item {
 interface Team {
   id: number;
   name: string;
+  companyName?: string | null;
+  labelCompanyInfo?: string | null;
 }
 
 interface LabelsPageClientProps {
@@ -55,6 +57,7 @@ export default function LabelsPageClient({
   const [includeItemName, setIncludeItemName] = useState(true);
   const [includeSKU, setIncludeSKU] = useState(true);
   const [includeStock, setIncludeStock] = useState(false);
+  const [includeCompanyInfo, setIncludeCompanyInfo] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const { t } = useTranslation();
@@ -193,6 +196,23 @@ export default function LabelsPageClient({
             maxWidth: labelWidth - 4,
           });
           currentY += fontSize + 1;
+        }
+
+        if (includeCompanyInfo && (team.companyName || team.labelCompanyInfo)) {
+          pdf.setFontSize(fontSize - 1);
+          pdf.setTextColor(70, 70, 70);
+          if (team.companyName) {
+            pdf.text(team.companyName.substring(0, 26), x + 2, currentY, {
+              maxWidth: labelWidth - 4,
+            });
+            currentY += fontSize;
+          }
+          if (team.labelCompanyInfo) {
+            pdf.text(team.labelCompanyInfo.substring(0, 36), x + 2, currentY, {
+              maxWidth: labelWidth - 4,
+            });
+            currentY += fontSize;
+          }
         }
 
         // Add SKU
@@ -348,6 +368,15 @@ export default function LabelsPageClient({
                   className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
                 />
                 <span className="text-sm text-gray-700">{t.labels.includeStock}</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={includeCompanyInfo}
+                  onChange={(e) => setIncludeCompanyInfo(e.target.checked)}
+                  className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
+                />
+                <span className="text-sm text-gray-700">{t.labels.includeCompanyInfo}</span>
               </label>
             </div>
           </div>
