@@ -138,7 +138,7 @@ export async function createTeamItem(params: {
     const payload = parsed.data;
     const customFieldsValidationError = validateCustomFieldsAgainstActiveSchema({
       customFields: payload.customFields,
-      schema: auth.team.itemCustomFieldSchema ?? null,
+      schema: auth.team?.itemCustomFieldSchema ?? null,
     });
     if (customFieldsValidationError) {
       return {
@@ -239,7 +239,7 @@ export async function updateTeamItem(
   const payload = parsed.data;
   const customFieldsValidationError = validateCustomFieldsAgainstActiveSchema({
     customFields: payload.customFields,
-    schema: auth.team.itemCustomFieldSchema ?? null,
+    schema: auth.team?.itemCustomFieldSchema ?? null,
   });
   if (customFieldsValidationError) {
     return {
