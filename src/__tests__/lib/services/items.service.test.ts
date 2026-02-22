@@ -129,6 +129,7 @@ describe("items service", () => {
     if (result.ok) return;
     expect(result.error.status).toBe(409);
     expect(result.error.errorCode).toBe(ERROR_CODES.VALIDATION_ERROR);
+    expect(result.error.error).toContain("histórico de transações de estoque");
   });
 
   it("force deletes item by deleting its stock transactions first", async () => {
