@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, type ChangeEvent } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect, useMemo, type ChangeEvent } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   UserPlus,
   Trash2,
@@ -46,6 +46,8 @@ interface SettingsPageClientProps {
   initialTeam: Team;
 }
 
+type SettingsTab = "users" | "password" | "billing" | "labels" | "customFields";
+
 function getBillingStatusLabel(status: string | null): string {
   if (!status) return "sem assinatura";
   if (status === "active") return "ativa";
@@ -69,11 +71,7 @@ export default function SettingsPageClient({
   const [companyTeams, setCompanyTeams] = useState<CompanyTeam[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [canManageUsers, setCanManageUsers] = useState(false);
-  const [activeSettingsTab, setActiveSettingsTab] = useState<
-    "users" | "password" | "billing" | "labels" | "customFields"
-  >(
-    "users"
-  );
+  const [activeSettingsTab, setActiveSettingsTab] = useState<SettingsTab>("users");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -91,6 +89,8 @@ export default function SettingsPageClient({
   const [showEditUserPassword, setShowEditUserPassword] = useState(false);
   const { language, t } = useTranslation();
   const { toast } = useToast();
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const billingRequired = searchParams.get("billing") === "required";
   const [billingStatus, setBillingStatus] = useState<string | null>(
@@ -143,6 +143,28 @@ export default function SettingsPageClient({
     { target: "tour-settings-custom-fields-tab", title: t.settings.tourCustomFieldsTitle, description: t.settings.tourCustomFieldsDesc },
   ];
 
+  const availableTabs = useMemo<SettingsTab[]>(() => {
+    if (billingRequired) {
+      return ["billing"];
+    }
+
+    const tabs: SettingsTab[] = ["password", "customFields", "labels", "billing"];
+    if (canManageUsers) {
+      tabs.unshift("users");
+    }
+    return tabs;
+  }, [billingRequired, canManageUsers]);
+
+  const resolveTab = (requestedTab: string | null): SettingsTab => {
+    if (requestedTab && availableTabs.includes(requestedTab as SettingsTab)) {
+      return requestedTab as SettingsTab;
+    }
+    if (availableTabs.includes("users")) {
+      return "users";
+    }
+    return availableTabs[0] ?? "billing";
+  };
+
   useEffect(() => {
     fetchManagedUsers().finally(() => setIsLoading(false));
   }, [teamId]);
@@ -189,16 +211,27 @@ export default function SettingsPageClient({
   }, [searchParams, teamId]);
 
   useEffect(() => {
-    if (!billingRequired && !canManageUsers && activeSettingsTab === "users") {
-      setActiveSettingsTab("password");
+    const nextTab = resolveTab(searchParams.get("tab"));
+    if (activeSettingsTab !== nextTab) {
+      setActiveSettingsTab(nextTab);
     }
-  }, [canManageUsers, activeSettingsTab, billingRequired]);
+  }, [searchParams, availableTabs, activeSettingsTab]);
 
   useEffect(() => {
-    if (billingRequired) {
-      setActiveSettingsTab("billing");
+    const currentTabInUrl = searchParams.get("tab");
+    if (currentTabInUrl === activeSettingsTab) {
+      return;
     }
-  }, [billingRequired]);
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", activeSettingsTab);
+    router.replace(`${pathname}?${params.toString()}`);
+  }, [activeSettingsTab, searchParams, router, pathname]);
+
+  const handleTabChange = (tab: SettingsTab) => {
+    const nextTab = resolveTab(tab);
+    setActiveSettingsTab(nextTab);
+  };
 
   const fetchManagedUsers = async () => {
     try {
@@ -817,7 +850,7 @@ export default function SettingsPageClient({
               {canManageUsers && !billingRequired ? (
                 <button
                   type="button"
-                  onClick={() => setActiveSettingsTab("users")}
+                  onClick={() => handleTabChange("users")}
                   className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                     activeSettingsTab === "users"
                       ? "border-purple-600 text-purple-700"
@@ -830,7 +863,7 @@ export default function SettingsPageClient({
               {!billingRequired ? (
               <button
                 type="button"
-                onClick={() => setActiveSettingsTab("password")}
+                onClick={() => handleTabChange("password")}
                 className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeSettingsTab === "password"
                     ? "border-purple-600 text-purple-700"
@@ -843,7 +876,7 @@ export default function SettingsPageClient({
               {!billingRequired ? (
               <button
                 type="button"
-                onClick={() => setActiveSettingsTab("customFields")}
+                onClick={() => handleTabChange("customFields")}
                 data-tour="tour-settings-custom-fields-tab"
                 className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeSettingsTab === "customFields"
@@ -857,7 +890,7 @@ export default function SettingsPageClient({
               {!billingRequired ? (
               <button
                 type="button"
-                onClick={() => setActiveSettingsTab("labels")}
+                onClick={() => handleTabChange("labels")}
                 className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeSettingsTab === "labels"
                     ? "border-purple-600 text-purple-700"
@@ -869,7 +902,7 @@ export default function SettingsPageClient({
               ) : null}
               <button
                 type="button"
-                onClick={() => setActiveSettingsTab("billing")}
+                onClick={() => handleTabChange("billing")}
                 className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeSettingsTab === "billing"
                     ? "border-purple-600 text-purple-700"
