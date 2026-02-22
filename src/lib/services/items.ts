@@ -143,6 +143,7 @@ export async function createTeamItem(params: {
       initialQuantity: payload.initialQuantity ?? 0,
       currentStock: payload.currentStock ?? undefined,
       minimumStock: payload.minimumStock ?? 0,
+      customFields: payload.customFields ?? null,
     });
 
     return { ok: true, data: { item: toItemDto(item) } };
@@ -230,6 +231,7 @@ export async function updateTeamItem(
       brand: payload.brand,
       photoData,
       locationId: payload.locationId,
+      customFields: payload.customFields,
     });
 
     return { ok: true, data: { item: toItemDto(item) } };

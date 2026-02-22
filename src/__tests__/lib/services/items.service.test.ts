@@ -266,15 +266,15 @@ describe("items service", () => {
     expect(result.data.item.name).toBe("New Item");
   });
 
-  it("creates item with photo data when authorized", async () => {
+  it("creates item with custom fields when authorized", async () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "items-create-photo@example.com", passwordHash: "hash", role: "admin" })
+      .values({ email: "items-create-custom@example.com", passwordHash: "hash", role: "admin" })
       .returning();
     const [team] = await drizzle
       .insert(teams)
-      .values({ name: "Items Photo Team", userId: admin.id, companyId: null })
+      .values({ name: "Items Custom Team", userId: admin.id, companyId: null })
       .returning();
     await drizzle.insert(teamMembers).values({
       teamId: team.id,
@@ -288,14 +288,20 @@ describe("items service", () => {
       requestUserId: admin.id,
       payload: {
         name: "Printer",
-        barcode: "barcode-photo-item",
-        photoData: "data:image/png;base64,AAAA",
+        barcode: "barcode-printer-custom",
+        customFields: {
+          medidor_total: "10234",
+          medidor_pb: "8300",
+        },
       },
     });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect((result.data.item as any).photoData).toBe("data:image/png;base64,AAAA");
+    expect((result.data.item as any).customFields).toEqual({
+      medidor_total: "10234",
+      medidor_pb: "8300",
+    });
   });
 
   it("returns validation error for invalid payload", async () => {

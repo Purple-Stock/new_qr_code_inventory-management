@@ -75,6 +75,7 @@ export async function createItem(data: {
   initialQuantity?: number;
   currentStock?: number;
   minimumStock?: number;
+  customFields?: Record<string, string> | null;
 }): Promise<Item> {
   const [item] = await sqlite
     .insert(items)
@@ -92,6 +93,7 @@ export async function createItem(data: {
       initialQuantity: data.initialQuantity || 0,
       currentStock: data.currentStock ?? data.initialQuantity ?? 0,
       minimumStock: data.minimumStock || 0,
+      customFields: data.customFields ?? null,
     })
     .returning();
 
@@ -113,6 +115,7 @@ export async function updateItem(
     brand?: string | null;
     photoData?: string | null;
     locationId?: number | null;
+    customFields?: Record<string, string> | null;
   }
 ): Promise<Item> {
   const [item] = await sqlite
@@ -127,6 +130,7 @@ export async function updateItem(
       ...(data.brand !== undefined && { brand: data.brand ?? null }),
       ...(data.photoData !== undefined && { photoData: data.photoData ?? null }),
       ...(data.locationId !== undefined && { locationId: data.locationId ?? null }),
+      ...(data.customFields !== undefined && { customFields: data.customFields ?? null }),
       updatedAt: new Date(),
     })
     .where(eq(items.id, itemId))

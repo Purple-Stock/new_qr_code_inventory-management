@@ -35,6 +35,7 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
   );
   const [destinationLocation, setDestinationLocation] = useState<string>("");
   const [itemSearch, setItemSearch] = useState("");
+  const [skuSearch, setSkuSearch] = useState("");
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,20 +45,29 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
     { target: "tour-move-tutorial", title: t.move.tourTutorialTitle, description: t.move.tourTutorialDesc },
     { target: "tour-move-locations", title: t.move.tourLocationsTitle, description: t.move.tourLocationsDesc },
     { target: "tour-move-items", title: t.move.tourItemsTitle, description: t.move.tourItemsDesc },
+    { target: "tour-move-sku", title: t.move.tourSkuTitle, description: t.move.tourSkuDesc },
     { target: "tour-move-table", title: t.move.tourTableTitle, description: t.move.tourTableDesc },
     { target: "tour-move-notes", title: t.move.tourNotesTitle, description: t.move.tourNotesDesc },
     { target: "tour-move-submit", title: t.move.tourSubmitTitle, description: t.move.tourSubmitDesc },
     { target: "tour-sidebar", title: t.move.tourSidebarTitle, description: t.move.tourSidebarDesc },
   ];
 
+  const normalizedSearch = itemSearch.trim().toLowerCase();
+  const normalizedSku = skuSearch.trim().toLowerCase();
+  const hasItemFilters = normalizedSearch.length > 0 || normalizedSku.length > 0;
+
   const filteredItems = items.filter((item) => {
-    if (!itemSearch) return false;
-    const query = itemSearch.toLowerCase();
-    return (
-      item.name?.toLowerCase().includes(query) ||
-      item.sku?.toLowerCase().includes(query) ||
-      item.barcode?.toLowerCase().includes(query)
-    );
+    if (!hasItemFilters) return false;
+
+    const matchesGeneral =
+      normalizedSearch.length === 0 ||
+      item.name?.toLowerCase().includes(normalizedSearch) ||
+      item.sku?.toLowerCase().includes(normalizedSearch) ||
+      item.barcode?.toLowerCase().includes(normalizedSearch);
+    const matchesSku =
+      normalizedSku.length === 0 || item.sku?.toLowerCase().includes(normalizedSku);
+
+    return Boolean(matchesGeneral && matchesSku);
   });
 
   const handleAddItem = (item: Item) => {
@@ -72,6 +82,7 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
       setSelectedItems([...selectedItems, { item, quantity: 1 }]);
     }
     setItemSearch("");
+    setSkuSearch("");
   };
 
   const handleBarcodeScan = async (barcode: string) => {
@@ -204,6 +215,7 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
       setSelectedItems([]);
       setNotes("");
       setItemSearch("");
+      setSkuSearch("");
     } catch (error) {
       console.error("Error moving stock:", error);
       toast({
@@ -300,7 +312,7 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
               onChange={(e) => setItemSearch(e.target.value)}
               className="pl-9 sm:pl-10 h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
             />
-            {itemSearch && filteredItems.length > 0 && (
+            {hasItemFilters && filteredItems.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                 {filteredItems.map((item) => (
                   <button
@@ -322,6 +334,26 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
               </div>
             )}
           </div>
+          <div className="w-full sm:w-48 md:w-56" data-tour="tour-move-sku">
+            <Input
+              type="text"
+              placeholder={`${t.items.sku}...`}
+              value={skuSearch}
+              onChange={(e) => setSkuSearch(e.target.value)}
+              className="h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setItemSearch("");
+              setSkuSearch("");
+            }}
+            className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 text-xs sm:text-sm touch-manipulation min-h-[44px] sm:min-h-0"
+          >
+            {t.common.clearFilter}
+          </Button>
           <Button
             variant="outline"
             onClick={() => setIsScannerOpen(true)}
@@ -346,6 +378,9 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
                 <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden sm:table-cell">
                   {t.move.currentStock}
                 </th>
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden md:table-cell">
+                  {t.items.sku}
+                </th>
                 <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                   {t.move.quantityToMove}
                 </th>
@@ -357,7 +392,7 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
             <tbody className="bg-white divide-y divide-gray-100">
               {selectedItems.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
+                  <td colSpan={5} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
                     {t.move.noItemsSelected}
                   </td>
                 </tr>
@@ -374,10 +409,18 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
                           <div className="text-xs text-gray-500 sm:hidden mt-1">
                             {t.move.currentStockLabel}: {maxStock}
                           </div>
+                          <div className="text-xs text-gray-500 sm:hidden mt-1">
+                            {t.items.sku}: {selectedItem.item.sku || "-"}
+                          </div>
                         </div>
                       </td>
                       <td className="px-4 sm:px-6 py-4 sm:py-5 hidden sm:table-cell">
                         <span className="text-sm font-medium text-gray-900">{maxStock}</span>
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 sm:py-5 hidden md:table-cell">
+                        <span className="text-sm font-medium text-gray-900">
+                          {selectedItem.item.sku || "-"}
+                        </span>
                       </td>
                       <td className="px-4 sm:px-6 py-4 sm:py-5">
                         <div className="flex items-center gap-2">
