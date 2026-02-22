@@ -58,7 +58,7 @@ export default function LabelsPageClient({
   const [customHeightCm, setCustomHeightCm] = useState("5");
   const [labelQuantityByItem, setLabelQuantityByItem] = useState<Record<number, number>>({});
   const [includeQRCode, setIncludeQRCode] = useState(true);
-  const [includeBarcode, setIncludeBarcode] = useState(true);
+  const [includeBarcode, setIncludeBarcode] = useState(false);
   const [includeItemName, setIncludeItemName] = useState(true);
   const [includeSKU, setIncludeSKU] = useState(true);
   const [includeStock, setIncludeStock] = useState(false);
