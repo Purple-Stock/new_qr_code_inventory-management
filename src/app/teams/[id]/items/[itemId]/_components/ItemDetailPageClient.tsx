@@ -225,6 +225,31 @@ export default function ItemDetailPageClient({
                   {item.locationName || t.reports.noLocation}
                 </p>
               </div>
+              <div className="col-span-2">
+                <p className="text-xs text-gray-500 uppercase mb-1">{t.itemForm.tourPhotoTitle}</p>
+                {item.photoData ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsPhotoModalOpen(true)}
+                    className="rounded-lg overflow-hidden border border-gray-200 hover:border-purple-400 transition-colors"
+                  >
+                    <img
+                      src={item.photoData}
+                      alt={itemName}
+                      className="h-28 w-28 object-cover"
+                    />
+                  </button>
+                ) : (
+                  <p className="font-medium text-gray-900">-</p>
+                )}
+              </div>
+              {customFieldEntries.length > 0 ? (
+                <div className="col-span-2 pt-2">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t.itemForm.customFieldsTitle}
+                  </p>
+                </div>
+              ) : null}
               {customFieldEntries.map(([key, value]) => (
                 <div key={key}>
                   <p className="text-xs text-gray-500 uppercase mb-0.5">{key}</p>
@@ -304,26 +329,6 @@ export default function ItemDetailPageClient({
 
           {/* QR Code */}
           <div className="lg:col-start-3 lg:row-start-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center">
-            <h2 className="text-lg font-semibold text-gray-900 mb-3 w-full">
-              {t.itemForm.tourPhotoTitle}
-            </h2>
-            {item.photoData ? (
-              <button
-                type="button"
-                onClick={() => setIsPhotoModalOpen(true)}
-                className="w-full mb-4 rounded-lg overflow-hidden border border-gray-200 hover:border-purple-400 transition-colors"
-              >
-                <img
-                  src={item.photoData}
-                  alt={itemName}
-                  className="h-40 w-full object-cover"
-                />
-              </button>
-            ) : (
-              <div className="w-full mb-4 h-40 rounded-lg border border-dashed border-gray-200 bg-gray-50 flex items-center justify-center text-sm text-gray-500">
-                -
-              </div>
-            )}
             <h2 className="text-lg font-semibold text-gray-900 mb-4 w-full">
               {t.items.qrCode}
             </h2>

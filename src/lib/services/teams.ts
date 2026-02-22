@@ -253,7 +253,7 @@ export async function updateTeamDetails(
       }
 
       await updateTeamAndCompanyLabelSettings(params.teamId, existingTeam.companyId, {
-        companyName: parsed.data.companyName ?? undefined,
+        companyName: parsed.data.companyName,
         team: payloadWithLogo,
       });
     } else if (Object.keys(payloadWithLogo).length > 0) {

@@ -609,24 +609,23 @@ export default function SettingsPageClient({
     }
   };
 
-  const handleLabelLogoFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result;
-      if (typeof result === "string") {
-        setLabelLogoUrl(result);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
   const handleSaveLabelCompanyInfo = async () => {
+    const trimmedCompanyName = companyName.trim();
+    const trimmedLabelInfo = labelCompanyInfo.trim();
+    const trimmedLogoUrl = labelLogoUrl.trim();
+
+    if (!trimmedCompanyName && trimmedLabelInfo) {
+      toast({
+        title: t.common.error,
+        description: t.settings.companyNameRequired,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLabelCompanyInfoSaving(true);
     try {
-      const result = await fetchApiJsonResult<{
+      const parsed = await fetchApiJsonResult<{
         team: {
           companyName?: string | null;
           labelCompanyInfo?: string | null;
@@ -635,28 +634,28 @@ export default function SettingsPageClient({
       }>(`/api/teams/${teamId}`, {
         method: "PUT",
         body: {
-          companyName: companyName.trim() || null,
-          labelCompanyInfo: labelCompanyInfo.trim() || null,
-          labelLogoUrl: labelLogoUrl || null,
+          ...(trimmedCompanyName ? { companyName: trimmedCompanyName } : {}),
+          ...(trimmedLabelInfo ? { labelCompanyInfo: trimmedLabelInfo } : { labelCompanyInfo: null }),
+          ...(trimmedLogoUrl ? { labelLogoUrl: trimmedLogoUrl } : { labelLogoUrl: null }),
         },
         fallbackError: t.settings.errorSaving,
       });
 
-      if (!result.ok) {
+      if (!parsed.ok) {
         toast({
           title: t.common.error,
-          description: result.error.error || t.settings.errorSaving,
+          description: t.settings.errorSaving,
           variant: "destructive",
         });
         return;
       }
 
-      setCompanyName(result.data.team.companyName ?? "");
-      setLabelCompanyInfo(result.data.team.labelCompanyInfo ?? "");
-      setLabelLogoUrl(result.data.team.labelLogoUrl ?? "");
+      setCompanyName(parsed.data.team.companyName ?? "");
+      setLabelCompanyInfo(parsed.data.team.labelCompanyInfo ?? "");
+      setLabelLogoUrl(parsed.data.team.labelLogoUrl ?? "");
       toast({
         title: t.common.success,
-        description: t.settings.saveChanges,
+        description: t.settings.changesSaved,
       });
     } catch {
       toast({
@@ -666,6 +665,36 @@ export default function SettingsPageClient({
       });
     } finally {
       setIsLabelCompanyInfoSaving(false);
+    }
+  };
+
+  const handleLabelLogoFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === "string") {
+            resolve(reader.result);
+            return;
+          }
+          reject(new Error("Invalid file content"));
+        };
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsDataURL(file);
+      });
+
+      setLabelLogoUrl(dataUrl);
+    } catch {
+      toast({
+        title: t.common.error,
+        description: t.settings.errorSaving,
+        variant: "destructive",
+      });
+    } finally {
+      event.target.value = "";
     }
   };
 

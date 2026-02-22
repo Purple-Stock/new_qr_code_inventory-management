@@ -84,6 +84,8 @@ export const teams = sqliteTable(
     manualTrialEndsAt: integer("manual_trial_ends_at", { mode: "timestamp" }),
     manualTrialGrantsCount: integer("manual_trial_grants_count").notNull().default(0),
     manualTrialLastGrantedAt: integer("manual_trial_last_granted_at", { mode: "timestamp" }),
+    labelCompanyInfo: text("label_company_info"),
+    labelLogoUrl: text("label_logo_url"),
     itemCustomFieldSchema: text("item_custom_field_schema", { mode: "json" })
       .$type<TeamItemCustomFieldSchemaEntry[] | null>()
       .default(null),
