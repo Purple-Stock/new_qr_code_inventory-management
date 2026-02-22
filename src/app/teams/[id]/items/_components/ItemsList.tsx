@@ -8,6 +8,7 @@ import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { MapPin, Edit, Copy, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast-simple";
 import { fetchApiJsonResult, fetchApiResult } from "@/lib/api-client";
+import { ERROR_CODES } from "@/lib/errors";
 import type { Item } from "../_types";
 
 interface ItemsListProps {
@@ -104,6 +105,18 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
         fallbackError: t.items.failedToDeleteItem,
       });
       if (!result.ok) {
+        if (result.error.errorCode === ERROR_CODES.ITEM_NOT_FOUND) {
+          // Idempotent delete: if item is already gone, close modal and refresh list.
+          toast({
+            variant: "success",
+            title: t.common.success,
+            description: t.items.itemDeleted,
+          });
+          router.refresh();
+          setDeleteModalOpen(false);
+          setItemToDelete(null);
+          return;
+        }
         toast({
           variant: "destructive",
           title: t.common.error,
