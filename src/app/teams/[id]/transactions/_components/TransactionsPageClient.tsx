@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Info, Download, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,18 +16,23 @@ interface TransactionsPageClientProps {
   transactions: TransactionWithDetails[];
   team: Team;
   initialSearchQuery?: string;
+  currentPage: number;
+  totalPages: number;
 }
 
 export function TransactionsPageClient({
   transactions,
   team,
   initialSearchQuery = "",
+  currentPage,
+  totalPages,
 }: TransactionsPageClientProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
-  const [filteredTransactions, setFilteredTransactions] = useState<TransactionWithDetails[]>(transactions);
+  const hasInitializedSearchEffect = useRef(false);
+  const suppressNextSearchEffect = useRef(false);
   const teamId = team.id.toString();
   const tourSteps: TourStep[] = [
     { target: "tour-transactions-tutorial", title: t.transactions.tourTutorialTitle, description: t.transactions.tourTutorialDesc },
@@ -41,10 +46,40 @@ export function TransactionsPageClient({
     router.refresh();
   };
 
-  const handleSearchChange = (query: string) => {
-    setSearchQuery(query);
-    // The search is handled server-side via the API, so we refresh
-    router.push(`/teams/${teamId}/transactions${query ? `?search=${encodeURIComponent(query)}` : ""}`);
+  useEffect(() => {
+    suppressNextSearchEffect.current = true;
+    setSearchQuery(initialSearchQuery);
+  }, [initialSearchQuery]);
+
+  useEffect(() => {
+    if (!hasInitializedSearchEffect.current) {
+      hasInitializedSearchEffect.current = true;
+      return;
+    }
+    if (suppressNextSearchEffect.current) {
+      suppressNextSearchEffect.current = false;
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      const params = new URLSearchParams();
+      if (searchQuery) {
+        params.set("search", searchQuery);
+      }
+      params.set("page", "1");
+      router.push(`/teams/${teamId}/transactions?${params.toString()}`);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, router, teamId]);
+
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams();
+    if (searchQuery) {
+      params.set("search", searchQuery);
+    }
+    params.set("page", page.toString());
+    router.push(`/teams/${teamId}/transactions?${params.toString()}`);
   };
 
   return (
@@ -79,9 +114,8 @@ export function TransactionsPageClient({
       {/* Search Bar */}
       <div className="mb-4 sm:mb-6" data-tour="tour-transactions-search">
         <TransactionsSearch
-          transactions={transactions}
-          onFilteredTransactionsChange={setFilteredTransactions}
-          onSearchChange={handleSearchChange}
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
           placeholder={t.transactions.searchPlaceholder}
         />
       </div>
@@ -89,11 +123,34 @@ export function TransactionsPageClient({
       {/* Transactions List */}
       <div data-tour="tour-transactions-list">
         <TransactionsList
-          transactions={filteredTransactions}
+          transactions={transactions}
           teamId={team.id}
           onDelete={handleRefresh}
         />
       </div>
+      {totalPages > 1 && (
+        <div className="mt-4 sm:mt-6 flex items-center justify-between gap-3">
+          <Button
+            variant="outline"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage <= 1}
+            className="text-xs sm:text-sm"
+          >
+            {t.common.back}
+          </Button>
+          <p className="text-xs sm:text-sm text-gray-600">
+            {`${t.transactions.page} ${currentPage} ${t.transactions.of} ${totalPages}`}
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage >= totalPages}
+            className="text-xs sm:text-sm"
+          >
+            {t.transactions.next}
+          </Button>
+        </div>
+      )}
       <TutorialTour
         isOpen={isTutorialOpen}
         onClose={() => setIsTutorialOpen(false)}
