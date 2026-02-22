@@ -161,3 +161,52 @@ export async function itemHasTransactions(itemId: number): Promise<boolean> {
 export async function deleteItem(itemId: number): Promise<void> {
   await sqlite.delete(items).where(eq(items.id, itemId));
 }
+
+export async function renameTeamItemCustomFieldKeys(
+  teamId: number,
+  renameMap: Record<string, string>
+): Promise<void> {
+  const entries = Object.entries(renameMap).filter(
+    ([fromKey, toKey]) => fromKey.trim() && toKey.trim() && fromKey !== toKey
+  );
+  if (entries.length === 0) {
+    return;
+  }
+
+  const teamItems = await sqlite
+    .select({ id: items.id, customFields: items.customFields })
+    .from(items)
+    .where(eq(items.teamId, teamId));
+
+  for (const teamItem of teamItems) {
+    const customFields = teamItem.customFields;
+    if (!customFields) {
+      continue;
+    }
+
+    let changed = false;
+    const nextCustomFields = { ...customFields };
+    for (const [fromKey, toKey] of entries) {
+      if (!(fromKey in nextCustomFields)) {
+        continue;
+      }
+
+      const originalValue = nextCustomFields[fromKey];
+      delete nextCustomFields[fromKey];
+      if (!(toKey in nextCustomFields)) {
+        nextCustomFields[toKey] = originalValue;
+      }
+      changed = true;
+    }
+
+    if (changed) {
+      await sqlite
+        .update(items)
+        .set({
+          customFields: nextCustomFields,
+          updatedAt: new Date(),
+        })
+        .where(eq(items.id, teamItem.id));
+    }
+  }
+}

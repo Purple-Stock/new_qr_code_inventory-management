@@ -6,6 +6,7 @@ import {
   updateTeam,
   updateTeamAndCompanyLabelSettings,
 } from "@/lib/db/teams";
+import { renameTeamItemCustomFieldKeys } from "@/lib/db/items";
 import { getActiveCompanyIdForUser, updateCompanyName } from "@/lib/db/companies";
 import { ERROR_CODES } from "@/lib/errors";
 import { isUniqueConstraintError } from "@/lib/error-utils";
@@ -33,6 +34,29 @@ const BLOCKED_TEAM_DELETE_SUBSCRIPTION_STATUSES = new Set([
   "past_due",
   "canceling",
 ]);
+
+function computeCustomFieldKeyRenames(params: {
+  previousSchema: { key: string; label: string; active: boolean }[] | null | undefined;
+  nextSchema: { key: string; label: string; active: boolean }[] | null | undefined;
+}): Record<string, string> {
+  if (!params.previousSchema || !params.nextSchema) {
+    return {};
+  }
+
+  const renames: Record<string, string> = {};
+  const maxLength = Math.max(params.previousSchema.length, params.nextSchema.length);
+  for (let index = 0; index < maxLength; index += 1) {
+    const previous = params.previousSchema[index];
+    const next = params.nextSchema[index];
+    if (!previous || !next) {
+      continue;
+    }
+    if (previous.key && next.key && previous.key !== next.key) {
+      renames[previous.key] = next.key;
+    }
+  }
+  return renames;
+}
 
 function mapImageUploadError(error: unknown): string {
   const message = error instanceof Error ? error.message : "Image upload failed";
@@ -193,6 +217,10 @@ export async function updateTeamDetails(
 
   try {
     const { companyName: _companyName, ...teamOnlyFields } = parsed.data;
+    const customFieldKeyRenames = computeCustomFieldKeyRenames({
+      previousSchema: existingTeam.itemCustomFieldSchema ?? null,
+      nextSchema: parsed.data.itemCustomFieldSchema ?? null,
+    });
 
     let logoUrl = teamOnlyFields.labelLogoUrl;
     if (typeof logoUrl === "string" && logoUrl.startsWith("data:image/")) {
@@ -229,6 +257,10 @@ export async function updateTeamDetails(
       });
     } else if (Object.keys(payloadWithLogo).length > 0) {
       await updateTeam(params.teamId, payloadWithLogo);
+    }
+
+    if (Object.keys(customFieldKeyRenames).length > 0) {
+      await renameTeamItemCustomFieldKeys(params.teamId, customFieldKeyRenames);
     }
 
     const updatedWithStats = await getTeamWithStats(params.teamId);

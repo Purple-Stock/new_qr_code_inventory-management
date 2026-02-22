@@ -1,4 +1,5 @@
 import { vi } from "vitest";
+import { eq } from "drizzle-orm";
 import {
   createTeamForUser,
   deleteTeamWithAuthorization,
@@ -8,7 +9,7 @@ import {
 } from "@/lib/services/teams";
 import { ERROR_CODES } from "@/lib/errors";
 import { getTestDb, cleanupTestDb, clearTestDb } from "../../helpers/test-db";
-import { companies, companyMembers, teamMembers, teams, users } from "@/db/schema";
+import { companies, companyMembers, items, teamMembers, teams, users } from "@/db/schema";
 import * as itemImagesService from "@/lib/services/item-images";
 
 const { drizzle } = getTestDb();
@@ -334,6 +335,52 @@ describe("teams service", () => {
       { key: "medidor_total", label: "Medidor total", active: true },
       { key: "medidor_color", label: "Medidor color", active: false },
     ]);
+  });
+
+  it("migrates existing item custom fields when schema key is renamed", async () => {
+    const { drizzle } = getTestDb();
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "teams-rename-schema@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({
+        name: "Rename Schema Team",
+        userId: user.id,
+        companyId: null,
+        itemCustomFieldSchema: [{ key: "medidor_total", label: "Medidor total", active: true }],
+      })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+    const [item] = await drizzle
+      .insert(items)
+      .values({
+        teamId: team.id,
+        name: "Printer",
+        barcode: "schema-rename-item-barcode",
+        customFields: { medidor_total: "1234" },
+      })
+      .returning();
+
+    const result = await updateTeamDetails({
+      teamId: team.id,
+      requestUserId: user.id,
+      payload: {
+        itemCustomFieldSchema: [{ key: "contador_total", label: "Medidor total", active: true }],
+      },
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const [updatedItem] = await drizzle.select().from(items).where(eq(items.id, item.id));
+    expect(updatedItem?.customFields).toEqual({ contador_total: "1234" });
   });
 
   it("returns error for updateTeamDetails when not authenticated", async () => {
