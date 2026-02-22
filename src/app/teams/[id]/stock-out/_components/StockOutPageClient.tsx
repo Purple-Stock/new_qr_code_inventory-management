@@ -34,7 +34,6 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
     locations.length > 0 ? locations[0].id.toString() : ""
   );
   const [itemSearch, setItemSearch] = useState("");
-  const [skuSearch, setSkuSearch] = useState("");
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,7 +43,6 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
     { target: "tour-stock-out-tutorial", title: t.stockOut.tourTutorialTitle, description: t.stockOut.tourTutorialDesc },
     { target: "tour-stock-out-location", title: t.stockOut.tourLocationTitle, description: t.stockOut.tourLocationDesc },
     { target: "tour-stock-out-items", title: t.stockOut.tourItemsTitle, description: t.stockOut.tourItemsDesc },
-    { target: "tour-stock-out-sku", title: t.stockOut.tourSkuTitle, description: t.stockOut.tourSkuDesc },
     { target: "tour-stock-out-table", title: t.stockOut.tourTableTitle, description: t.stockOut.tourTableDesc },
     { target: "tour-stock-out-notes", title: t.stockOut.tourNotesTitle, description: t.stockOut.tourNotesDesc },
     { target: "tour-stock-out-submit", title: t.stockOut.tourSubmitTitle, description: t.stockOut.tourSubmitDesc },
@@ -52,21 +50,15 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
   ];
 
   const normalizedSearch = itemSearch.trim().toLowerCase();
-  const normalizedSku = skuSearch.trim().toLowerCase();
-  const hasItemFilters = normalizedSearch.length > 0 || normalizedSku.length > 0;
+  const hasItemFilters = normalizedSearch.length > 0;
 
   const filteredItems = items.filter((item) => {
     if (!hasItemFilters) return false;
-
-    const matchesGeneral =
-      normalizedSearch.length === 0 ||
+    return Boolean(
       item.name?.toLowerCase().includes(normalizedSearch) ||
-      item.sku?.toLowerCase().includes(normalizedSearch) ||
-      item.barcode?.toLowerCase().includes(normalizedSearch);
-    const matchesSku =
-      normalizedSku.length === 0 || item.sku?.toLowerCase().includes(normalizedSku);
-
-    return Boolean(matchesGeneral && matchesSku);
+        item.sku?.toLowerCase().includes(normalizedSearch) ||
+        item.barcode?.toLowerCase().includes(normalizedSearch)
+    );
   });
 
   const handleAddItem = (item: Item) => {
@@ -81,7 +73,6 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
       setSelectedItems([...selectedItems, { item, quantity: 1 }]);
     }
     setItemSearch("");
-    setSkuSearch("");
   };
 
   const handleBarcodeScan = async (barcode: string) => {
@@ -204,7 +195,6 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
       setSelectedItems([]);
       setNotes("");
       setItemSearch("");
-      setSkuSearch("");
     } catch (error) {
       console.error("Error removing stock:", error);
       toast({
@@ -298,22 +288,10 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
               </div>
             )}
           </div>
-          <div className="w-full sm:w-48 md:w-56" data-tour="tour-stock-out-sku">
-            <Input
-              type="text"
-              placeholder={`${t.items.sku}...`}
-              value={skuSearch}
-              onChange={(e) => setSkuSearch(e.target.value)}
-              className="h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
-            />
-          </div>
           <Button
             type="button"
             variant="outline"
-            onClick={() => {
-              setItemSearch("");
-              setSkuSearch("");
-            }}
+            onClick={() => setItemSearch("")}
             className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 text-xs sm:text-sm touch-manipulation min-h-[44px] sm:min-h-0"
           >
             {t.common.clearFilter}

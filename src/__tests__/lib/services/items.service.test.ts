@@ -304,6 +304,90 @@ describe("items service", () => {
     });
   });
 
+  it("rejects item custom fields not present in active team schema on create", async () => {
+    const { drizzle } = getTestDb();
+    const [admin] = await drizzle
+      .insert(users)
+      .values({ email: "items-create-custom-schema@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({
+        name: "Items Custom Schema Team",
+        userId: admin.id,
+        companyId: null,
+        itemCustomFieldSchema: [{ key: "medidor_total", label: "Medidor total", active: true }],
+      })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: admin.id,
+      role: "admin",
+      status: "active",
+    });
+
+    const result = await createTeamItem({
+      teamId: team.id,
+      requestUserId: admin.id,
+      payload: {
+        name: "Printer",
+        barcode: "barcode-printer-schema-invalid",
+        customFields: {
+          medidor_total: "10234",
+          medidor_pb: "8300",
+        },
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.status).toBe(400);
+    expect(result.error.error).toContain("custom fields");
+  });
+
+  it("rejects item custom fields not present in active team schema on update", async () => {
+    const { drizzle } = getTestDb();
+    const [admin] = await drizzle
+      .insert(users)
+      .values({ email: "items-update-custom-schema@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({
+        name: "Items Update Schema Team",
+        userId: admin.id,
+        companyId: null,
+        itemCustomFieldSchema: [{ key: "medidor_total", label: "Medidor total", active: true }],
+      })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: admin.id,
+      role: "admin",
+      status: "active",
+    });
+    const [item] = await drizzle
+      .insert(items)
+      .values({ name: "Printer", barcode: "barcode-printer-schema-update", teamId: team.id })
+      .returning();
+
+    const result = await updateTeamItem({
+      teamId: team.id,
+      itemId: item.id,
+      requestUserId: admin.id,
+      payload: {
+        customFields: {
+          medidor_pb: "8300",
+        },
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.status).toBe(400);
+    expect(result.error.error).toContain("custom fields");
+  });
+
   it("returns validation error for invalid payload", async () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle

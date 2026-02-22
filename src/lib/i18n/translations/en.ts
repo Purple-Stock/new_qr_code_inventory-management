@@ -502,6 +502,8 @@ export const en = {
     tourSettingsDesc: "Set label size (default 10x5 cm or custom) and visible fields.",
     tourSizeTitle: "Label dimensions",
     tourSizeDesc: "Use 10x5 cm by default or enter custom width and height.",
+    tourCustomFieldsTitle: "Custom fields",
+    tourCustomFieldsDesc: "Choose which filled custom item fields should be printed on each label.",
     tourSearchTitle: "Search items",
     tourSearchDesc: "Find products quickly before selecting them for printing.",
     tourActionsTitle: "Selection actions",

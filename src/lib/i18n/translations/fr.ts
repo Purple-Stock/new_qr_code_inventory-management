@@ -502,6 +502,8 @@ export const fr = {
     tourSettingsDesc: "Définissez la taille d'étiquette (10x5 cm par défaut ou personnalisée) et les champs visibles.",
     tourSizeTitle: "Dimensions de l'étiquette",
     tourSizeDesc: "Utilisez 10x5 cm par défaut ou renseignez une largeur/hauteur personnalisée.",
+    tourCustomFieldsTitle: "Champs personnalisés",
+    tourCustomFieldsDesc: "Choisissez les champs personnalisés renseignés de l'article à imprimer sur l'étiquette.",
     tourSearchTitle: "Rechercher des articles",
     tourSearchDesc: "Trouvez rapidement les produits avant de les sélectionner pour impression.",
     tourActionsTitle: "Actions de sélection",

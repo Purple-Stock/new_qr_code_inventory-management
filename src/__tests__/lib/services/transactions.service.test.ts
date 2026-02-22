@@ -89,12 +89,14 @@ describe("transactions service", () => {
       teamId: 1,
       requestUserId: 7,
       searchQuery: "item",
+      skuQuery: "sku-01",
     });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.transactions).toHaveLength(1);
     expect(result.data.transactions[0].createdAt).toBe("2026-01-01T00:00:00.000Z");
+    expect(mockGetTeamTransactions).toHaveBeenCalledWith(1, "item", "sku-01");
   });
 
   it("returns not found when item does not exist", async () => {

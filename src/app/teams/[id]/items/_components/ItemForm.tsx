@@ -14,6 +14,7 @@ export interface ItemFormValues {
   price: string;
   itemType: string;
   brand: string;
+  photoData: string;
   customFields: Record<string, string>;
 }
 
@@ -51,6 +52,20 @@ export function ItemForm({
   onGenerateBarcode,
 }: ItemFormProps) {
   const activeCustomFieldSchema = customFieldSchema.filter((field) => field.active);
+
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result === "string") {
+        onValueChange("photoData", result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
     <form onSubmit={onSubmit} className="space-y-8">

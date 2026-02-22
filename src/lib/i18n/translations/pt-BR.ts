@@ -502,6 +502,8 @@ export const ptBR = {
     tourSettingsDesc: "Defina o tamanho da etiqueta (padrão 10x5 cm ou custom) e os campos visíveis.",
     tourSizeTitle: "Tamanho da etiqueta",
     tourSizeDesc: "Use 10x5 cm como padrão ou informe largura e altura customizadas.",
+    tourCustomFieldsTitle: "Campos customizáveis",
+    tourCustomFieldsDesc: "Selecione quais campos customizados preenchidos do item devem aparecer na etiqueta.",
     tourSearchTitle: "Buscar itens",
     tourSearchDesc: "Encontre produtos rapidamente antes de selecionar para impressão.",
     tourActionsTitle: "Ações de seleção",

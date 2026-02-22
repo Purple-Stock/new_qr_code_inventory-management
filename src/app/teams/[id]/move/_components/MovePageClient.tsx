@@ -35,7 +35,6 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
   );
   const [destinationLocation, setDestinationLocation] = useState<string>("");
   const [itemSearch, setItemSearch] = useState("");
-  const [skuSearch, setSkuSearch] = useState("");
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,7 +44,6 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
     { target: "tour-move-tutorial", title: t.move.tourTutorialTitle, description: t.move.tourTutorialDesc },
     { target: "tour-move-locations", title: t.move.tourLocationsTitle, description: t.move.tourLocationsDesc },
     { target: "tour-move-items", title: t.move.tourItemsTitle, description: t.move.tourItemsDesc },
-    { target: "tour-move-sku", title: t.move.tourSkuTitle, description: t.move.tourSkuDesc },
     { target: "tour-move-table", title: t.move.tourTableTitle, description: t.move.tourTableDesc },
     { target: "tour-move-notes", title: t.move.tourNotesTitle, description: t.move.tourNotesDesc },
     { target: "tour-move-submit", title: t.move.tourSubmitTitle, description: t.move.tourSubmitDesc },
@@ -53,21 +51,15 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
   ];
 
   const normalizedSearch = itemSearch.trim().toLowerCase();
-  const normalizedSku = skuSearch.trim().toLowerCase();
-  const hasItemFilters = normalizedSearch.length > 0 || normalizedSku.length > 0;
+  const hasItemFilters = normalizedSearch.length > 0;
 
   const filteredItems = items.filter((item) => {
     if (!hasItemFilters) return false;
-
-    const matchesGeneral =
-      normalizedSearch.length === 0 ||
+    return Boolean(
       item.name?.toLowerCase().includes(normalizedSearch) ||
-      item.sku?.toLowerCase().includes(normalizedSearch) ||
-      item.barcode?.toLowerCase().includes(normalizedSearch);
-    const matchesSku =
-      normalizedSku.length === 0 || item.sku?.toLowerCase().includes(normalizedSku);
-
-    return Boolean(matchesGeneral && matchesSku);
+        item.sku?.toLowerCase().includes(normalizedSearch) ||
+        item.barcode?.toLowerCase().includes(normalizedSearch)
+    );
   });
 
   const handleAddItem = (item: Item) => {
@@ -82,7 +74,6 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
       setSelectedItems([...selectedItems, { item, quantity: 1 }]);
     }
     setItemSearch("");
-    setSkuSearch("");
   };
 
   const handleBarcodeScan = async (barcode: string) => {
@@ -215,7 +206,6 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
       setSelectedItems([]);
       setNotes("");
       setItemSearch("");
-      setSkuSearch("");
     } catch (error) {
       console.error("Error moving stock:", error);
       toast({
@@ -334,22 +324,10 @@ export function MovePageClient({ items, locations, team }: MovePageClientProps) 
               </div>
             )}
           </div>
-          <div className="w-full sm:w-48 md:w-56" data-tour="tour-move-sku">
-            <Input
-              type="text"
-              placeholder={`${t.items.sku}...`}
-              value={skuSearch}
-              onChange={(e) => setSkuSearch(e.target.value)}
-              className="h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
-            />
-          </div>
           <Button
             type="button"
             variant="outline"
-            onClick={() => {
-              setItemSearch("");
-              setSkuSearch("");
-            }}
+            onClick={() => setItemSearch("")}
             className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 text-xs sm:text-sm touch-manipulation min-h-[44px] sm:min-h-0"
           >
             {t.common.clearFilter}

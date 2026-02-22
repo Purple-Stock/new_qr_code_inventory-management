@@ -107,6 +107,7 @@ export default function EditItemPageClient({
           price: form.price ? parseFloat(form.price) : null,
           itemType: form.itemType.trim() || null,
           brand: form.brand.trim() || null,
+          photoData: form.photoData || null,
           customFields: Object.keys(customFields).length > 0 ? customFields : null,
         },
         fallbackError: t.itemForm.unexpectedError,

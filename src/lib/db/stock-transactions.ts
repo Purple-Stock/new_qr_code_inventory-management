@@ -116,7 +116,8 @@ export interface TransactionWithDetails {
 
 export async function getTeamStockTransactionsWithDetails(
   teamId: number,
-  searchQuery?: string
+  searchQuery?: string,
+  skuQuery?: string
 ): Promise<TransactionWithDetails[]> {
   // Get all transactions for the team
   const allTransactions = await sqlite
@@ -157,22 +158,29 @@ export async function getTeamStockTransactionsWithDetails(
 
   // Filter by search query if provided
   let transactions = allTransactions;
-  if (searchQuery) {
-    const search = searchQuery.toLowerCase();
+  const normalizedSearch = searchQuery?.trim().toLowerCase();
+  const normalizedSku = skuQuery?.trim().toLowerCase();
+  if (normalizedSearch || normalizedSku) {
     transactions = allTransactions.filter((t) => {
       const item = itemsMap.get(t.itemId);
       const user = usersMap.get(t.userId);
       const sourceLoc = t.sourceLocationId ? locationsMap.get(t.sourceLocationId) : null;
       const destLoc = t.destinationLocationId ? locationsMap.get(t.destinationLocationId) : null;
 
-      return (
-        item?.name?.toLowerCase().includes(search) ||
-        item?.sku?.toLowerCase().includes(search) ||
-        item?.barcode?.toLowerCase().includes(search) ||
-        user?.email?.toLowerCase().includes(search) ||
-        sourceLoc?.name?.toLowerCase().includes(search) ||
-        destLoc?.name?.toLowerCase().includes(search)
-      );
+      const matchesSearch =
+        !normalizedSearch ||
+        Boolean(
+          item?.name?.toLowerCase().includes(normalizedSearch) ||
+            item?.sku?.toLowerCase().includes(normalizedSearch) ||
+            item?.barcode?.toLowerCase().includes(normalizedSearch) ||
+            user?.email?.toLowerCase().includes(normalizedSearch) ||
+            sourceLoc?.name?.toLowerCase().includes(normalizedSearch) ||
+            destLoc?.name?.toLowerCase().includes(normalizedSearch)
+        );
+      const matchesSku =
+        !normalizedSku || Boolean(item?.sku?.toLowerCase().includes(normalizedSku));
+
+      return matchesSearch && matchesSku;
     });
   }
 

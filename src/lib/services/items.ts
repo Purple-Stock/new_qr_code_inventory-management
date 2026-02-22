@@ -22,6 +22,7 @@ import {
   validationServiceError,
 } from "@/lib/services/errors";
 import { toItemDto } from "@/lib/services/mappers";
+import type { ItemCustomFields, TeamItemCustomFieldSchemaEntry } from "@/db/schema";
 
 function mapImageUploadError(error: unknown): string {
   const message = error instanceof Error ? error.message : "Image upload failed";
@@ -29,6 +30,28 @@ function mapImageUploadError(error: unknown): string {
     return "Image upload failed: S3 permission denied";
   }
   return message || "Image upload failed";
+}
+
+function validateCustomFieldsAgainstActiveSchema(params: {
+  customFields: ItemCustomFields | null | undefined;
+  schema: TeamItemCustomFieldSchemaEntry[] | null | undefined;
+}): string | null {
+  if (params.customFields === undefined || params.customFields === null) {
+    return null;
+  }
+
+  const schema = params.schema ?? null;
+  if (!schema || schema.length === 0) {
+    return null;
+  }
+
+  const activeKeys = new Set(schema.filter((entry) => entry.active).map((entry) => entry.key));
+  const invalidKeys = Object.keys(params.customFields).filter((key) => !activeKeys.has(key));
+  if (invalidKeys.length === 0) {
+    return null;
+  }
+
+  return `Item custom fields contain keys that are not active in team schema: ${invalidKeys.join(", ")}`;
 }
 
 export async function getTeamItemDetails(params: {
@@ -113,6 +136,17 @@ export async function createTeamItem(params: {
 
   try {
     const payload = parsed.data;
+    const customFieldsValidationError = validateCustomFieldsAgainstActiveSchema({
+      customFields: payload.customFields,
+      schema: auth.team.itemCustomFieldSchema ?? null,
+    });
+    if (customFieldsValidationError) {
+      return {
+        ok: false,
+        error: validationServiceError(customFieldsValidationError),
+      };
+    }
+
     let photoData = payload.photoData ?? null;
     if (payload.photoData && payload.photoData.startsWith("data:image/")) {
       try {
@@ -203,6 +237,16 @@ export async function updateTeamItem(
     return { ok: false, error: validationServiceError(parsed.error) };
   }
   const payload = parsed.data;
+  const customFieldsValidationError = validateCustomFieldsAgainstActiveSchema({
+    customFields: payload.customFields,
+    schema: auth.team.itemCustomFieldSchema ?? null,
+  });
+  if (customFieldsValidationError) {
+    return {
+      ok: false,
+      error: validationServiceError(customFieldsValidationError),
+    };
+  }
 
   try {
     let photoData = payload.photoData;

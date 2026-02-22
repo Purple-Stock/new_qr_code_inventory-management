@@ -605,6 +605,66 @@ export default function SettingsPageClient({
     }
   };
 
+  const handleLabelLogoFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result === "string") {
+        setLabelLogoUrl(result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveLabelCompanyInfo = async () => {
+    setIsLabelCompanyInfoSaving(true);
+    try {
+      const result = await fetchApiJsonResult<{
+        team: {
+          companyName?: string | null;
+          labelCompanyInfo?: string | null;
+          labelLogoUrl?: string | null;
+        };
+      }>(`/api/teams/${teamId}`, {
+        method: "PUT",
+        body: {
+          companyName: companyName.trim() || null,
+          labelCompanyInfo: labelCompanyInfo.trim() || null,
+          labelLogoUrl: labelLogoUrl || null,
+        },
+        fallbackError: t.settings.errorSaving,
+      });
+
+      if (!result.ok) {
+        toast({
+          title: t.common.error,
+          description: result.error.error || t.settings.errorSaving,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setCompanyName(result.data.team.companyName ?? "");
+      setLabelCompanyInfo(result.data.team.labelCompanyInfo ?? "");
+      setLabelLogoUrl(result.data.team.labelLogoUrl ?? "");
+      toast({
+        title: t.common.success,
+        description: t.settings.saveChanges,
+      });
+    } catch {
+      toast({
+        title: t.common.error,
+        description: t.settings.errorSaving,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLabelCompanyInfoSaving(false);
+    }
+  };
+
   const addCustomFieldSchemaRow = () => {
     setItemCustomFieldSchema((prev) => [...prev, { key: "", label: "", active: true }]);
   };

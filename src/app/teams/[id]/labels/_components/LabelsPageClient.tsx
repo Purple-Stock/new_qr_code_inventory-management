@@ -91,6 +91,7 @@ export default function LabelsPageClient({
     { target: "tour-labels-tutorial", title: t.labels.tourTutorialTitle, description: t.labels.tourTutorialDesc },
     { target: "tour-labels-settings", title: t.labels.tourSettingsTitle, description: t.labels.tourSettingsDesc },
     { target: "tour-labels-size", title: t.labels.tourSizeTitle, description: t.labels.tourSizeDesc },
+    { target: "tour-labels-custom-fields", title: t.labels.tourCustomFieldsTitle, description: t.labels.tourCustomFieldsDesc },
     { target: "tour-labels-search", title: t.labels.tourSearchTitle, description: t.labels.tourSearchDesc },
     { target: "tour-labels-actions", title: t.labels.tourActionsTitle, description: t.labels.tourActionsDesc },
     { target: "tour-labels-list", title: t.labels.tourListTitle, description: t.labels.tourListDesc },
@@ -160,7 +161,6 @@ export default function LabelsPageClient({
     try {
       const selectedItemsList = getSelectedItemsList();
       const pdf = new jsPDF("p", "mm", "a4");
-      const companyLogoDataUrl = await resolveLogoDataUrl();
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 10;
@@ -174,7 +174,6 @@ export default function LabelsPageClient({
       const cols = Math.max(1, Math.floor((availableWidth + horizontalGap) / (labelWidth + horizontalGap)));
       const rows = Math.max(1, Math.floor((availableHeight + verticalGap) / (labelHeight + verticalGap)));
 
-      let currentPage = 0;
       let currentRow = 0;
       let currentCol = 0;
 
@@ -184,7 +183,6 @@ export default function LabelsPageClient({
         // Check if we need a new page
         if (currentRow >= rows) {
           pdf.addPage();
-          currentPage++;
           currentRow = 0;
           currentCol = 0;
         }
@@ -198,6 +196,11 @@ export default function LabelsPageClient({
 
         const qrSize = Math.max(10, Math.min(24, labelHeight * 0.42, labelWidth * 0.38));
         const fontSize = Math.max(6, Math.min(12, labelHeight * 0.09));
+        const metaFont = Math.max(5, fontSize - 1);
+        const lineStep = Math.max(2.8, fontSize * 0.75);
+        const innerW = labelWidth - 4;
+        const innerBottom = y + labelHeight - 2;
+        const centerX = x + labelWidth / 2;
 
         let currentY = y + 3;
 
@@ -262,10 +265,13 @@ export default function LabelsPageClient({
 
         // Item name (centered)
         if (includeItemName && item.name) {
-          pdf.setFontSize(fontSize);
-          pdf.setTextColor(0, 0, 0);
-          pdf.text(item.name.substring(0, 28), x + 2, currentY, {
-            maxWidth: labelWidth - 4,
+          const titleLines = addFittedText(item.name, {
+            fontSize,
+            maxWidth: innerW,
+            maxLines: 2,
+            color: [0, 0, 0],
+            x: x + 2,
+            y: currentY + lineStep,
           });
           currentY += Math.max(lineStep, titleLines * lineStep) + 1;
         }
@@ -291,7 +297,7 @@ export default function LabelsPageClient({
             color: [55, 65, 81],
             y: currentY + lineStep,
           });
-          currentY += fontSize;
+          currentY += Math.max(lineStep, used * lineStep);
         }
 
         // Add stock
@@ -462,24 +468,31 @@ export default function LabelsPageClient({
                 />
                 <span className="text-sm text-gray-700">{t.labels.includeStock}</span>
               </label>
-              {customFieldOptions.map((field) => (
-                <label key={field.key} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(includeCustomFieldKeys[field.key])}
-                    onChange={(e) =>
-                      setIncludeCustomFieldKeys((prev) => ({
-                        ...prev,
-                        [field.key]: e.target.checked,
-                      }))
-                    }
-                    className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
-                  />
-                  <span className="text-sm text-gray-700">
-                    {t.labels.includeCustomField}: {field.label}
-                  </span>
-                </label>
-              ))}
+              {customFieldOptions.length > 0 ? (
+                <div
+                  className="col-span-2 sm:col-span-3 lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+                  data-tour="tour-labels-custom-fields"
+                >
+                  {customFieldOptions.map((field) => (
+                    <label key={field.key} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(includeCustomFieldKeys[field.key])}
+                        onChange={(e) =>
+                          setIncludeCustomFieldKeys((prev) => ({
+                            ...prev,
+                            [field.key]: e.target.checked,
+                          }))
+                        }
+                        className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
+                      />
+                      <span className="text-sm text-gray-700">
+                        {t.labels.includeCustomField}: {field.label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
 
