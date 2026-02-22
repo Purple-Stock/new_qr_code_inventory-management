@@ -39,14 +39,14 @@
       "short_name": "Items",
       "description": "View all items",
       "url": "/teams/1/items",
-      "icons": [{ "src": "/icon.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
     },
     {
       "name": "Locations",
       "short_name": "Locations",
       "description": "Manage locations",
       "url": "/teams/1/locations",
-      "icons": [{ "src": "/icon.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
     }
   ]
 }

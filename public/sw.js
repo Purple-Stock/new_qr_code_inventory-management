@@ -1,6 +1,6 @@
 // Service Worker for Purple Stock PWA
-const CACHE_NAME = 'purple-stock-v1';
-const RUNTIME_CACHE = 'purple-stock-runtime-v1';
+const CACHE_NAME = 'purple-stock-v2';
+const RUNTIME_CACHE = 'purple-stock-runtime-v2';
 
 // Assets to cache on install
 const STATIC_ASSETS = [
