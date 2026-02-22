@@ -1,18 +1,19 @@
+import { vi } from "vitest";
 import { NextRequest } from "next/server";
 import { POST } from "@/app/api/stripe/webhook/route";
 import { ERROR_CODES } from "@/lib/errors";
 
-jest.mock("@/lib/services/billing", () => ({
-  processStripeWebhook: jest.fn(),
+vi.mock("@/lib/services/billing", () => ({
+  processStripeWebhook: vi.fn(),
 }));
 
 import { processStripeWebhook } from "@/lib/services/billing";
 
-const mockedProcessStripeWebhook = jest.mocked(processStripeWebhook);
+const mockedProcessStripeWebhook = vi.mocked(processStripeWebhook);
 
 describe("/api/stripe/webhook route", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("returns success payload when service succeeds", async () => {

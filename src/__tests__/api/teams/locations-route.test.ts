@@ -1,28 +1,29 @@
+import { vi } from "vitest";
 import { NextRequest } from "next/server";
 import { GET, POST } from "@/app/api/teams/[id]/locations/route";
 import { ERROR_CODES } from "@/lib/errors";
 
-jest.mock("@/lib/services/locations", () => ({
-  createTeamLocation: jest.fn(),
-  listTeamLocationsForUser: jest.fn(),
+vi.mock("@/lib/services/locations", () => ({
+  createTeamLocation: vi.fn(),
+  listTeamLocationsForUser: vi.fn(),
 }));
 
-jest.mock("@/lib/permissions", () => ({
-  getUserIdFromRequest: jest.fn(),
-  authorizeTeamAccess: jest.fn(),
+vi.mock("@/lib/permissions", () => ({
+  getUserIdFromRequest: vi.fn(),
+  authorizeTeamAccess: vi.fn(),
 }));
 
 import { createTeamLocation, listTeamLocationsForUser } from "@/lib/services/locations";
 import { authorizeTeamAccess, getUserIdFromRequest } from "@/lib/permissions";
 
-const mockedCreateTeamLocation = jest.mocked(createTeamLocation);
-const mockedListTeamLocationsForUser = jest.mocked(listTeamLocationsForUser);
-const mockedGetUserIdFromRequest = jest.mocked(getUserIdFromRequest);
-const mockedAuthorizeTeamAccess = jest.mocked(authorizeTeamAccess);
+const mockedCreateTeamLocation = vi.mocked(createTeamLocation);
+const mockedListTeamLocationsForUser = vi.mocked(listTeamLocationsForUser);
+const mockedGetUserIdFromRequest = vi.mocked(getUserIdFromRequest);
+const mockedAuthorizeTeamAccess = vi.mocked(authorizeTeamAccess);
 
 describe("/api/teams/[id]/locations route", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockedGetUserIdFromRequest.mockReturnValue(9);
     mockedAuthorizeTeamAccess.mockResolvedValue({
       ok: true,

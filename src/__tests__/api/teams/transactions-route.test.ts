@@ -1,26 +1,27 @@
+import { vi } from "vitest";
 import { NextRequest } from "next/server";
 import { GET } from "@/app/api/teams/[id]/transactions/route";
 import { ERROR_CODES } from "@/lib/errors";
 
-jest.mock("@/lib/services/transactions", () => ({
-  listTeamTransactionsForUser: jest.fn(),
+vi.mock("@/lib/services/transactions", () => ({
+  listTeamTransactionsForUser: vi.fn(),
 }));
 
-jest.mock("@/lib/permissions", () => ({
-  getUserIdFromRequest: jest.fn(),
-  authorizeTeamAccess: jest.fn(),
+vi.mock("@/lib/permissions", () => ({
+  getUserIdFromRequest: vi.fn(),
+  authorizeTeamAccess: vi.fn(),
 }));
 
 import { listTeamTransactionsForUser } from "@/lib/services/transactions";
 import { authorizeTeamAccess, getUserIdFromRequest } from "@/lib/permissions";
 
-const mockedListTeamTransactionsForUser = jest.mocked(listTeamTransactionsForUser);
-const mockedGetUserIdFromRequest = jest.mocked(getUserIdFromRequest);
-const mockedAuthorizeTeamAccess = jest.mocked(authorizeTeamAccess);
+const mockedListTeamTransactionsForUser = vi.mocked(listTeamTransactionsForUser);
+const mockedGetUserIdFromRequest = vi.mocked(getUserIdFromRequest);
+const mockedAuthorizeTeamAccess = vi.mocked(authorizeTeamAccess);
 
 describe("/api/teams/[id]/transactions route", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockedGetUserIdFromRequest.mockReturnValue(15);
     mockedAuthorizeTeamAccess.mockResolvedValue({
       ok: true,

@@ -1,15 +1,16 @@
+import { vi } from "vitest";
 import { NextRequest } from "next/server";
 import { DELETE, GET, PUT } from "@/app/api/teams/[id]/route";
 import { ERROR_CODES } from "@/lib/errors";
 
-jest.mock("@/lib/services/teams", () => ({
-  deleteTeamWithAuthorization: jest.fn(),
-  getTeamForUser: jest.fn(),
-  updateTeamDetails: jest.fn(),
+vi.mock("@/lib/services/teams", () => ({
+  deleteTeamWithAuthorization: vi.fn(),
+  getTeamForUser: vi.fn(),
+  updateTeamDetails: vi.fn(),
 }));
 
-jest.mock("@/lib/permissions", () => ({
-  getUserIdFromRequest: jest.fn(),
+vi.mock("@/lib/permissions", () => ({
+  getUserIdFromRequest: vi.fn(),
 }));
 
 import {
@@ -19,14 +20,14 @@ import {
 } from "@/lib/services/teams";
 import { getUserIdFromRequest } from "@/lib/permissions";
 
-const mockedDeleteTeamWithAuthorization = jest.mocked(deleteTeamWithAuthorization);
-const mockedGetTeamForUser = jest.mocked(getTeamForUser);
-const mockedUpdateTeamDetails = jest.mocked(updateTeamDetails);
-const mockedGetUserIdFromRequest = jest.mocked(getUserIdFromRequest);
+const mockedDeleteTeamWithAuthorization = vi.mocked(deleteTeamWithAuthorization);
+const mockedGetTeamForUser = vi.mocked(getTeamForUser);
+const mockedUpdateTeamDetails = vi.mocked(updateTeamDetails);
+const mockedGetUserIdFromRequest = vi.mocked(getUserIdFromRequest);
 
 describe("/api/teams/[id] route", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockedGetUserIdFromRequest.mockReturnValue(11);
   });
 

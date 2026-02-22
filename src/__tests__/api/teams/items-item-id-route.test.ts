@@ -1,36 +1,37 @@
+import { vi } from "vitest";
 import { NextRequest } from "next/server";
 import { DELETE, GET, PUT } from "@/app/api/teams/[id]/items/[itemId]/route";
 import { ERROR_CODES } from "@/lib/errors";
 
-jest.mock("next/cache", () => ({
-  revalidatePath: jest.fn(),
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
 }));
 
-jest.mock("@/lib/services/items", () => ({
-  deleteTeamItemById: jest.fn(),
-  getTeamItemDetails: jest.fn(),
-  updateTeamItem: jest.fn(),
+vi.mock("@/lib/services/items", () => ({
+  deleteTeamItemById: vi.fn(),
+  getTeamItemDetails: vi.fn(),
+  updateTeamItem: vi.fn(),
 }));
 
-jest.mock("@/lib/permissions", () => ({
-  getUserIdFromRequest: jest.fn(),
-  authorizeTeamAccess: jest.fn(),
+vi.mock("@/lib/permissions", () => ({
+  getUserIdFromRequest: vi.fn(),
+  authorizeTeamAccess: vi.fn(),
 }));
 
 import { revalidatePath } from "next/cache";
 import { deleteTeamItemById, getTeamItemDetails, updateTeamItem } from "@/lib/services/items";
 import { authorizeTeamAccess, getUserIdFromRequest } from "@/lib/permissions";
 
-const mockedRevalidatePath = jest.mocked(revalidatePath);
-const mockedDeleteTeamItemById = jest.mocked(deleteTeamItemById);
-const mockedGetTeamItemDetails = jest.mocked(getTeamItemDetails);
-const mockedUpdateTeamItem = jest.mocked(updateTeamItem);
-const mockedGetUserIdFromRequest = jest.mocked(getUserIdFromRequest);
-const mockedAuthorizeTeamAccess = jest.mocked(authorizeTeamAccess);
+const mockedRevalidatePath = vi.mocked(revalidatePath);
+const mockedDeleteTeamItemById = vi.mocked(deleteTeamItemById);
+const mockedGetTeamItemDetails = vi.mocked(getTeamItemDetails);
+const mockedUpdateTeamItem = vi.mocked(updateTeamItem);
+const mockedGetUserIdFromRequest = vi.mocked(getUserIdFromRequest);
+const mockedAuthorizeTeamAccess = vi.mocked(authorizeTeamAccess);
 
 describe("/api/teams/[id]/items/[itemId] route", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockedGetUserIdFromRequest.mockReturnValue(5);
     mockedAuthorizeTeamAccess.mockResolvedValue({
       ok: true,

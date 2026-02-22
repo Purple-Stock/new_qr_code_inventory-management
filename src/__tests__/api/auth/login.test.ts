@@ -1,24 +1,25 @@
+import { vi } from "vitest";
 import { NextRequest } from "next/server";
 import { POST } from "@/app/api/auth/login/route";
 import { ERROR_CODES } from "@/lib/errors";
 
-jest.mock("@/lib/services/auth", () => ({
-  loginUser: jest.fn(),
+vi.mock("@/lib/services/auth", () => ({
+  loginUser: vi.fn(),
 }));
 
-jest.mock("@/lib/session", () => ({
-  setSessionCookie: jest.fn(),
+vi.mock("@/lib/session", () => ({
+  setSessionCookie: vi.fn(),
 }));
 
 import { loginUser } from "@/lib/services/auth";
 import { setSessionCookie } from "@/lib/session";
 
-const mockedLoginUser = jest.mocked(loginUser);
-const mockedSetSessionCookie = jest.mocked(setSessionCookie);
+const mockedLoginUser = vi.mocked(loginUser);
+const mockedSetSessionCookie = vi.mocked(setSessionCookie);
 
 describe("/api/auth/login", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("returns success and sets session cookie", async () => {

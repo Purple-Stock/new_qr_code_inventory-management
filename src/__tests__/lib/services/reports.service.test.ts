@@ -1,26 +1,27 @@
+import { vi } from "vitest";
 import { getTeamReportStatsForUser } from "@/lib/services/reports";
 import { authorizeTeamAccess } from "@/lib/permissions";
 import { getTeamReportStats } from "@/lib/db/reports";
 import { ERROR_CODES } from "@/lib/errors";
 
-jest.mock("@/lib/permissions", () => ({
-  authorizeTeamAccess: jest.fn(),
+vi.mock("@/lib/permissions", () => ({
+  authorizeTeamAccess: vi.fn(),
 }));
 
-jest.mock("@/lib/db/reports", () => ({
-  getTeamReportStats: jest.fn(),
+vi.mock("@/lib/db/reports", () => ({
+  getTeamReportStats: vi.fn(),
 }));
 
-const mockAuthorizeTeamAccess = authorizeTeamAccess as jest.MockedFunction<
+const mockAuthorizeTeamAccess = authorizeTeamAccess as vi.MockedFunction<
   typeof authorizeTeamAccess
 >;
-const mockGetTeamReportStats = getTeamReportStats as jest.MockedFunction<
+const mockGetTeamReportStats = getTeamReportStats as vi.MockedFunction<
   typeof getTeamReportStats
 >;
 
 describe("reports service", () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   it("returns auth error when team access fails", async () => {

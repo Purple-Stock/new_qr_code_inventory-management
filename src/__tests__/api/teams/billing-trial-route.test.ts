@@ -1,24 +1,25 @@
+import { vi } from "vitest";
 import { NextRequest } from "next/server";
 import { POST } from "@/app/api/teams/[id]/billing/trial/route";
 import { ERROR_CODES } from "@/lib/errors";
 
-jest.mock("@/lib/services/billing", () => ({
-  grantTeamManualTrial: jest.fn(),
+vi.mock("@/lib/services/billing", () => ({
+  grantTeamManualTrial: vi.fn(),
 }));
 
-jest.mock("@/lib/permissions", () => ({
-  getUserIdFromRequest: jest.fn(),
+vi.mock("@/lib/permissions", () => ({
+  getUserIdFromRequest: vi.fn(),
 }));
 
 import { grantTeamManualTrial } from "@/lib/services/billing";
 import { getUserIdFromRequest } from "@/lib/permissions";
 
-const mockedGrantTeamManualTrial = jest.mocked(grantTeamManualTrial);
-const mockedGetUserIdFromRequest = jest.mocked(getUserIdFromRequest);
+const mockedGrantTeamManualTrial = vi.mocked(grantTeamManualTrial);
+const mockedGetUserIdFromRequest = vi.mocked(getUserIdFromRequest);
 
 describe("/api/teams/[id]/billing/trial route", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockedGetUserIdFromRequest.mockReturnValue(9);
   });
 
