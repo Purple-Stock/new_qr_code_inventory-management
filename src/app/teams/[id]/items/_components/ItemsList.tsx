@@ -16,6 +16,7 @@ interface ItemsListProps {
   teamId: string;
   formatPrice: (price: number | null) => string;
   t: any;
+  onItemDeleted?: (itemId: number) => void;
 }
 
 interface ItemDetails extends Item {
@@ -28,7 +29,7 @@ function generateBarcode(): string {
   return Math.floor(1000000000000 + Math.random() * 9000000000000).toString();
 }
 
-export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
+export function ItemsList({ items, teamId, formatPrice, t, onItemDeleted }: ItemsListProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [copyingId, setCopyingId] = useState<number | null>(null);
@@ -107,6 +108,7 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
       if (!result.ok) {
         if (result.error.errorCode === ERROR_CODES.ITEM_NOT_FOUND) {
           // Idempotent delete: if item is already gone, close modal and refresh list.
+          onItemDeleted?.(itemToDelete.id);
           toast({
             variant: "success",
             title: t.common.success,
@@ -131,6 +133,7 @@ export function ItemsList({ items, teamId, formatPrice, t }: ItemsListProps) {
         title: t.common.success,
         description: t.items.itemDeleted,
       });
+      onItemDeleted?.(itemToDelete.id);
       router.refresh();
       setDeleteModalOpen(false);
       setItemToDelete(null);
