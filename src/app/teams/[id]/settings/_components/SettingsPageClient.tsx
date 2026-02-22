@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, type ChangeEvent } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect, useMemo, type ChangeEvent } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   UserPlus,
   Trash2,
@@ -46,6 +46,8 @@ interface SettingsPageClientProps {
   initialTeam: Team;
 }
 
+type SettingsTab = "users" | "password" | "billing" | "labels" | "customFields";
+
 function getBillingStatusLabel(status: string | null): string {
   if (!status) return "sem assinatura";
   if (status === "active") return "ativa";
@@ -69,11 +71,6 @@ export default function SettingsPageClient({
   const [companyTeams, setCompanyTeams] = useState<CompanyTeam[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [canManageUsers, setCanManageUsers] = useState(false);
-  const [activeSettingsTab, setActiveSettingsTab] = useState<
-    "users" | "password" | "billing" | "labels" | "customFields"
-  >(
-    "users"
-  );
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -91,6 +88,8 @@ export default function SettingsPageClient({
   const [showEditUserPassword, setShowEditUserPassword] = useState(false);
   const { language, t } = useTranslation();
   const { toast } = useToast();
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const billingRequired = searchParams.get("billing") === "required";
   const [billingStatus, setBillingStatus] = useState<string | null>(
@@ -143,6 +142,40 @@ export default function SettingsPageClient({
     { target: "tour-settings-custom-fields-tab", title: t.settings.tourCustomFieldsTitle, description: t.settings.tourCustomFieldsDesc },
   ];
 
+  const availableTabs = useMemo<SettingsTab[]>(() => {
+    if (billingRequired) {
+      return ["billing"];
+    }
+
+    const tabs: SettingsTab[] = ["password", "customFields", "labels", "billing"];
+    if (canManageUsers) {
+      tabs.unshift("users");
+    }
+    return tabs;
+  }, [billingRequired, canManageUsers]);
+
+  const resolveTab = (requestedTab: string | null): SettingsTab => {
+    if (requestedTab && availableTabs.includes(requestedTab as SettingsTab)) {
+      return requestedTab as SettingsTab;
+    }
+    if (availableTabs.includes("users")) {
+      return "users";
+    }
+    return availableTabs[0] ?? "billing";
+  };
+
+  const updateUrlTab = (tab: SettingsTab) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (params.get("tab") === tab) {
+      return;
+    }
+    params.set("tab", tab);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const tabFromUrl = searchParams.get("tab");
+  const activeSettingsTab = resolveTab(tabFromUrl);
+
   useEffect(() => {
     fetchManagedUsers().finally(() => setIsLoading(false));
   }, [teamId]);
@@ -189,16 +222,15 @@ export default function SettingsPageClient({
   }, [searchParams, teamId]);
 
   useEffect(() => {
-    if (!billingRequired && !canManageUsers && activeSettingsTab === "users") {
-      setActiveSettingsTab("password");
+    if (tabFromUrl !== activeSettingsTab) {
+      updateUrlTab(activeSettingsTab);
     }
-  }, [canManageUsers, activeSettingsTab, billingRequired]);
+  }, [tabFromUrl, activeSettingsTab, searchParams, pathname, router, availableTabs]);
 
-  useEffect(() => {
-    if (billingRequired) {
-      setActiveSettingsTab("billing");
-    }
-  }, [billingRequired]);
+  const handleTabChange = (tab: SettingsTab) => {
+    const nextTab = resolveTab(tab);
+    updateUrlTab(nextTab);
+  };
 
   const fetchManagedUsers = async () => {
     try {
@@ -609,24 +641,23 @@ export default function SettingsPageClient({
     }
   };
 
-  const handleLabelLogoFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result;
-      if (typeof result === "string") {
-        setLabelLogoUrl(result);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
   const handleSaveLabelCompanyInfo = async () => {
+    const trimmedCompanyName = companyName.trim();
+    const trimmedLabelInfo = labelCompanyInfo.trim();
+    const trimmedLogoUrl = labelLogoUrl.trim();
+
+    if (!trimmedCompanyName && trimmedLabelInfo) {
+      toast({
+        title: t.common.error,
+        description: t.settings.companyNameRequired,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLabelCompanyInfoSaving(true);
     try {
-      const result = await fetchApiJsonResult<{
+      const parsed = await fetchApiJsonResult<{
         team: {
           companyName?: string | null;
           labelCompanyInfo?: string | null;
@@ -635,28 +666,28 @@ export default function SettingsPageClient({
       }>(`/api/teams/${teamId}`, {
         method: "PUT",
         body: {
-          companyName: companyName.trim() || null,
-          labelCompanyInfo: labelCompanyInfo.trim() || null,
-          labelLogoUrl: labelLogoUrl || null,
+          ...(trimmedCompanyName ? { companyName: trimmedCompanyName } : {}),
+          ...(trimmedLabelInfo ? { labelCompanyInfo: trimmedLabelInfo } : { labelCompanyInfo: null }),
+          ...(trimmedLogoUrl ? { labelLogoUrl: trimmedLogoUrl } : { labelLogoUrl: null }),
         },
         fallbackError: t.settings.errorSaving,
       });
 
-      if (!result.ok) {
+      if (!parsed.ok) {
         toast({
           title: t.common.error,
-          description: result.error.error || t.settings.errorSaving,
+          description: t.settings.errorSaving,
           variant: "destructive",
         });
         return;
       }
 
-      setCompanyName(result.data.team.companyName ?? "");
-      setLabelCompanyInfo(result.data.team.labelCompanyInfo ?? "");
-      setLabelLogoUrl(result.data.team.labelLogoUrl ?? "");
+      setCompanyName(parsed.data.team.companyName ?? "");
+      setLabelCompanyInfo(parsed.data.team.labelCompanyInfo ?? "");
+      setLabelLogoUrl(parsed.data.team.labelLogoUrl ?? "");
       toast({
         title: t.common.success,
-        description: t.settings.saveChanges,
+        description: t.settings.changesSaved,
       });
     } catch {
       toast({
@@ -666,6 +697,36 @@ export default function SettingsPageClient({
       });
     } finally {
       setIsLabelCompanyInfoSaving(false);
+    }
+  };
+
+  const handleLabelLogoFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === "string") {
+            resolve(reader.result);
+            return;
+          }
+          reject(new Error("Invalid file content"));
+        };
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsDataURL(file);
+      });
+
+      setLabelLogoUrl(dataUrl);
+    } catch {
+      toast({
+        title: t.common.error,
+        description: t.settings.errorSaving,
+        variant: "destructive",
+      });
+    } finally {
+      event.target.value = "";
     }
   };
 
@@ -788,7 +849,7 @@ export default function SettingsPageClient({
               {canManageUsers && !billingRequired ? (
                 <button
                   type="button"
-                  onClick={() => setActiveSettingsTab("users")}
+                  onClick={() => handleTabChange("users")}
                   className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                     activeSettingsTab === "users"
                       ? "border-purple-600 text-purple-700"
@@ -801,7 +862,7 @@ export default function SettingsPageClient({
               {!billingRequired ? (
               <button
                 type="button"
-                onClick={() => setActiveSettingsTab("password")}
+                onClick={() => handleTabChange("password")}
                 className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeSettingsTab === "password"
                     ? "border-purple-600 text-purple-700"
@@ -814,7 +875,7 @@ export default function SettingsPageClient({
               {!billingRequired ? (
               <button
                 type="button"
-                onClick={() => setActiveSettingsTab("customFields")}
+                onClick={() => handleTabChange("customFields")}
                 data-tour="tour-settings-custom-fields-tab"
                 className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeSettingsTab === "customFields"
@@ -828,7 +889,7 @@ export default function SettingsPageClient({
               {!billingRequired ? (
               <button
                 type="button"
-                onClick={() => setActiveSettingsTab("labels")}
+                onClick={() => handleTabChange("labels")}
                 className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeSettingsTab === "labels"
                     ? "border-purple-600 text-purple-700"
@@ -840,7 +901,7 @@ export default function SettingsPageClient({
               ) : null}
               <button
                 type="button"
-                onClick={() => setActiveSettingsTab("billing")}
+                onClick={() => handleTabChange("billing")}
                 className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeSettingsTab === "billing"
                     ? "border-purple-600 text-purple-700"

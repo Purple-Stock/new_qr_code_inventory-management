@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import {
   Search,
   Info,
@@ -34,12 +34,34 @@ interface Team {
   id: number;
   name: string;
   itemCustomFieldSchema?: { key: string; label: string; active: boolean }[] | null;
+  companyName?: string | null;
+  labelCompanyInfo?: string | null;
+  labelLogoUrl?: string | null;
 }
 
 interface LabelsPageClientProps {
   initialTeam: Team;
   initialItems: Item[];
 }
+
+type LabelSizePreset =
+  | "default_10x5"
+  | "custom"
+  | "zebra_100x150"
+  | "zebra_60x40"
+  | "zebra_110x64"
+  | "zebra_170x64";
+
+const LABEL_SIZE_PRESETS: Record<
+  Exclude<LabelSizePreset, "custom">,
+  { widthCm: number; heightCm: number; label: string; zebra: boolean }
+> = {
+  default_10x5: { widthCm: 10, heightCm: 5, label: "Padrão (10 x 5 cm)", zebra: false },
+  zebra_100x150: { widthCm: 10, heightCm: 15, label: "Zebra 100 x 150 mm", zebra: true },
+  zebra_60x40: { widthCm: 6, heightCm: 4, label: "Zebra 60 x 40 mm", zebra: true },
+  zebra_110x64: { widthCm: 11, heightCm: 6.4, label: "Zebra 110 x 64 mm", zebra: true },
+  zebra_170x64: { widthCm: 17, heightCm: 6.4, label: "Zebra 170 x 64 mm", zebra: true },
+};
 
 export default function LabelsPageClient({
   initialTeam,
@@ -50,11 +72,12 @@ export default function LabelsPageClient({
   const [isLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
-  const [labelSizeMode, setLabelSizeMode] = useState<"default" | "custom">("default");
+  const [labelSizePreset, setLabelSizePreset] = useState<LabelSizePreset>("zebra_100x150");
   const [customWidthCm, setCustomWidthCm] = useState("10");
   const [customHeightCm, setCustomHeightCm] = useState("5");
+  const [labelQuantityByItem, setLabelQuantityByItem] = useState<Record<number, number>>({});
   const [includeQRCode, setIncludeQRCode] = useState(true);
-  const [includeBarcode, setIncludeBarcode] = useState(true);
+  const [includeBarcode, setIncludeBarcode] = useState(false);
   const [includeItemName, setIncludeItemName] = useState(true);
   const [includeSKU, setIncludeSKU] = useState(true);
   const [includeStock, setIncludeStock] = useState(false);
@@ -83,6 +106,7 @@ export default function LabelsPageClient({
   const [includeCustomFieldKeys, setIncludeCustomFieldKeys] = useState<Record<string, boolean>>(
     () => Object.fromEntries(customFieldOptions.map((field) => [field.key, field.active]))
   );
+  const [includeCompanyInfo, setIncludeCompanyInfo] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const { t } = useTranslation();
@@ -120,11 +144,19 @@ export default function LabelsPageClient({
       newSelected.delete(itemId);
     } else {
       newSelected.add(itemId);
+      setLabelQuantityByItem((prev) => (prev[itemId] ? prev : { ...prev, [itemId]: 1 }));
     }
     setSelectedItems(newSelected);
   };
 
   const selectAll = () => {
+    setLabelQuantityByItem((prev) => {
+      const next = { ...prev };
+      for (const item of filteredItems) {
+        if (!next[item.id] || next[item.id] < 1) next[item.id] = 1;
+      }
+      return next;
+    });
     setSelectedItems(new Set(filteredItems.map((item) => item.id)));
   };
 
@@ -136,6 +168,14 @@ export default function LabelsPageClient({
     return items.filter((item) => selectedItems.has(item.id));
   };
 
+  const getItemQuantity = (itemId: number) => Math.max(1, labelQuantityByItem[itemId] ?? 1);
+
+  const updateItemQuantity = (itemId: number, rawValue: string) => {
+    const parsed = Number.parseInt(rawValue, 10);
+    const normalized = Number.isFinite(parsed) ? Math.max(1, parsed) : 1;
+    setLabelQuantityByItem((prev) => ({ ...prev, [itemId]: normalized }));
+  };
+
   const parseCm = (value: string, fallback: number) => {
     const parsed = Number(value.replace(",", "."));
     if (!Number.isFinite(parsed)) return fallback;
@@ -143,13 +183,31 @@ export default function LabelsPageClient({
   };
 
   const getLabelDimensionsCm = () => {
-    if (labelSizeMode === "default") {
-      return { widthCm: 10, heightCm: 5 };
+    if (labelSizePreset !== "custom") {
+      const preset = LABEL_SIZE_PRESETS[labelSizePreset];
+      return { widthCm: preset.widthCm, heightCm: preset.heightCm };
     }
 
     const widthCm = Math.min(Math.max(parseCm(customWidthCm, 10), 3), 18);
     const heightCm = Math.min(Math.max(parseCm(customHeightCm, 5), 2), 12);
     return { widthCm, heightCm };
+  };
+
+  const resolveLogoDataUrl = async (): Promise<string | null> => {
+    try {
+      const apiResponse = await fetch(`/api/teams/${team.id}/labels/logo-data`);
+      if (!apiResponse.ok) return null;
+      const payload = (await apiResponse.json()) as {
+        dataUrl?: string;
+        data?: { dataUrl?: string };
+      };
+      if ("dataUrl" in payload) {
+        return payload.dataUrl ?? null;
+      }
+      return payload?.data?.dataUrl ?? null;
+    } catch {
+      return null;
+    }
   };
 
   const generatePDF = async () => {
@@ -160,49 +218,72 @@ export default function LabelsPageClient({
     setIsGenerating(true);
     try {
       const selectedItemsList = getSelectedItemsList();
-      const pdf = new jsPDF("p", "mm", "a4");
+      const labelsToPrint = selectedItemsList.flatMap((item) =>
+        Array.from({ length: getItemQuantity(item.id) }, () => item)
+      );
+      const companyLogoDataUrl = await resolveLogoDataUrl();
+      const { widthCm, heightCm } = getLabelDimensionsCm();
+      const isZebraLayout = labelSizePreset !== "custom" && LABEL_SIZE_PRESETS[labelSizePreset].zebra;
+      const pdf = isZebraLayout
+        ? new jsPDF({
+            orientation: heightCm >= widthCm ? "p" : "l",
+            unit: "mm",
+            format: [widthCm * 10, heightCm * 10],
+          })
+        : new jsPDF("p", "mm", "a4");
+
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10;
+      const margin = isZebraLayout ? 2 : 10;
       const availableWidth = pageWidth - 2 * margin;
       const availableHeight = pageHeight - 2 * margin;
-      const { widthCm, heightCm } = getLabelDimensionsCm();
-      const labelWidth = widthCm * 10;
-      const labelHeight = heightCm * 10;
-      const horizontalGap = 2;
-      const verticalGap = 2;
-      const cols = Math.max(1, Math.floor((availableWidth + horizontalGap) / (labelWidth + horizontalGap)));
-      const rows = Math.max(1, Math.floor((availableHeight + verticalGap) / (labelHeight + verticalGap)));
-
+      const labelWidth = isZebraLayout ? availableWidth : widthCm * 10;
+      const labelHeight = isZebraLayout ? availableHeight : heightCm * 10;
+      const horizontalGap = isZebraLayout ? 0 : 2;
+      const verticalGap = isZebraLayout ? 0 : 2;
+      const cols = isZebraLayout
+        ? 1
+        : Math.max(1, Math.floor((availableWidth + horizontalGap) / (labelWidth + horizontalGap)));
+      const rows = isZebraLayout
+        ? 1
+        : Math.max(1, Math.floor((availableHeight + verticalGap) / (labelHeight + verticalGap)));
+      let currentPage = 0;
       let currentRow = 0;
       let currentCol = 0;
 
-      for (let i = 0; i < selectedItemsList.length; i++) {
-        const item = selectedItemsList[i];
+      for (let i = 0; i < labelsToPrint.length; i++) {
+        const item = labelsToPrint[i];
 
-        // Check if we need a new page
-        if (currentRow >= rows) {
-          pdf.addPage();
-          currentRow = 0;
-          currentCol = 0;
-        }
+          // Check if we need a new page
+          if (currentRow >= rows) {
+            pdf.addPage();
+            currentPage++;
+            currentRow = 0;
+            currentCol = 0;
+          }
 
-        const x = margin + currentCol * (labelWidth + horizontalGap);
-        const y = margin + currentRow * (labelHeight + verticalGap);
+          const x = margin + currentCol * (labelWidth + horizontalGap);
+          const y = margin + currentRow * (labelHeight + verticalGap);
+          const innerPadding = 2;
+          const innerX = x + innerPadding;
+          const innerY = y + innerPadding;
+          const innerW = labelWidth - innerPadding * 2;
+          const innerH = labelHeight - innerPadding * 2;
+          const innerBottom = innerY + innerH;
 
-        // Draw border
-        pdf.setDrawColor(200, 200, 200);
-        pdf.rect(x, y, labelWidth, labelHeight);
+          // Draw border
+          pdf.setDrawColor(200, 200, 200);
+          pdf.rect(x, y, labelWidth, labelHeight);
 
-        const qrSize = Math.max(10, Math.min(24, labelHeight * 0.42, labelWidth * 0.38));
-        const fontSize = Math.max(6, Math.min(12, labelHeight * 0.09));
-        const metaFont = Math.max(5, fontSize - 1);
-        const lineStep = Math.max(2.8, fontSize * 0.75);
-        const innerW = labelWidth - 4;
-        const innerBottom = y + labelHeight - 2;
-        const centerX = x + labelWidth / 2;
+          const titleFont = Math.max(7, Math.min(11, labelHeight * 0.14));
+          const bodyFont = Math.max(6, Math.min(9, labelHeight * 0.12));
+          const metaFont = Math.max(5, bodyFont - 1);
+          const lineStep = Math.max(2.5, bodyFont * 0.45);
+          const qrSize = Math.max(14, Math.min(28, innerH * 0.46));
+          const logoSize = Math.max(8, Math.min(14, innerH * 0.24));
+          const centerX = innerX + innerW / 2;
 
-        let currentY = y + 3;
+          let currentY = innerY;
 
         const addFittedText = (text: string, options: {
           fontSize: number;
@@ -244,6 +325,83 @@ export default function LabelsPageClient({
           return lines.length;
         };
 
+        const normalizeToEan13 = (raw: string): string | null => {
+          const digits = raw.replace(/\D/g, "");
+          if (digits.length !== 12 && digits.length !== 13) {
+            return null;
+          }
+
+          const base12 = digits.slice(0, 12);
+          const expectedCheck = (() => {
+            let sum = 0;
+            for (let idx = 0; idx < base12.length; idx++) {
+              const num = Number(base12[idx]);
+              sum += idx % 2 === 0 ? num : num * 3;
+            }
+            return (10 - (sum % 10)) % 10;
+          })();
+
+          if (digits.length === 13) {
+            const providedCheck = Number(digits[12]);
+            if (providedCheck !== expectedCheck) {
+              return null;
+            }
+            return digits;
+          }
+
+          return `${base12}${expectedCheck}`;
+        };
+
+        const drawEan13Barcode = (ean13: string, options: {
+          centerX: number;
+          y: number;
+          maxWidth: number;
+          height: number;
+        }): { renderedWidth: number } => {
+          const leftOdd = ["0001101", "0011001", "0010011", "0111101", "0100011", "0110001", "0101111", "0111011", "0110111", "0001011"];
+          const leftEven = ["0100111", "0110011", "0011011", "0100001", "0011101", "0111001", "0000101", "0010001", "0001001", "0010111"];
+          const right = ["1110010", "1100110", "1101100", "1000010", "1011100", "1001110", "1010000", "1000100", "1001000", "1110100"];
+          const parity = ["AAAAAA", "AABABB", "AABBAB", "AABBBA", "ABAABB", "ABBAAB", "ABBBAA", "ABABAB", "ABABBA", "ABBABA"];
+
+          const firstDigit = Number(ean13[0]);
+          const leftDigits = ean13.slice(1, 7).split("").map(Number);
+          const rightDigits = ean13.slice(7).split("").map(Number);
+
+          let pattern = "101";
+          const leftParity = parity[firstDigit];
+          for (let i = 0; i < 6; i++) {
+            pattern += leftParity[i] === "A" ? leftOdd[leftDigits[i]] : leftEven[leftDigits[i]];
+          }
+          pattern += "01010";
+          for (let i = 0; i < 6; i++) {
+            pattern += right[rightDigits[i]];
+          }
+          pattern += "101";
+
+          const patternModules = pattern.length; // 95 modules (EAN-13 bars only)
+          const quietModules = 7;
+          const totalModules = patternModules + quietModules * 2; // 109 with quiet zones
+          // Keep proper EAN proportions to avoid stretched appearance.
+          let moduleWidth = Math.max(0.22, Math.min(0.45, options.height / 18));
+          moduleWidth = Math.min(moduleWidth, options.maxWidth / totalModules);
+          const renderedWidth = totalModules * moduleWidth;
+          const startX = options.centerX - renderedWidth / 2 + quietModules * moduleWidth;
+          const guardHeight = options.height * 1.08;
+          let cursorX = startX;
+          pdf.setFillColor(0, 0, 0);
+          for (let i = 0; i < pattern.length; i++) {
+            if (pattern[i] === "1") {
+              const isGuard =
+                i < 3 ||
+                (i >= 45 && i < 50) ||
+                i >= pattern.length - 3;
+              pdf.rect(cursorX, options.y, moduleWidth, isGuard ? guardHeight : options.height, "F");
+            }
+            cursorX += moduleWidth;
+          }
+          return { renderedWidth };
+        };
+
         // MAIN block: centered and stacked
         if (includeQRCode && item.barcode) {
           try {
@@ -265,12 +423,11 @@ export default function LabelsPageClient({
 
         // Item name (centered)
         if (includeItemName && item.name) {
-          const titleLines = addFittedText(item.name, {
-            fontSize,
+          const titleLines = addCenteredText(item.name, {
+            fontSize: titleFont,
             maxWidth: innerW,
             maxLines: 2,
-            color: [0, 0, 0],
-            x: x + 2,
+            color: [15, 23, 42],
             y: currentY + lineStep,
           });
           currentY += Math.max(lineStep, titleLines * lineStep) + 1;
@@ -289,25 +446,61 @@ export default function LabelsPageClient({
         }
 
         if (includeBarcode && item.barcode) {
-          const availableLines = Math.max(1, Math.floor((innerBottom - currentY) / lineStep));
-          const used = addCenteredText(item.barcode, {
+          const ean13 = normalizeToEan13(item.barcode);
+          if (!ean13) {
+            const safeY = Math.min(currentY + lineStep, innerBottom - 0.8);
+            addCenteredText(item.barcode, {
+              fontSize: metaFont,
+              maxWidth: innerW,
+              maxLines: 1,
+              color: [30, 41, 59],
+              y: safeY,
+            });
+            currentY = Math.max(currentY, safeY + lineStep);
+          } else {
+            const barcodeHeight = Math.max(4, lineStep * 1.6);
+            const barcodeMaxWidth = innerW * 0.9;
+            const barcodeY = currentY + 1;
+            const barcodeTextY = barcodeY + barcodeHeight + Math.max(1.2, lineStep * 0.75);
+
+            if (barcodeTextY + 0.5 <= innerBottom) {
+              const rendered = drawEan13Barcode(ean13, {
+                centerX,
+                y: barcodeY,
+                maxWidth: barcodeMaxWidth,
+                height: barcodeHeight,
+              });
+              addCenteredText(ean13, {
+                fontSize: Math.max(4.8, metaFont - 0.5),
+                maxWidth: Math.max(rendered.renderedWidth, innerW * 0.45),
+                maxLines: 1,
+                color: [30, 41, 59],
+                y: barcodeTextY,
+              });
+              currentY = barcodeTextY + 0.8;
+            } else {
+              const safeY = Math.min(currentY + lineStep, innerBottom - 0.8);
+              addCenteredText(ean13, {
+                fontSize: metaFont,
+                maxWidth: innerW,
+                maxLines: 1,
+                color: [30, 41, 59],
+                y: safeY,
+              });
+              currentY = Math.max(currentY, safeY + lineStep);
+            }
+          }
+        }
+
+        if (includeStock && item.currentStock !== null && currentY + lineStep <= innerBottom) {
+          const used = addCenteredText(`Stock: ${item.currentStock}`, {
             fontSize: metaFont,
             maxWidth: innerW,
-            maxLines: Math.min(2, availableLines),
-            color: [55, 65, 81],
+            maxLines: 1,
+            color: [100, 100, 100],
             y: currentY + lineStep,
           });
           currentY += Math.max(lineStep, used * lineStep);
-        }
-
-        // Add stock
-        if (includeStock && item.currentStock !== null) {
-          pdf.setFontSize(fontSize - 1);
-          pdf.setTextColor(100, 100, 100);
-          pdf.text(`Stock: ${item.currentStock}`, x + 2, currentY, {
-            maxWidth: labelWidth - 4,
-          });
-          currentY += fontSize;
         }
 
         for (const field of customFieldOptions) {
@@ -316,25 +509,73 @@ export default function LabelsPageClient({
           }
 
           const fieldValue = item.customFields?.[field.key];
-          if (!fieldValue) {
+          if (!fieldValue || currentY + lineStep > innerBottom) {
             continue;
           }
 
-          pdf.setFontSize(fontSize - 1);
-          pdf.setTextColor(80, 80, 80);
           const fieldLabel = customFieldLabelByKey.get(field.key) ?? field.key;
-          pdf.text(`${fieldLabel}: ${fieldValue}`, x + 2, currentY, {
-            maxWidth: labelWidth - 4,
+          const availableLines = Math.max(1, Math.floor((innerBottom - currentY) / lineStep));
+          const used = addFittedText(`${fieldLabel}: ${fieldValue}`, {
+            fontSize: metaFont,
+            maxWidth: innerW,
+            maxLines: Math.min(2, availableLines),
+            color: [80, 80, 80],
+            x: innerX,
+            y: currentY + lineStep,
           });
-          currentY += fontSize;
+          currentY += Math.max(lineStep, used * lineStep);
         }
 
-        // Move to next position
-        currentCol++;
-        if (currentCol >= cols) {
-          currentCol = 0;
-          currentRow++;
+        currentY += 1.5;
+
+        // Company block: logo left, company name and extras on the right
+        if (
+          includeCompanyInfo &&
+          (companyLogoDataUrl || team.companyName || team.labelCompanyInfo) &&
+          currentY + lineStep <= innerBottom
+        ) {
+          const companyBlockY = currentY;
+          const rightTextX = companyLogoDataUrl ? innerX + logoSize + 2 : innerX;
+          const rightTextW = companyLogoDataUrl ? innerW - logoSize - 2 : innerW;
+          let rightTextY = companyBlockY;
+
+          if (companyLogoDataUrl) {
+            const logoFormat = companyLogoDataUrl.includes("data:image/jpeg") ? "JPEG" : "PNG";
+            pdf.addImage(companyLogoDataUrl, logoFormat, innerX, companyBlockY, logoSize, logoSize);
+          }
+
+          if (team.companyName && rightTextY + lineStep <= innerBottom) {
+            const remainingLines = Math.max(1, Math.floor((innerBottom - rightTextY) / lineStep));
+            const used = addFittedText(team.companyName, {
+              fontSize: bodyFont,
+              maxWidth: rightTextW,
+              maxLines: Math.min(1, remainingLines),
+              color: [55, 65, 81],
+              x: rightTextX,
+              y: rightTextY + lineStep,
+            });
+            rightTextY += Math.max(lineStep, used * lineStep);
+          }
+
+          if (team.labelCompanyInfo && rightTextY + lineStep <= innerBottom) {
+            const remainingLines = Math.max(1, Math.floor((innerBottom - rightTextY) / lineStep));
+            addFittedText(team.labelCompanyInfo, {
+              fontSize: metaFont,
+              maxWidth: rightTextW,
+              maxLines: Math.min(2, remainingLines),
+              color: [107, 114, 128],
+              x: rightTextX,
+              y: rightTextY + lineStep,
+            });
+          }
         }
+
+          // Move to next position
+          currentCol++;
+          if (currentCol >= cols) {
+            currentCol = 0;
+            currentRow++;
+          }
       }
 
       // Save PDF
@@ -383,11 +624,15 @@ export default function LabelsPageClient({
                   {t.labels.labelSize}
                 </Label>
                 <select
-                  value={labelSizeMode}
-                  onChange={(e) => setLabelSizeMode(e.target.value as "default" | "custom")}
+                  value={labelSizePreset}
+                  onChange={(e) => setLabelSizePreset(e.target.value as LabelSizePreset)}
                   className="w-full h-11 text-base border border-gray-300 rounded-md px-3 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
                 >
-                  <option value="default">{t.labels.default10x5}</option>
+                  <option value="default_10x5">{t.labels.default10x5}</option>
+                  <option value="zebra_100x150">Zebra 100 x 150 mm</option>
+                  <option value="zebra_60x40">Zebra 60 x 40 mm</option>
+                  <option value="zebra_110x64">Zebra 110 x 64 mm</option>
+                  <option value="zebra_170x64">Zebra 170 x 64 mm</option>
                   <option value="custom">{t.labels.customSize}</option>
                 </select>
               </div>
@@ -397,9 +642,9 @@ export default function LabelsPageClient({
                 </Label>
                 <Input
                   type="text"
-                  value={labelSizeMode === "default" ? "10" : customWidthCm}
+                  value={labelSizePreset === "custom" ? customWidthCm : String(getLabelDimensionsCm().widthCm)}
                   onChange={(e) => setCustomWidthCm(e.target.value)}
-                  disabled={labelSizeMode === "default"}
+                  disabled={labelSizePreset !== "custom"}
                   className="h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
                 />
               </div>
@@ -409,20 +654,20 @@ export default function LabelsPageClient({
                 </Label>
                 <Input
                   type="text"
-                  value={labelSizeMode === "default" ? "5" : customHeightCm}
+                  value={labelSizePreset === "custom" ? customHeightCm : String(getLabelDimensionsCm().heightCm)}
                   onChange={(e) => setCustomHeightCm(e.target.value)}
-                  disabled={labelSizeMode === "default"}
+                  disabled={labelSizePreset !== "custom"}
                   className="h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
                 />
               </div>
               <div className="flex items-end">
                 <div className="text-xs text-gray-600">
-                  {labelSizeMode === "default" ? "10 x 5 cm" : `${getLabelDimensionsCm().widthCm} x ${getLabelDimensionsCm().heightCm} cm`}
+                  {`${getLabelDimensionsCm().widthCm} x ${getLabelDimensionsCm().heightCm} cm`}
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -468,9 +713,18 @@ export default function LabelsPageClient({
                 />
                 <span className="text-sm text-gray-700">{t.labels.includeStock}</span>
               </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={includeCompanyInfo}
+                  onChange={(e) => setIncludeCompanyInfo(e.target.checked)}
+                  className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
+                />
+                <span className="text-sm text-gray-700">{t.labels.includeCompanyInfo}</span>
+              </label>
               {customFieldOptions.length > 0 ? (
                 <div
-                  className="col-span-2 sm:col-span-3 lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+                  className="col-span-2 sm:col-span-3 lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
                   data-tour="tour-labels-custom-fields"
                 >
                   {customFieldOptions.map((field) => (
@@ -584,18 +838,21 @@ export default function LabelsPageClient({
                     <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden md:table-cell">
                       {t.labels.stock}
                     </th>
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      {t.labels.quantityPerItem}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
                   {isLoading ? (
                     <tr>
-                      <td colSpan={6} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
+                      <td colSpan={7} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
                         {t.common.loading}
                       </td>
                     </tr>
                   ) : filteredItems.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
+                      <td colSpan={7} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
                         {searchQuery ? t.labels.noItemsSearch : t.labels.noItems}
                       </td>
                     </tr>
@@ -653,6 +910,19 @@ export default function LabelsPageClient({
                           <span className="text-sm font-semibold text-gray-900">
                             {item.currentStock?.toFixed(1) || "0.0"}
                           </span>
+                        </td>
+                        <td className="px-4 sm:px-6 py-4">
+                          <Input
+                            type="number"
+                            min={1}
+                            step={1}
+                            value={getItemQuantity(item.id)}
+                            onChange={(e) => updateItemQuantity(item.id, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-9 w-20 text-sm"
+                            disabled={!selectedItems.has(item.id)}
+                            aria-label={`${t.labels.quantityPerItem} ${item.name || item.sku || item.id}`}
+                          />
                         </td>
                       </tr>
                     ))

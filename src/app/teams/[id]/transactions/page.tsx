@@ -1,10 +1,11 @@
 import { TransactionsPageClient } from "./_components/TransactionsPageClient";
 import { notFound, redirect } from "next/navigation";
 import { getTeamTransactionsData } from "@/lib/services/team-dashboard";
+import { paginateTransactions } from "./_utils/pagination";
 
 interface PageProps {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ search?: string }>;
+  searchParams: Promise<{ search?: string; page?: string }>;
 }
 
 export default async function TransactionsPage({ params, searchParams }: PageProps) {
@@ -29,11 +30,15 @@ export default async function TransactionsPage({ params, searchParams }: PagePro
     notFound();
   }
 
+  const paginated = paginateTransactions(transactions, resolvedSearchParams.page);
+
   return (
     <TransactionsPageClient
-      transactions={transactions}
+      transactions={paginated.items}
       team={team}
       initialSearchQuery={resolvedSearchParams.search || ""}
+      currentPage={paginated.currentPage}
+      totalPages={paginated.totalPages}
     />
   );
 }

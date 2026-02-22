@@ -225,6 +225,31 @@ export default function ItemDetailPageClient({
                   {item.locationName || t.reports.noLocation}
                 </p>
               </div>
+              <div className="col-span-2">
+                <p className="text-xs text-gray-500 uppercase mb-1">{t.itemForm.tourPhotoTitle}</p>
+                {item.photoData ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsPhotoModalOpen(true)}
+                    className="rounded-lg overflow-hidden border border-gray-200 hover:border-purple-400 transition-colors"
+                  >
+                    <img
+                      src={item.photoData}
+                      alt={itemName}
+                      className="h-28 w-28 object-cover"
+                    />
+                  </button>
+                ) : (
+                  <p className="font-medium text-gray-900">-</p>
+                )}
+              </div>
+              {customFieldEntries.length > 0 ? (
+                <div className="col-span-2 pt-2">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t.itemForm.customFieldsTitle}
+                  </p>
+                </div>
+              ) : null}
               {customFieldEntries.map(([key, value]) => (
                 <div key={key}>
                   <p className="text-xs text-gray-500 uppercase mb-0.5">{key}</p>
