@@ -11,6 +11,7 @@ export type Team = Pick<
   | "name"
   | "notes"
   | "labelCompanyInfo"
+  | "labelLogoUrl"
   | "companyName"
   | "stripeSubscriptionStatus"
   | "stripeCurrentPeriodEnd"

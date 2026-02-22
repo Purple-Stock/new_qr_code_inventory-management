@@ -52,6 +52,7 @@ export function toTeamDto(
   } & Partial<{
     companyName: string | null;
     labelCompanyInfo: string | null;
+    labelLogoUrl: string | null;
     stripeCustomerId: string | null;
     stripeSubscriptionId: string | null;
     stripeSubscriptionStatus: string | null;
@@ -73,6 +74,7 @@ export function toTeamDto(
     companyId: team.companyId,
     companyName: team.companyName ?? null,
     labelCompanyInfo: team.labelCompanyInfo ?? null,
+    labelLogoUrl: team.labelLogoUrl ?? null,
     stripeCustomerId: team.stripeCustomerId ?? null,
     stripeSubscriptionId: team.stripeSubscriptionId ?? null,
     stripeSubscriptionStatus: team.stripeSubscriptionStatus ?? null,

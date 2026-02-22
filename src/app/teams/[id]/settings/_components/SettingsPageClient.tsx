@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ChangeEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   UserPlus,
@@ -58,7 +58,9 @@ export default function SettingsPageClient({
   const [companyTeams, setCompanyTeams] = useState<CompanyTeam[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [canManageUsers, setCanManageUsers] = useState(false);
-  const [activeSettingsTab, setActiveSettingsTab] = useState<"users" | "password" | "billing">(
+  const [activeSettingsTab, setActiveSettingsTab] = useState<
+    "users" | "password" | "billing" | "labels"
+  >(
     "users"
   );
   const [currentPassword, setCurrentPassword] = useState("");
@@ -88,6 +90,8 @@ export default function SettingsPageClient({
   const [labelCompanyInfo, setLabelCompanyInfo] = useState(
     initialTeam.labelCompanyInfo ?? ""
   );
+  const [companyName, setCompanyName] = useState(initialTeam.companyName ?? "");
+  const [labelLogoUrl, setLabelLogoUrl] = useState(initialTeam.labelLogoUrl ?? "");
   const [isLabelCompanyInfoSaving, setIsLabelCompanyInfoSaving] = useState(false);
   const [manualTrialEndsAt, setManualTrialEndsAt] = useState<string | null>(
     initialTeam.manualTrialEndsAt ?? null
@@ -590,14 +594,35 @@ export default function SettingsPageClient({
   };
 
   const handleSaveLabelCompanyInfo = async () => {
+    const trimmedCompanyName = companyName.trim();
+    const trimmedLabelInfo = labelCompanyInfo.trim();
+    const trimmedLogoUrl = labelLogoUrl.trim();
+
+    if (!trimmedCompanyName && trimmedLabelInfo) {
+      toast({
+        title: t.common.error,
+        description: t.settings.companyNameRequired,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLabelCompanyInfoSaving(true);
     try {
-      const parsed = await fetchApiJsonResult<{ team: { labelCompanyInfo?: string | null } }>(
+      const parsed = await fetchApiJsonResult<{
+        team: {
+          companyName?: string | null;
+          labelCompanyInfo?: string | null;
+          labelLogoUrl?: string | null;
+        };
+      }>(
         `/api/teams/${teamId}`,
         {
           method: "PUT",
           body: {
-            labelCompanyInfo: labelCompanyInfo.trim() || null,
+            ...(trimmedCompanyName ? { companyName: trimmedCompanyName } : {}),
+            ...(trimmedLabelInfo ? { labelCompanyInfo: trimmedLabelInfo } : { labelCompanyInfo: null }),
+            ...(trimmedLogoUrl ? { labelLogoUrl: trimmedLogoUrl } : { labelLogoUrl: null }),
           },
           fallbackError: t.settings.errorSaving,
         }
@@ -611,7 +636,9 @@ export default function SettingsPageClient({
         return;
       }
 
+      setCompanyName(parsed.data.team.companyName ?? "");
       setLabelCompanyInfo(parsed.data.team.labelCompanyInfo ?? "");
+      setLabelLogoUrl(parsed.data.team.labelLogoUrl ?? "");
       toast({
         title: t.common.success,
         description: t.settings.changesSaved,
@@ -624,6 +651,36 @@ export default function SettingsPageClient({
       });
     } finally {
       setIsLabelCompanyInfoSaving(false);
+    }
+  };
+
+  const handleLabelLogoFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === "string") {
+            resolve(reader.result);
+            return;
+          }
+          reject(new Error("Invalid file content"));
+        };
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsDataURL(file);
+      });
+
+      setLabelLogoUrl(dataUrl);
+    } catch {
+      toast({
+        title: t.common.error,
+        description: t.settings.errorSaving,
+        variant: "destructive",
+      });
+    } finally {
+      event.target.value = "";
     }
   };
 
@@ -680,6 +737,19 @@ export default function SettingsPageClient({
                 }`}
               >
                 {t.settings.changePasswordTab}
+              </button>
+              ) : null}
+              {!billingRequired ? (
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab("labels")}
+                className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  activeSettingsTab === "labels"
+                    ? "border-purple-600 text-purple-700"
+                    : "border-transparent text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                {t.settings.labelsTab}
               </button>
               ) : null}
               <button
@@ -752,33 +822,68 @@ export default function SettingsPageClient({
                       </Button>
                     ) : null}
                   </div>
-                  <div className="mt-6 border-t border-gray-200 pt-4">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-1">
-                      {t.settings.labelCompanyInfoTitle}
-                    </h3>
-                    <p className="text-xs text-gray-600 mb-2">
-                      {t.settings.labelCompanyInfoDesc}
+                </div>
+              ) : null}
+
+              {activeSettingsTab === "labels" ? (
+                <div data-tour="tour-settings-panel" className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">
+                    {t.settings.labelCompanyInfoTitle}
+                  </h2>
+                  <p className="text-sm text-gray-600 mb-4">
+                    {t.settings.labelCompanyInfoDesc}
+                  </p>
+                  <p className="text-xs text-gray-700 mb-2">
+                    {t.settings.companyName}
+                  </p>
+                  <Input
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder={t.settings.companyName}
+                    className="max-w-xl mb-3"
+                  />
+                  <Input
+                    value={labelCompanyInfo}
+                    onChange={(e) => setLabelCompanyInfo(e.target.value)}
+                    placeholder={t.settings.labelCompanyInfoPlaceholder}
+                    className="max-w-xl"
+                  />
+                  <div className="mt-4">
+                    <p className="text-xs text-gray-700 mb-2">
+                      {t.settings.labelLogoTitle}
                     </p>
-                    {initialTeam.companyName ? (
-                      <p className="text-xs text-gray-700 mb-2">
-                        {t.settings.companyName}: <strong>{initialTeam.companyName}</strong>
-                      </p>
-                    ) : null}
                     <Input
-                      value={labelCompanyInfo}
-                      onChange={(e) => setLabelCompanyInfo(e.target.value)}
-                      placeholder={t.settings.labelCompanyInfoPlaceholder}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLabelLogoFileChange}
                       className="max-w-xl"
                     />
-                    <Button
-                      type="button"
-                      onClick={handleSaveLabelCompanyInfo}
-                      disabled={isLabelCompanyInfoSaving}
-                      className="mt-3 bg-purple-600 hover:bg-purple-700 text-white"
-                    >
-                      {isLabelCompanyInfoSaving ? t.settings.modalSaving : t.settings.saveChanges}
-                    </Button>
+                    {labelLogoUrl ? (
+                      <div className="mt-3 flex items-center gap-3">
+                        <img
+                          src={labelLogoUrl}
+                          alt={t.settings.labelLogoTitle}
+                          className="h-16 w-16 object-contain rounded border border-gray-200 bg-white"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setLabelLogoUrl("")}
+                          className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                        >
+                          {t.settings.removeLabelLogo}
+                        </Button>
+                      </div>
+                    ) : null}
                   </div>
+                  <Button
+                    type="button"
+                    onClick={handleSaveLabelCompanyInfo}
+                    disabled={isLabelCompanyInfoSaving}
+                    className="mt-3 bg-purple-600 hover:bg-purple-700 text-white"
+                  >
+                    {isLabelCompanyInfoSaving ? t.settings.modalSaving : t.settings.saveChanges}
+                  </Button>
                 </div>
               ) : null}
 

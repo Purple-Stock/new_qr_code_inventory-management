@@ -215,6 +215,7 @@ export async function updateTeam(
     name?: string;
     notes?: string | null;
     labelCompanyInfo?: string | null;
+    labelLogoUrl?: string | null;
   }
 ): Promise<Team> {
   const [updatedTeam] = await sqlite
@@ -336,5 +337,61 @@ export async function deleteTeam(teamId: number): Promise<boolean> {
 
     const result = await tx.delete(teams).where(eq(teams.id, teamId));
     return hasAffectedRows(result);
+  });
+}
+
+type UpdateTeamData = {
+  name?: string;
+  notes?: string | null;
+  labelCompanyInfo?: string | null;
+  labelLogoUrl?: string | null;
+};
+
+export async function updateTeamAndCompanyLabelSettings(
+  teamId: number,
+  companyId: number,
+  data: {
+    companyName?: string;
+    team?: UpdateTeamData;
+  }
+): Promise<Team> {
+  return sqlite.transaction(async (tx) => {
+    if (data.companyName !== undefined) {
+      const [updatedCompany] = await tx
+        .update(companies)
+        .set({
+          name: data.companyName,
+          updatedAt: new Date(),
+        })
+        .where(eq(companies.id, companyId))
+        .returning();
+
+      if (!updatedCompany) {
+        throw new Error("Company not found");
+      }
+    }
+
+    if (data.team) {
+      const [updatedTeam] = await tx
+        .update(teams)
+        .set({
+          ...data.team,
+          updatedAt: new Date(),
+        })
+        .where(eq(teams.id, teamId))
+        .returning();
+
+      if (!updatedTeam) {
+        throw new Error("Team not found");
+      }
+
+      return updatedTeam;
+    }
+
+    const [team] = await tx.select().from(teams).where(eq(teams.id, teamId)).limit(1);
+    if (!team) {
+      throw new Error("Team not found");
+    }
+    return team;
   });
 }

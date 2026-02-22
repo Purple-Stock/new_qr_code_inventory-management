@@ -39,6 +39,7 @@ export type TeamDto = {
   companyId: number | null;
   companyName?: string | null;
   labelCompanyInfo?: string | null;
+  labelLogoUrl?: string | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   stripeSubscriptionStatus: string | null;

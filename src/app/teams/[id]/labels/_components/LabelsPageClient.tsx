@@ -34,6 +34,7 @@ interface Team {
   name: string;
   companyName?: string | null;
   labelCompanyInfo?: string | null;
+  labelLogoUrl?: string | null;
 }
 
 interface LabelsPageClientProps {
@@ -103,6 +104,23 @@ export default function LabelsPageClient({
     return items.filter((item) => selectedItems.has(item.id));
   };
 
+  const resolveLogoDataUrl = async (): Promise<string | null> => {
+    try {
+      const apiResponse = await fetch(`/api/teams/${team.id}/labels/logo-data`);
+      if (!apiResponse.ok) return null;
+      const payload = (await apiResponse.json()) as {
+        dataUrl?: string;
+        data?: { dataUrl?: string };
+      };
+      if ("dataUrl" in payload) {
+        return payload.dataUrl ?? null;
+      }
+      return payload?.data?.dataUrl ?? null;
+    } catch {
+      return null;
+    }
+  };
+
   const generatePDF = async () => {
     if (selectedItems.size === 0) {
       return;
@@ -112,6 +130,7 @@ export default function LabelsPageClient({
     try {
       const selectedItemsList = getSelectedItemsList();
       const pdf = new jsPDF("p", "mm", "a4");
+      const companyLogoDataUrl = await resolveLogoDataUrl();
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 10;
@@ -134,6 +153,7 @@ export default function LabelsPageClient({
 
       const labelWidth = availableWidth / cols;
       const labelHeight = availableHeight / rows;
+      const sizeScale = labelSize === "small" ? 0.9 : labelSize === "large" ? 1.1 : 1;
 
       let currentPage = 0;
       let currentRow = 0;
@@ -152,25 +172,68 @@ export default function LabelsPageClient({
 
         const x = margin + currentCol * labelWidth;
         const y = margin + currentRow * labelHeight;
+        const innerPadding = 2;
+        const innerX = x + innerPadding;
+        const innerY = y + innerPadding;
+        const innerW = labelWidth - innerPadding * 2 - 2;
+        const innerH = labelHeight - innerPadding * 2 - 2;
+        const innerBottom = innerY + innerH;
 
         // Draw border
         pdf.setDrawColor(200, 200, 200);
         pdf.rect(x, y, labelWidth - 2, labelHeight - 2);
 
-        // Calculate sizes based on labelSize
-        let qrSize = 20;
-        let fontSize = 8;
-        if (labelSize === "small") {
-          qrSize = 15;
-          fontSize = 6;
-        } else if (labelSize === "large") {
-          qrSize = 30;
-          fontSize = 10;
-        }
+        const titleFont = Math.max(7, Math.min(11, labelHeight * 0.14)) * sizeScale;
+        const bodyFont = Math.max(6, Math.min(9, labelHeight * 0.12)) * sizeScale;
+        const metaFont = Math.max(5, bodyFont - 1);
+        const lineStep = Math.max(2.5, bodyFont * 0.45);
+        const qrSize = Math.max(14, Math.min(28, innerH * 0.46)) * sizeScale;
+        const logoSize = Math.max(8, Math.min(14, innerH * 0.24)) * sizeScale;
+        const centerX = innerX + innerW / 2;
 
-        let currentY = y + 2;
+        let currentY = innerY;
 
-        // Generate QR code as image
+        const addFittedText = (text: string, options: {
+          fontSize: number;
+          maxWidth: number;
+          maxLines: number;
+          color: [number, number, number];
+          x: number;
+          y: number;
+        }): number => {
+          if (!text.trim()) return 0;
+          pdf.setFontSize(options.fontSize);
+          pdf.setTextColor(...options.color);
+          const splitRaw = pdf.splitTextToSize(text, options.maxWidth);
+          const lines = (Array.isArray(splitRaw) ? splitRaw : [splitRaw]).slice(0, options.maxLines);
+          if (lines.length === 0) return 0;
+          pdf.text(lines, options.x, options.y, {
+            maxWidth: options.maxWidth,
+          });
+          return lines.length;
+        };
+
+        const addCenteredText = (text: string, options: {
+          fontSize: number;
+          maxWidth: number;
+          maxLines: number;
+          color: [number, number, number];
+          y: number;
+        }): number => {
+          if (!text.trim()) return 0;
+          pdf.setFontSize(options.fontSize);
+          pdf.setTextColor(...options.color);
+          const splitRaw = pdf.splitTextToSize(text, options.maxWidth);
+          const lines = (Array.isArray(splitRaw) ? splitRaw : [splitRaw]).slice(0, options.maxLines);
+          if (lines.length === 0) return 0;
+          pdf.text(lines, centerX, options.y, {
+            align: "center",
+            maxWidth: options.maxWidth,
+          });
+          return lines.length;
+        };
+
+        // MAIN block: centered and stacked
         if (includeQRCode && item.barcode) {
           try {
             const qrDataUrl = await QRCode.toDataURL(item.barcode, {
@@ -181,66 +244,103 @@ export default function LabelsPageClient({
                 light: "#FFFFFF",
               },
             });
-            pdf.addImage(qrDataUrl, "PNG", x + 2, currentY, qrSize, qrSize);
-            currentY += qrSize + 2;
+            const qrX = centerX - qrSize / 2;
+            pdf.addImage(qrDataUrl, "PNG", qrX, currentY, qrSize, qrSize);
+            currentY += qrSize + 1.5;
           } catch (error) {
             console.error("Error generating QR code:", error);
           }
         }
 
-        // Add item name
+        // Item name (centered)
         if (includeItemName && item.name) {
-          pdf.setFontSize(fontSize);
-          pdf.setTextColor(0, 0, 0);
-          pdf.text(item.name.substring(0, 20), x + 2, currentY, {
-            maxWidth: labelWidth - 4,
+          const titleLines = addCenteredText(item.name, {
+            fontSize: titleFont,
+            maxWidth: innerW,
+            maxLines: 2,
+            color: [15, 23, 42],
+            y: currentY + lineStep,
           });
-          currentY += fontSize + 1;
+          currentY += Math.max(lineStep, titleLines * lineStep) + 1;
         }
 
-        if (includeCompanyInfo && (team.companyName || team.labelCompanyInfo)) {
-          pdf.setFontSize(fontSize - 1);
-          pdf.setTextColor(70, 70, 70);
-          if (team.companyName) {
-            pdf.text(team.companyName.substring(0, 26), x + 2, currentY, {
-              maxWidth: labelWidth - 4,
-            });
-            currentY += fontSize;
-          }
-          if (team.labelCompanyInfo) {
-            pdf.text(team.labelCompanyInfo.substring(0, 36), x + 2, currentY, {
-              maxWidth: labelWidth - 4,
-            });
-            currentY += fontSize;
-          }
-        }
-
-        // Add SKU
+        // Main text info (centered)
         if (includeSKU && item.sku) {
-          pdf.setFontSize(fontSize - 1);
-          pdf.setTextColor(100, 100, 100);
-          pdf.text(`SKU: ${item.sku}`, x + 2, currentY, {
-            maxWidth: labelWidth - 4,
+          const used = addCenteredText(`SKU: ${item.sku}`, {
+            fontSize: metaFont,
+            maxWidth: innerW,
+            maxLines: 1,
+            color: [75, 85, 99],
+            y: currentY + lineStep,
           });
-          currentY += fontSize;
+          currentY += Math.max(lineStep, used * lineStep);
         }
 
-        // Add barcode text
         if (includeBarcode && item.barcode) {
-          pdf.setFontSize(fontSize - 1);
-          pdf.setTextColor(50, 50, 50);
-          pdf.text(item.barcode, x + 2, currentY, {
-            maxWidth: labelWidth - 4,
+          const availableLines = Math.max(1, Math.floor((innerBottom - currentY) / lineStep));
+          const used = addCenteredText(item.barcode, {
+            fontSize: metaFont,
+            maxWidth: innerW,
+            maxLines: Math.min(2, availableLines),
+            color: [55, 65, 81],
+            y: currentY + lineStep,
           });
+          currentY += Math.max(lineStep, used * lineStep);
         }
 
-        // Add stock
-        if (includeStock && item.currentStock !== null) {
-          pdf.setFontSize(fontSize - 1);
-          pdf.setTextColor(100, 100, 100);
-          pdf.text(`Stock: ${item.currentStock}`, x + 2, currentY + fontSize, {
-            maxWidth: labelWidth - 4,
+        if (includeStock && item.currentStock !== null && currentY + lineStep <= innerBottom) {
+          const used = addCenteredText(`Stock: ${item.currentStock}`, {
+            fontSize: metaFont,
+            maxWidth: innerW,
+            maxLines: 1,
+            color: [100, 100, 100],
+            y: currentY + lineStep,
           });
+          currentY += Math.max(lineStep, used * lineStep);
+        }
+
+        currentY += 1.5;
+
+        // Company block: logo left, company name and extras on the right
+        if (
+          includeCompanyInfo &&
+          (companyLogoDataUrl || team.companyName || team.labelCompanyInfo) &&
+          currentY + lineStep <= innerBottom
+        ) {
+          const companyBlockY = currentY;
+          const rightTextX = companyLogoDataUrl ? innerX + logoSize + 2 : innerX;
+          const rightTextW = companyLogoDataUrl ? innerW - logoSize - 2 : innerW;
+          let rightTextY = companyBlockY;
+
+          if (companyLogoDataUrl) {
+            const logoFormat = companyLogoDataUrl.includes("data:image/jpeg") ? "JPEG" : "PNG";
+            pdf.addImage(companyLogoDataUrl, logoFormat, innerX, companyBlockY, logoSize, logoSize);
+          }
+
+          if (team.companyName && rightTextY + lineStep <= innerBottom) {
+            const remainingLines = Math.max(1, Math.floor((innerBottom - rightTextY) / lineStep));
+            const used = addFittedText(team.companyName, {
+              fontSize: bodyFont,
+              maxWidth: rightTextW,
+              maxLines: Math.min(1, remainingLines),
+              color: [55, 65, 81],
+              x: rightTextX,
+              y: rightTextY + lineStep,
+            });
+            rightTextY += Math.max(lineStep, used * lineStep);
+          }
+
+          if (team.labelCompanyInfo && rightTextY + lineStep <= innerBottom) {
+            const remainingLines = Math.max(1, Math.floor((innerBottom - rightTextY) / lineStep));
+            addFittedText(team.labelCompanyInfo, {
+              fontSize: metaFont,
+              maxWidth: rightTextW,
+              maxLines: Math.min(2, remainingLines),
+              color: [107, 114, 128],
+              x: rightTextX,
+              y: rightTextY + lineStep,
+            });
+          }
         }
 
         // Move to next position

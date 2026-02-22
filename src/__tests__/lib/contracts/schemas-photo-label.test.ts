@@ -40,4 +40,24 @@ describe("contracts/schemas photo + label company info", () => {
     if (!parsed.ok) return;
     expect(parsed.data.labelCompanyInfo).toBe("CNPJ 00.000.000/0001-00");
   });
+
+  it("parses team update payload with labelLogoUrl", () => {
+    const parsed = parseTeamUpdatePayload({
+      labelLogoUrl: "https://cdn.example.com/logo.png",
+    });
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.data.labelLogoUrl).toBe("https://cdn.example.com/logo.png");
+  });
+
+  it("parses team update payload with companyName", () => {
+    const parsed = parseTeamUpdatePayload({
+      companyName: "Purple Stock LTDA",
+    });
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.data.companyName).toBe("Purple Stock LTDA");
+  });
 });

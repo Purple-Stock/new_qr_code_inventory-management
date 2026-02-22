@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -10,6 +10,7 @@ import {
   RotateCcw,
   Move,
   Pencil,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QRCodeDisplay } from "@/components/QRCodeDisplay";
@@ -50,6 +51,20 @@ export default function ItemDetailPageClient({
   const [item] = useState<ItemWithLocation>(initialItem);
   const [transactions] = useState<TransactionWithDetails[]>(initialTransactions);
   const [txFilter, setTxFilter] = useState<TransactionTypeFilter>("all");
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isPhotoModalOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsPhotoModalOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isPhotoModalOpen]);
 
   const filteredTx =
     txFilter === "all"
@@ -212,11 +227,18 @@ export default function ItemDetailPageClient({
                   {t.itemForm.photoLabel}
                 </p>
                 {item.photoData ? (
-                  <img
-                    src={item.photoData}
-                    alt={itemName}
-                    className="h-20 w-20 object-cover rounded-md border border-gray-200"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsPhotoModalOpen(true)}
+                    className="inline-block rounded-md focus:outline-none focus:ring-2 focus:ring-[#6B21A8] focus:ring-offset-2"
+                    aria-label={`${t.itemForm.photoLabel} - ampliar`}
+                  >
+                    <img
+                      src={item.photoData}
+                      alt={itemName}
+                      className="h-20 w-20 object-cover rounded-md border border-gray-200 cursor-zoom-in"
+                    />
+                  </button>
                 ) : (
                   <p className="font-medium text-gray-900">-</p>
                 )}
@@ -305,6 +327,31 @@ export default function ItemDetailPageClient({
           </div>
         </div>
       </div>
+
+      {isPhotoModalOpen && item.photoData ? (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 p-4 sm:p-6 flex items-center justify-center"
+          onClick={() => setIsPhotoModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={t.itemForm.photoLabel}
+        >
+          <button
+            type="button"
+            onClick={() => setIsPhotoModalOpen(false)}
+            className="absolute top-4 right-4 sm:top-6 sm:right-6 text-white hover:text-gray-200"
+            aria-label={t.common.close}
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <img
+            src={item.photoData}
+            alt={itemName}
+            className="max-h-[90vh] max-w-[90vw] rounded-lg shadow-2xl object-contain"
+            onClick={(event) => event.stopPropagation()}
+          />
+        </div>
+      ) : null}
     </TeamLayout>
   );
 }

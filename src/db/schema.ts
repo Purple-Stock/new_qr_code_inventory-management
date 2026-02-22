@@ -79,6 +79,7 @@ export const teams = sqliteTable(
     manualTrialGrantsCount: integer("manual_trial_grants_count").notNull().default(0),
     manualTrialLastGrantedAt: integer("manual_trial_last_granted_at", { mode: "timestamp" }),
     labelCompanyInfo: text("label_company_info"),
+    labelLogoUrl: text("label_logo_url"),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .$defaultFn(() => new Date()),
