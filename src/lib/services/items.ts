@@ -337,7 +337,7 @@ export async function deleteTeamItemById(
       error: makeServiceError(
         409,
         ERROR_CODES.VALIDATION_ERROR,
-        "Cannot delete item: it has stock transaction history. Remove or adjust transactions first."
+        "Não é possível excluir o item: ele possui histórico de transações de estoque. Remova ou ajuste as transações primeiro."
       ),
     };
   }

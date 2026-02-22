@@ -176,7 +176,7 @@ describe("/api/teams/[id]/items/[itemId] route", () => {
         error: {
           status: 409,
           errorCode: ERROR_CODES.VALIDATION_ERROR,
-          error: "Cannot delete item: it has stock transaction history. Remove or adjust transactions first.",
+          error: "Não é possível excluir o item: ele possui histórico de transações de estoque. Remova ou ajuste as transações primeiro.",
         },
       });
 
@@ -189,7 +189,7 @@ describe("/api/teams/[id]/items/[itemId] route", () => {
       expect(response.status).toBe(409);
       expect(await response.json()).toEqual({
         errorCode: ERROR_CODES.VALIDATION_ERROR,
-        error: "Cannot delete item: it has stock transaction history. Remove or adjust transactions first.",
+        error: "Não é possível excluir o item: ele possui histórico de transações de estoque. Remova ou ajuste as transações primeiro.",
       });
     });
   });
