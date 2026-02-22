@@ -140,6 +140,26 @@ function resolveAwsRegion(): string {
   );
 }
 
+function resolveS3Credentials(runtimeHost?: string | null):
+  | { accessKeyId: string; secretAccessKey: string; sessionToken?: string }
+  | undefined {
+  const accessKeyId = resolveEnv("S3_ACCESS_KEY_ID", runtimeHost) || process.env.AWS_ACCESS_KEY_ID?.trim();
+  const secretAccessKey =
+    resolveEnv("S3_SECRET_ACCESS_KEY", runtimeHost) || process.env.AWS_SECRET_ACCESS_KEY?.trim();
+  const sessionToken =
+    resolveEnv("S3_SESSION_TOKEN", runtimeHost) || process.env.AWS_SESSION_TOKEN?.trim();
+
+  if (!accessKeyId || !secretAccessKey) {
+    return undefined;
+  }
+
+  return {
+    accessKeyId,
+    secretAccessKey,
+    ...(sessionToken ? { sessionToken } : {}),
+  };
+}
+
 function resolveAmplifyBranchName(): string {
   return (process.env.AWS_BRANCH || process.env.AMPLIFY_BRANCH || "").trim().toUpperCase();
 }
@@ -389,6 +409,9 @@ async function uploadTeamImageToS3(params: {
     region,
     endpoint,
     forcePathStyle,
+    ...(resolveS3Credentials(params.runtimeHost)
+      ? { credentials: resolveS3Credentials(params.runtimeHost) }
+      : {}),
   });
 
   let lastError: Error | null = null;
