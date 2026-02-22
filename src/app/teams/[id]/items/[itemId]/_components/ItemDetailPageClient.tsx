@@ -304,6 +304,26 @@ export default function ItemDetailPageClient({
 
           {/* QR Code */}
           <div className="lg:col-start-3 lg:row-start-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3 w-full">
+              {t.itemForm.tourPhotoTitle}
+            </h2>
+            {item.photoData ? (
+              <button
+                type="button"
+                onClick={() => setIsPhotoModalOpen(true)}
+                className="w-full mb-4 rounded-lg overflow-hidden border border-gray-200 hover:border-purple-400 transition-colors"
+              >
+                <img
+                  src={item.photoData}
+                  alt={itemName}
+                  className="h-40 w-full object-cover"
+                />
+              </button>
+            ) : (
+              <div className="w-full mb-4 h-40 rounded-lg border border-dashed border-gray-200 bg-gray-50 flex items-center justify-center text-sm text-gray-500">
+                -
+              </div>
+            )}
             <h2 className="text-lg font-semibold text-gray-900 mb-4 w-full">
               {t.items.qrCode}
             </h2>
