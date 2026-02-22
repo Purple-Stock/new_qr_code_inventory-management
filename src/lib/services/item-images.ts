@@ -207,10 +207,16 @@ function resolveEnv(key: string, runtimeHost?: string | null): string | undefine
   }
 
   if (branch === "DEVELOP") {
-    return process.env[`${key}_STAGING`]?.trim() || undefined;
+    const value = process.env[`${key}_STAGING`]?.trim();
+    if (value) {
+      return value;
+    }
   }
   if (branch === "MAIN") {
-    return process.env[`${key}_PROD`]?.trim() || undefined;
+    const value = process.env[`${key}_PROD`]?.trim();
+    if (value) {
+      return value;
+    }
   }
 
   return resolveHostedDefaultByDomain(key, runtimeHost);
