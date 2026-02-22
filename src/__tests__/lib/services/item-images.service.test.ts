@@ -101,12 +101,14 @@ describe("item-images service", () => {
       AWS_REGION: process.env.AWS_REGION,
       AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
       AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+      NODE_ENV: process.env.NODE_ENV,
     };
 
     delete process.env.S3_BUCKET;
     delete process.env.AWS_REGION;
     delete process.env.AWS_ACCESS_KEY_ID;
     delete process.env.AWS_SECRET_ACCESS_KEY;
+    process.env.NODE_ENV = "test";
 
     try {
       const dataUrl = "data:image/png;base64,AAAA";
@@ -120,6 +122,29 @@ describe("item-images service", () => {
       process.env.AWS_REGION = backup.AWS_REGION;
       process.env.AWS_ACCESS_KEY_ID = backup.AWS_ACCESS_KEY_ID;
       process.env.AWS_SECRET_ACCESS_KEY = backup.AWS_SECRET_ACCESS_KEY;
+      process.env.NODE_ENV = backup.NODE_ENV;
+    }
+  });
+
+  it("throws in production when S3 is not configured", async () => {
+    const backup = {
+      S3_BUCKET: process.env.S3_BUCKET,
+      NODE_ENV: process.env.NODE_ENV,
+    };
+
+    delete process.env.S3_BUCKET;
+    process.env.NODE_ENV = "production";
+
+    try {
+      await expect(
+        uploadItemImageToS3({
+          teamId: 1,
+          dataUrl: "data:image/png;base64,AAAA",
+        })
+      ).rejects.toThrow("S3_BUCKET is required in production for image uploads");
+    } finally {
+      process.env.S3_BUCKET = backup.S3_BUCKET;
+      process.env.NODE_ENV = backup.NODE_ENV;
     }
   });
 
