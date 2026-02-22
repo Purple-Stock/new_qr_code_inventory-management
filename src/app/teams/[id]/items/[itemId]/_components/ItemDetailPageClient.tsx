@@ -322,7 +322,7 @@ export default function ItemDetailPageClient({
           onClick={() => setIsPhotoModalOpen(false)}
           role="dialog"
           aria-modal="true"
-          aria-label={t.itemForm.photoLabel}
+          aria-label={t.itemForm.tourPhotoTitle}
         >
           <button
             type="button"
