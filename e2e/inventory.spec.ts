@@ -40,6 +40,11 @@ test.describe("Inventory Management", () => {
     await page.goto("/teams/1/labels");
     await expect(page).toHaveURL(/\/|\/login/);
   });
+
+  test("unauthenticated users are redirected to login for scan lookup", async ({ page }) => {
+    await page.goto("/teams/1/scan");
+    await expect(page).toHaveURL(/\/|\/login/);
+  });
 });
 
 test.describe("Public Pages", () => {

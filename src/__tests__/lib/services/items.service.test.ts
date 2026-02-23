@@ -6,10 +6,11 @@ import {
   getTeamItemDetails,
   listTeamItemsForUser,
   createTeamItem,
+  lookupTeamItemsByCodeForUser,
 } from "@/lib/services/items";
 import { ERROR_CODES } from "@/lib/errors";
 import { getTestDb, cleanupTestDb, clearTestDb } from "../../helpers/test-db";
-import { items, stockTransactions, teamMembers, teams, users } from "@/db/schema";
+import { items, locations, stockTransactions, teamMembers, teams, users } from "@/db/schema";
 
 const { drizzle } = getTestDb();
 
@@ -655,5 +656,142 @@ describe("items service", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.status).toBe(403);
+  });
+
+  it("returns validation error when lookup code is empty", async () => {
+    const result = await lookupTeamItemsByCodeForUser({
+      teamId: 1,
+      code: "   ",
+      requestUserId: 1,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.status).toBe(400);
+    expect(result.error.errorCode).toBe(ERROR_CODES.VALIDATION_ERROR);
+  });
+
+  it("returns auth error when lookup requester is not authenticated", async () => {
+    const result = await lookupTeamItemsByCodeForUser({
+      teamId: 1,
+      code: "ABC-1",
+      requestUserId: null,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.status).toBe(401);
+  });
+
+  it("returns empty list when lookup finds no matching barcode", async () => {
+    const { drizzle } = getTestDb();
+    const [admin] = await drizzle
+      .insert(users)
+      .values({ email: "lookup-empty@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Lookup Team Empty", userId: admin.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: admin.id,
+      role: "admin",
+      status: "active",
+    });
+
+    const result = await lookupTeamItemsByCodeForUser({
+      teamId: team.id,
+      code: "NOT-FOUND",
+      requestUserId: admin.id,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.items).toEqual([]);
+  });
+
+  it("returns one lookup candidate when barcode is unique", async () => {
+    const { drizzle } = getTestDb();
+    const [admin] = await drizzle
+      .insert(users)
+      .values({ email: "lookup-one@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Lookup Team One", userId: admin.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: admin.id,
+      role: "admin",
+      status: "active",
+    });
+    const [location] = await drizzle
+      .insert(locations)
+      .values({ name: "Setor A", teamId: team.id })
+      .returning();
+    await drizzle.insert(items).values({
+      name: "Machine A",
+      sku: "MA-001",
+      barcode: "MACHINE-001",
+      teamId: team.id,
+      locationId: location.id,
+      currentStock: 7,
+    });
+
+    const result = await lookupTeamItemsByCodeForUser({
+      teamId: team.id,
+      code: "MACHINE-001",
+      requestUserId: admin.id,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.items).toHaveLength(1);
+    expect(result.data.items[0]).toMatchObject({
+      name: "Machine A",
+      sku: "MA-001",
+      barcode: "MACHINE-001",
+      currentStock: 7,
+      locationName: "Setor A",
+    });
+  });
+
+  it("returns multiple lookup candidates when barcode is duplicated in same team", async () => {
+    const { drizzle } = getTestDb();
+    const [admin] = await drizzle
+      .insert(users)
+      .values({ email: "lookup-many@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Lookup Team Many", userId: admin.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: admin.id,
+      role: "admin",
+      status: "active",
+    });
+
+    await drizzle.insert(items).values([
+      { name: "Machine A", sku: "M-A", barcode: "DUP-001", teamId: team.id, currentStock: 1 },
+      { name: "Machine B", sku: "M-B", barcode: "DUP-001", teamId: team.id, currentStock: 2 },
+    ]);
+
+    const result = await lookupTeamItemsByCodeForUser({
+      teamId: team.id,
+      code: "DUP-001",
+      requestUserId: admin.id,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.items).toHaveLength(2);
+    expect(result.data.items.map((item) => item.name).sort()).toEqual([
+      "Machine A",
+      "Machine B",
+    ]);
   });
 });

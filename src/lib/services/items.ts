@@ -3,6 +3,7 @@ import {
   deleteItem,
   getItemById,
   getItemByIdWithLocation,
+  getTeamItemsByBarcode,
   getTeamItems,
   itemHasTransactions,
   updateItem,
@@ -24,6 +25,11 @@ import {
 } from "@/lib/services/errors";
 import { toItemDto } from "@/lib/services/mappers";
 import type { ItemCustomFields, TeamItemCustomFieldSchemaEntry } from "@/db/schema";
+
+export type ItemLookupCandidateDto = Pick<
+  ItemDto,
+  "id" | "name" | "sku" | "barcode" | "currentStock" | "locationName" | "photoData"
+>;
 
 function mapImageUploadError(error: unknown): string {
   const message = error instanceof Error ? error.message : "Image upload failed";
@@ -109,6 +115,51 @@ export async function listTeamItemsForUser(params: {
     return {
       ok: false,
       error: internalServiceError("An error occurred while fetching items"),
+    };
+  }
+}
+
+export async function lookupTeamItemsByCodeForUser(params: {
+  teamId: number;
+  code: string;
+  requestUserId: number | null;
+}): Promise<ServiceResult<{ items: ItemLookupCandidateDto[] }>> {
+  const normalizedCode = params.code.trim();
+  if (!normalizedCode) {
+    return {
+      ok: false,
+      error: validationServiceError("Code is required"),
+    };
+  }
+
+  const auth = await authorizeTeamAccess({
+    teamId: params.teamId,
+    requestUserId: params.requestUserId,
+  });
+  if (!auth.ok) {
+    return { ok: false, error: authServiceError(auth) };
+  }
+
+  try {
+    const foundItems = await getTeamItemsByBarcode(params.teamId, normalizedCode);
+    const items = foundItems.map((item) => {
+      const dto = toItemDto(item);
+      return {
+        id: dto.id,
+        name: dto.name,
+        sku: dto.sku,
+        barcode: dto.barcode,
+        currentStock: dto.currentStock,
+        locationName: dto.locationName ?? null,
+        photoData: dto.photoData ?? null,
+      };
+    });
+
+    return { ok: true, data: { items } };
+  } catch {
+    return {
+      ok: false,
+      error: internalServiceError("An error occurred while looking up items by code"),
     };
   }
 }

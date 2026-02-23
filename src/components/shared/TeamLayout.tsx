@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Menu,
   X,
+  ScanLine,
 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { fetchApiResult } from "@/lib/api-client";
@@ -52,6 +53,7 @@ export function TeamLayout({ team, activeMenuItem, children }: TeamLayoutProps) 
     { icon: RotateCcw, label: t.menu.adjust, href: `/teams/${teamId}/adjust`, key: "adjust" },
     { icon: Move, label: t.menu.move, href: `/teams/${teamId}/move`, key: "move" },
     { icon: FileText, label: t.menu.transactions, href: `/teams/${teamId}/transactions`, key: "transactions" },
+    { icon: ScanLine, label: t.menu.scan, href: `/teams/${teamId}/scan`, key: "scan" },
     { icon: BarChart3, label: t.menu.stockByLocation, href: `/teams/${teamId}/stock-by-location`, key: "stock-by-location" },
     { icon: Tag, label: t.menu.labels, href: `/teams/${teamId}/labels`, key: "labels" },
     { icon: FileBarChart, label: t.menu.reports, href: `/teams/${teamId}/reports`, key: "reports" },
