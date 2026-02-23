@@ -72,7 +72,13 @@ export function TransactionsList({ transactions, teamId, onDelete }: Transaction
               <th className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 hidden sm:table-cell">
                 {t.transactions.location}
               </th>
-              <th className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 hidden md:table-cell">
+              <th
+                suppressHydrationWarning
+                className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 hidden md:table-cell"
+              >
+                {t.transactions.notes || "Notas"}
+              </th>
+              <th className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 hidden lg:table-cell">
                 {t.transactions.user}
               </th>
               <th className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-right text-xs font-semibold text-gray-700">
@@ -104,7 +110,12 @@ export function TransactionsList({ transactions, teamId, onDelete }: Transaction
                 <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm text-gray-600 hidden sm:table-cell">
                   {formatLocation(transaction, t)}
                 </td>
-                <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm text-gray-600 hidden md:table-cell">
+                <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm text-gray-600 hidden md:table-cell max-w-[240px]">
+                  <span className="block truncate" title={transaction.notes || t.common.noNotes}>
+                    {transaction.notes || t.common.noNotes}
+                  </span>
+                </td>
+                <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm text-gray-600 hidden lg:table-cell">
                   {transaction.user?.email || "-"}
                 </td>
                 <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-right">

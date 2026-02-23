@@ -19,6 +19,7 @@ export async function listTeamTransactionsForUser(params: {
   teamId: number;
   requestUserId: number | null;
   searchQuery?: string;
+  skuQuery?: string;
 }): Promise<ServiceResult<{ transactions: TransactionDto[] }>> {
   const auth = await authorizeTeamAccess({
     teamId: params.teamId,
@@ -31,7 +32,8 @@ export async function listTeamTransactionsForUser(params: {
   try {
     const transactions = await getTeamStockTransactionsWithDetails(
       params.teamId,
-      params.searchQuery
+      params.searchQuery,
+      params.skuQuery
     );
     return { ok: true, data: { transactions: transactions.map(toTransactionDto) } };
   } catch (error: unknown) {

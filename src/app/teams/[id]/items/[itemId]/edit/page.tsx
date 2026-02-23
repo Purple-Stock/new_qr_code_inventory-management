@@ -39,6 +39,7 @@ export default async function EditItemPage({ params }: PageProps) {
         itemType: item.itemType ?? "",
         brand: item.brand ?? "",
         photoData: item.photoData ?? "",
+        customFields: item.customFields ?? {},
       }}
     />
   );

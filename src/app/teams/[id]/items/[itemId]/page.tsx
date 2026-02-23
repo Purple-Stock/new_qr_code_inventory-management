@@ -2,6 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { getItemDetailsData } from "@/lib/services/team-dashboard";
 import ItemDetailPageClient from "./_components/ItemDetailPageClient";
 
+export const dynamic = "force-dynamic";
+
 interface PageProps {
   params: Promise<{ id: string; itemId: string }>;
 }

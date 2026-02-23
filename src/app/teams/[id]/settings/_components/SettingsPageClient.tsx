@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, type ChangeEvent } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect, useMemo, type ChangeEvent } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   UserPlus,
   Trash2,
@@ -11,6 +11,7 @@ import {
   EyeOff,
   CreditCard,
   Info,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,10 +31,22 @@ import type {
   Team,
 } from "../_types";
 
+type TeamCustomFieldSchemaEntry = {
+  key: string;
+  label: string;
+  active: boolean;
+};
+
+type TeamCustomFieldSchemaRow = TeamCustomFieldSchemaEntry & {
+  isExisting: boolean;
+};
+
 interface SettingsPageClientProps {
   teamId: number;
   initialTeam: Team;
 }
+
+type SettingsTab = "users" | "password" | "billing" | "labels" | "customFields";
 
 function getBillingStatusLabel(status: string | null): string {
   if (!status) return "sem assinatura";
@@ -58,17 +71,13 @@ export default function SettingsPageClient({
   const [companyTeams, setCompanyTeams] = useState<CompanyTeam[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [canManageUsers, setCanManageUsers] = useState(false);
-  const [activeSettingsTab, setActiveSettingsTab] = useState<
-    "users" | "password" | "billing" | "labels"
-  >(
-    "users"
-  );
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isPasswordSaving, setIsPasswordSaving] = useState(false);
   const [isBillingLoading, setIsBillingLoading] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [isCustomSchemaSaving, setIsCustomSchemaSaving] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -79,10 +88,15 @@ export default function SettingsPageClient({
   const [showEditUserPassword, setShowEditUserPassword] = useState(false);
   const { language, t } = useTranslation();
   const { toast } = useToast();
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const billingRequired = searchParams.get("billing") === "required";
   const [billingStatus, setBillingStatus] = useState<string | null>(
     initialTeam.stripeSubscriptionStatus ?? null
+  );
+  const [itemCustomFieldSchema, setItemCustomFieldSchema] = useState<TeamCustomFieldSchemaRow[]>(
+    (initialTeam.itemCustomFieldSchema ?? []).map((entry) => ({ ...entry, isExisting: true }))
   );
   const [billingPeriodEnd, setBillingPeriodEnd] = useState<string | null>(
     initialTeam.stripeCurrentPeriodEnd ?? null
@@ -125,7 +139,42 @@ export default function SettingsPageClient({
     { target: "tour-settings-tutorial", title: t.settings.tourTutorialTitle, description: t.settings.tourTutorialDesc },
     { target: "tour-settings-tabs", title: t.settings.tourTabsTitle, description: t.settings.tourTabsDesc },
     { target: "tour-settings-panel", title: t.settings.tourPanelTitle, description: t.settings.tourPanelDesc },
+    { target: "tour-settings-custom-fields-tab", title: t.settings.tourCustomFieldsTitle, description: t.settings.tourCustomFieldsDesc },
   ];
+
+  const availableTabs = useMemo<SettingsTab[]>(() => {
+    if (billingRequired) {
+      return ["billing"];
+    }
+
+    const tabs: SettingsTab[] = ["password", "customFields", "labels", "billing"];
+    if (canManageUsers) {
+      tabs.unshift("users");
+    }
+    return tabs;
+  }, [billingRequired, canManageUsers]);
+
+  const resolveTab = (requestedTab: string | null): SettingsTab => {
+    if (requestedTab && availableTabs.includes(requestedTab as SettingsTab)) {
+      return requestedTab as SettingsTab;
+    }
+    if (availableTabs.includes("users")) {
+      return "users";
+    }
+    return availableTabs[0] ?? "billing";
+  };
+
+  const updateUrlTab = (tab: SettingsTab) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (params.get("tab") === tab) {
+      return;
+    }
+    params.set("tab", tab);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const tabFromUrl = searchParams.get("tab");
+  const activeSettingsTab = resolveTab(tabFromUrl);
 
   useEffect(() => {
     fetchManagedUsers().finally(() => setIsLoading(false));
@@ -173,16 +222,15 @@ export default function SettingsPageClient({
   }, [searchParams, teamId]);
 
   useEffect(() => {
-    if (!billingRequired && !canManageUsers && activeSettingsTab === "users") {
-      setActiveSettingsTab("password");
+    if (tabFromUrl !== activeSettingsTab) {
+      updateUrlTab(activeSettingsTab);
     }
-  }, [canManageUsers, activeSettingsTab, billingRequired]);
+  }, [tabFromUrl, activeSettingsTab, searchParams, pathname, router, availableTabs]);
 
-  useEffect(() => {
-    if (billingRequired) {
-      setActiveSettingsTab("billing");
-    }
-  }, [billingRequired]);
+  const handleTabChange = (tab: SettingsTab) => {
+    const nextTab = resolveTab(tab);
+    updateUrlTab(nextTab);
+  };
 
   const fetchManagedUsers = async () => {
     try {
@@ -615,18 +663,16 @@ export default function SettingsPageClient({
           labelCompanyInfo?: string | null;
           labelLogoUrl?: string | null;
         };
-      }>(
-        `/api/teams/${teamId}`,
-        {
-          method: "PUT",
-          body: {
-            ...(trimmedCompanyName ? { companyName: trimmedCompanyName } : {}),
-            ...(trimmedLabelInfo ? { labelCompanyInfo: trimmedLabelInfo } : { labelCompanyInfo: null }),
-            ...(trimmedLogoUrl ? { labelLogoUrl: trimmedLogoUrl } : { labelLogoUrl: null }),
-          },
-          fallbackError: t.settings.errorSaving,
-        }
-      );
+      }>(`/api/teams/${teamId}`, {
+        method: "PUT",
+        body: {
+          ...(trimmedCompanyName ? { companyName: trimmedCompanyName } : {}),
+          ...(trimmedLabelInfo ? { labelCompanyInfo: trimmedLabelInfo } : { labelCompanyInfo: null }),
+          ...(trimmedLogoUrl ? { labelLogoUrl: trimmedLogoUrl } : { labelLogoUrl: null }),
+        },
+        fallbackError: t.settings.errorSaving,
+      });
+
       if (!parsed.ok) {
         toast({
           title: t.common.error,
@@ -684,6 +730,93 @@ export default function SettingsPageClient({
     }
   };
 
+  const addCustomFieldSchemaRow = () => {
+    setItemCustomFieldSchema((prev) => [
+      ...prev,
+      { key: "", label: "", active: true, isExisting: false },
+    ]);
+  };
+
+  const updateCustomFieldSchemaRow = (
+    index: number,
+    patch: Partial<TeamCustomFieldSchemaRow>
+  ) => {
+    setItemCustomFieldSchema((prev) =>
+      prev.map((row, currentIndex) =>
+        currentIndex === index ? { ...row, ...patch } : row
+      )
+    );
+  };
+
+  const removeCustomFieldSchemaRow = (index: number) => {
+    setItemCustomFieldSchema((prev) => prev.filter((_, currentIndex) => currentIndex !== index));
+  };
+
+  const handleSaveCustomFieldSchema = async () => {
+    const normalized = itemCustomFieldSchema.map((entry) => ({
+      key: entry.key.trim(),
+      label: entry.label.trim(),
+      active: entry.active,
+    }));
+    if (normalized.some((entry) => !entry.key || !entry.label)) {
+      toast({
+        title: t.common.error,
+        description: t.settings.customFieldRequired,
+        variant: "destructive",
+      });
+      return;
+    }
+    const uniqueKeys = new Set(normalized.map((entry) => entry.key));
+    if (uniqueKeys.size !== normalized.length) {
+      toast({
+        title: t.common.error,
+        description: t.settings.customFieldDuplicate,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCustomSchemaSaving(true);
+    try {
+      const result = await fetchApiJsonResult<{
+        team: { itemCustomFieldSchema?: TeamCustomFieldSchemaEntry[] | null };
+      }>(`/api/teams/${teamId}`, {
+        method: "PUT",
+        body: {
+          itemCustomFieldSchema: normalized,
+        },
+        fallbackError: t.settings.errorSaving,
+      });
+      if (!result.ok) {
+        toast({
+          title: t.common.error,
+          description: t.settings.errorSaving,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setItemCustomFieldSchema(
+        (result.data.team.itemCustomFieldSchema ?? []).map((entry) => ({
+          ...entry,
+          isExisting: true,
+        }))
+      );
+      toast({
+        title: t.common.success,
+        description: t.settings.customFieldSchemaSaved,
+      });
+    } catch {
+      toast({
+        title: t.common.error,
+        description: t.settings.errorSaving,
+        variant: "destructive",
+      });
+    } finally {
+      setIsCustomSchemaSaving(false);
+    }
+  };
+
   return (
     <TeamLayout
       team={initialTeam}
@@ -716,7 +849,7 @@ export default function SettingsPageClient({
               {canManageUsers && !billingRequired ? (
                 <button
                   type="button"
-                  onClick={() => setActiveSettingsTab("users")}
+                  onClick={() => handleTabChange("users")}
                   className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                     activeSettingsTab === "users"
                       ? "border-purple-600 text-purple-700"
@@ -729,7 +862,7 @@ export default function SettingsPageClient({
               {!billingRequired ? (
               <button
                 type="button"
-                onClick={() => setActiveSettingsTab("password")}
+                onClick={() => handleTabChange("password")}
                 className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeSettingsTab === "password"
                     ? "border-purple-600 text-purple-700"
@@ -742,7 +875,21 @@ export default function SettingsPageClient({
               {!billingRequired ? (
               <button
                 type="button"
-                onClick={() => setActiveSettingsTab("labels")}
+                onClick={() => handleTabChange("customFields")}
+                data-tour="tour-settings-custom-fields-tab"
+                className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  activeSettingsTab === "customFields"
+                    ? "border-purple-600 text-purple-700"
+                    : "border-transparent text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                {t.settings.customFieldsTab}
+              </button>
+              ) : null}
+              {!billingRequired ? (
+              <button
+                type="button"
+                onClick={() => handleTabChange("labels")}
                 className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeSettingsTab === "labels"
                     ? "border-purple-600 text-purple-700"
@@ -754,7 +901,7 @@ export default function SettingsPageClient({
               ) : null}
               <button
                 type="button"
-                onClick={() => setActiveSettingsTab("billing")}
+                onClick={() => handleTabChange("billing")}
                 className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeSettingsTab === "billing"
                     ? "border-purple-600 text-purple-700"
@@ -884,6 +1031,109 @@ export default function SettingsPageClient({
                   >
                     {isLabelCompanyInfoSaving ? t.settings.modalSaving : t.settings.saveChanges}
                   </Button>
+                </div>
+              ) : null}
+
+              {activeSettingsTab === "customFields" ? (
+                <div
+                  data-tour="tour-settings-panel"
+                  className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6"
+                >
+                  <div
+                    className="rounded-lg border border-gray-200 p-4"
+                    data-tour="tour-settings-custom-fields"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-900">
+                          {t.settings.customFieldsTitle}
+                        </h3>
+                        <p className="text-xs text-gray-600">
+                          {t.settings.customFieldsSubtitle}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={addCustomFieldSchemaRow}
+                        className="border-gray-300"
+                        disabled={!canManageUsers}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        {t.settings.addCustomField}
+                      </Button>
+                    </div>
+
+                    {!canManageUsers ? (
+                      <p className="text-xs text-amber-700 mb-3">
+                        {t.settings.noPermissionManageCustomFields}
+                      </p>
+                    ) : null}
+
+                    <div className="space-y-2">
+                      {itemCustomFieldSchema.length === 0 ? (
+                        <p className="text-xs text-gray-500">{t.settings.noCustomFields}</p>
+                      ) : (
+                        itemCustomFieldSchema.map((field, index) => (
+                          <div
+                            key={`custom-field-row-${index}`}
+                            className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center"
+                          >
+                            <Input
+                              value={field.key}
+                              onChange={(e) =>
+                                updateCustomFieldSchemaRow(index, { key: e.target.value })
+                              }
+                              placeholder={t.settings.customFieldKeyPlaceholder}
+                              className="sm:col-span-4 h-9"
+                              disabled={field.isExisting || !canManageUsers}
+                            />
+                            <Input
+                              value={field.label}
+                              onChange={(e) =>
+                                updateCustomFieldSchemaRow(index, { label: e.target.value })
+                              }
+                              placeholder={t.settings.customFieldLabelPlaceholder}
+                              className="sm:col-span-5 h-9"
+                              disabled={!canManageUsers}
+                            />
+                            <label className="sm:col-span-2 flex items-center gap-2 text-xs text-gray-700">
+                              <input
+                                type="checkbox"
+                                checked={field.active}
+                                onChange={(e) =>
+                                  updateCustomFieldSchemaRow(index, { active: e.target.checked })
+                                }
+                                className="w-4 h-4"
+                                disabled={!canManageUsers}
+                              />
+                              {t.settings.customFieldActive}
+                            </label>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => removeCustomFieldSchemaRow(index)}
+                              className="sm:col-span-1 border-red-200 text-red-600 hover:bg-red-50 h-9"
+                              disabled={!canManageUsers}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="mt-3">
+                      <Button
+                        type="button"
+                        onClick={handleSaveCustomFieldSchema}
+                        disabled={isCustomSchemaSaving || !canManageUsers}
+                        className="bg-purple-600 hover:bg-purple-700 text-white"
+                      >
+                        {isCustomSchemaSaving ? t.settings.modalSaving : t.settings.saveCustomFieldSchema}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               ) : null}
 

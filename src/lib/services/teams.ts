@@ -34,6 +34,25 @@ const BLOCKED_TEAM_DELETE_SUBSCRIPTION_STATUSES = new Set([
   "canceling",
 ]);
 
+function validateNoInPlaceCustomFieldKeyRename(params: {
+  previousSchema: { key: string; label: string; active: boolean }[] | null | undefined;
+  nextSchema: { key: string; label: string; active: boolean }[] | null | undefined;
+}): string | null {
+  if (!params.previousSchema || !params.nextSchema) {
+    return null;
+  }
+
+  const previousKeys = new Set(params.previousSchema.map((entry) => entry.key).filter(Boolean));
+  const nextKeys = new Set(params.nextSchema.map((entry) => entry.key).filter(Boolean));
+  const removedKeys = [...previousKeys].filter((key) => !nextKeys.has(key));
+  const addedKeys = [...nextKeys].filter((key) => !previousKeys.has(key));
+
+  if (removedKeys.length > 0 && addedKeys.length > 0) {
+    return "Custom field key rename is not supported. Keep existing keys immutable and change only labels/active state.";
+  }
+  return null;
+}
+
 function mapImageUploadError(error: unknown): string {
   const message = error instanceof Error ? error.message : "Image upload failed";
   if (/accessdenied|forbidden|not authorized/i.test(message)) {
@@ -193,6 +212,16 @@ export async function updateTeamDetails(
 
   try {
     const { companyName: _companyName, ...teamOnlyFields } = parsed.data;
+    const customFieldSchemaError = validateNoInPlaceCustomFieldKeyRename({
+      previousSchema: existingTeam.itemCustomFieldSchema ?? null,
+      nextSchema: parsed.data.itemCustomFieldSchema ?? null,
+    });
+    if (customFieldSchemaError) {
+      return {
+        ok: false,
+        error: validationServiceError(customFieldSchemaError),
+      };
+    }
 
     let logoUrl = teamOnlyFields.labelLogoUrl;
     if (typeof logoUrl === "string" && logoUrl.startsWith("data:image/")) {

@@ -48,8 +48,8 @@ export default function ItemDetailPageClient({
 }: ItemDetailPageClientProps) {
   const { language, t } = useTranslation();
 
-  const [item] = useState<ItemWithLocation>(initialItem);
-  const [transactions] = useState<TransactionWithDetails[]>(initialTransactions);
+  const item = initialItem;
+  const transactions = initialTransactions;
   const [txFilter, setTxFilter] = useState<TransactionTypeFilter>("all");
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
 
@@ -70,6 +70,9 @@ export default function ItemDetailPageClient({
     txFilter === "all"
       ? transactions
       : transactions.filter((t) => t.transactionType === txFilter);
+  const customFieldEntries = Object.entries(item.customFields ?? {}).filter(
+    ([, value]) => Boolean(value)
+  );
 
   const filters: { value: TransactionTypeFilter; label: string }[] = [
     { value: "all", label: t.transactions.all },
@@ -80,6 +83,9 @@ export default function ItemDetailPageClient({
   ];
 
   const itemName = item.name || t.items.unnamedItem;
+  const itemPhotoSrc = item.photoData
+    ? `${item.photoData}${item.photoData.includes("?") ? "&" : "?"}v=${encodeURIComponent(item.updatedAt)}`
+    : null;
 
   return (
     <TeamLayout team={team} activeMenuItem="items">
@@ -222,27 +228,37 @@ export default function ItemDetailPageClient({
                   {item.locationName || t.reports.noLocation}
                 </p>
               </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase mb-0.5">
-                  {t.itemForm.photoLabel}
-                </p>
-                {item.photoData ? (
+              <div className="col-span-2">
+                <p className="text-xs text-gray-500 uppercase mb-1">{t.itemForm.tourPhotoTitle}</p>
+                {itemPhotoSrc ? (
                   <button
                     type="button"
                     onClick={() => setIsPhotoModalOpen(true)}
-                    className="inline-block rounded-md focus:outline-none focus:ring-2 focus:ring-[#6B21A8] focus:ring-offset-2"
-                    aria-label={`${t.itemForm.photoLabel} - ampliar`}
+                    className="rounded-lg overflow-hidden border border-gray-200 hover:border-purple-400 transition-colors"
                   >
                     <img
-                      src={item.photoData}
+                      src={itemPhotoSrc}
                       alt={itemName}
-                      className="h-20 w-20 object-cover rounded-md border border-gray-200 cursor-zoom-in"
+                      className="h-28 w-28 object-cover"
                     />
                   </button>
                 ) : (
                   <p className="font-medium text-gray-900">-</p>
                 )}
               </div>
+              {customFieldEntries.length > 0 ? (
+                <div className="col-span-2 pt-2">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t.itemForm.customFieldsTitle}
+                  </p>
+                </div>
+              ) : null}
+              {customFieldEntries.map(([key, value]) => (
+                <div key={key}>
+                  <p className="text-xs text-gray-500 uppercase mb-0.5">{key}</p>
+                  <p className="font-medium text-gray-900">{value}</p>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -328,13 +344,13 @@ export default function ItemDetailPageClient({
         </div>
       </div>
 
-      {isPhotoModalOpen && item.photoData ? (
+      {isPhotoModalOpen && itemPhotoSrc ? (
         <div
           className="fixed inset-0 z-50 bg-black/70 p-4 sm:p-6 flex items-center justify-center"
           onClick={() => setIsPhotoModalOpen(false)}
           role="dialog"
           aria-modal="true"
-          aria-label={t.itemForm.photoLabel}
+          aria-label={t.itemForm.tourPhotoTitle}
         >
           <button
             type="button"
@@ -345,7 +361,7 @@ export default function ItemDetailPageClient({
             <X className="h-6 w-6" />
           </button>
           <img
-            src={item.photoData}
+            src={itemPhotoSrc}
             alt={itemName}
             className="max-h-[90vh] max-w-[90vw] rounded-lg shadow-2xl object-contain"
             onClick={(event) => event.stopPropagation()}
