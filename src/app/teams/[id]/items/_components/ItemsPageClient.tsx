@@ -71,6 +71,10 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
     setFilteredItems((prev) => prev.filter((item) => item.id !== itemId));
   };
 
+  const handleItemDuplicated = (item: Item) => {
+    setFilteredItems((prev) => [item, ...prev]);
+  };
+
   return (
     <TeamLayout team={team} activeMenuItem="items">
       <div className="mb-4 sm:mb-6">
@@ -155,6 +159,7 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
             formatPrice={(p) => formatPrice(p, language)}
             t={t}
             onItemDeleted={handleItemDeleted}
+            onItemDuplicated={handleItemDuplicated}
           />
         </div>
       )}

@@ -17,6 +17,7 @@ interface ItemsListProps {
   formatPrice: (price: number | null) => string;
   t: any;
   onItemDeleted?: (itemId: number) => void;
+  onItemDuplicated?: (item: Item) => void;
 }
 
 interface ItemDetails extends Item {
@@ -29,7 +30,7 @@ function generateBarcode(): string {
   return Math.floor(1000000000000 + Math.random() * 9000000000000).toString();
 }
 
-export function ItemsList({ items, teamId, formatPrice, t, onItemDeleted }: ItemsListProps) {
+export function ItemsList({ items, teamId, formatPrice, t, onItemDeleted, onItemDuplicated }: ItemsListProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [copyingId, setCopyingId] = useState<number | null>(null);
@@ -59,7 +60,7 @@ export function ItemsList({ items, teamId, formatPrice, t, onItemDeleted }: Item
       const name = (full.name && String(full.name).trim())
         ? String(full.name).trim()
         : t.items.unnamedItemCopy;
-      const postResult = await fetchApiJsonResult(`/api/teams/${teamId}/items`, {
+      const postResult = await fetchApiJsonResult<{ item?: Item }>(`/api/teams/${teamId}/items`, {
         method: "POST",
         body: {
           name,
@@ -88,6 +89,9 @@ export function ItemsList({ items, teamId, formatPrice, t, onItemDeleted }: Item
         title: t.common.success,
         description: t.items.itemDuplicated,
       });
+      if (postResult.data.item) {
+        onItemDuplicated?.(postResult.data.item);
+      }
       router.refresh();
     } finally {
       setCopyingId(null);
