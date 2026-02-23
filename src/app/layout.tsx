@@ -75,7 +75,7 @@ export default function RootLayout({
         <Toaster />
         <Script id="sw-register" strategy="afterInteractive">
           {`
-            if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+            if (typeof window !== 'undefined' && 'serviceWorker' in navigator && '${process.env.NODE_ENV}' === 'production') {
               window.addEventListener('load', () => {
                 navigator.serviceWorker
                   .register('/sw.js')

@@ -48,8 +48,8 @@ export default function ItemDetailPageClient({
 }: ItemDetailPageClientProps) {
   const { language, t } = useTranslation();
 
-  const [item] = useState<ItemWithLocation>(initialItem);
-  const [transactions] = useState<TransactionWithDetails[]>(initialTransactions);
+  const item = initialItem;
+  const transactions = initialTransactions;
   const [txFilter, setTxFilter] = useState<TransactionTypeFilter>("all");
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
 
@@ -83,6 +83,9 @@ export default function ItemDetailPageClient({
   ];
 
   const itemName = item.name || t.items.unnamedItem;
+  const itemPhotoSrc = item.photoData
+    ? `${item.photoData}${item.photoData.includes("?") ? "&" : "?"}v=${encodeURIComponent(item.updatedAt)}`
+    : null;
 
   return (
     <TeamLayout team={team} activeMenuItem="items">
@@ -227,14 +230,14 @@ export default function ItemDetailPageClient({
               </div>
               <div className="col-span-2">
                 <p className="text-xs text-gray-500 uppercase mb-1">{t.itemForm.tourPhotoTitle}</p>
-                {item.photoData ? (
+                {itemPhotoSrc ? (
                   <button
                     type="button"
                     onClick={() => setIsPhotoModalOpen(true)}
                     className="rounded-lg overflow-hidden border border-gray-200 hover:border-purple-400 transition-colors"
                   >
                     <img
-                      src={item.photoData}
+                      src={itemPhotoSrc}
                       alt={itemName}
                       className="h-28 w-28 object-cover"
                     />
@@ -341,7 +344,7 @@ export default function ItemDetailPageClient({
         </div>
       </div>
 
-      {isPhotoModalOpen && item.photoData ? (
+      {isPhotoModalOpen && itemPhotoSrc ? (
         <div
           className="fixed inset-0 z-50 bg-black/70 p-4 sm:p-6 flex items-center justify-center"
           onClick={() => setIsPhotoModalOpen(false)}
@@ -358,7 +361,7 @@ export default function ItemDetailPageClient({
             <X className="h-6 w-6" />
           </button>
           <img
-            src={item.photoData}
+            src={itemPhotoSrc}
             alt={itemName}
             className="max-h-[90vh] max-w-[90vw] rounded-lg shadow-2xl object-contain"
             onClick={(event) => event.stopPropagation()}

@@ -209,6 +209,7 @@ export function ItemsList({ items, teamId, formatPrice, t, onItemDeleted, onItem
               <div className="flex-1 min-w-0">
                 <Link
                   href={`/teams/${teamId}/items/${item.id}`}
+                  prefetch={false}
                   className="text-base font-bold text-gray-900 mb-1 truncate block hover:text-[#6B21A8] hover:underline transition-colors"
                 >
                   {item.name || t.items.unnamedItem}
@@ -336,6 +337,7 @@ export function ItemsList({ items, teamId, formatPrice, t, onItemDeleted, onItem
                     <div>
                       <Link
                         href={`/teams/${teamId}/items/${item.id}`}
+                        prefetch={false}
                         className="text-sm font-bold text-gray-900 mb-1 block hover:text-[#6B21A8] hover:underline transition-colors"
                       >
                         {item.name || t.items.unnamedItem}

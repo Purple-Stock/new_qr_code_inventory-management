@@ -99,6 +99,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     revalidatePath(`/teams/${teamId}/items`);
+    revalidatePath(`/teams/${teamId}/items/${itemId}`);
+    revalidatePath(`/teams/${teamId}/items/${itemId}/edit`);
 
     return successResponse({ message: "Item updated successfully", item: result.data.item }, 200);
   } catch (error: unknown) {
@@ -143,6 +145,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return serviceErrorResponse(result.error);
     }
     revalidatePath(`/teams/${teamId}/items`);
+    revalidatePath(`/teams/${teamId}/items/${itemId}`);
+    revalidatePath(`/teams/${teamId}/items/${itemId}/edit`);
 
     return successResponse({ message: "Item deleted successfully" }, 200);
   } catch (error) {
