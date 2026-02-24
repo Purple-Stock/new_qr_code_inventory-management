@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Info, ScanLine, Search, X } from "lucide-react";
+import { Info, ScanLine, Search, X, CheckCircle2, AlertCircle, Layers3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast-simple";
@@ -25,6 +25,8 @@ interface ScanPageClientProps {
   team: TeamDto;
 }
 
+type ScanFeedbackState = "idle" | "loading" | "success" | "multiple" | "not_found" | "error";
+
 export function ScanPageClient({ team }: ScanPageClientProps) {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -34,6 +36,8 @@ export function ScanPageClient({ team }: ScanPageClientProps) {
   const [lastCode, setLastCode] = useState("");
   const [multipleResults, setMultipleResults] = useState<LookupItem[]>([]);
   const [summaryItem, setSummaryItem] = useState<LookupItem | null>(null);
+  const [scanState, setScanState] = useState<ScanFeedbackState>("idle");
+  const [scanMessage, setScanMessage] = useState("");
 
   const handleLookup = async (rawCode: string) => {
     const code = rawCode.trim();
@@ -49,6 +53,8 @@ export function ScanPageClient({ team }: ScanPageClientProps) {
     setIsLoading(true);
     setLastCode(code);
     setMultipleResults([]);
+    setScanState("loading");
+    setScanMessage(t.common.loading);
 
     try {
       const result = await fetchApiResult<{ items: LookupItem[] }>(
@@ -57,6 +63,8 @@ export function ScanPageClient({ team }: ScanPageClientProps) {
       );
 
       if (!result.ok) {
+        setScanState("error");
+        setScanMessage(result.error.error);
         toast({
           variant: "destructive",
           title: t.common.error,
@@ -67,6 +75,8 @@ export function ScanPageClient({ team }: ScanPageClientProps) {
 
       const items = result.data.items ?? [];
       if (items.length === 0) {
+        setScanState("not_found");
+        setScanMessage(`${t.scan.noItemWithCode} ${code}`);
         toast({
           variant: "destructive",
           title: t.scan.itemNotFound,
@@ -76,6 +86,8 @@ export function ScanPageClient({ team }: ScanPageClientProps) {
       }
 
       if (items.length === 1) {
+        setScanState("success");
+        setScanMessage(t.scan.openingSummary);
         toast({
           variant: "success",
           title: t.scan.itemFound,
@@ -86,6 +98,8 @@ export function ScanPageClient({ team }: ScanPageClientProps) {
       }
 
       setMultipleResults(items);
+      setScanState("multiple");
+      setScanMessage(`${t.scan.multipleItemsFound} (${items.length})`);
       toast({
         variant: "default",
         title: t.scan.multipleItemsFound,
@@ -93,6 +107,8 @@ export function ScanPageClient({ team }: ScanPageClientProps) {
       });
     } catch (error) {
       console.error("Error looking up item by code:", error);
+      setScanState("error");
+      setScanMessage(t.scan.lookupError);
       toast({
         variant: "destructive",
         title: t.common.error,
@@ -145,6 +161,64 @@ export function ScanPageClient({ team }: ScanPageClientProps) {
             {isLoading ? t.common.loading : t.scan.lookupButton}
           </Button>
         </div>
+
+        {scanState !== "idle" ? (
+          <div
+            className={`rounded-lg border px-3 py-2 sm:px-4 sm:py-3 transition-all ${
+              scanState === "loading"
+                ? "bg-blue-50 border-blue-200"
+                : scanState === "success"
+                  ? "bg-green-50 border-green-200"
+                  : scanState === "multiple"
+                    ? "bg-amber-50 border-amber-200"
+                    : scanState === "not_found" || scanState === "error"
+                      ? "bg-red-50 border-red-200"
+                      : "bg-gray-50 border-gray-200"
+            }`}
+          >
+            <div className="flex items-start gap-2 sm:gap-3">
+              {scanState === "loading" ? (
+                <div className="h-4 w-4 mt-0.5 rounded-full border-2 border-blue-300 border-t-blue-600 animate-spin" />
+              ) : null}
+              {scanState === "success" ? (
+                <CheckCircle2 className="h-4 w-4 mt-0.5 text-green-700" />
+              ) : null}
+              {scanState === "multiple" ? (
+                <Layers3 className="h-4 w-4 mt-0.5 text-amber-700" />
+              ) : null}
+              {scanState === "not_found" || scanState === "error" ? (
+                <AlertCircle className="h-4 w-4 mt-0.5 text-red-700" />
+              ) : null}
+              <div className="min-w-0">
+                <p
+                  className={`text-xs sm:text-sm font-semibold ${
+                    scanState === "loading"
+                      ? "text-blue-800"
+                      : scanState === "success"
+                        ? "text-green-800"
+                        : scanState === "multiple"
+                          ? "text-amber-800"
+                          : "text-red-800"
+                  }`}
+                >
+                  {scanState === "loading"
+                    ? t.common.loading
+                    : scanState === "success"
+                      ? t.scan.itemFound
+                      : scanState === "multiple"
+                        ? t.scan.multipleItemsFound
+                        : t.common.error}
+                </p>
+                <p className="text-xs sm:text-sm text-gray-700 break-words">{scanMessage}</p>
+                {lastCode ? (
+                  <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5">
+                    QR: <span className="font-mono">{lastCode}</span>
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
