@@ -130,7 +130,7 @@ export function ScanPageClient({ team }: ScanPageClientProps) {
         </div>
         <Button
           variant="outline"
-          className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto"
+          className="hidden sm:inline-flex border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto"
           onClick={() => setIsScannerOpen(true)}
         >
           <ScanLine className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -273,6 +273,15 @@ export function ScanPageClient({ team }: ScanPageClientProps) {
         onScan={handleLookup}
         onManualEnter={handleLookup}
       />
+
+      <Button
+        onClick={() => setIsScannerOpen(true)}
+        className="sm:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-40 h-20 w-20 rounded-full p-0 bg-[#6B21A8] hover:bg-[#7C3AED] shadow-xl border-2 border-white"
+        aria-label={t.scan.openScanner}
+        title={t.scan.openScanner}
+      >
+        <ScanLine className="h-8 w-8" />
+      </Button>
 
       {summaryItem ? (
         <div className="fixed inset-0 z-50 bg-black/50 p-4 flex items-center justify-center">
