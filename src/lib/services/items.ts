@@ -28,7 +28,14 @@ import type { ItemCustomFields, TeamItemCustomFieldSchemaEntry } from "@/db/sche
 
 export type ItemLookupCandidateDto = Pick<
   ItemDto,
-  "id" | "name" | "sku" | "barcode" | "currentStock" | "locationName" | "photoData"
+  | "id"
+  | "name"
+  | "sku"
+  | "barcode"
+  | "currentStock"
+  | "locationName"
+  | "photoData"
+  | "customFields"
 >;
 
 function mapImageUploadError(error: unknown): string {
@@ -152,6 +159,7 @@ export async function lookupTeamItemsByCodeForUser(params: {
         currentStock: dto.currentStock,
         locationName: dto.locationName ?? null,
         photoData: dto.photoData ?? null,
+        customFields: dto.customFields ?? null,
       };
     });
 

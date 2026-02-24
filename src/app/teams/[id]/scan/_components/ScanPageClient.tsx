@@ -19,6 +19,7 @@ type LookupItem = {
   currentStock: number | null;
   locationName: string | null;
   photoData: string | null;
+  customFields: Record<string, string> | null;
 };
 
 interface ScanPageClientProps {
@@ -44,6 +45,14 @@ export function ScanPageClient({
   const [summaryItem, setSummaryItem] = useState<LookupItem | null>(null);
   const [scanState, setScanState] = useState<ScanFeedbackState>("idle");
   const [scanMessage, setScanMessage] = useState("");
+  const summaryCustomFields = Object.entries(summaryItem?.customFields ?? {}).filter(
+    ([, value]) => Boolean(value)
+  );
+  const customFieldLabelByKey = new Map(
+    (team.itemCustomFieldSchema ?? [])
+      .filter((field) => field.active)
+      .map((field) => [field.key, field.label])
+  );
 
   const idsKey = (items: LookupItem[]) =>
     items
@@ -369,7 +378,7 @@ export function ScanPageClient({
 
       {summaryItem ? (
         <div className="fixed inset-0 z-50 bg-black/50 p-4 flex items-center justify-center">
-          <div className="w-full max-w-xl bg-white rounded-xl shadow-2xl overflow-hidden">
+          <div className="w-full max-w-xl max-h-[85vh] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col">
             <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900">{t.scan.summaryTitle}</h3>
               <Button
@@ -382,7 +391,7 @@ export function ScanPageClient({
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-[160px,1fr] gap-4">
+            <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-[160px,1fr] gap-4 overflow-y-auto">
               <div>
                 {summaryItem.photoData ? (
                   <img
@@ -417,6 +426,21 @@ export function ScanPageClient({
                   <p className="text-xs uppercase text-gray-500">{t.locations.title}</p>
                   <p className="font-medium text-gray-900">{summaryItem.locationName || t.reports.noLocation}</p>
                 </div>
+                {summaryCustomFields.length > 0 ? (
+                  <div>
+                    <p className="text-xs uppercase text-gray-500">{t.itemForm.customFieldsTitle}</p>
+                    <div className="mt-2 space-y-2">
+                      {summaryCustomFields.map(([key, value]) => (
+                        <div key={key} className="rounded-md border border-gray-200 px-3 py-2">
+                          <p className="text-[11px] uppercase tracking-wide text-gray-500">
+                            {customFieldLabelByKey.get(key) ?? key}
+                          </p>
+                          <p className="text-sm font-medium text-gray-900 break-words">{value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>

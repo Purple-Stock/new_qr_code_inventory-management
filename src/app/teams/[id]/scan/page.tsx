@@ -35,6 +35,7 @@ export default async function ScanPage({ params }: PageProps) {
     currentStock: number | null;
     locationName: string | null;
     photoData: string | null;
+    customFields: Record<string, string> | null;
   }> = [];
 
   if (!preferServerLookup) {
@@ -47,6 +48,7 @@ export default async function ScanPage({ params }: PageProps) {
       currentStock: item.currentStock,
       locationName: item.locationName ?? null,
       photoData: item.photoData ?? null,
+      customFields: item.customFields ?? null,
     }));
   }
 
