@@ -1,6 +1,6 @@
 import { sqlite } from "@/db/client";
 import { items, locations, stockTransactions } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { Item } from "@/db/schema";
 
 /**
@@ -15,6 +15,28 @@ export async function getTeamItems(teamId: number): Promise<(Item & { locationNa
     .from(items)
     .leftJoin(locations, eq(items.locationId, locations.id))
     .where(eq(items.teamId, teamId));
+
+  return teamItems.map((row) => ({
+    ...row.item,
+    locationName: row.locationName || null,
+  }));
+}
+
+/**
+ * Get team items by barcode (exact match)
+ */
+export async function getTeamItemsByBarcode(
+  teamId: number,
+  barcode: string
+): Promise<(Item & { locationName?: string | null })[]> {
+  const teamItems = await sqlite
+    .select({
+      item: items,
+      locationName: locations.name,
+    })
+    .from(items)
+    .leftJoin(locations, eq(items.locationId, locations.id))
+    .where(and(eq(items.teamId, teamId), eq(items.barcode, barcode)));
 
   return teamItems.map((row) => ({
     ...row.item,
