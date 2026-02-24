@@ -23,11 +23,17 @@ type LookupItem = {
 
 interface ScanPageClientProps {
   team: TeamDto;
+  initialItems: LookupItem[];
+  preferServerLookup: boolean;
 }
 
 type ScanFeedbackState = "idle" | "loading" | "success" | "multiple" | "not_found" | "error";
 
-export function ScanPageClient({ team }: ScanPageClientProps) {
+export function ScanPageClient({
+  team,
+  initialItems,
+  preferServerLookup,
+}: ScanPageClientProps) {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -38,6 +44,102 @@ export function ScanPageClient({ team }: ScanPageClientProps) {
   const [summaryItem, setSummaryItem] = useState<LookupItem | null>(null);
   const [scanState, setScanState] = useState<ScanFeedbackState>("idle");
   const [scanMessage, setScanMessage] = useState("");
+
+  const idsKey = (items: LookupItem[]) =>
+    items
+      .map((item) => item.id)
+      .sort((a, b) => a - b)
+      .join(",");
+
+  const applyLookupResult = (
+    code: string,
+    items: LookupItem[],
+    options: { emitToast: boolean }
+  ) => {
+    if (items.length === 0) {
+      setScanState("not_found");
+      setScanMessage(`${t.scan.noItemWithCode} ${code}`);
+      if (options.emitToast) {
+        toast({
+          variant: "destructive",
+          title: t.scan.itemNotFound,
+          description: `${t.scan.noItemWithCode} ${code}`,
+        });
+      }
+      return;
+    }
+
+    if (items.length === 1) {
+      setScanState("success");
+      setScanMessage(t.scan.openingSummary);
+      if (options.emitToast) {
+        toast({
+          variant: "success",
+          title: t.scan.itemFound,
+          description: t.scan.openingSummary,
+        });
+      }
+      setSummaryItem(items[0]);
+      return;
+    }
+
+    setMultipleResults(items);
+    setScanState("multiple");
+    setScanMessage(`${t.scan.multipleItemsFound} (${items.length})`);
+    if (options.emitToast) {
+      toast({
+        variant: "default",
+        title: t.scan.multipleItemsFound,
+        description: t.scan.selectItemFromList,
+      });
+    }
+  };
+
+  const lookupFromServer = async (
+    code: string,
+    options: { emitToast: boolean; showLoading: boolean }
+  ): Promise<LookupItem[] | null> => {
+    if (options.showLoading) {
+      setIsLoading(true);
+      setScanState("loading");
+      setScanMessage(t.common.loading);
+    }
+    try {
+      const result = await fetchApiResult<{ items: LookupItem[] }>(
+        `/api/teams/${team.id}/items/lookup?code=${encodeURIComponent(code)}`,
+        { fallbackError: t.scan.lookupError }
+      );
+      if (!result.ok) {
+        setScanState("error");
+        setScanMessage(result.error.error);
+        if (options.emitToast) {
+          toast({
+            variant: "destructive",
+            title: t.common.error,
+            description: result.error.error,
+          });
+        }
+        return null;
+      }
+      return result.data.items ?? [];
+    } catch (error) {
+      console.error("Error looking up item by code:", error);
+      setScanState("error");
+      setScanMessage(t.scan.lookupError);
+      if (options.emitToast) {
+        toast({
+          variant: "destructive",
+          title: t.common.error,
+          description: t.scan.lookupError,
+        });
+      }
+      return null;
+    } finally {
+      if (options.showLoading) {
+        setIsLoading(false);
+      }
+    }
+  };
 
   const handleLookup = async (rawCode: string) => {
     const code = rawCode.trim();
@@ -50,72 +152,43 @@ export function ScanPageClient({ team }: ScanPageClientProps) {
       return;
     }
 
-    setIsLoading(true);
     setLastCode(code);
     setMultipleResults([]);
-    setScanState("loading");
-    setScanMessage(t.common.loading);
-
-    try {
-      const result = await fetchApiResult<{ items: LookupItem[] }>(
-        `/api/teams/${team.id}/items/lookup?code=${encodeURIComponent(code)}`,
-        { fallbackError: t.scan.lookupError }
-      );
-
-      if (!result.ok) {
-        setScanState("error");
-        setScanMessage(result.error.error);
-        toast({
-          variant: "destructive",
-          title: t.common.error,
-          description: result.error.error,
-        });
-        return;
-      }
-
-      const items = result.data.items ?? [];
-      if (items.length === 0) {
-        setScanState("not_found");
-        setScanMessage(`${t.scan.noItemWithCode} ${code}`);
-        toast({
-          variant: "destructive",
-          title: t.scan.itemNotFound,
-          description: `${t.scan.noItemWithCode} ${code}`,
-        });
-        return;
-      }
-
-      if (items.length === 1) {
-        setScanState("success");
-        setScanMessage(t.scan.openingSummary);
-        toast({
-          variant: "success",
-          title: t.scan.itemFound,
-          description: t.scan.openingSummary,
-        });
-        setSummaryItem(items[0]);
-        return;
-      }
-
-      setMultipleResults(items);
-      setScanState("multiple");
-      setScanMessage(`${t.scan.multipleItemsFound} (${items.length})`);
-      toast({
-        variant: "default",
-        title: t.scan.multipleItemsFound,
-        description: t.scan.selectItemFromList,
+    if (preferServerLookup) {
+      const serverItems = await lookupFromServer(code, {
+        emitToast: true,
+        showLoading: true,
       });
-    } catch (error) {
-      console.error("Error looking up item by code:", error);
-      setScanState("error");
-      setScanMessage(t.scan.lookupError);
-      toast({
-        variant: "destructive",
-        title: t.common.error,
-        description: t.scan.lookupError,
-      });
-    } finally {
-      setIsLoading(false);
+      if (serverItems) {
+        applyLookupResult(code, serverItems, { emitToast: true });
+      }
+      return;
+    }
+
+    const localItems = initialItems.filter((item) => item.barcode === code);
+    if (localItems.length > 0) {
+      applyLookupResult(code, localItems, { emitToast: true });
+
+      // Validate in background to keep UI fast and still consistent with server state.
+      void (async () => {
+        const serverItems = await lookupFromServer(code, {
+          emitToast: false,
+          showLoading: false,
+        });
+        if (!serverItems) return;
+        if (idsKey(serverItems) !== idsKey(localItems)) {
+          applyLookupResult(code, serverItems, { emitToast: false });
+        }
+      })();
+      return;
+    }
+
+    const serverItems = await lookupFromServer(code, {
+      emitToast: true,
+      showLoading: true,
+    });
+    if (serverItems) {
+      applyLookupResult(code, serverItems, { emitToast: true });
     }
   };
 
@@ -147,14 +220,14 @@ export function ScanPageClient({ team }: ScanPageClientProps) {
             placeholder={t.scan.codePlaceholder}
             className="h-11"
             onKeyDown={(event) => {
-              if (event.key === "Enter" && !isLoading) {
-                handleLookup(manualCode);
+              if (event.key === "Enter") {
+                void handleLookup(manualCode);
               }
             }}
           />
           <Button
             className="h-11 bg-[#6B21A8] hover:bg-[#7C3AED]"
-            onClick={() => handleLookup(manualCode)}
+            onClick={() => void handleLookup(manualCode)}
             disabled={isLoading}
           >
             <Search className="h-4 w-4 mr-2" />
