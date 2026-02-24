@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { getTeamBasicData } from "@/lib/services/team-dashboard";
+import { getTeamBasicData, getTeamItemsData } from "@/lib/services/team-dashboard";
 import { ScanPageClient } from "./_components/ScanPageClient";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +9,7 @@ interface PageProps {
 }
 
 export default async function ScanPage({ params }: PageProps) {
+  const LOCAL_LOOKUP_ITEM_LIMIT = 1500;
   const { id } = await params;
   const teamId = Number.parseInt(id, 10);
 
@@ -25,5 +26,35 @@ export default async function ScanPage({ params }: PageProps) {
     notFound();
   }
 
-  return <ScanPageClient team={team} />;
+  const preferServerLookup = (team.itemCount ?? 0) > LOCAL_LOOKUP_ITEM_LIMIT;
+  let lookupItems: Array<{
+    id: number;
+    name: string | null;
+    sku: string | null;
+    barcode: string | null;
+    currentStock: number | null;
+    locationName: string | null;
+    photoData: string | null;
+  }> = [];
+
+  if (!preferServerLookup) {
+    const { items } = await getTeamItemsData(teamId);
+    lookupItems = items.map((item) => ({
+      id: item.id,
+      name: item.name,
+      sku: item.sku,
+      barcode: item.barcode,
+      currentStock: item.currentStock,
+      locationName: item.locationName ?? null,
+      photoData: item.photoData ?? null,
+    }));
+  }
+
+  return (
+    <ScanPageClient
+      team={team}
+      initialItems={lookupItems}
+      preferServerLookup={preferServerLookup}
+    />
+  );
 }
