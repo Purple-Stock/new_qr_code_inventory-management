@@ -100,6 +100,8 @@ export function ScanPageClient({
     options: { emitToast: boolean; showLoading: boolean }
   ): Promise<LookupItem[] | null> => {
     if (options.showLoading) {
+      // When server lookup starts, close scanner and show fullscreen loader.
+      setIsScannerOpen(false);
       setIsLoading(true);
       setScanState("loading");
       setScanMessage(t.common.loading);
@@ -346,6 +348,15 @@ export function ScanPageClient({
         onScan={handleLookup}
         onManualEnter={handleLookup}
       />
+
+      {isLoading ? (
+        <div className="fixed inset-0 z-50 bg-white/85 backdrop-blur-[1px] flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-10 w-10 rounded-full border-4 border-[#C4B5FD] border-t-[#6B21A8] animate-spin" />
+            <p className="text-sm font-medium text-gray-700">{t.common.loading}</p>
+          </div>
+        </div>
+      ) : null}
 
       <Button
         onClick={() => setIsScannerOpen(true)}
