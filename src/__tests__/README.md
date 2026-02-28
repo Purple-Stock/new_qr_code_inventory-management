@@ -1,11 +1,11 @@
 # Testes
 
-Este diretório contém os testes do projeto usando Jest.
+Este diretório contém os testes do projeto usando Vitest.
 
 ## Configuração
 
 Os testes estão configurados para usar:
-- **Jest** como framework de testes
+- **Vitest** como framework de testes
 - **SQLite em memória** para o banco de dados de teste
 - **Next.js** com suporte a API routes
 
@@ -13,7 +13,7 @@ Os testes estão configurados para usar:
 
 ```bash
 # Executar todos os testes
-npm test
+npm run test
 
 # Executar testes em modo watch
 npm run test:watch
@@ -25,7 +25,10 @@ npm run test:coverage
 ## Estrutura
 
 - `__tests__/api/` - Testes das API routes
+- `__tests__/app/` - Testes de regras e comportamentos da camada de UI
+- `__tests__/components/` - Testes de componentes compartilhados
 - `__tests__/helpers/` - Helpers e utilitários para testes
+- `__tests__/lib/` - Testes de utilitários, serviços e contratos
 
 ## Banco de Dados de Teste
 

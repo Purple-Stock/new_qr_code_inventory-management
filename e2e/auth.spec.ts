@@ -17,7 +17,6 @@ test.describe("Authentication", () => {
     await page.locator('input[type="password"]').fill("wrongpassword");
     await page.locator('button[type="submit"]').click();
     
-    await page.waitForTimeout(2000);
     await expect(page.getByRole("alert").filter({ hasText: /inválidos|invalid/i })).toBeVisible();
   });
 

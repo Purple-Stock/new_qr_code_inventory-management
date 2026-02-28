@@ -13,8 +13,20 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
-      include: ["src/app/**/*.ts", "src/app/**/*.tsx", "src/lib/**/*.ts"],
+      include: [
+        "src/app/**/*.ts",
+        "src/app/**/*.tsx",
+        "src/lib/**/*.ts",
+        "src/components/**/*.ts",
+        "src/components/**/*.tsx",
+      ],
       exclude: ["**/*.d.ts", "**/node_modules/**"],
+      thresholds: {
+        statements: 39,
+        branches: 35,
+        functions: 31,
+        lines: 39,
+      },
     },
   },
   resolve: {
