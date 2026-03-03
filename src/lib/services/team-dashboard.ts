@@ -228,7 +228,10 @@ export async function getTeamStockOperationData(
   }
 
   const destinationTeams = team.companyId
-    ? (await getCompanyTeams(team.companyId)).filter((companyTeam) => companyTeam.id !== teamId)
+    ? (await getCompanyTeams(team.companyId)).filter(
+        (companyTeam) =>
+          companyTeam.id !== teamId && hasActiveTeamSubscription(companyTeam)
+      )
     : [];
 
   return {

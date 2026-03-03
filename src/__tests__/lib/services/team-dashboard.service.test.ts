@@ -3,12 +3,14 @@ import {
   getItemDetailsData,
   getTeamLocationsData,
   getTeamReportsData,
+  getTeamStockOperationData,
   getTeamTransactionsData,
 } from "@/lib/services/team-dashboard";
 import { getTeamWithStats } from "@/lib/db/teams";
 import { getTeamItems, getItemByIdWithLocation } from "@/lib/db/items";
 import { getLocationById, getTeamLocations } from "@/lib/db/locations";
 import { getTeamReportStats } from "@/lib/db/reports";
+import { getCompanyTeams } from "@/lib/db/team-members";
 import {
   getItemStockTransactionsWithDetails,
   getTeamStockTransactionsWithDetails,
@@ -28,6 +30,9 @@ vi.mock("@/lib/db/locations", () => ({
 vi.mock("@/lib/db/reports", () => ({
   getTeamReportStats: vi.fn(),
 }));
+vi.mock("@/lib/db/team-members", () => ({
+  getCompanyTeams: vi.fn(),
+}));
 vi.mock("@/lib/db/stock-transactions", () => ({
   getItemStockTransactionsWithDetails: vi.fn(),
   getTeamStockTransactionsWithDetails: vi.fn(),
@@ -41,6 +46,7 @@ const mockGetItemByIdWithLocation = getItemByIdWithLocation as vi.MockedFunction
 const mockGetLocationById = getLocationById as vi.MockedFunction<typeof getLocationById>;
 const mockGetTeamLocations = getTeamLocations as vi.MockedFunction<typeof getTeamLocations>;
 const mockGetTeamReportStats = getTeamReportStats as vi.MockedFunction<typeof getTeamReportStats>;
+const mockGetCompanyTeams = getCompanyTeams as vi.MockedFunction<typeof getCompanyTeams>;
 const mockGetItemTransactions =
   getItemStockTransactionsWithDetails as vi.MockedFunction<
     typeof getItemStockTransactionsWithDetails
@@ -70,6 +76,7 @@ describe("team-dashboard service", () => {
       createdAt: new Date("2026-01-01T00:00:00.000Z"),
       updatedAt: new Date("2026-01-01T00:00:00.000Z"),
     } as never);
+    mockGetCompanyTeams.mockResolvedValue([]);
   });
 
   it("returns team report data with dto mapping", async () => {
@@ -192,5 +199,45 @@ describe("team-dashboard service", () => {
 
     expect(result.subscriptionRequired).toBe(false);
     expect(result.team?.id).toBe(1);
+  });
+
+  it("returns only active destination teams for stock operation data", async () => {
+    mockGetTeamWithStats.mockResolvedValue({
+      id: 1,
+      name: "Source",
+      notes: null,
+      userId: 7,
+      companyId: 77,
+      stripeSubscriptionStatus: "active",
+      manualTrialEndsAt: null,
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    } as never);
+    mockGetTeamLocations.mockResolvedValue([]);
+    mockGetTeamItems.mockResolvedValue([]);
+    mockGetCompanyTeams.mockResolvedValue([
+      {
+        id: 1,
+        name: "Source",
+        stripeSubscriptionStatus: "active",
+        manualTrialEndsAt: null,
+      },
+      {
+        id: 2,
+        name: "Inactive Team",
+        stripeSubscriptionStatus: "canceled",
+        manualTrialEndsAt: null,
+      },
+      {
+        id: 3,
+        name: "Trial Team",
+        stripeSubscriptionStatus: null,
+        manualTrialEndsAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      },
+    ] as never);
+
+    const result = await getTeamStockOperationData(1);
+
+    expect(result.destinationTeams).toEqual([{ id: 3, name: "Trial Team" }]);
   });
 });
