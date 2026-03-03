@@ -16,6 +16,8 @@ describe("transactions UI utils", () => {
       move: "Move",
       count: "Count",
       defaultLocation: "Default",
+      toTeamPrefix: "To team",
+      fromTeamPrefix: "From team",
     },
   };
 
@@ -117,6 +119,30 @@ describe("transactions UI utils", () => {
           t
         )
       ).toBe("Default");
+    });
+
+    it("formats inter-team transfer context for stock out/in", () => {
+      expect(
+        formatLocation(
+          {
+            transactionType: "stock_out",
+            destinationKind: "team",
+            counterpartyTeam: { name: "DPS" },
+          },
+          t
+        )
+      ).toBe("To team DPS");
+
+      expect(
+        formatLocation(
+          {
+            transactionType: "stock_in",
+            destinationKind: "team",
+            counterpartyTeam: { name: "Direct" },
+          },
+          t
+        )
+      ).toBe("From team Direct");
     });
   });
 

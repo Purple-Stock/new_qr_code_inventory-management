@@ -154,6 +154,11 @@ export function toStockTransactionDto(transaction: StockTransaction): StockTrans
     userId: transaction.userId,
     sourceLocationId: transaction.sourceLocationId,
     destinationLocationId: transaction.destinationLocationId,
+    destinationKind: transaction.destinationKind,
+    destinationLabel: transaction.destinationLabel,
+    counterpartyTeamId: transaction.counterpartyTeamId,
+    linkedTransactionId: transaction.linkedTransactionId,
+    transferGroupId: transaction.transferGroupId,
     createdAt: toIsoString(transaction.createdAt),
     updatedAt: toIsoString(transaction.updatedAt),
   };
@@ -170,6 +175,11 @@ export function toTransactionDto(transaction: TransactionWithDetails): Transacti
     userId: transaction.userId,
     sourceLocationId: transaction.sourceLocationId,
     destinationLocationId: transaction.destinationLocationId,
+    destinationKind: transaction.destinationKind,
+    destinationLabel: transaction.destinationLabel,
+    counterpartyTeamId: transaction.counterpartyTeamId,
+    linkedTransactionId: transaction.linkedTransactionId,
+    transferGroupId: transaction.transferGroupId,
     createdAt: toIsoString(transaction.createdAt),
     updatedAt: toIsoString(transaction.updatedAt),
     item: transaction.item
@@ -196,6 +206,12 @@ export function toTransactionDto(transaction: TransactionWithDetails): Transacti
       ? {
           id: transaction.destinationLocation.id,
           name: transaction.destinationLocation.name,
+        }
+      : null,
+    counterpartyTeam: transaction.counterpartyTeam
+      ? {
+          id: transaction.counterpartyTeam.id,
+          name: transaction.counterpartyTeam.name,
         }
       : null,
   };

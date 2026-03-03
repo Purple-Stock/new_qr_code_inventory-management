@@ -514,6 +514,9 @@ export function parseStockTransactionPayload(body: unknown): ValidationResult<{
   locationId: number | null;
   sourceLocationId: number | null;
   destinationLocationId: number | null;
+  destinationKind: "location" | "team" | "external" | null;
+  destinationTeamId: number | null;
+  destinationLabel: string | null;
 }> {
   if (!isRecord(body)) {
     return { ok: false, error: "Invalid request payload" };
@@ -554,8 +557,36 @@ export function parseStockTransactionPayload(body: unknown): ValidationResult<{
   const locationIdParsed = parseOptionalInteger(body.locationId);
   const sourceLocationIdParsed = parseOptionalInteger(body.sourceLocationId);
   const destinationLocationIdParsed = parseOptionalInteger(body.destinationLocationId);
+  const destinationTeamIdParsed = parseOptionalInteger(body.destinationTeamId);
   if (!locationIdParsed.ok || !sourceLocationIdParsed.ok || !destinationLocationIdParsed.ok) {
     return { ok: false, error: "Location IDs must be integers" };
+  }
+  if (!destinationTeamIdParsed.ok) {
+    return { ok: false, error: "Destination team ID must be an integer" };
+  }
+
+  let destinationKind: "location" | "team" | "external" | null = null;
+  if (body.destinationKind !== undefined && body.destinationKind !== null && body.destinationKind !== "") {
+    if (
+      body.destinationKind !== "location" &&
+      body.destinationKind !== "team" &&
+      body.destinationKind !== "external"
+    ) {
+      return { ok: false, error: "Invalid destination kind" };
+    }
+    destinationKind = body.destinationKind;
+  }
+
+  const destinationLabelParsed = parseOptionalTrimmedString(body.destinationLabel);
+  if (!destinationLabelParsed.ok) {
+    return { ok: false, error: "Destination label must be a string" };
+  }
+
+  if (destinationKind === "team" && !destinationTeamIdParsed.data) {
+    return { ok: false, error: "Destination team is required for team transfer" };
+  }
+  if (destinationKind === "external" && !(destinationLabelParsed.data ?? null)) {
+    return { ok: false, error: "Destination label is required for external transfer" };
   }
 
   return {
@@ -568,6 +599,9 @@ export function parseStockTransactionPayload(body: unknown): ValidationResult<{
       locationId: locationIdParsed.data ?? null,
       sourceLocationId: sourceLocationIdParsed.data ?? null,
       destinationLocationId: destinationLocationIdParsed.data ?? null,
+      destinationKind,
+      destinationTeamId: destinationTeamIdParsed.data ?? null,
+      destinationLabel: destinationLabelParsed.data ?? null,
     },
   };
 }

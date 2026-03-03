@@ -85,6 +85,41 @@ describe("/api/teams/[id]/stock-transactions route", () => {
     expect(mockedGetUserIdFromRequest).toHaveBeenCalledWith(request);
   });
 
+  it("forwards inter-team transfer payload fields to service", async () => {
+    mockedCreateTeamStockTransaction.mockResolvedValue({
+      ok: true,
+      data: {
+        transaction: { id: 101, itemId: 4, quantity: 2 },
+      },
+    } as any);
+
+    const payload = {
+      transactionType: "move",
+      itemId: 4,
+      quantity: 2,
+      sourceLocationId: 1,
+      destinationKind: "team",
+      destinationTeamId: 55,
+      notes: "Transferência para outro time",
+    };
+
+    const response = await POST(
+      new NextRequest("http://localhost:3000/api/teams/12/stock-transactions", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+      { params: Promise.resolve({ id: "12" }) }
+    );
+
+    expect(response.status).toBe(201);
+    expect(mockedCreateTeamStockTransaction).toHaveBeenCalledWith({
+      teamId: 12,
+      requestUserId: 31,
+      payload,
+    });
+  });
+
   it("maps service errors", async () => {
     mockedCreateTeamStockTransaction.mockResolvedValue({
       ok: false,

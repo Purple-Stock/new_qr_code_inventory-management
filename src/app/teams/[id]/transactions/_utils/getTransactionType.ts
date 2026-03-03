@@ -36,6 +36,16 @@ export function formatQuantity(quantity: number, type: string): string {
 }
 
 export function formatLocation(transaction: any, t: any): string {
+  if (transaction.destinationKind === "team" && transaction.counterpartyTeam?.name) {
+    const teamName = transaction.counterpartyTeam.name;
+    if (transaction.transactionType === "stock_out") {
+      return `${t.transactions.toTeamPrefix || "To team"} ${teamName}`;
+    }
+    if (transaction.transactionType === "stock_in") {
+      return `${t.transactions.fromTeamPrefix || "From team"} ${teamName}`;
+    }
+  }
+
   if (transaction.transactionType === "move") {
     const source = transaction.sourceLocation?.name || t.transactions.defaultLocation;
     const dest = transaction.destinationLocation?.name || t.transactions.defaultLocation;

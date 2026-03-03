@@ -15,7 +15,8 @@ export default async function MovePage({ params }: PageProps) {
   }
 
   // Fetch data on the server
-  const { team, locations, items, subscriptionRequired } = await getTeamStockOperationData(teamId);
+  const { team, locations, items, destinationTeams, subscriptionRequired } =
+    await getTeamStockOperationData(teamId);
 
   if (subscriptionRequired) {
     redirect(`/teams/${teamId}/settings?billing=required`);
@@ -25,5 +26,12 @@ export default async function MovePage({ params }: PageProps) {
     notFound();
   }
 
-  return <MovePageClient items={items} locations={locations} team={team} />;
+  return (
+    <MovePageClient
+      items={items}
+      locations={locations}
+      destinationTeams={destinationTeams}
+      team={team}
+    />
+  );
 }
