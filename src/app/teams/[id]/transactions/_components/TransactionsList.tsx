@@ -74,7 +74,7 @@ export function TransactionsList({ transactions, teamId, onDelete }: Transaction
               </th>
               <th
                 suppressHydrationWarning
-                className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 hidden md:table-cell"
+                className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700"
               >
                 {t.transactions.notes || "Notas"}
               </th>
@@ -110,7 +110,7 @@ export function TransactionsList({ transactions, teamId, onDelete }: Transaction
                 <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm text-gray-600 hidden sm:table-cell">
                   {formatLocation(transaction, t)}
                 </td>
-                <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm text-gray-600 hidden md:table-cell max-w-[240px]">
+                <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm text-gray-600 max-w-[240px]">
                   <span className="block truncate" title={transaction.notes || t.common.noNotes}>
                     {transaction.notes || t.common.noNotes}
                   </span>
