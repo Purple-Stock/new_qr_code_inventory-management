@@ -5,11 +5,23 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MovePageClient } from "@/app/teams/[id]/move/_components/MovePageClient";
 import { createMoveAction } from "@/app/teams/[id]/move/_actions/createStockTransaction";
+import { fetchApiJsonResult } from "@/lib/api-client";
 
 const toastSpy = vi.fn();
+const refreshSpy = vi.fn();
 
 vi.mock("@/app/teams/[id]/move/_actions/createStockTransaction", () => ({
   createMoveAction: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    refresh: refreshSpy,
+  }),
+}));
+
+vi.mock("@/lib/api-client", () => ({
+  fetchApiJsonResult: vi.fn(),
 }));
 
 vi.mock("@/components/ui/use-toast-simple", () => ({
@@ -85,6 +97,10 @@ vi.mock("@/lib/i18n", () => ({
         selectDestinationTeamFirst: "Select destination team",
         noActiveDestinationTeams: "No destination teams with active subscription available for transfer",
         manageTeamsCta: "Activate team for transfer",
+        syncBillingCta: "Sync subscription",
+        syncBillingInProgress: "Syncing...",
+        syncBillingSuccess: "Subscription status synced successfully",
+        syncBillingError: "Could not sync subscription status",
         quantityRequired: "Quantity required",
         quantityExceedsStock: "Quantity exceeds stock",
         partialMoveError: "Partial move error",
@@ -124,11 +140,16 @@ vi.mock("@/lib/i18n", () => ({
 }));
 
 const mockedCreateMoveAction = vi.mocked(createMoveAction);
+const mockedFetchApiJsonResult = vi.mocked(fetchApiJsonResult);
 
 describe("MovePageClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(window, "confirm").mockReturnValue(true);
+    mockedFetchApiJsonResult.mockResolvedValue({
+      ok: true,
+      data: { synced: true, subscriptionStatus: "active" },
+    } as any);
   });
 
   it("renders both tabs", () => {
@@ -190,6 +211,29 @@ describe("MovePageClient", () => {
     expect(
       screen.getByText("No destination teams with active subscription available for transfer")
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sync subscription" })).toBeInTheDocument();
+  });
+
+  it("syncs billing status and refreshes page when destination teams are unavailable", async () => {
+    render(
+      <MovePageClient
+        team={{ id: 1, name: "Direct" }}
+        locations={[{ id: 10, name: "A" }]}
+        destinationTeams={[]}
+        items={[]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Between teams" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sync subscription" }));
+
+    await waitFor(() => {
+      expect(mockedFetchApiJsonResult).toHaveBeenCalledWith("/api/teams/1/billing/sync", {
+        method: "POST",
+        fallbackError: "Could not sync subscription status",
+      });
+      expect(refreshSpy).toHaveBeenCalledTimes(1);
+    });
   });
 
   it("prevents duplicate submit while request is in progress", async () => {

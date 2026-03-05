@@ -402,8 +402,12 @@ export const fr = {
     destinationTeamPlaceholder: "Sélectionnez une équipe",
     selectDestinationTeamFirst: "Veuillez sélectionner l'équipe de destination",
     noActiveDestinationTeams:
-      "Aucune équipe de destination avec abonnement actif disponible pour le transfert",
+      "Aucune équipe de la même entreprise avec abonnement/période d'essai actif disponible pour le transfert",
     manageTeamsCta: "Activer l'équipe pour transfert",
+    syncBillingCta: "Synchroniser l'abonnement",
+    syncBillingInProgress: "Synchronisation...",
+    syncBillingSuccess: "Le statut d'abonnement a été synchronisé avec succès",
+    syncBillingError: "Impossible de synchroniser le statut d'abonnement",
     tabByLocation: "Entre emplacements",
     tabByTeam: "Entre équipes",
     defaultLocation: "Emplacement par défaut",

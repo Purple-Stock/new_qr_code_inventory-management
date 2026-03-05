@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Search, Info, ScanLine, Plus, Minus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "@/lib/i18n";
+import { fetchApiJsonResult } from "@/lib/api-client";
 import { useToast } from "@/components/ui/use-toast-simple";
 import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
@@ -35,6 +37,7 @@ export function MovePageClient({
   destinationTeams,
   team,
 }: MovePageClientProps) {
+  const router = useRouter();
   const { t } = useTranslation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<"location" | "team">("location");
@@ -49,6 +52,7 @@ export function MovePageClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [isSyncingBilling, setIsSyncingBilling] = useState(false);
   const hasDestinationTeams = destinationTeams.length > 0;
   const isTeamTransferUnavailable = activeTab === "team" && !hasDestinationTeams;
   const tourSteps: TourStep[] = [
@@ -320,6 +324,48 @@ export function MovePageClient({
     }
   };
 
+  const handleSyncDestinationTeams = async () => {
+    if (isSyncingBilling) {
+      return;
+    }
+
+    setIsSyncingBilling(true);
+    try {
+      const result = await fetchApiJsonResult<{ synced: boolean; subscriptionStatus: string | null }>(
+        `/api/teams/${team.id}/billing/sync`,
+        {
+          method: "POST",
+          fallbackError: t.move.syncBillingError,
+        }
+      );
+
+      if (!result.ok) {
+        toast({
+          variant: "destructive",
+          title: t.common.error,
+          description: result.error || t.move.syncBillingError,
+        });
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: t.common.success,
+        description: t.move.syncBillingSuccess,
+      });
+      router.refresh();
+    } catch (error) {
+      console.error("Error syncing destination team billing:", error);
+      toast({
+        variant: "destructive",
+        title: t.common.error,
+        description: t.move.syncBillingError,
+      });
+    } finally {
+      setIsSyncingBilling(false);
+    }
+  };
+
   return (
     <TeamLayout team={team} activeMenuItem="move">
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
@@ -445,6 +491,15 @@ export function MovePageClient({
             {!hasDestinationTeams && (
               <div className="mt-2 space-y-2">
                 <p className="text-sm text-amber-700">{t.move.noActiveDestinationTeams}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleSyncDestinationTeams}
+                  disabled={isSyncingBilling}
+                  className="h-8 px-3 text-xs"
+                >
+                  {isSyncingBilling ? t.move.syncBillingInProgress : t.move.syncBillingCta}
+                </Button>
                 <Link
                   href="/team_selection"
                   className="inline-flex text-xs text-[#6B21A8] underline underline-offset-2 hover:text-[#581c87]"
