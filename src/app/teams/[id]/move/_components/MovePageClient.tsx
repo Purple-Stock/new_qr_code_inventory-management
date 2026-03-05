@@ -343,7 +343,7 @@ export function MovePageClient({
         toast({
           variant: "destructive",
           title: t.common.error,
-          description: result.error || t.move.syncBillingError,
+          description: result.error.error || t.move.syncBillingError,
         });
         return;
       }
