@@ -517,6 +517,7 @@ export function parseStockTransactionPayload(body: unknown): ValidationResult<{
   destinationKind: "location" | "team" | "external" | null;
   destinationTeamId: number | null;
   destinationLabel: string | null;
+  transferGroupId: string | null;
 }> {
   if (!isRecord(body)) {
     return { ok: false, error: "Invalid request payload" };
@@ -581,6 +582,10 @@ export function parseStockTransactionPayload(body: unknown): ValidationResult<{
   if (!destinationLabelParsed.ok) {
     return { ok: false, error: "Destination label must be a string" };
   }
+  const transferGroupIdParsed = parseOptionalTrimmedString(body.transferGroupId);
+  if (!transferGroupIdParsed.ok) {
+    return { ok: false, error: "Transfer group ID must be a string" };
+  }
 
   if (destinationKind === "team" && !destinationTeamIdParsed.data) {
     return { ok: false, error: "Destination team is required for team transfer" };
@@ -602,6 +607,7 @@ export function parseStockTransactionPayload(body: unknown): ValidationResult<{
       destinationKind,
       destinationTeamId: destinationTeamIdParsed.data ?? null,
       destinationLabel: destinationLabelParsed.data ?? null,
+      transferGroupId: transferGroupIdParsed.data ?? null,
     },
   };
 }

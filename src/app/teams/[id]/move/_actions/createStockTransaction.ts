@@ -17,6 +17,7 @@ export async function createMoveAction(
     destinationKind?: "location" | "team" | "external" | null;
     destinationTeamId?: number | null;
     destinationLabel?: string | null;
+    transferGroupId?: string | null;
   }
 ) {
   try {

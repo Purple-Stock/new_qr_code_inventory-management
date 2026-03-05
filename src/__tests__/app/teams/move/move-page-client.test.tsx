@@ -128,6 +128,7 @@ const mockedCreateMoveAction = vi.mocked(createMoveAction);
 describe("MovePageClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
   });
 
   it("renders both tabs", () => {
@@ -159,7 +160,6 @@ describe("MovePageClient", () => {
     fireEvent.click(screen.getByRole("button", { name: "Between teams" }));
     fireEvent.change(screen.getByPlaceholderText("Search"), { target: { value: "Printer" } });
     fireEvent.click(screen.getByRole("button", { name: /Printer/ }));
-    fireEvent.click(screen.getByLabelText("I confirm this transfer with the details above"));
 
     fireEvent.click(screen.getByRole("button", { name: "Transfer Between Teams" }));
 
@@ -172,6 +172,7 @@ describe("MovePageClient", () => {
       itemId: 100,
       destinationKind: "team",
     });
+    expect(typeof firstCall.transferGroupId).toBe("string");
   });
 
   it("shows empty state when there are no active destination teams", () => {
@@ -212,7 +213,6 @@ describe("MovePageClient", () => {
     fireEvent.click(screen.getByRole("button", { name: "Between teams" }));
     fireEvent.change(screen.getByPlaceholderText("Search"), { target: { value: "Printer" } });
     fireEvent.click(screen.getByRole("button", { name: /Printer/ }));
-    fireEvent.click(screen.getByLabelText("I confirm this transfer with the details above"));
 
     const submitButton = screen.getByRole("button", { name: "Transfer Between Teams" });
     fireEvent.click(submitButton);

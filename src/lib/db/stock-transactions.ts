@@ -41,6 +41,7 @@ export async function createStockTransaction(data: {
       notes: data.notes ?? null,
       userId: data.userId,
       sourceLocationId: data.sourceLocationId ?? null,
+      transferGroupId: data.transferGroupId ?? null,
     });
   }
 
@@ -119,6 +120,7 @@ async function createInterTeamTransferTransaction(data: {
   notes: string | null;
   userId: number;
   sourceLocationId: number | null;
+  transferGroupId?: string | null;
 }): Promise<StockTransaction> {
   return sqlite.transaction(async (tx) => {
     const [sourceTeam, destinationTeam] = await Promise.all([
@@ -210,7 +212,7 @@ async function createInterTeamTransferTransaction(data: {
         .returning();
     }
 
-    const transferGroupId = randomUUID();
+    const transferGroupId = data.transferGroupId || randomUUID();
 
     const [sourceTransaction] = await tx
       .insert(stockTransactions)

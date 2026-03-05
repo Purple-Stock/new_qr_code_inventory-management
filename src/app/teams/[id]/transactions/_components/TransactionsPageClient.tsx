@@ -6,16 +6,20 @@ import { Info, Download, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
 import Link from "next/link";
+import { Label } from "@/components/ui/label";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import { TransactionsList } from "./TransactionsList";
 import { TransactionsSearch } from "./TransactionsSearch";
-import type { TransactionWithDetails, Team } from "../_types";
+import type { CounterpartyTeamOption, TransactionWithDetails, Team } from "../_types";
 
 interface TransactionsPageClientProps {
   transactions: TransactionWithDetails[];
   team: Team;
   initialSearchQuery?: string;
+  initialCounterpartyTeamId?: string;
+  initialInterTeamOnly?: boolean;
+  counterpartyTeamOptions: CounterpartyTeamOption[];
   currentPage: number;
   totalPages: number;
 }
@@ -24,6 +28,9 @@ export function TransactionsPageClient({
   transactions,
   team,
   initialSearchQuery = "",
+  initialCounterpartyTeamId = "",
+  initialInterTeamOnly = false,
+  counterpartyTeamOptions,
   currentPage,
   totalPages,
 }: TransactionsPageClientProps) {
@@ -31,6 +38,8 @@ export function TransactionsPageClient({
   const { t } = useTranslation();
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+  const [counterpartyTeamId, setCounterpartyTeamId] = useState(initialCounterpartyTeamId);
+  const [interTeamOnly, setInterTeamOnly] = useState(initialInterTeamOnly);
   const hasInitializedSearchEffect = useRef(false);
   const suppressNextSearchEffect = useRef(false);
   const teamId = team.id.toString();
@@ -49,7 +58,9 @@ export function TransactionsPageClient({
   useEffect(() => {
     suppressNextSearchEffect.current = true;
     setSearchQuery(initialSearchQuery);
-  }, [initialSearchQuery]);
+    setCounterpartyTeamId(initialCounterpartyTeamId);
+    setInterTeamOnly(initialInterTeamOnly);
+  }, [initialSearchQuery, initialCounterpartyTeamId, initialInterTeamOnly]);
 
   useEffect(() => {
     if (!hasInitializedSearchEffect.current) {
@@ -66,17 +77,29 @@ export function TransactionsPageClient({
       if (searchQuery) {
         params.set("search", searchQuery);
       }
+      if (counterpartyTeamId) {
+        params.set("counterpartyTeamId", counterpartyTeamId);
+      }
+      if (interTeamOnly) {
+        params.set("interTeamOnly", "1");
+      }
       params.set("page", "1");
       router.push(`/teams/${teamId}/transactions?${params.toString()}`);
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, router, teamId]);
+  }, [searchQuery, counterpartyTeamId, interTeamOnly, router, teamId]);
 
   const handlePageChange = (page: number) => {
     const params = new URLSearchParams();
     if (searchQuery) {
       params.set("search", searchQuery);
+    }
+    if (counterpartyTeamId) {
+      params.set("counterpartyTeamId", counterpartyTeamId);
+    }
+    if (interTeamOnly) {
+      params.set("interTeamOnly", "1");
     }
     params.set("page", page.toString());
     router.push(`/teams/${teamId}/transactions?${params.toString()}`);
@@ -118,6 +141,34 @@ export function TransactionsPageClient({
           onSearchQueryChange={setSearchQuery}
           placeholder={t.transactions.searchPlaceholder}
         />
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="counterpartyTeamFilter" className="text-xs text-gray-600">
+              {t.transactions.counterpartyTeamFilter}
+            </Label>
+            <select
+              id="counterpartyTeamFilter"
+              className="mt-1 h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm"
+              value={counterpartyTeamId}
+              onChange={(e) => setCounterpartyTeamId(e.target.value)}
+            >
+              <option value="">{t.transactions.allCounterpartyTeams}</option>
+              {counterpartyTeamOptions.map((option) => (
+                <option key={option.id} value={option.id.toString()}>
+                  {option.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <label className="mt-6 flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={interTeamOnly}
+              onChange={(e) => setInterTeamOnly(e.target.checked)}
+            />
+            {t.transactions.interTeamOnly}
+          </label>
+        </div>
       </div>
 
       {/* Transactions List */}

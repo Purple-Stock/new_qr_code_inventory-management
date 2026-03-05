@@ -238,6 +238,86 @@ describe("stock-transactions service", () => {
     expect(sourceTx[0].transferGroupId).toBe(destinationTx[0].transferGroupId);
   });
 
+  it("reuses provided transferGroupId across inter-team batch operations", async () => {
+    const { drizzle } = getTestDb();
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "transfer-batch@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [company] = await drizzle
+      .insert(companies)
+      .values({ name: "Batch Group Co", slug: "batch-group-co" })
+      .returning();
+    const [sourceTeam] = await drizzle
+      .insert(teams)
+      .values({ name: "Direct", userId: user.id, companyId: company.id })
+      .returning();
+    const [destinationTeam] = await drizzle
+      .insert(teams)
+      .values({ name: "DPS", userId: user.id, companyId: company.id })
+      .returning();
+    await drizzle.insert(teamMembers).values([
+      { teamId: sourceTeam.id, userId: user.id, role: "admin", status: "active" },
+      { teamId: destinationTeam.id, userId: user.id, role: "admin", status: "active" },
+    ]);
+    const [sourceLocation] = await drizzle
+      .insert(locations)
+      .values({ name: "Direct Main", description: null, teamId: sourceTeam.id })
+      .returning();
+    await drizzle
+      .insert(locations)
+      .values({ name: "DPS Main", description: null, teamId: destinationTeam.id })
+      .returning();
+    const [sourceItemA] = await drizzle
+      .insert(items)
+      .values({
+        name: "Printer A",
+        barcode: "printer-a-001",
+        teamId: sourceTeam.id,
+        locationId: sourceLocation.id,
+        initialQuantity: 10,
+        currentStock: 10,
+      })
+      .returning();
+    const [sourceItemB] = await drizzle
+      .insert(items)
+      .values({
+        name: "Printer B",
+        barcode: "printer-b-001",
+        teamId: sourceTeam.id,
+        locationId: sourceLocation.id,
+        initialQuantity: 8,
+        currentStock: 8,
+      })
+      .returning();
+
+    const batchId = "batch-transfer-20260305";
+    for (const sourceItem of [sourceItemA, sourceItemB]) {
+      const result = await createTeamStockTransaction({
+        teamId: sourceTeam.id,
+        requestUserId: user.id,
+        payload: {
+          itemId: sourceItem.id,
+          transactionType: "move",
+          quantity: 1,
+          sourceLocationId: sourceLocation.id,
+          destinationKind: "team",
+          destinationTeamId: destinationTeam.id,
+          transferGroupId: batchId,
+        },
+      });
+      expect(result.ok).toBe(true);
+    }
+
+    const sourceTx = await drizzle
+      .select()
+      .from(stockTransactions)
+      .where(eq(stockTransactions.teamId, sourceTeam.id));
+
+    expect(sourceTx).toHaveLength(2);
+    expect(sourceTx.every((tx) => tx.transferGroupId === batchId)).toBe(true);
+  });
+
   it("blocks transfer between teams from different companies", async () => {
     const { drizzle } = getTestDb();
     const [user] = await drizzle

@@ -105,6 +105,7 @@ export async function createTeamStockTransaction(params: {
       destinationKind: payload.destinationKind,
       destinationLabel: payload.destinationLabel,
       destinationTeamId: payload.destinationTeamId,
+      transferGroupId: payload.transferGroupId,
     });
 
     return { ok: true, data: { transaction: toStockTransactionDto(transaction) } };

@@ -47,7 +47,6 @@ export function MovePageClient({
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [confirmTeamTransfer, setConfirmTeamTransfer] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const hasDestinationTeams = destinationTeams.length > 0;
@@ -203,13 +202,6 @@ export function MovePageClient({
           : t.move.noActiveDestinationTeams,
       });
       return;
-    } else if (!confirmTeamTransfer) {
-      toast({
-        variant: "destructive",
-        title: t.common.error,
-        description: t.move.confirmTeamTransferRequired,
-      });
-      return;
     }
 
     if (selectedItems.length === 0) {
@@ -245,6 +237,27 @@ export function MovePageClient({
       return;
     }
 
+    const batchTransferGroupId =
+      activeTab === "team"
+        ? (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`)
+        : null;
+
+    if (activeTab === "team") {
+      const summaryLines = selectedItems.map((si) => {
+        const itemName = si.item.name || t.items.unnamedItem;
+        return `- ${itemName}: ${si.quantity}`;
+      });
+      const confirmMessage = [
+        t.move.reviewTransferImpact,
+        `${team.name} -> ${selectedDestinationTeam?.name || t.move.destinationTeamPlaceholder}`,
+        ...summaryLines,
+      ].join("\n");
+
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
       const results = await Promise.all(
@@ -262,6 +275,7 @@ export function MovePageClient({
               activeTab === "team" && destinationTeamId
                 ? parseInt(destinationTeamId, 10)
                 : null,
+            transferGroupId: batchTransferGroupId,
             notes: notes || null,
           })
         )
@@ -294,7 +308,6 @@ export function MovePageClient({
       setSelectedItems([]);
       setNotes("");
       setItemSearch("");
-      setConfirmTeamTransfer(false);
     } catch (error) {
       console.error("Error moving stock:", error);
       toast({
@@ -333,7 +346,6 @@ export function MovePageClient({
             type="button"
             onClick={() => {
               setActiveTab("location");
-              setConfirmTeamTransfer(false);
             }}
             className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
               activeTab === "location"
@@ -615,14 +627,15 @@ export function MovePageClient({
             <p className="mt-1">
               {`${team.name} -> ${selectedDestinationTeam?.name || t.move.destinationTeamPlaceholder} | ${selectedItems.length} ${t.move.items.toLowerCase()} | ${totalQuantity} ${t.move.quantityToMove.toLowerCase()}`}
             </p>
-            <label className="mt-3 flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={confirmTeamTransfer}
-                onChange={(e) => setConfirmTeamTransfer(e.target.checked)}
-              />
-              <span>{t.move.confirmTeamTransferLabel}</span>
-            </label>
+            {selectedItems.length > 0 && (
+              <ul className="mt-2 list-disc pl-5 text-xs text-violet-800">
+                {selectedItems.map((selectedItem) => (
+                  <li key={selectedItem.item.id}>
+                    {(selectedItem.item.name || t.items.unnamedItem) + `: ${selectedItem.quantity}`}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -635,8 +648,7 @@ export function MovePageClient({
             disabled={
               isSubmitting ||
               selectedItems.length === 0 ||
-              isTeamTransferUnavailable ||
-              (activeTab === "team" && !confirmTeamTransfer)
+              isTeamTransferUnavailable
             }
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 h-auto"
           >
