@@ -126,6 +126,9 @@ export function TransactionsPageClient({
           transactions={transactions}
           teamId={team.id}
           onDelete={handleRefresh}
+          onSearchByTransferGroup={(transferGroupId) => {
+            setSearchQuery(transferGroupId);
+          }}
         />
       </div>
       {totalPages > 1 && (

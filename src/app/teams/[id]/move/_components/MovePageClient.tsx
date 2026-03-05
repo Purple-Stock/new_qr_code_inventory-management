@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Search, Info, ScanLine, Plus, Minus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,7 @@ export function MovePageClient({
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmTeamTransfer, setConfirmTeamTransfer] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const hasDestinationTeams = destinationTeams.length > 0;
@@ -155,6 +157,11 @@ export function MovePageClient({
   };
 
   const totalItems = selectedItems.reduce((sum, si) => sum + si.quantity, 0);
+  const totalQuantity = selectedItems.reduce((sum, si) => sum + si.quantity, 0);
+  const selectedDestinationTeam =
+    activeTab === "team"
+      ? destinationTeams.find((destinationTeam) => destinationTeam.id.toString() === destinationTeamId)
+      : null;
 
   const handleSubmit = async () => {
     if (isSubmitting) {
@@ -194,6 +201,13 @@ export function MovePageClient({
         description: hasDestinationTeams
           ? t.move.selectDestinationTeamFirst
           : t.move.noActiveDestinationTeams,
+      });
+      return;
+    } else if (!confirmTeamTransfer) {
+      toast({
+        variant: "destructive",
+        title: t.common.error,
+        description: t.move.confirmTeamTransferRequired,
       });
       return;
     }
@@ -268,12 +282,19 @@ export function MovePageClient({
         variant: "success",
         title: t.common.success,
         description:
-          activeTab === "team" ? t.move.stockTransferredTeamSuccess : t.move.stockMovedSuccess,
+          activeTab === "team"
+            ? `${t.move.stockTransferredTeamSuccess} ${selectedItems.length} ${
+                t.move.items.toLowerCase()
+              } (${totalQuantity}) ${t.move.transferSummaryToTeamPrefix} ${
+                selectedDestinationTeam?.name || "-"
+              }.`
+            : t.move.stockMovedSuccess,
       });
 
       setSelectedItems([]);
       setNotes("");
       setItemSearch("");
+      setConfirmTeamTransfer(false);
     } catch (error) {
       console.error("Error moving stock:", error);
       toast({
@@ -312,6 +333,7 @@ export function MovePageClient({
             type="button"
             onClick={() => {
               setActiveTab("location");
+              setConfirmTeamTransfer(false);
             }}
             className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
               activeTab === "location"
@@ -409,7 +431,15 @@ export function MovePageClient({
               </SelectContent>
             </Select>
             {!hasDestinationTeams && (
-              <p className="mt-2 text-sm text-amber-700">{t.move.noActiveDestinationTeams}</p>
+              <div className="mt-2 space-y-2">
+                <p className="text-sm text-amber-700">{t.move.noActiveDestinationTeams}</p>
+                <Link
+                  href="/team_selection"
+                  className="inline-flex text-xs text-[#6B21A8] underline underline-offset-2 hover:text-[#581c87]"
+                >
+                  {t.move.manageTeamsCta}
+                </Link>
+              </div>
             )}
           </div>
         )}
@@ -579,6 +609,22 @@ export function MovePageClient({
       </div>
 
       <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6" data-tour="tour-move-submit">
+        {activeTab === "team" && (
+          <div className="mb-4 rounded-lg border border-violet-200 bg-violet-50 p-3 text-sm text-violet-900">
+            <p className="font-semibold">{t.move.reviewTransferImpact}</p>
+            <p className="mt-1">
+              {`${team.name} -> ${selectedDestinationTeam?.name || t.move.destinationTeamPlaceholder} | ${selectedItems.length} ${t.move.items.toLowerCase()} | ${totalQuantity} ${t.move.quantityToMove.toLowerCase()}`}
+            </p>
+            <label className="mt-3 flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={confirmTeamTransfer}
+                onChange={(e) => setConfirmTeamTransfer(e.target.checked)}
+              />
+              <span>{t.move.confirmTeamTransferLabel}</span>
+            </label>
+          </div>
+        )}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <p className="text-sm text-gray-600">{t.move.totalItemsToMove}</p>
@@ -586,7 +632,12 @@ export function MovePageClient({
           </div>
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting || selectedItems.length === 0 || isTeamTransferUnavailable}
+            disabled={
+              isSubmitting ||
+              selectedItems.length === 0 ||
+              isTeamTransferUnavailable ||
+              (activeTab === "team" && !confirmTeamTransfer)
+            }
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 h-auto"
           >
             {isSubmitting

@@ -12,9 +12,15 @@ interface TransactionsListProps {
   transactions: TransactionWithDetails[];
   teamId: number;
   onDelete: () => void;
+  onSearchByTransferGroup?: (transferGroupId: string) => void;
 }
 
-export function TransactionsList({ transactions, teamId, onDelete }: TransactionsListProps) {
+export function TransactionsList({
+  transactions,
+  teamId,
+  onDelete,
+  onSearchByTransferGroup,
+}: TransactionsListProps) {
   const { language, t } = useTranslation();
   const { toast } = useToast();
 
@@ -95,11 +101,21 @@ export function TransactionsList({ transactions, teamId, onDelete }: Transaction
                 <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3">
                   <span
                     className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getTransactionTypeColor(
-                      transaction.transactionType
+                      transaction.transactionType,
+                      transaction
                     )}`}
                   >
-                    {getTransactionTypeLabel(transaction.transactionType, t)}
+                    {getTransactionTypeLabel(transaction.transactionType, t, transaction)}
                   </span>
+                  {transaction.transferGroupId && (
+                    <button
+                      type="button"
+                      className="mt-1 block text-[11px] text-violet-700 hover:text-violet-900 underline underline-offset-2"
+                      onClick={() => onSearchByTransferGroup?.(transaction.transferGroupId!)}
+                    >
+                      {`${t.transactions.transferGroupPrefix || "Group"} ${transaction.transferGroupId.slice(0, 8)}`}
+                    </button>
+                  )}
                 </td>
                 <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
                   {transaction.item?.name || "-"}

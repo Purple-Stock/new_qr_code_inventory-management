@@ -397,6 +397,7 @@ export async function getTeamStockTransactionsWithDetails(
             sourceLoc?.name?.toLowerCase().includes(normalizedSearch) ||
             destLoc?.name?.toLowerCase().includes(normalizedSearch) ||
             t.destinationLabel?.toLowerCase().includes(normalizedSearch) ||
+            t.transferGroupId?.toLowerCase().includes(normalizedSearch) ||
             counterpartyTeam?.name?.toLowerCase().includes(normalizedSearch)
         );
       const matchesSku =
