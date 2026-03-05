@@ -395,6 +395,7 @@ export const ptBR = {
     destinationTeamRequired: "Time de Destino*",
     destinationTeamPlaceholder: "Selecione um time",
     selectDestinationTeamFirst: "Por favor, selecione o time de destino",
+    noActiveDestinationTeams: "Nenhum time com assinatura ativa disponível para transferência",
     tabByLocation: "Entre localizações",
     tabByTeam: "Entre times",
     defaultLocation: "Localização Padrão",

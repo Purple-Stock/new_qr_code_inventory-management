@@ -83,6 +83,7 @@ vi.mock("@/lib/i18n", () => ({
         selectSourceLocationFirst: "Select source",
         selectLocationsFirst: "Select locations",
         selectDestinationTeamFirst: "Select destination team",
+        noActiveDestinationTeams: "No destination teams with active subscription available for transfer",
         quantityRequired: "Quantity required",
         quantityExceedsStock: "Quantity exceeds stock",
         partialMoveError: "Partial move error",
@@ -165,5 +166,55 @@ describe("MovePageClient", () => {
       itemId: 100,
       destinationKind: "team",
     });
+  });
+
+  it("shows empty state when there are no active destination teams", () => {
+    render(
+      <MovePageClient
+        team={{ id: 1, name: "Direct" }}
+        locations={[{ id: 10, name: "A" }]}
+        destinationTeams={[]}
+        items={[]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Between teams" }));
+
+    expect(
+      screen.getByText("No destination teams with active subscription available for transfer")
+    ).toBeInTheDocument();
+  });
+
+  it("prevents duplicate submit while request is in progress", async () => {
+    let resolveRequest: ((value: any) => void) | undefined;
+    mockedCreateMoveAction.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRequest = resolve;
+        }) as any
+    );
+
+    render(
+      <MovePageClient
+        team={{ id: 1, name: "Direct" }}
+        locations={[{ id: 10, name: "A" }, { id: 11, name: "B" }]}
+        destinationTeams={[{ id: 2, name: "DPS" }]}
+        items={[{ id: 100, name: "Printer", sku: "PR-1", barcode: "ABC", currentStock: 5, locationName: "A" }]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Between teams" }));
+    fireEvent.change(screen.getByPlaceholderText("Search"), { target: { value: "Printer" } });
+    fireEvent.click(screen.getByRole("button", { name: /Printer/ }));
+
+    const submitButton = screen.getByRole("button", { name: "Transfer Between Teams" });
+    fireEvent.click(submitButton);
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(mockedCreateMoveAction).toHaveBeenCalledTimes(1);
+    });
+
+    resolveRequest?.({ success: true, transaction: { id: 99 } });
   });
 });

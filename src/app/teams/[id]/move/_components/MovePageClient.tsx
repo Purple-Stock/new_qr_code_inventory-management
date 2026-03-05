@@ -48,6 +48,8 @@ export function MovePageClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const hasDestinationTeams = destinationTeams.length > 0;
+  const isTeamTransferUnavailable = activeTab === "team" && !hasDestinationTeams;
   const tourSteps: TourStep[] = [
     {
       target: "tour-move-tutorial",
@@ -155,6 +157,10 @@ export function MovePageClient({
   const totalItems = selectedItems.reduce((sum, si) => sum + si.quantity, 0);
 
   const handleSubmit = async () => {
+    if (isSubmitting) {
+      return;
+    }
+
     if (!sourceLocation) {
       toast({
         variant: "destructive",
@@ -185,7 +191,9 @@ export function MovePageClient({
       toast({
         variant: "destructive",
         title: t.common.error,
-        description: t.move.selectDestinationTeamFirst,
+        description: hasDestinationTeams
+          ? t.move.selectDestinationTeamFirst
+          : t.move.noActiveDestinationTeams,
       });
       return;
     }
@@ -400,6 +408,9 @@ export function MovePageClient({
                 ))}
               </SelectContent>
             </Select>
+            {!hasDestinationTeams && (
+              <p className="mt-2 text-sm text-amber-700">{t.move.noActiveDestinationTeams}</p>
+            )}
           </div>
         )}
       </div>
@@ -575,7 +586,7 @@ export function MovePageClient({
           </div>
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting || selectedItems.length === 0}
+            disabled={isSubmitting || selectedItems.length === 0 || isTeamTransferUnavailable}
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 h-auto"
           >
             {isSubmitting

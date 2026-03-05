@@ -395,6 +395,7 @@ export const en = {
     destinationTeamRequired: "Destination Team*",
     destinationTeamPlaceholder: "Select a team",
     selectDestinationTeamFirst: "Please select a destination team",
+    noActiveDestinationTeams: "No destination teams with active subscription available for transfer",
     tabByLocation: "Between locations",
     tabByTeam: "Between teams",
     defaultLocation: "Default Location",
