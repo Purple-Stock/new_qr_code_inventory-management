@@ -10,6 +10,7 @@ import { ERROR_CODES } from "@/lib/errors";
 import { getTestDb, cleanupTestDb, clearTestDb } from "../../helpers/test-db";
 import { companies, companyMembers, teamMembers, teams, users } from "@/db/schema";
 import * as itemImagesService from "@/lib/services/item-images";
+import { eq } from "drizzle-orm";
 
 const { drizzle } = getTestDb();
 
@@ -66,7 +67,7 @@ describe("teams service", () => {
     expect(result.error.errorCode).toBe(ERROR_CODES.USER_NOT_AUTHENTICATED);
   });
 
-  it("returns 403 when user has no active company", async () => {
+  it("auto-creates and links an active company when legacy user has none", async () => {
     const { drizzle } = getTestDb();
     const [user] = await drizzle
       .insert(users)
@@ -78,10 +79,17 @@ describe("teams service", () => {
       payload: { name: "Team Service", notes: null },
     });
 
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.error.status).toBe(403);
-    expect(result.error.errorCode).toBe(ERROR_CODES.FORBIDDEN);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.team.name).toBe("Team Service");
+    expect(result.data.team.companyId).toBeTruthy();
+
+    const memberships = await drizzle
+      .select()
+      .from(companyMembers)
+      .where(eq(companyMembers.userId, user.id));
+    expect(memberships).toHaveLength(1);
+    expect(memberships[0].status).toBe("active");
   });
 
   it("updates and deletes a team when requester is admin member", async () => {

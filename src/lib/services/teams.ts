@@ -6,7 +6,11 @@ import {
   updateTeam,
   updateTeamAndCompanyLabelSettings,
 } from "@/lib/db/teams";
-import { getActiveCompanyIdForUser, updateCompanyName } from "@/lib/db/companies";
+import {
+  ensureActiveCompanyForUser,
+  getActiveCompanyIdForUser,
+  updateCompanyName,
+} from "@/lib/db/companies";
 import { ERROR_CODES } from "@/lib/errors";
 import { isUniqueConstraintError } from "@/lib/error-utils";
 import {
@@ -90,16 +94,9 @@ export async function createTeamForUser(params: {
     return { ok: false, error: authServiceError(auth) };
   }
 
-  const companyId = await getActiveCompanyIdForUser(params.requestUserId);
+  let companyId = await getActiveCompanyIdForUser(params.requestUserId);
   if (!companyId) {
-    return {
-      ok: false,
-      error: {
-        status: 403,
-        errorCode: ERROR_CODES.FORBIDDEN,
-        error: "User is not linked to an active company",
-      },
-    };
+    companyId = await ensureActiveCompanyForUser(params.requestUserId);
   }
 
   try {

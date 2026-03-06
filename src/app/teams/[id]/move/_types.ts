@@ -6,6 +6,7 @@ export type Item = Pick<ItemDto, "id" | "name" | "sku" | "barcode" | "currentSto
 export type Location = Pick<LocationDto, "id" | "name">;
 
 export type Team = Pick<TeamDto, "id" | "name">;
+export type DestinationTeam = Pick<TeamDto, "id" | "name">;
 
 export interface SelectedItem {
   item: Item;

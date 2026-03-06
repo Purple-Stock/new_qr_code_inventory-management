@@ -1,6 +1,7 @@
 import { getTeamWithStats } from "@/lib/db/teams";
 import { getTeamItems, getItemByIdWithLocation } from "@/lib/db/items";
 import { getLocationById, getTeamLocations } from "@/lib/db/locations";
+import { getCompanyTeams } from "@/lib/db/team-members";
 import { getTeamReportStats } from "@/lib/db/reports";
 import {
   getItemStockTransactionsWithDetails,
@@ -55,6 +56,7 @@ export async function getTeamStockByLocationData(
       team: null,
       locations: locations.map(toLocationDto),
       items: items.map((item) => toItemDto(item)),
+      destinationTeams: [],
       subscriptionRequired: false,
     };
   }
@@ -220,14 +222,26 @@ export async function getTeamStockOperationData(
       team: null,
       locations: [],
       items: [],
+      destinationTeams: [],
       subscriptionRequired: true,
     };
   }
+
+  const destinationTeams = team.companyId
+    ? (await getCompanyTeams(team.companyId)).filter(
+        (companyTeam) =>
+          companyTeam.id !== teamId && hasActiveTeamSubscription(companyTeam)
+      )
+    : [];
 
   return {
     team: toTeamDto(team),
     locations: locations.map(toLocationDto),
     items: items.map((item) => toItemDto(item)),
+    destinationTeams: destinationTeams.map((destinationTeam) => ({
+      id: destinationTeam.id,
+      name: destinationTeam.name,
+    })),
     subscriptionRequired: false,
   };
 }

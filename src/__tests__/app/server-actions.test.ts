@@ -150,6 +150,39 @@ describe("server actions", () => {
     expect(mockedRevalidatePath).toHaveBeenCalledWith("/teams/9/stock-by-location");
   });
 
+  it("createMoveAction forwards destination team payload", async () => {
+    mockedCreateTeamStockTransaction.mockResolvedValue({
+      ok: true,
+      data: { transaction: { id: 12 } },
+    } as any);
+
+    const result = await createMoveAction(9, {
+      itemId: 1,
+      quantity: 2,
+      sourceLocationId: 4,
+      destinationLocationId: null,
+      destinationKind: "team",
+      destinationTeamId: 88,
+      notes: "transfer",
+    });
+
+    expect(result).toEqual({ success: true, transaction: { id: 12 } });
+    expect(mockedCreateTeamStockTransaction).toHaveBeenCalledWith({
+      teamId: 9,
+      requestUserId: 77,
+      payload: {
+        itemId: 1,
+        quantity: 2,
+        sourceLocationId: 4,
+        destinationLocationId: null,
+        destinationKind: "team",
+        destinationTeamId: 88,
+        notes: "transfer",
+        transactionType: "move",
+      },
+    });
+  });
+
   it("deleteTransactionAction returns success and revalidates pages", async () => {
     mockedDeleteTeamTransaction.mockResolvedValue({ ok: true, data: null } as any);
 

@@ -141,6 +141,11 @@ export type StockTransactionDto = {
   userId: number;
   sourceLocationId: number | null;
   destinationLocationId: number | null;
+  destinationKind: "location" | "team" | "external" | null;
+  destinationLabel: string | null;
+  counterpartyTeamId: number | null;
+  linkedTransactionId: number | null;
+  transferGroupId: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -161,6 +166,10 @@ export type TransactionDto = StockTransactionDto & {
     name: string;
   } | null;
   destinationLocation: {
+    id: number;
+    name: string;
+  } | null;
+  counterpartyTeam: {
     id: number;
     name: string;
   } | null;
