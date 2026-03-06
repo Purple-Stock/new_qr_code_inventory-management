@@ -305,10 +305,11 @@ export default function ItemDetailPageClient({
                     <div className="min-w-0 flex-1">
                       <span
                         className={`inline-block px-2 py-0.5 rounded text-xs font-medium border ${getTransactionTypeColor(
-                          tx.transactionType
+                          tx.transactionType,
+                          tx
                         )}`}
                       >
-                        {getTransactionTypeLabel(tx.transactionType, t)}
+                        {getTransactionTypeLabel(tx.transactionType, t, tx)}
                       </span>
                       <p className="text-xs text-gray-500 mt-0.5 truncate">
                         {formatLocation(tx, t)} ·{" "}

@@ -82,7 +82,12 @@ export async function getCompanyActiveUsers(companyId: number) {
 
 export async function getCompanyTeams(companyId: number) {
   return sqlite
-    .select({ id: teams.id, name: teams.name })
+    .select({
+      id: teams.id,
+      name: teams.name,
+      stripeSubscriptionStatus: teams.stripeSubscriptionStatus,
+      manualTrialEndsAt: teams.manualTrialEndsAt,
+    })
     .from(teams)
     .where(eq(teams.companyId, companyId));
 }

@@ -1,4 +1,20 @@
-export function getTransactionTypeLabel(type: string, t: any): string {
+export function isInterTeamTransfer(transaction: any): boolean {
+  return (
+    transaction?.destinationKind === "team" &&
+    (transaction?.transactionType === "stock_in" ||
+      transaction?.transactionType === "stock_out")
+  );
+}
+
+export function getTransactionTypeLabel(
+  type: string,
+  t: any,
+  transaction?: any
+): string {
+  if (transaction && isInterTeamTransfer(transaction)) {
+    return t.transactions.interTeamTransfer || "Inter-team transfer";
+  }
+
   switch (type) {
     case "stock_in":
       return t.transactions.stockIn;
@@ -15,7 +31,11 @@ export function getTransactionTypeLabel(type: string, t: any): string {
   }
 }
 
-export function getTransactionTypeColor(type: string): string {
+export function getTransactionTypeColor(type: string, transaction?: any): string {
+  if (transaction && isInterTeamTransfer(transaction)) {
+    return "bg-violet-100 text-violet-800 border-violet-200";
+  }
+
   switch (type) {
     case "stock_in":
       return "bg-green-100 text-green-800 border-green-200";
@@ -36,6 +56,16 @@ export function formatQuantity(quantity: number, type: string): string {
 }
 
 export function formatLocation(transaction: any, t: any): string {
+  if (transaction.destinationKind === "team" && transaction.counterpartyTeam?.name) {
+    const teamName = transaction.counterpartyTeam.name;
+    if (transaction.transactionType === "stock_out") {
+      return `${t.transactions.toTeamPrefix || "To team"} ${teamName}`;
+    }
+    if (transaction.transactionType === "stock_in") {
+      return `${t.transactions.fromTeamPrefix || "From team"} ${teamName}`;
+    }
+  }
+
   if (transaction.transactionType === "move") {
     const source = transaction.sourceLocation?.name || t.transactions.defaultLocation;
     const dest = transaction.destinationLocation?.name || t.transactions.defaultLocation;

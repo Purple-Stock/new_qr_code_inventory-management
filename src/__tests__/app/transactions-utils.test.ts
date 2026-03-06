@@ -15,7 +15,11 @@ describe("transactions UI utils", () => {
       adjust: "Adjust",
       move: "Move",
       count: "Count",
+      interTeamTransfer: "Inter-team transfer",
+      transferGroupPrefix: "Group",
       defaultLocation: "Default",
+      toTeamPrefix: "To team",
+      fromTeamPrefix: "From team",
     },
   };
 
@@ -26,6 +30,15 @@ describe("transactions UI utils", () => {
       expect(getTransactionTypeLabel("adjust", t)).toBe("Adjust");
       expect(getTransactionTypeLabel("move", t)).toBe("Move");
       expect(getTransactionTypeLabel("count", t)).toBe("Count");
+    });
+
+    it("returns inter-team transfer label when destination kind is team", () => {
+      expect(
+        getTransactionTypeLabel("stock_out", t, {
+          transactionType: "stock_out",
+          destinationKind: "team",
+        })
+      ).toBe("Inter-team transfer");
     });
 
     it("falls back to original type for unknown values", () => {
@@ -39,6 +52,15 @@ describe("transactions UI utils", () => {
       expect(getTransactionTypeColor("stock_out")).toContain("red");
       expect(getTransactionTypeColor("adjust")).toContain("yellow");
       expect(getTransactionTypeColor("move")).toContain("blue");
+    });
+
+    it("returns violet class for inter-team transfer", () => {
+      expect(
+        getTransactionTypeColor("stock_out", {
+          transactionType: "stock_out",
+          destinationKind: "team",
+        })
+      ).toContain("violet");
     });
 
     it("uses gray fallback class for unknown types", () => {
@@ -117,6 +139,30 @@ describe("transactions UI utils", () => {
           t
         )
       ).toBe("Default");
+    });
+
+    it("formats inter-team transfer context for stock out/in", () => {
+      expect(
+        formatLocation(
+          {
+            transactionType: "stock_out",
+            destinationKind: "team",
+            counterpartyTeam: { name: "DPS" },
+          },
+          t
+        )
+      ).toBe("To team DPS");
+
+      expect(
+        formatLocation(
+          {
+            transactionType: "stock_in",
+            destinationKind: "team",
+            counterpartyTeam: { name: "Direct" },
+          },
+          t
+        )
+      ).toBe("From team Direct");
     });
   });
 

@@ -249,6 +249,7 @@ export type StockTransactionType =
   | "adjust"
   | "move"
   | "count";
+export type StockTransactionDestinationKind = "location" | "team" | "external";
 
 // Stock Transactions table
 export const stockTransactions = sqliteTable(
@@ -273,6 +274,11 @@ export const stockTransactions = sqliteTable(
     destinationLocationId: integer("destination_location_id").references(
       () => locations.id
     ),
+    destinationKind: text("destination_kind").$type<StockTransactionDestinationKind>(),
+    destinationLabel: text("destination_label"),
+    counterpartyTeamId: integer("counterparty_team_id").references(() => teams.id),
+    linkedTransactionId: integer("linked_transaction_id"),
+    transferGroupId: text("transfer_group_id"),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .$defaultFn(() => new Date()),
@@ -297,6 +303,12 @@ export const stockTransactions = sqliteTable(
     destinationLocationIdIdx: index(
       "index_stock_transactions_on_destination_location_id"
     ).on(table.destinationLocationId),
+    counterpartyTeamIdIdx: index("index_stock_transactions_on_counterparty_team_id").on(
+      table.counterpartyTeamId
+    ),
+    transferGroupIdIdx: index("index_stock_transactions_on_transfer_group_id").on(
+      table.transferGroupId
+    ),
   })
 );
 
@@ -488,6 +500,16 @@ export const stockTransactionsRelations = relations(
       fields: [stockTransactions.destinationLocationId],
       references: [locations.id],
       relationName: "destinationLocation",
+    }),
+    counterpartyTeam: one(teams, {
+      fields: [stockTransactions.counterpartyTeamId],
+      references: [teams.id],
+      relationName: "counterpartyTeam",
+    }),
+    linkedTransaction: one(stockTransactions, {
+      fields: [stockTransactions.linkedTransactionId],
+      references: [stockTransactions.id],
+      relationName: "linkedTransaction",
     }),
   })
 );

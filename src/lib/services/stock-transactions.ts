@@ -54,6 +54,44 @@ export async function createTeamStockTransaction(params: {
   }
 
   try {
+    if (payload.destinationKind === "team") {
+      const destinationTeamId = payload.destinationTeamId;
+      if (!destinationTeamId) {
+        return {
+          ok: false,
+          error: validationServiceError("Destination team is required for team transfer"),
+        };
+      }
+
+      const destinationTeam = await getTeamWithStats(destinationTeamId);
+      if (!destinationTeam) {
+        return {
+          ok: false,
+          error: validationServiceError("Destination team not found"),
+        };
+      }
+
+      if (
+        !team.companyId ||
+        !destinationTeam.companyId ||
+        team.companyId !== destinationTeam.companyId
+      ) {
+        return {
+          ok: false,
+          error: validationServiceError("Destination team must belong to the same company"),
+        };
+      }
+
+      const destinationAuth = await authorizeTeamPermission({
+        permission: "stock:write",
+        teamId: destinationTeamId,
+        requestUserId: params.requestUserId,
+      });
+      if (!destinationAuth.ok) {
+        return { ok: false, error: authServiceError(destinationAuth) };
+      }
+    }
+
     const transaction = await createStockTransaction({
       itemId: payload.itemId,
       teamId: params.teamId,
@@ -64,6 +102,10 @@ export async function createTeamStockTransaction(params: {
       sourceLocationId:
         payload.sourceLocationId ?? (payload.transactionType === "move" ? null : null),
       destinationLocationId: payload.destinationLocationId ?? (payload.locationId ?? null),
+      destinationKind: payload.destinationKind,
+      destinationLabel: payload.destinationLabel,
+      destinationTeamId: payload.destinationTeamId,
+      transferGroupId: payload.transferGroupId,
     });
 
     return { ok: true, data: { transaction: toStockTransactionDto(transaction) } };
