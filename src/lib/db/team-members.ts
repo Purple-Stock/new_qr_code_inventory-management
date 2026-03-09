@@ -85,7 +85,9 @@ export async function getCompanyTeams(companyId: number) {
     .select({
       id: teams.id,
       name: teams.name,
+      stripeSubscriptionId: teams.stripeSubscriptionId,
       stripeSubscriptionStatus: teams.stripeSubscriptionStatus,
+      stripeCurrentPeriodEnd: teams.stripeCurrentPeriodEnd,
       manualTrialEndsAt: teams.manualTrialEndsAt,
     })
     .from(teams)
