@@ -9,6 +9,15 @@ const ACTIVE_SUBSCRIPTION_STATUSES = new Set(["active", "trialing", "canceling"]
 
 export function hasActiveTeamSubscription(team: TeamBillingSnapshot): boolean {
   if (ACTIVE_SUBSCRIPTION_STATUSES.has(team.stripeSubscriptionStatus ?? "")) {
+    // Preserve the previous behavior for legacy callers/tests that only know the
+    // subscription status and do not provide Stripe identifiers or billing end dates.
+    if (
+      team.stripeSubscriptionId === undefined &&
+      team.stripeCurrentPeriodEnd === undefined
+    ) {
+      return true;
+    }
+
     if (team.stripeSubscriptionId) {
       return true;
     }
