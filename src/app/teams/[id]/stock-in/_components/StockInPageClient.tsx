@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Search, Info, ScanLine, Plus, Minus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Search, Info, ScanLine, Plus, Minus, Trash2, PackagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,9 @@ import { useToast } from "@/components/ui/use-toast-simple";
 import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
+import type { ItemDto } from "@/lib/services/types";
 import { createStockInAction } from "../_actions/createStockTransaction";
+import { CreateItemInlineModal } from "./CreateItemInlineModal";
 import type { Item, Location, Team, SelectedItem } from "../_types";
 
 interface StockInPageClientProps {
@@ -27,18 +29,40 @@ interface StockInPageClientProps {
   team: Team;
 }
 
+function looksLikeBarcode(value: string) {
+  return /^\d{8,}$/.test(value.trim());
+}
+
+function normalizeItemForStockIn(item: ItemDto): Item {
+  return {
+    id: item.id,
+    name: item.name,
+    sku: item.sku,
+    barcode: item.barcode,
+    currentStock: item.currentStock,
+    locationName: item.locationName,
+  };
+}
+
 export function StockInPageClient({ items, locations, team }: StockInPageClientProps) {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [selectedLocation, setSelectedLocation] = useState<string>(
     locations.length > 0 ? locations[0].id.toString() : ""
   );
+  const [availableItems, setAvailableItems] = useState<Item[]>(items);
   const [itemSearch, setItemSearch] = useState("");
+  const [itemSearchSource, setItemSearchSource] = useState<"search" | "barcode">("search");
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [isCreateItemModalOpen, setIsCreateItemModalOpen] = useState(false);
+  const [createItemInitialValues, setCreateItemInitialValues] = useState({
+    name: "",
+    barcode: "",
+  });
   const tourSteps: TourStep[] = [
     { target: "tour-stock-in-tutorial", title: t.stockIn.tourTutorialTitle, description: t.stockIn.tourTutorialDesc },
     { target: "tour-stock-in-location", title: t.stockIn.tourLocationTitle, description: t.stockIn.tourLocationDesc },
@@ -49,10 +73,14 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
     { target: "tour-sidebar", title: t.stockIn.tourSidebarTitle, description: t.stockIn.tourSidebarDesc },
   ];
 
+  useEffect(() => {
+    setAvailableItems(items);
+  }, [items]);
+
   const normalizedSearch = itemSearch.trim().toLowerCase();
   const hasItemFilters = normalizedSearch.length > 0;
 
-  const filteredItems = items.filter((item) => {
+  const filteredItems = availableItems.filter((item) => {
     if (!hasItemFilters) return false;
     return Boolean(
       item.name?.toLowerCase().includes(normalizedSearch) ||
@@ -61,22 +89,36 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
     );
   });
 
+  const showCreateItemState = hasItemFilters && filteredItems.length === 0;
+
+  const openCreateItemModal = (value: string, source: "search" | "barcode") => {
+    const trimmedValue = value.trim();
+
+    setCreateItemInitialValues({
+      name: source === "search" ? trimmedValue : "",
+      barcode:
+        source === "barcode" || looksLikeBarcode(trimmedValue) ? trimmedValue : "",
+    });
+    setIsCreateItemModalOpen(true);
+  };
+
   const handleAddItem = (item: Item) => {
     const exists = selectedItems.find((si) => si.item.id === item.id);
     if (exists) {
-      setSelectedItems(
-        selectedItems.map((si) =>
+      setSelectedItems((currentItems) =>
+        currentItems.map((si) =>
           si.item.id === item.id ? { ...si, quantity: si.quantity + 1 } : si
         )
       );
     } else {
-      setSelectedItems([...selectedItems, { item, quantity: 1 }]);
+      setSelectedItems((currentItems) => [...currentItems, { item, quantity: 1 }]);
     }
     setItemSearch("");
+    setItemSearchSource("search");
   };
 
   const handleBarcodeScan = async (barcode: string) => {
-    const foundItem = items.find((item) => item.barcode === barcode);
+    const foundItem = availableItems.find((item) => item.barcode === barcode);
 
     if (foundItem) {
       handleAddItem(foundItem);
@@ -86,12 +128,34 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
         description: `${foundItem.name || t.items.unnamedItem} ${t.stockIn.itemAddedToList}`,
       });
     } else {
+      setItemSearchSource("barcode");
+      setItemSearch(barcode);
       toast({
-        variant: "destructive",
+        variant: "default",
         title: t.stockIn.itemNotFound,
-        description: `${t.stockIn.noItemWithBarcode} ${barcode}`,
+        description: `${t.stockIn.noItemWithBarcode} ${barcode}. ${t.stockIn.createMissingItemHint}`,
       });
     }
+  };
+
+  const handleCreateItemSuccess = async (item: ItemDto) => {
+    const normalizedItem = normalizeItemForStockIn(item);
+
+    setAvailableItems((currentItems) => {
+      if (currentItems.some((currentItem) => currentItem.id === normalizedItem.id)) {
+        return currentItems;
+      }
+
+      return [normalizedItem, ...currentItems];
+    });
+
+    handleAddItem(normalizedItem);
+    setIsCreateItemModalOpen(false);
+    toast({
+      variant: "success",
+      title: t.common.success,
+      description: t.stockIn.createItemSuccessAndAdded,
+    });
   };
 
   const handleQuantityChange = (itemId: number, quantity: number) => {
@@ -138,19 +202,18 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
 
     setIsSubmitting(true);
     try {
-      // Create transactions using Server Action
       const results = await Promise.all(
         selectedItems.map((si) =>
           createStockInAction(team.id, {
             itemId: si.item.id,
             quantity: si.quantity,
-            locationId: selectedLocation ? parseInt(selectedLocation) : null,
+            locationId: selectedLocation ? parseInt(selectedLocation, 10) : null,
             notes: notes || null,
           })
         )
       );
 
-      const hasError = results.some((r) => !r.success);
+      const hasError = results.some((result) => !result.success);
       if (hasError) {
         toast({
           variant: "destructive",
@@ -166,10 +229,10 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
         description: t.stockIn.stockAddedSuccess,
       });
 
-      // Reset form
       setSelectedItems([]);
       setNotes("");
       setItemSearch("");
+      setItemSearchSource("search");
     } catch (error) {
       console.error("Error adding stock:", error);
       toast({
@@ -184,7 +247,6 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
 
   return (
     <TeamLayout team={team} activeMenuItem="stock-in">
-      {/* Page Header */}
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
         <div className="flex-1">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-600 mb-1 sm:mb-2">
@@ -203,7 +265,6 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
         </Button>
       </div>
 
-      {/* Location Section */}
       <div className="mb-4 sm:mb-6" data-tour="tour-stock-in-location">
         <Label htmlFor="location" className="text-sm font-semibold text-gray-700 mb-2 block">
           {t.stockIn.locationRequired}
@@ -225,7 +286,6 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
         </Select>
       </div>
 
-      {/* Items Section */}
       <div className="mb-4 sm:mb-6" data-tour="tour-stock-in-items">
         <Label htmlFor="items" className="text-sm font-semibold text-gray-700 mb-2 block">
           {t.stockIn.items}
@@ -238,10 +298,13 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
               type="text"
               placeholder={t.stockIn.searchItem}
               value={itemSearch}
-              onChange={(e) => setItemSearch(e.target.value)}
+              onChange={(e) => {
+                setItemSearchSource("search");
+                setItemSearch(e.target.value);
+              }}
               className="pl-9 sm:pl-10 h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
             />
-            {hasItemFilters && filteredItems.length > 0 && (
+            {hasItemFilters && filteredItems.length > 0 ? (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                 {filteredItems.map((item) => (
                   <button
@@ -252,21 +315,24 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
                     <div className="font-medium text-gray-900">
                       {item.name || t.items.unnamedItem}
                     </div>
-                    {item.sku && <div className="text-xs text-gray-500">SKU: {item.sku}</div>}
-                    {item.currentStock !== null && (
+                    {item.sku ? <div className="text-xs text-gray-500">SKU: {item.sku}</div> : null}
+                    {item.currentStock !== null ? (
                       <div className="text-xs text-gray-500">
                         {t.stockIn.currentStockLabel}: {item.currentStock}
                       </div>
-                    )}
+                    ) : null}
                   </button>
                 ))}
               </div>
-            )}
+            ) : null}
           </div>
           <Button
             type="button"
             variant="outline"
-            onClick={() => setItemSearch("")}
+            onClick={() => {
+              setItemSearch("");
+              setItemSearchSource("search");
+            }}
             className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 text-xs sm:text-sm touch-manipulation min-h-[44px] sm:min-h-0"
           >
             {t.common.clearFilter}
@@ -281,9 +347,29 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
             <span className="sm:hidden">Scan</span>
           </Button>
         </div>
+
+        {showCreateItemState ? (
+          <div className="mt-3 rounded-xl border border-dashed border-purple-200 bg-purple-50/60 px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-gray-900">
+                {t.stockIn.noSearchResultsCreate}
+              </p>
+              <p className="text-xs sm:text-sm text-gray-600">
+                {t.stockIn.noSearchResultsCreateHint}
+              </p>
+            </div>
+            <Button
+              type="button"
+              onClick={() => openCreateItemModal(itemSearch, itemSearchSource)}
+              className="bg-[#6B21A8] hover:bg-[#6B21A8]/90 text-white w-full sm:w-auto"
+            >
+              <PackagePlus className="h-4 w-4 mr-2" />
+              {t.stockIn.createItemCta}
+            </Button>
+          </div>
+        ) : null}
       </div>
 
-      {/* Items Table */}
       <div className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden" data-tour="tour-stock-in-table">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -357,7 +443,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
                           onChange={(e) =>
                             handleQuantityChange(
                               selectedItem.item.id,
-                              parseInt(e.target.value) || 0
+                              parseInt(e.target.value, 10) || 0
                             )
                           }
                           className="w-20 sm:w-24 h-9 sm:h-10 text-center text-sm font-semibold border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
@@ -389,7 +475,6 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
         </div>
       </div>
 
-      {/* Notes Section */}
       <div className="mb-4 sm:mb-6" data-tour="tour-stock-in-notes">
         <Label htmlFor="notes" className="text-sm font-semibold text-gray-700 mb-2 block">
           {t.stockIn.notes}
@@ -404,7 +489,6 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
         />
       </div>
 
-      {/* Summary and Submit */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-gray-200" data-tour="tour-stock-in-submit">
         <div className="text-sm sm:text-base font-semibold text-gray-700">
           {t.stockIn.totalItemsToAdd}: <span className="text-[#6B21A8]">{totalItems}</span>
@@ -418,12 +502,18 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
         </Button>
       </div>
 
-      {/* Barcode Scanner Modal */}
       <BarcodeScannerModal
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
         onScan={handleBarcodeScan}
         onManualEnter={handleBarcodeScan}
+      />
+      <CreateItemInlineModal
+        isOpen={isCreateItemModalOpen}
+        team={team}
+        initialValues={createItemInitialValues}
+        onClose={() => setIsCreateItemModalOpen(false)}
+        onSuccess={handleCreateItemSuccess}
       />
       <TutorialTour
         isOpen={isTutorialOpen}

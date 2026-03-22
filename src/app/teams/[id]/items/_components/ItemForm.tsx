@@ -29,7 +29,8 @@ interface ItemFormProps {
   values: ItemFormValues;
   customFieldSchema: CustomFieldSchemaEntry[];
   isLoading: boolean;
-  cancelHref: string;
+  cancelHref?: string;
+  onCancel?: () => void;
   mode: "create" | "edit";
   onSubmit: (e: React.FormEvent) => void;
   onValueChange: (field: keyof ItemFormValues, value: string) => void;
@@ -44,6 +45,7 @@ export function ItemForm({
   customFieldSchema,
   isLoading,
   cancelHref,
+  onCancel,
   mode,
   onSubmit,
   onValueChange,
@@ -290,15 +292,26 @@ export function ItemForm({
             ? t.itemForm.updating
             : t.itemForm.updateAction}
         </Button>
-        <Link href={cancelHref}>
+        {cancelHref ? (
+          <Link href={cancelHref}>
+            <Button
+              type="button"
+              variant="outline"
+              className="border-gray-300 text-gray-700 hover:bg-gray-50"
+            >
+              {t.common.cancel}
+            </Button>
+          </Link>
+        ) : (
           <Button
             type="button"
             variant="outline"
+            onClick={onCancel}
             className="border-gray-300 text-gray-700 hover:bg-gray-50"
           >
             {t.common.cancel}
           </Button>
-        </Link>
+        )}
       </div>
     </form>
   );
