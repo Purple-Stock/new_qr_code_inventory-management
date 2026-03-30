@@ -354,7 +354,7 @@ export function parseTeamManualActivationPayload(body: unknown): ValidationResul
   }
 
   const durationParsed = parseOptionalInteger(body.durationDays);
-  if (!durationParsed.ok || durationParsed.data === null) {
+  if (!durationParsed.ok) {
     return { ok: false, error: "Duration must be an integer between 1 and 365 days" };
   }
 

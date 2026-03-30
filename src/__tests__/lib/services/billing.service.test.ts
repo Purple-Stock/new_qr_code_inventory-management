@@ -369,6 +369,71 @@ describe("billing service", () => {
     );
   });
 
+  it("uses the default manual billing duration when durationDays is omitted", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-11T00:00:00.000Z"));
+
+    mockedFindUserById.mockResolvedValue({
+      id: 50,
+      email: "ops@example.com",
+      role: "super_admin",
+    } as never);
+    mockedGetTeamWithStats.mockResolvedValue({
+      id: 3,
+      name: "PIX Team",
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+    } as never);
+    mockedPersistTeamManualBilling.mockResolvedValue({
+      id: 3,
+      stripeSubscriptionStatus: "active",
+      stripeCurrentPeriodEnd: new Date("2026-04-10T00:00:00.000Z"),
+    } as never);
+
+    const result = await activateTeamManualBilling({
+      teamId: 3,
+      requestUserId: 50,
+      payload: { reason: "Pagamento PIX confirmado" },
+    });
+
+    expect(result.ok).toBe(true);
+    expect(mockedPersistTeamManualBilling).toHaveBeenCalledWith(
+      3,
+      expect.objectContaining({
+        stripeCurrentPeriodEnd: new Date("2026-04-10T00:00:00.000Z"),
+      })
+    );
+
+    vi.useRealTimers();
+  });
+
+  it("rejects manual billing activation when the team still has managed Stripe billing", async () => {
+    mockedFindUserById.mockResolvedValue({
+      id: 50,
+      email: "ops@example.com",
+      role: "super_admin",
+    } as never);
+    mockedGetTeamWithStats.mockResolvedValue({
+      id: 3,
+      name: "PIX Team",
+      stripeCustomerId: "cus_123",
+      stripeSubscriptionId: "sub_123",
+    } as never);
+
+    const result = await activateTeamManualBilling({
+      teamId: 3,
+      requestUserId: 50,
+      payload: { durationDays: 30, reason: "Pagamento PIX confirmado" },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.status).toBe(409);
+    expect(result.error.errorCode).toBe(ERROR_CODES.VALIDATION_ERROR);
+    expect(result.error.error).toContain("managed Stripe billing");
+    expect(mockedPersistTeamManualBilling).not.toHaveBeenCalled();
+  });
+
   it("rejects manual billing activation without super admin access", async () => {
     mockedFindUserById.mockResolvedValue({
       id: 9,

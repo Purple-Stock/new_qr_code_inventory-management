@@ -18,6 +18,7 @@ import { authorizeTeamPermission } from "@/lib/permissions";
 import type { ServiceResult } from "@/lib/services/types";
 import {
   authServiceError,
+  conflictValidationServiceError,
   internalServiceError,
   makeServiceError,
   validationServiceError,
@@ -191,6 +192,15 @@ export async function activateTeamManualBilling(params: {
     return {
       ok: false,
       error: makeServiceError(404, ERROR_CODES.TEAM_NOT_FOUND, "Team not found"),
+    };
+  }
+
+  if (team.stripeCustomerId || team.stripeSubscriptionId) {
+    return {
+      ok: false,
+      error: conflictValidationServiceError(
+        "Team still has managed Stripe billing. Cancel or migrate the Stripe subscription before manual activation."
+      ),
     };
   }
 
