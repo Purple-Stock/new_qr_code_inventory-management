@@ -55,8 +55,7 @@ type LabelSizePreset =
   | "zebra_110x64"
   | "zebra_170x64";
 
-type QRSizePreset = "medium" | "large" | "small" | "custom";
-type PreviewScaleMode = "fit" | "real";
+type QRSizePreset = "medium" | "large" | "extra_large" | "small" | "custom";
 
 const LABEL_SIZE_PRESETS: Record<
   Exclude<LabelSizePreset, "custom">,
@@ -119,7 +118,6 @@ export default function LabelsPageClient({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [previewScaleMode, setPreviewScaleMode] = useState<PreviewScaleMode>("fit");
   const { t } = useTranslation();
   const tourSteps: TourStep[] = [
     { target: "tour-labels-tutorial", title: t.labels.tourTutorialTitle, description: t.labels.tourTutorialDesc },
@@ -240,6 +238,8 @@ export default function LabelsPageClient({
         return 1;
       case "large":
         return 1.25;
+      case "extra_large":
+        return 1.7;
       case "custom": {
         const parsed = Number.parseInt(customQRScale, 10);
         const safeScale = Number.isFinite(parsed) ? Math.min(Math.max(parsed, 70), 180) : 125;
@@ -258,11 +258,21 @@ export default function LabelsPageClient({
         return t.labels.medium;
       case "large":
         return t.labels.large;
+      case "extra_large":
+        return t.labels.extraLarge;
       case "custom":
         return `${customQRScale}%`;
       default:
         return t.labels.large;
     }
+  };
+
+  const getQRRenderWidth = (qrSize: number) => {
+    if (qrSizePreset === "extra_large") {
+      return 800;
+    }
+
+    return qrSize * 4;
   };
 
   const normalizedWidthCm = getLabelDimensionsCm().widthCm;
@@ -276,18 +286,11 @@ export default function LabelsPageClient({
   const previewScaleStyle = {
     transform: `scale(${Math.min(Math.max(qrScaleFactor, 0.85), 1.45)})`,
   };
-  const previewSheetStyle =
-    previewScaleMode === "real"
-      ? {
-          width: `${normalizedWidthCm}cm`,
-          height: `${normalizedHeightCm}cm`,
-          maxWidth: "none",
-        }
-      : {
-          width: "100%",
-          maxWidth: "320px",
-          minHeight: "440px",
-        };
+  const previewSheetStyle = {
+    width: `${normalizedWidthCm}cm`,
+    height: `${normalizedHeightCm}cm`,
+    maxWidth: "none",
+  };
 
   const resolveLogoDataUrl = async (): Promise<{
     dataUrl: string | null;
@@ -402,6 +405,16 @@ export default function LabelsPageClient({
 
           let currentY = innerY;
 
+        const getClampedLines = (
+          text: string,
+          maxWidth: number,
+          maxLines: number
+        ): string[] => {
+          if (!text.trim()) return [];
+          const splitRaw = pdf.splitTextToSize(text, maxWidth);
+          return (Array.isArray(splitRaw) ? splitRaw : [splitRaw]).slice(0, maxLines);
+        };
+
         const addFittedText = (text: string, options: {
           fontSize: number;
           maxWidth: number;
@@ -413,8 +426,7 @@ export default function LabelsPageClient({
           if (!text.trim()) return 0;
           pdf.setFontSize(options.fontSize);
           pdf.setTextColor(...options.color);
-          const splitRaw = pdf.splitTextToSize(text, options.maxWidth);
-          const lines = (Array.isArray(splitRaw) ? splitRaw : [splitRaw]).slice(0, options.maxLines);
+          const lines = getClampedLines(text, options.maxWidth, options.maxLines);
           if (lines.length === 0) return 0;
           pdf.text(lines, options.x, options.y, {
             maxWidth: options.maxWidth,
@@ -432,8 +444,7 @@ export default function LabelsPageClient({
           if (!text.trim()) return 0;
           pdf.setFontSize(options.fontSize);
           pdf.setTextColor(...options.color);
-          const splitRaw = pdf.splitTextToSize(text, options.maxWidth);
-          const lines = (Array.isArray(splitRaw) ? splitRaw : [splitRaw]).slice(0, options.maxLines);
+          const lines = getClampedLines(text, options.maxWidth, options.maxLines);
           if (lines.length === 0) return 0;
           pdf.text(lines, centerX, options.y, {
             align: "center",
@@ -523,7 +534,7 @@ export default function LabelsPageClient({
         if (includeQRCode && item.barcode) {
           try {
             const qrDataUrl = await QRCode.toDataURL(item.barcode, {
-              width: qrSize * 4,
+              width: getQRRenderWidth(qrSize),
               margin: 1,
               color: {
                 dark: "#000000",
@@ -621,53 +632,77 @@ export default function LabelsPageClient({
           currentY += Math.max(lineStep, used * lineStep);
         }
 
-        for (const field of customFieldOptions) {
-          if (!includeCustomFieldKeys[field.key]) {
-            continue;
-          }
+        const companyEnabled =
+          includeCompanyInfo &&
+          (companyLogoDataUrl || team.companyName || team.labelCompanyInfo);
+        const rightTextX = companyLogoDataUrl ? innerX + logoSize + 2 : innerX;
+        const rightTextW = companyLogoDataUrl ? innerW - logoSize - 2 : innerW;
+        const companyNameLines = team.companyName
+          ? getClampedLines(team.companyName, rightTextW, 1)
+          : [];
+        const companyInfoLines = team.labelCompanyInfo
+          ? getClampedLines(team.labelCompanyInfo, rightTextW, 2)
+          : [];
+        const companyTextLineCount = companyNameLines.length + companyInfoLines.length;
+        const companyTextHeight = companyTextLineCount > 0 ? companyTextLineCount * lineStep : 0;
+        const companyBlockHeight = companyEnabled
+          ? Math.max(logoSize, companyTextHeight || logoSize)
+          : 0;
+        const companyBlockTop = companyEnabled ? innerBottom - companyBlockHeight : innerBottom;
 
-          const fieldValue = item.customFields?.[field.key];
-          if (!fieldValue || currentY + lineStep > innerBottom) {
-            continue;
-          }
+        const renderableCustomFields = customFieldOptions
+          .filter((field) => includeCustomFieldKeys[field.key])
+          .map((field) => {
+            const fieldValue = item.customFields?.[field.key];
+            if (!fieldValue) return null;
+            const fieldLabel = customFieldLabelByKey.get(field.key) ?? field.key;
+            const lines = getClampedLines(`${fieldLabel}: ${fieldValue}`, innerW, 2);
+            if (lines.length === 0) return null;
+            return {
+              key: field.key,
+              text: `${fieldLabel}: ${fieldValue}`,
+              lines,
+              height: Math.max(lineStep, lines.length * lineStep),
+            };
+          })
+          .filter((field): field is { key: string; text: string; lines: string[]; height: number } => Boolean(field));
 
-          const fieldLabel = customFieldLabelByKey.get(field.key) ?? field.key;
-          const availableLines = Math.max(1, Math.floor((innerBottom - currentY) / lineStep));
-          const used = addFittedText(`${fieldLabel}: ${fieldValue}`, {
+        const customFieldsHeight = renderableCustomFields.reduce((total, field) => total + field.height, 0);
+        const customFieldsStartY =
+          renderableCustomFields.length > 0
+            ? Math.max(currentY + 1.5, companyBlockTop - customFieldsHeight - (companyEnabled ? 3 : 0))
+            : currentY;
+
+        let fieldsY = customFieldsStartY;
+        for (const field of renderableCustomFields) {
+          if (fieldsY + lineStep > companyBlockTop) {
+            break;
+          }
+          const availableLines = Math.max(1, Math.floor((companyBlockTop - fieldsY) / lineStep));
+          const used = addFittedText(field.text, {
             fontSize: metaFont,
             maxWidth: innerW,
-            maxLines: Math.min(2, availableLines),
+            maxLines: Math.min(field.lines.length, availableLines),
             color: [80, 80, 80],
             x: innerX,
-            y: currentY + lineStep,
+            y: fieldsY + lineStep,
           });
-          currentY += Math.max(lineStep, used * lineStep);
+          fieldsY += Math.max(lineStep, used * lineStep);
         }
 
-        currentY += 1.5;
-
-        // Company block: logo left, company name and extras on the right
-        if (
-          includeCompanyInfo &&
-          (companyLogoDataUrl || team.companyName || team.labelCompanyInfo) &&
-          currentY + lineStep <= innerBottom
-        ) {
-          const companyBlockY = currentY;
-          const rightTextX = companyLogoDataUrl ? innerX + logoSize + 2 : innerX;
-          const rightTextW = companyLogoDataUrl ? innerW - logoSize - 2 : innerW;
-          let rightTextY = companyBlockY;
+        if (companyEnabled && companyBlockTop + lineStep <= innerBottom) {
+          let rightTextY = companyBlockTop;
 
           if (companyLogoDataUrl) {
             const logoFormat = companyLogoDataUrl.includes("data:image/jpeg") ? "JPEG" : "PNG";
-            pdf.addImage(companyLogoDataUrl, logoFormat, innerX, companyBlockY, logoSize, logoSize);
+            pdf.addImage(companyLogoDataUrl, logoFormat, innerX, companyBlockTop, logoSize, logoSize);
           }
 
-          if (team.companyName && rightTextY + lineStep <= innerBottom) {
-            const remainingLines = Math.max(1, Math.floor((innerBottom - rightTextY) / lineStep));
-            const used = addFittedText(team.companyName, {
+          if (companyNameLines.length > 0 && rightTextY + lineStep <= innerBottom) {
+            const used = addFittedText(team.companyName ?? "", {
               fontSize: bodyFont,
               maxWidth: rightTextW,
-              maxLines: Math.min(1, remainingLines),
+              maxLines: companyNameLines.length,
               color: [55, 65, 81],
               x: rightTextX,
               y: rightTextY + lineStep,
@@ -675,12 +710,11 @@ export default function LabelsPageClient({
             rightTextY += Math.max(lineStep, used * lineStep);
           }
 
-          if (team.labelCompanyInfo && rightTextY + lineStep <= innerBottom) {
-            const remainingLines = Math.max(1, Math.floor((innerBottom - rightTextY) / lineStep));
-            addFittedText(team.labelCompanyInfo, {
+          if (companyInfoLines.length > 0 && rightTextY + lineStep <= innerBottom) {
+            addFittedText(team.labelCompanyInfo ?? "", {
               fontSize: metaFont,
               maxWidth: rightTextW,
-              maxLines: Math.min(2, remainingLines),
+              maxLines: companyInfoLines.length,
               color: [107, 114, 128],
               x: rightTextX,
               y: rightTextY + lineStep,
@@ -1016,6 +1050,7 @@ export default function LabelsPageClient({
 	                    <option value="small">{t.labels.small}</option>
 	                    <option value="medium">{t.labels.medium}</option>
 	                    <option value="large">{t.labels.large}</option>
+	                    <option value="extra_large">{t.labels.extraLarge}</option>
 	                    <option value="custom">{t.labels.customSize}</option>
 	                  </select>
 	                  {qrSizePreset === "custom" ? (
@@ -1312,29 +1347,8 @@ export default function LabelsPageClient({
 	                        </div>
                           <div>
                             <p className="font-medium text-slate-900">{t.labels.previewScaleTitle}</p>
-                            <div className="mt-2 inline-flex rounded-full border border-slate-200 bg-white p-1">
-                              <button
-                                type="button"
-                                onClick={() => setPreviewScaleMode("fit")}
-                                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                                  previewScaleMode === "fit"
-                                    ? "bg-[#6B21A8] text-white"
-                                    : "text-slate-600 hover:bg-slate-100"
-                                }`}
-                              >
-                                {t.labels.previewScaleFit}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setPreviewScaleMode("real")}
-                                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                                  previewScaleMode === "real"
-                                    ? "bg-[#6B21A8] text-white"
-                                    : "text-slate-600 hover:bg-slate-100"
-                                }`}
-                              >
-                                {t.labels.previewScaleReal}
-                              </button>
+                            <div className="mt-2 inline-flex rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-[#6B21A8] shadow-sm">
+                              {t.labels.previewScaleReal}
                             </div>
                           </div>
                           <div>
@@ -1359,7 +1373,7 @@ export default function LabelsPageClient({
 	                          {includeQRCode && previewItem.barcode ? (
 	                            <div className="flex items-start justify-center pt-2">
 	                              <div className="transition-transform" style={previewScaleStyle}>
-	                                <QRCodeDisplay value={previewItem.barcode} size={previewScaleMode === "real" ? 170 : 140} />
+	                                <QRCodeDisplay value={previewItem.barcode} size={170} />
 	                              </div>
 	                            </div>
 	                          ) : (
