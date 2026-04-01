@@ -82,6 +82,10 @@ vi.mock("@/lib/i18n", () => ({
         heightCm: "Height",
         customSizeLimits: "Allowed dimensions: width between 3 and 18 cm, height between 2 and 12 cm.",
         customSizeAdjusted: "Adjusted to {width} x {height} cm",
+        small: "Small",
+        medium: "Medium",
+        large: "Large",
+        extraLarge: "Extra large",
         includeQRCode: "Include QR",
         qrSizeLabel: "QR size",
         qrScaleLabel: "Custom QR scale (%)",
@@ -270,6 +274,19 @@ describe("LabelsPageClient", () => {
     expect(addImageSpy.mock.calls[0]?.[5]).toBeGreaterThan(40);
   });
 
+  it("supports the extra large QR option with render width 800", async () => {
+    render(<LabelsPageClient initialTeam={team as any} initialItems={items as any} />);
+
+    fireEvent.change(screen.getByRole("combobox", { name: "QR size" }), {
+      target: { value: "extra_large" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Select all" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Generate PDF" })[0]);
+
+    await waitFor(() => expect(mockedQRCodeToDataUrl).toHaveBeenCalled());
+    expect(mockedQRCodeToDataUrl.mock.calls[0]?.[1]).toMatchObject({ width: 800 });
+  });
+
   it("opens a preview modal with a sample label", () => {
     render(<LabelsPageClient initialTeam={team as any} initialItems={items as any} />);
 
@@ -279,12 +296,12 @@ describe("LabelsPageClient", () => {
     expect(screen.getAllByText("Item A").length).toBeGreaterThan(0);
   });
 
-  it("switches the preview to real-size mode", () => {
+  it("keeps the preview in real-size mode", () => {
     render(<LabelsPageClient initialTeam={team as any} initialItems={items as any} />);
 
     fireEvent.click(screen.getAllByRole("button", { name: "Preview label" })[0]);
-    fireEvent.click(screen.getByRole("button", { name: "Real size" }));
 
+    expect(screen.getByText("Real size")).toBeInTheDocument();
     const previewSheet = screen.getByTestId("label-preview-sheet");
     expect(previewSheet).toHaveStyle({ width: "10cm", height: "15cm" });
   });
