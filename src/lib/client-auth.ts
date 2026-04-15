@@ -1,9 +1,14 @@
 import { fetchApiResult } from "@/lib/api-client";
+import type { ToastVariant } from "@/components/ui/use-toast-simple";
 
 interface LogoutAndRedirectOptions {
   message: string;
   title: string;
-  toast: (options: { variant: string; title: string; description: string }) => void;
+  toast: (options: {
+    variant?: ToastVariant;
+    title?: string;
+    description?: string;
+  }) => unknown;
   router: { push: (href: string) => void };
 }
 
