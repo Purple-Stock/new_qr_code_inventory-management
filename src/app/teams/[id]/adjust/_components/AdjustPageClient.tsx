@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Search, Info, ScanLine, Plus, Minus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/ui/use-toast-simple";
+import { ERROR_CODES } from "@/lib/errors";
+import { logoutAndRedirectToLogin } from "@/lib/client-auth";
 import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
@@ -33,6 +36,7 @@ interface AdjustPageClientProps {
 }
 
 export function AdjustPageClient({ items, locations, team }: AdjustPageClientProps) {
+  const router = useRouter();
   const { t } = useTranslation();
   const { toast } = useToast();
   const [selectedLocation, setSelectedLocation] = useState<string>(
@@ -150,12 +154,22 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
         )
       );
 
-      const hasError = results.some((r) => !r.success);
-      if (hasError) {
+      const firstError = results.find((r) => !r.success);
+      if (firstError) {
+        if (firstError.errorCode === ERROR_CODES.USER_NOT_AUTHENTICATED) {
+          await logoutAndRedirectToLogin({
+            message: firstError.error || "User not authenticated",
+            title: t.common.error,
+            toast,
+            router,
+          });
+          return;
+        }
+
         toast({
           variant: "destructive",
           title: t.common.error,
-          description: t.adjust.partialAdjustError,
+          description: firstError.error || t.adjust.partialAdjustError,
         });
         return;
       }

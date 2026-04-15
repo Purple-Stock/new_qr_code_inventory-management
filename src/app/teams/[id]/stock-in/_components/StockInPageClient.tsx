@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Search, Info, ScanLine, Plus, Minus, Trash2, PackagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/ui/use-toast-simple";
+import { ERROR_CODES } from "@/lib/errors";
+import { logoutAndRedirectToLogin } from "@/lib/client-auth";
 import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
@@ -45,6 +48,7 @@ function normalizeItemForStockIn(item: ItemDto): Item {
 }
 
 export function StockInPageClient({ items, locations, team }: StockInPageClientProps) {
+  const router = useRouter();
   const { t } = useTranslation();
   const { toast } = useToast();
   const [selectedLocation, setSelectedLocation] = useState<string>(
@@ -213,12 +217,22 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
         )
       );
 
-      const hasError = results.some((result) => !result.success);
-      if (hasError) {
+      const firstError = results.find((result) => !result.success);
+      if (firstError) {
+        if (firstError.errorCode === ERROR_CODES.USER_NOT_AUTHENTICATED) {
+          await logoutAndRedirectToLogin({
+            message: firstError.error || "User not authenticated",
+            title: t.common.error,
+            toast,
+            router,
+          });
+          return;
+        }
+
         toast({
           variant: "destructive",
           title: t.common.error,
-          description: t.stockIn.partialAddError,
+          description: firstError.error || t.stockIn.partialAddError,
         });
         return;
       }
