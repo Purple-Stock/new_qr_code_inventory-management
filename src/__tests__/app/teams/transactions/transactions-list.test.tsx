@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { TransactionsList } from "@/app/teams/[id]/transactions/_components/TransactionsList";
+import { deleteTransactionAction } from "@/app/teams/[id]/transactions/_actions/deleteTransaction";
 
 vi.mock("@/lib/i18n", () => ({
   useTranslation: () => ({
@@ -12,6 +13,13 @@ vi.mock("@/lib/i18n", () => ({
         error: "Erro",
         success: "Sucesso",
         noNotes: "Sem notas.",
+        delete: "Excluir",
+        cancel: "Cancelar",
+        loading: "Carregando",
+        cannotBeUndone: "Essa ação não pode ser desfeita.",
+      },
+      teamSelection: {
+        deleteConfirm: "Tem certeza que deseja excluir?",
       },
       transactions: {
         noTransactions: "Nenhuma transação encontrada",
@@ -32,6 +40,17 @@ vi.mock("@/lib/i18n", () => ({
         stockOut: "Saída",
         adjust: "Ajustar",
         move: "Mover",
+        count: "Contagem",
+        deleteModalTitle: "Excluir transação",
+        deleteModalDescription: "Confira os dados antes de excluir a movimentação.",
+        deleteModalType: "Tipo",
+        deleteModalItem: "Item",
+        deleteModalQuantity: "Quantidade",
+        deleteModalLocation: "Localização",
+        deleteModalDate: "Data",
+        deleteModalUser: "Usuário",
+        deleteModalNotes: "Notas",
+        deleteModalConfirm: "Excluir transação",
       },
     },
   }),
@@ -44,6 +63,8 @@ vi.mock("@/components/ui/use-toast-simple", () => ({
 vi.mock("@/app/teams/[id]/transactions/_actions/deleteTransaction", () => ({
   deleteTransactionAction: vi.fn(),
 }));
+
+const mockedDeleteTransactionAction = vi.mocked(deleteTransactionAction);
 
 const baseTransaction = {
   id: 1,
@@ -98,5 +119,67 @@ describe("TransactionsList", () => {
     expect(
       screen.getByRole("button", { name: "Delete transaction" })
     ).toBeInTheDocument();
+  });
+
+  it("opens a contextual delete modal when clicking the delete action", () => {
+    render(
+      <TransactionsList
+        transactions={[baseTransaction] as any}
+        teamId={29}
+        onDelete={vi.fn()}
+        canDeleteTransactions={true}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete transaction" }));
+
+    expect(
+      screen.getByRole("heading", { name: "Excluir transação" })
+    ).toBeInTheDocument();
+    expect(screen.getByText("Confira os dados antes de excluir a movimentação.")).toBeInTheDocument();
+    expect(screen.getAllByText("CAP CALABRESA")).toHaveLength(2);
+    expect(screen.getAllByText("admpadariakids@gmail.com")).toHaveLength(2);
+    expect(screen.getAllByText("teste")).toHaveLength(2);
+    expect(
+      screen.getByRole("button", { name: "Excluir transação" })
+    ).toBeInTheDocument();
+  });
+
+  it("closes the modal when cancelling deletion", () => {
+    render(
+      <TransactionsList
+        transactions={[baseTransaction] as any}
+        teamId={29}
+        onDelete={vi.fn()}
+        canDeleteTransactions={true}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete transaction" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(screen.queryByText("Confira os dados antes de excluir a movimentação.")).not.toBeInTheDocument();
+  });
+
+  it("confirms deletion through the modal", async () => {
+    mockedDeleteTransactionAction.mockResolvedValue({ success: true } as any);
+    const onDelete = vi.fn();
+
+    render(
+      <TransactionsList
+        transactions={[baseTransaction] as any}
+        teamId={29}
+        onDelete={onDelete}
+        canDeleteTransactions={true}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete transaction" }));
+    fireEvent.click(screen.getByRole("button", { name: "Excluir transação" }));
+
+    await waitFor(() => {
+      expect(mockedDeleteTransactionAction).toHaveBeenCalledWith(29, 1);
+      expect(onDelete).toHaveBeenCalled();
+    });
   });
 });
