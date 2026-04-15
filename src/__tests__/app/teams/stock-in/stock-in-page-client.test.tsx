@@ -1,16 +1,30 @@
 // @vitest-environment jsdom
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
+import { ERROR_CODES } from "@/lib/errors";
 import { StockInPageClient } from "@/app/teams/[id]/stock-in/_components/StockInPageClient";
 import { createStockInAction } from "@/app/teams/[id]/stock-in/_actions/createStockTransaction";
+import { fetchApiResult } from "@/lib/api-client";
 
 const toastSpy = vi.fn();
 const createItemModalSpy = vi.fn();
+const pushSpy = vi.fn();
+const localStorageStore = new Map<string, string>();
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: pushSpy,
+  }),
+}));
 
 vi.mock("@/app/teams/[id]/stock-in/_actions/createStockTransaction", () => ({
   createStockInAction: vi.fn(),
+}));
+
+vi.mock("@/lib/api-client", () => ({
+  fetchApiResult: vi.fn(),
 }));
 
 vi.mock("@/components/ui/use-toast-simple", () => ({
@@ -123,6 +137,8 @@ vi.mock("@/lib/i18n", () => ({
         noItemsSelected: "No items selected",
         selectLocationFirst: "Select location first",
         quantityRequired: "Quantity required",
+        partialAddError: "Some items could not be added. Try again.",
+        addError: "Add error",
         stockAddedSuccess: "Added",
         itemFound: "Item found",
         itemNotFound: "Item not found",
@@ -153,6 +169,7 @@ vi.mock("@/lib/i18n", () => ({
 }));
 
 const mockedCreateStockInAction = vi.mocked(createStockInAction);
+const mockedFetchApiResult = vi.mocked(fetchApiResult);
 
 const baseTeam = {
   id: 1,
@@ -180,7 +197,26 @@ const baseTeam = {
 describe("StockInPageClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(window, "localStorage", {
+      value: {
+        getItem: (key: string) => localStorageStore.get(key) ?? null,
+        setItem: (key: string, value: string) => {
+          localStorageStore.set(key, value);
+        },
+        removeItem: (key: string) => {
+          localStorageStore.delete(key);
+        },
+        clear: () => {
+          localStorageStore.clear();
+        },
+      },
+      configurable: true,
+    });
+    window.localStorage.clear();
+    window.localStorage.setItem("userId", "26");
+    window.localStorage.setItem("userRole", "operator");
     mockedCreateStockInAction.mockResolvedValue({ success: true } as any);
+    mockedFetchApiResult.mockResolvedValue({ ok: true } as any);
   });
 
   it("shows create-item CTA when search has no results", () => {
@@ -244,5 +280,64 @@ describe("StockInPageClient", () => {
 
     expect(screen.getByText("Modal name: -")).toBeInTheDocument();
     expect(screen.getByText("Modal barcode: 78912345678")).toBeInTheDocument();
+  });
+
+  it("shows the specific backend error instead of the generic partial error", async () => {
+    mockedCreateStockInAction.mockResolvedValue({
+      success: false,
+      errorCode: ERROR_CODES.VALIDATION_ERROR,
+      error: "Location is required",
+    } as any);
+
+    render(
+      <StockInPageClient
+        team={baseTeam}
+        locations={[{ id: 10, name: "Main" }]}
+        items={[{ id: 1, name: "Printer", sku: "PR-1", barcode: "12345678", currentStock: 5, locationName: "Main" }]}
+      />
+    );
+
+    fireEvent.change(screen.getByPlaceholderText("Search item"), {
+      target: { value: "Printer" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Printer/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Add stock" }));
+
+    await waitFor(() => {
+      expect(toastSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: "Location is required",
+        })
+      );
+    });
+  });
+
+  it("logs out automatically when the server returns user not authenticated", async () => {
+    mockedCreateStockInAction.mockResolvedValue({
+      success: false,
+      errorCode: ERROR_CODES.USER_NOT_AUTHENTICATED,
+      error: "User not authenticated",
+    } as any);
+
+    render(
+      <StockInPageClient
+        team={baseTeam}
+        locations={[{ id: 10, name: "Main" }]}
+        items={[{ id: 1, name: "Printer", sku: "PR-1", barcode: "12345678", currentStock: 5, locationName: "Main" }]}
+      />
+    );
+
+    fireEvent.change(screen.getByPlaceholderText("Search item"), {
+      target: { value: "Printer" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Printer/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Add stock" }));
+
+    await waitFor(() => {
+      expect(mockedFetchApiResult).toHaveBeenCalledWith("/api/auth/logout", { method: "POST" });
+      expect(window.localStorage.getItem("userId")).toBeNull();
+      expect(window.localStorage.getItem("userRole")).toBeNull();
+      expect(pushSpy).toHaveBeenCalledWith("/");
+    });
   });
 });

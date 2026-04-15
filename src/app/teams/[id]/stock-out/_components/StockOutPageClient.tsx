@@ -16,8 +16,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/ui/use-toast-simple";
-import { fetchApiResult } from "@/lib/api-client";
 import { ERROR_CODES } from "@/lib/errors";
+import { logoutAndRedirectToLogin } from "@/lib/client-auth";
 import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
@@ -121,24 +121,6 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
 
   const totalItems = selectedItems.reduce((sum, si) => sum + si.quantity, 0);
 
-  const handleAutomaticLogout = async (message: string) => {
-    toast({
-      variant: "destructive",
-      title: t.common.error,
-      description: message,
-    });
-
-    try {
-      await fetchApiResult("/api/auth/logout", { method: "POST" });
-    } catch {
-      // Best-effort logout. Local cleanup and redirect still proceed.
-    }
-
-    localStorage.removeItem("userId");
-    localStorage.removeItem("userRole");
-    router.push("/");
-  };
-
   const handleSubmit = async () => {
     if (!selectedLocation) {
       toast({
@@ -200,7 +182,12 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
       const firstError = results.find((r) => !r.success);
       if (firstError) {
         if (firstError.errorCode === ERROR_CODES.USER_NOT_AUTHENTICATED) {
-          await handleAutomaticLogout(firstError.error || "User not authenticated");
+          await logoutAndRedirectToLogin({
+            message: firstError.error || "User not authenticated",
+            title: t.common.error,
+            toast,
+            router,
+          });
           return;
         }
 

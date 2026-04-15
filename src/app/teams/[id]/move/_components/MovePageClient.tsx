@@ -17,6 +17,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "@/lib/i18n";
 import { fetchApiJsonResult } from "@/lib/api-client";
+import { ERROR_CODES } from "@/lib/errors";
+import { logoutAndRedirectToLogin } from "@/lib/client-auth";
 import { useToast } from "@/components/ui/use-toast-simple";
 import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
@@ -285,13 +287,24 @@ export function MovePageClient({
         )
       );
 
-      const hasError = results.some((r) => !r.success);
-      if (hasError) {
+      const firstError = results.find((r) => !r.success);
+      if (firstError) {
+        if (firstError.errorCode === ERROR_CODES.USER_NOT_AUTHENTICATED) {
+          await logoutAndRedirectToLogin({
+            message: firstError.error || "User not authenticated",
+            title: t.common.error,
+            toast,
+            router,
+          });
+          return;
+        }
+
         toast({
           variant: "destructive",
           title: t.common.error,
           description:
-            activeTab === "team" ? t.move.partialTeamTransferError : t.move.partialMoveError,
+            firstError.error ||
+            (activeTab === "team" ? t.move.partialTeamTransferError : t.move.partialMoveError),
         });
         return;
       }
