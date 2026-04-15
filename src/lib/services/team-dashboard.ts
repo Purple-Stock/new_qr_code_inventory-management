@@ -1,7 +1,7 @@
 import { getTeamWithStats } from "@/lib/db/teams";
 import { getTeamItems, getItemByIdWithLocation } from "@/lib/db/items";
 import { getLocationById, getTeamLocations } from "@/lib/db/locations";
-import { getCompanyTeams } from "@/lib/db/team-members";
+import { getActiveTeamMemberRole, getCompanyTeams } from "@/lib/db/team-members";
 import { getTeamReportStats } from "@/lib/db/reports";
 import {
   getItemStockTransactionsWithDetails,
@@ -172,16 +172,19 @@ export async function getTeamLocationsData(teamId: number, options: TeamDashboar
 export async function getTeamTransactionsData(
   teamId: number,
   searchQuery?: string,
+  requestUserId?: number | null,
   options: TeamDashboardOptions = {}
 ) {
-  const [team, transactions] = await Promise.all([
+  const [team, transactions, teamRole] = await Promise.all([
     getTeamWithStats(teamId),
     getTeamStockTransactionsWithDetails(teamId, searchQuery),
+    requestUserId ? getActiveTeamMemberRole(teamId, requestUserId) : Promise.resolve(null),
   ]);
   if (!team) {
     return {
       team: null,
       transactions: transactions.map(toTransactionDto),
+      canDeleteTransactions: false,
       subscriptionRequired: false,
     };
   }
@@ -189,12 +192,14 @@ export async function getTeamTransactionsData(
     return {
       team: null,
       transactions: [],
+      canDeleteTransactions: false,
       subscriptionRequired: true,
     };
   }
   return {
     team: toTeamDto(team),
     transactions: transactions.map(toTransactionDto),
+    canDeleteTransactions: teamRole === "admin" || teamRole === "operator",
     subscriptionRequired: false,
   };
 }

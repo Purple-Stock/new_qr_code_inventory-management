@@ -3,12 +3,15 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
+import { ERROR_CODES } from "@/lib/errors";
 import { MovePageClient } from "@/app/teams/[id]/move/_components/MovePageClient";
 import { createMoveAction } from "@/app/teams/[id]/move/_actions/createStockTransaction";
-import { fetchApiJsonResult } from "@/lib/api-client";
+import { fetchApiJsonResult, fetchApiResult } from "@/lib/api-client";
 
 const toastSpy = vi.fn();
 const refreshSpy = vi.fn();
+const pushSpy = vi.fn();
+const localStorageStore = new Map<string, string>();
 
 vi.mock("@/app/teams/[id]/move/_actions/createStockTransaction", () => ({
   createMoveAction: vi.fn(),
@@ -17,11 +20,13 @@ vi.mock("@/app/teams/[id]/move/_actions/createStockTransaction", () => ({
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     refresh: refreshSpy,
+    push: pushSpy,
   }),
 }));
 
 vi.mock("@/lib/api-client", () => ({
   fetchApiJsonResult: vi.fn(),
+  fetchApiResult: vi.fn(),
 }));
 
 vi.mock("@/components/ui/use-toast-simple", () => ({
@@ -141,15 +146,35 @@ vi.mock("@/lib/i18n", () => ({
 
 const mockedCreateMoveAction = vi.mocked(createMoveAction);
 const mockedFetchApiJsonResult = vi.mocked(fetchApiJsonResult);
+const mockedFetchApiResult = vi.mocked(fetchApiResult);
 
 describe("MovePageClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(window, "confirm").mockReturnValue(true);
+    Object.defineProperty(window, "localStorage", {
+      value: {
+        getItem: (key: string) => localStorageStore.get(key) ?? null,
+        setItem: (key: string, value: string) => {
+          localStorageStore.set(key, value);
+        },
+        removeItem: (key: string) => {
+          localStorageStore.delete(key);
+        },
+        clear: () => {
+          localStorageStore.clear();
+        },
+      },
+      configurable: true,
+    });
+    window.localStorage.clear();
+    window.localStorage.setItem("userId", "26");
+    window.localStorage.setItem("userRole", "operator");
     mockedFetchApiJsonResult.mockResolvedValue({
       ok: true,
       data: { synced: true, subscriptionStatus: "active" },
     } as any);
+    mockedFetchApiResult.mockResolvedValue({ ok: true } as any);
   });
 
   it("renders both tabs", () => {
@@ -267,5 +292,64 @@ describe("MovePageClient", () => {
     });
 
     resolveRequest?.({ success: true, transaction: { id: 99 } });
+  });
+
+  it("shows the specific backend error instead of the generic partial error", async () => {
+    mockedCreateMoveAction.mockResolvedValue({
+      success: false,
+      errorCode: ERROR_CODES.VALIDATION_ERROR,
+      error: "Destination location is required",
+    } as any);
+
+    render(
+      <MovePageClient
+        team={{ id: 1, name: "Direct" }}
+        locations={[{ id: 10, name: "A" }, { id: 11, name: "B" }]}
+        destinationTeams={[{ id: 2, name: "DPS" }]}
+        items={[{ id: 100, name: "Printer", sku: "PR-1", barcode: "ABC", currentStock: 5, locationName: "A" }]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Between teams" }));
+    fireEvent.change(screen.getByPlaceholderText("Search"), { target: { value: "Printer" } });
+    fireEvent.click(screen.getByRole("button", { name: /Printer/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Transfer Between Teams" }));
+
+    await waitFor(() => {
+      expect(toastSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: "Destination location is required",
+        })
+      );
+    });
+  });
+
+  it("logs out automatically when the server returns user not authenticated", async () => {
+    mockedCreateMoveAction.mockResolvedValue({
+      success: false,
+      errorCode: ERROR_CODES.USER_NOT_AUTHENTICATED,
+      error: "User not authenticated",
+    } as any);
+
+    render(
+      <MovePageClient
+        team={{ id: 1, name: "Direct" }}
+        locations={[{ id: 10, name: "A" }, { id: 11, name: "B" }]}
+        destinationTeams={[{ id: 2, name: "DPS" }]}
+        items={[{ id: 100, name: "Printer", sku: "PR-1", barcode: "ABC", currentStock: 5, locationName: "A" }]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Between teams" }));
+    fireEvent.change(screen.getByPlaceholderText("Search"), { target: { value: "Printer" } });
+    fireEvent.click(screen.getByRole("button", { name: /Printer/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Transfer Between Teams" }));
+
+    await waitFor(() => {
+      expect(mockedFetchApiResult).toHaveBeenCalledWith("/api/auth/logout", { method: "POST" });
+      expect(window.localStorage.getItem("userId")).toBeNull();
+      expect(window.localStorage.getItem("userRole")).toBeNull();
+      expect(pushSpy).toHaveBeenCalledWith("/");
+    });
   });
 });

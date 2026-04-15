@@ -22,6 +22,7 @@ interface TransactionsPageClientProps {
   counterpartyTeamOptions: CounterpartyTeamOption[];
   currentPage: number;
   totalPages: number;
+  canDeleteTransactions: boolean;
 }
 
 export function TransactionsPageClient({
@@ -33,6 +34,7 @@ export function TransactionsPageClient({
   counterpartyTeamOptions,
   currentPage,
   totalPages,
+  canDeleteTransactions,
 }: TransactionsPageClientProps) {
   const router = useRouter();
   const { t } = useTranslation();
@@ -177,6 +179,7 @@ export function TransactionsPageClient({
           transactions={transactions}
           teamId={team.id}
           onDelete={handleRefresh}
+          canDeleteTransactions={canDeleteTransactions}
           onSearchByTransferGroup={(transferGroupId) => {
             setSearchQuery(transferGroupId);
           }}

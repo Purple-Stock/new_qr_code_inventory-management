@@ -1,7 +1,9 @@
 import { TransactionsPageClient } from "./_components/TransactionsPageClient";
 import { notFound, redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { getTeamTransactionsData } from "@/lib/services/team-dashboard";
 import { paginateTransactions } from "./_utils/pagination";
+import { getUserIdFromSessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -21,11 +23,13 @@ export default async function TransactionsPage({ params, searchParams }: PagePro
     notFound();
   }
 
-  // Fetch data on the server
-  const { team, transactions, subscriptionRequired } = await getTeamTransactionsData(
-    teamId,
-    resolvedSearchParams.search
+  const requestUserId = getUserIdFromSessionToken(
+    (await cookies()).get(SESSION_COOKIE_NAME)?.value
   );
+
+  // Fetch data on the server
+  const { team, transactions, subscriptionRequired, canDeleteTransactions } =
+    await getTeamTransactionsData(teamId, resolvedSearchParams.search, requestUserId);
 
   if (subscriptionRequired) {
     redirect(`/teams/${teamId}/settings?billing=required`);
@@ -87,6 +91,7 @@ export default async function TransactionsPage({ params, searchParams }: PagePro
       counterpartyTeamOptions={counterpartyTeamOptions}
       currentPage={paginated.currentPage}
       totalPages={paginated.totalPages}
+      canDeleteTransactions={canDeleteTransactions}
     />
   );
 }
