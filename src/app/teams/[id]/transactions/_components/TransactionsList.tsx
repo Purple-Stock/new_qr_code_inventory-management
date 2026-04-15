@@ -12,6 +12,7 @@ interface TransactionsListProps {
   transactions: TransactionWithDetails[];
   teamId: number;
   onDelete: () => void;
+  canDeleteTransactions: boolean;
   onSearchByTransferGroup?: (transferGroupId: string) => void;
 }
 
@@ -19,6 +20,7 @@ export function TransactionsList({
   transactions,
   teamId,
   onDelete,
+  canDeleteTransactions,
   onSearchByTransferGroup,
 }: TransactionsListProps) {
   const { language, t } = useTranslation();
@@ -141,14 +143,16 @@ export function TransactionsList({
                   {transaction.user?.email || "-"}
                 </td>
                 <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-right">
-                  <button
-                    onClick={() => handleDelete(transaction.id)}
-                    className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
-                    aria-label="Delete transaction"
-                    title="Delete transaction"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  {canDeleteTransactions ? (
+                    <button
+                      onClick={() => handleDelete(transaction.id)}
+                      className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
+                      aria-label="Delete transaction"
+                      title="Delete transaction"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  ) : null}
                 </td>
               </tr>
             ))}

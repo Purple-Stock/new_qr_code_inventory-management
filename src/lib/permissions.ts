@@ -27,7 +27,7 @@ const permissionMatrix: Record<Permission, UserRole[]> = {
   "location:write": ["admin", "operator"],
   "location:delete": ["admin", "operator"],
   "stock:write": ["admin", "operator"],
-  "transaction:delete": ["admin"],
+  "transaction:delete": ["admin", "operator"],
 };
 
 type TeamPermission = Exclude<Permission, "team:create">;
@@ -40,7 +40,7 @@ const teamPermissionMatrix: Record<TeamPermission, TeamMemberRole[]> = {
   "location:write": ["admin", "operator"],
   "location:delete": ["admin", "operator"],
   "stock:write": ["admin", "operator"],
-  "transaction:delete": ["admin"],
+  "transaction:delete": ["admin", "operator"],
 };
 
 export function isUserRole(value: unknown): value is UserRole {

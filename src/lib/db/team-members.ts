@@ -15,6 +15,22 @@ export async function getTeamMembers(teamId: number) {
     );
 }
 
+export async function getActiveTeamMemberRole(teamId: number, userId: number) {
+  const [membership] = await sqlite
+    .select({ role: teamMembers.role })
+    .from(teamMembers)
+    .where(
+      and(
+        eq(teamMembers.teamId, teamId),
+        eq(teamMembers.userId, userId),
+        eq(teamMembers.status, "active")
+      )
+    )
+    .limit(1);
+
+  return membership?.role ?? null;
+}
+
 export async function countActiveTeamAdmins(teamId: number) {
   const memberships = await sqlite
     .select({ userId: teamMembers.userId })
