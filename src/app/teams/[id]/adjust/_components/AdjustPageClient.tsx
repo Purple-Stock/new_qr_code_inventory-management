@@ -22,6 +22,7 @@ import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import { createAdjustAction } from "../_actions/createStockTransaction";
+import { parseDecimalInput } from "@/lib/utils/parse-decimal-input";
 import type { Item, Location, Team } from "../_types";
 
 interface SelectedItem {
@@ -367,9 +368,13 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
                         <Input
                           type="number"
                           min="0"
+                          step="0.1"
                           value={selectedItem.newStock}
                           onChange={(e) =>
-                            handleStockChange(selectedItem.item.id, parseInt(e.target.value) || 0)
+                            handleStockChange(
+                              selectedItem.item.id,
+                              parseDecimalInput(e.target.value)
+                            )
                           }
                           className="w-20 sm:w-24 h-9 sm:h-10 text-center text-sm font-semibold border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
                         />

@@ -24,6 +24,7 @@ import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import { createMoveAction } from "../_actions/createStockTransaction";
+import { parseDecimalInput } from "@/lib/utils/parse-decimal-input";
 import type { DestinationTeam, Item, Location, Team, SelectedItem } from "../_types";
 
 interface MovePageClientProps {
@@ -636,13 +637,14 @@ export function MovePageClient({
                           </button>
                           <Input
                             type="number"
-                            min="1"
+                            min="0.1"
+                            step="0.1"
                             max={maxStock}
                             value={selectedItem.quantity}
                             onChange={(e) =>
                               handleQuantityChange(
                                 selectedItem.item.id,
-                                parseInt(e.target.value || "0", 10)
+                                parseDecimalInput(e.target.value)
                               )
                             }
                             className="w-24 h-10 text-center border-gray-300"

@@ -210,4 +210,23 @@ describe("AdjustPageClient", () => {
       expect(pushSpy).toHaveBeenCalledWith("/");
     });
   });
+
+  it("submits decimal stock values without truncating them", async () => {
+    await addSelectedItem();
+
+    fireEvent.change(screen.getByRole("spinbutton"), {
+      target: { value: "0.5" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Adjust stock" }));
+
+    await waitFor(() => {
+      expect(mockedCreateAdjustAction).toHaveBeenCalledWith(
+        29,
+        expect.objectContaining({
+          itemId: 1,
+          quantity: 0.5,
+        })
+      );
+    });
+  });
 });
