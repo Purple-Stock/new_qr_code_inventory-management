@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Info, ScanLine, Plus, Minus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,11 @@ import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/ui/use-toast-simple";
 import { ERROR_CODES } from "@/lib/errors";
 import { logoutAndRedirectToLogin } from "@/lib/client-auth";
+import {
+  readLocalStorageJson,
+  removeLocalStorageEntry,
+  writeLocalStorageJson,
+} from "@/lib/local-storage";
 import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
@@ -29,6 +34,12 @@ interface StockOutPageClientProps {
   items: Item[];
   locations: Location[];
   team: Team;
+}
+
+interface StockOutDraft {
+  selectedLocation: string;
+  selectedItems: SelectedItem[];
+  notes: string;
 }
 
 export function StockOutPageClient({ items, locations, team }: StockOutPageClientProps) {
@@ -44,6 +55,8 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [hasLoadedDraft, setHasLoadedDraft] = useState(false);
+  const draftStorageKey = `inventory-draft:stock-out:${team.id}`;
   const tourSteps: TourStep[] = [
     { target: "tour-stock-out-tutorial", title: t.stockOut.tourTutorialTitle, description: t.stockOut.tourTutorialDesc },
     { target: "tour-stock-out-location", title: t.stockOut.tourLocationTitle, description: t.stockOut.tourLocationDesc },
@@ -65,6 +78,35 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
         item.barcode?.toLowerCase().includes(normalizedSearch)
     );
   });
+
+  useEffect(() => {
+    const draft = readLocalStorageJson<StockOutDraft>(draftStorageKey);
+
+    if (draft) {
+      setSelectedLocation(draft.selectedLocation || "");
+      setSelectedItems(Array.isArray(draft.selectedItems) ? draft.selectedItems : []);
+      setNotes(draft.notes || "");
+    }
+
+    setHasLoadedDraft(true);
+  }, [draftStorageKey]);
+
+  useEffect(() => {
+    if (!hasLoadedDraft) {
+      return;
+    }
+
+    if (selectedItems.length === 0 && notes.trim() === "") {
+      removeLocalStorageEntry(draftStorageKey);
+      return;
+    }
+
+    writeLocalStorageJson<StockOutDraft>(draftStorageKey, {
+      selectedLocation,
+      selectedItems,
+      notes,
+    });
+  }, [draftStorageKey, hasLoadedDraft, notes, selectedItems, selectedLocation]);
 
   const handleAddItem = (item: Item) => {
     const exists = selectedItems.find((si) => si.item.id === item.id);
@@ -207,6 +249,7 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
       });
 
       // Reset form
+      removeLocalStorageEntry(draftStorageKey);
       setSelectedItems([]);
       setNotes("");
       setItemSearch("");

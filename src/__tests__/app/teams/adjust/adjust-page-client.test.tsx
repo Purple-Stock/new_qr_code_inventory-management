@@ -229,4 +229,43 @@ describe("AdjustPageClient", () => {
       );
     });
   });
+
+  it("restores an unsaved draft from localStorage and clears it after success", async () => {
+    window.localStorage.setItem(
+      "inventory-draft:adjust:29",
+      JSON.stringify({
+        selectedLocation: "10",
+        selectedItems: [
+          {
+            item: baseItems[0],
+            newStock: 7,
+          },
+        ],
+        notes: "draft adjust",
+      })
+    );
+
+    render(
+      <AdjustPageClient team={baseTeam} locations={baseLocations as any} items={baseItems} />
+    );
+
+    expect(screen.getByText("CAP CALABRESA")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("7")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Notes...")).toHaveValue("draft adjust");
+
+    fireEvent.click(screen.getByRole("button", { name: "Adjust stock" }));
+
+    await waitFor(() => {
+      expect(mockedCreateAdjustAction).toHaveBeenCalledWith(
+        29,
+        expect.objectContaining({
+          itemId: 1,
+          quantity: 7,
+          locationId: 10,
+          notes: "draft adjust",
+        })
+      );
+      expect(window.localStorage.getItem("inventory-draft:adjust:29")).toBeNull();
+    });
+  });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, Info, ScanLine, Plus, Minus, Trash2 } from "lucide-react";
@@ -19,6 +19,11 @@ import { useTranslation } from "@/lib/i18n";
 import { fetchApiJsonResult } from "@/lib/api-client";
 import { ERROR_CODES } from "@/lib/errors";
 import { logoutAndRedirectToLogin } from "@/lib/client-auth";
+import {
+  readLocalStorageJson,
+  removeLocalStorageEntry,
+  writeLocalStorageJson,
+} from "@/lib/local-storage";
 import { useToast } from "@/components/ui/use-toast-simple";
 import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
@@ -32,6 +37,15 @@ interface MovePageClientProps {
   locations: Location[];
   destinationTeams: DestinationTeam[];
   team: Team;
+}
+
+interface MoveDraft {
+  activeTab: "location" | "team";
+  sourceLocation: string;
+  destinationLocation: string;
+  destinationTeamId: string;
+  selectedItems: SelectedItem[];
+  notes: string;
 }
 
 export function MovePageClient({
@@ -56,6 +70,8 @@ export function MovePageClient({
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [isSyncingBilling, setIsSyncingBilling] = useState(false);
+  const [hasLoadedDraft, setHasLoadedDraft] = useState(false);
+  const draftStorageKey = `inventory-draft:move:${team.id}`;
   const hasDestinationTeams = destinationTeams.length > 0;
   const isTeamTransferUnavailable = activeTab === "team" && !hasDestinationTeams;
   const tourSteps: TourStep[] = [
@@ -107,6 +123,56 @@ export function MovePageClient({
         item.barcode?.toLowerCase().includes(normalizedSearch)
     );
   });
+
+  useEffect(() => {
+    const draft = readLocalStorageJson<MoveDraft>(draftStorageKey);
+
+    if (draft) {
+      setActiveTab(draft.activeTab || "location");
+      setSourceLocation(draft.sourceLocation || "");
+      setDestinationLocation(draft.destinationLocation || "");
+      setDestinationTeamId(draft.destinationTeamId || "");
+      setSelectedItems(Array.isArray(draft.selectedItems) ? draft.selectedItems : []);
+      setNotes(draft.notes || "");
+    }
+
+    setHasLoadedDraft(true);
+  }, [draftStorageKey]);
+
+  useEffect(() => {
+    if (!hasLoadedDraft) {
+      return;
+    }
+
+    if (
+      selectedItems.length === 0 &&
+      notes.trim() === "" &&
+      activeTab === "location" &&
+      destinationLocation === "" &&
+      destinationTeamId === ""
+    ) {
+      removeLocalStorageEntry(draftStorageKey);
+      return;
+    }
+
+    writeLocalStorageJson<MoveDraft>(draftStorageKey, {
+      activeTab,
+      sourceLocation,
+      destinationLocation,
+      destinationTeamId,
+      selectedItems,
+      notes,
+    });
+  }, [
+    activeTab,
+    destinationLocation,
+    destinationTeamId,
+    draftStorageKey,
+    hasLoadedDraft,
+    notes,
+    selectedItems,
+    sourceLocation,
+  ]);
 
   const handleAddItem = (item: Item) => {
     const exists = selectedItems.find((si) => si.item.id === item.id);
@@ -323,6 +389,10 @@ export function MovePageClient({
             : t.move.stockMovedSuccess,
       });
 
+      removeLocalStorageEntry(draftStorageKey);
+      setActiveTab("location");
+      setDestinationLocation("");
+      setDestinationTeamId("");
       setSelectedItems([]);
       setNotes("");
       setItemSearch("");

@@ -340,4 +340,63 @@ describe("StockInPageClient", () => {
       expect(pushSpy).toHaveBeenCalledWith("/");
     });
   });
+
+  it("restores an unsaved draft from localStorage and clears it after success", async () => {
+    window.localStorage.setItem(
+      "inventory-draft:stock-in:1",
+      JSON.stringify({
+        selectedLocation: "10",
+        selectedItems: [
+          {
+            item: {
+              id: 1,
+              name: "Printer",
+              sku: "PR-1",
+              barcode: "12345678",
+              currentStock: 5,
+              locationName: "Main",
+            },
+            quantity: 3,
+          },
+        ],
+        notes: "draft note",
+      })
+    );
+
+    render(
+      <StockInPageClient
+        team={baseTeam}
+        locations={[{ id: 10, name: "Main" }]}
+        items={[
+          {
+            id: 1,
+            name: "Printer",
+            sku: "PR-1",
+            barcode: "12345678",
+            currentStock: 5,
+            locationName: "Main",
+          },
+        ]}
+      />
+    );
+
+    expect(screen.getByText("Printer")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("3")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Notes...")).toHaveValue("draft note");
+
+    fireEvent.click(screen.getByRole("button", { name: "Add stock" }));
+
+    await waitFor(() => {
+      expect(mockedCreateStockInAction).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({
+          itemId: 1,
+          quantity: 3,
+          locationId: 10,
+          notes: "draft note",
+        })
+      );
+      expect(window.localStorage.getItem("inventory-draft:stock-in:1")).toBeNull();
+    });
+  });
 });
