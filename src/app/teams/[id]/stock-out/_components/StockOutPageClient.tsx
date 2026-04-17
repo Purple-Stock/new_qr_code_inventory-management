@@ -22,6 +22,7 @@ import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import { createStockOutAction } from "../_actions/createStockTransaction";
+import { parseDecimalInput } from "@/lib/utils/parse-decimal-input";
 import type { Item, Location, Team, SelectedItem } from "../_types";
 
 interface StockOutPageClientProps {
@@ -391,13 +392,14 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
                           </button>
                           <Input
                             type="number"
-                            min="1"
+                            min="0.1"
+                            step="0.1"
                             max={maxStock}
                             value={selectedItem.quantity}
                             onChange={(e) =>
                               handleQuantityChange(
                                 selectedItem.item.id,
-                                parseInt(e.target.value) || 0
+                                parseDecimalInput(e.target.value)
                               )
                             }
                             className="w-20 sm:w-24 h-9 sm:h-10 text-center text-sm font-semibold border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
