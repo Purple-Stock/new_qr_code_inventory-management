@@ -352,4 +352,36 @@ describe("MovePageClient", () => {
       expect(pushSpy).toHaveBeenCalledWith("/");
     });
   });
+
+  it("submits decimal move quantities without truncating them", async () => {
+    mockedCreateMoveAction.mockResolvedValue({ success: true, transaction: { id: 99 } } as any);
+
+    render(
+      <MovePageClient
+        team={{ id: 1, name: "Direct" }}
+        locations={[{ id: 10, name: "A" }, { id: 11, name: "B" }]}
+        destinationTeams={[{ id: 2, name: "DPS" }]}
+        items={[{ id: 100, name: "Printer", sku: "PR-1", barcode: "ABC", currentStock: 5, locationName: "A" }]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Between teams" }));
+    fireEvent.change(screen.getByPlaceholderText("Search"), { target: { value: "Printer" } });
+    fireEvent.click(screen.getByRole("button", { name: /Printer/ }));
+    fireEvent.change(screen.getByRole("spinbutton"), {
+      target: { value: "0.5" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Transfer Between Teams" }));
+
+    await waitFor(() => {
+      expect(mockedCreateMoveAction).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({
+          itemId: 100,
+          quantity: 0.5,
+        })
+      );
+    });
+  });
 });
