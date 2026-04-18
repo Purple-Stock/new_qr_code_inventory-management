@@ -268,4 +268,34 @@ describe("AdjustPageClient", () => {
       expect(window.localStorage.getItem("inventory-draft:adjust:29")).toBeNull();
     });
   });
+
+  it("ignores restored adjust items that are no longer available", () => {
+    window.localStorage.setItem(
+      "inventory-draft:adjust:29",
+      JSON.stringify({
+        selectedLocation: "10",
+        selectedItems: [
+          {
+            item: {
+              id: 999,
+              name: "Ghost item",
+              sku: "GH-1",
+              barcode: "999",
+              currentStock: 4,
+              locationName: "Old",
+            },
+            newStock: 7,
+          },
+        ],
+        notes: "draft adjust",
+      })
+    );
+
+    render(
+      <AdjustPageClient team={baseTeam} locations={baseLocations as any} items={baseItems} />
+    );
+
+    expect(screen.queryByText("Ghost item")).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Notes...")).toHaveValue("draft adjust");
+  });
 });

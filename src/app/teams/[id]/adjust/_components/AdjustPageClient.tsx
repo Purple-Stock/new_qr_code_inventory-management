@@ -47,12 +47,35 @@ interface AdjustDraft {
   notes: string;
 }
 
+function reconcileDraftItems(draftItems: SelectedItem[] | undefined, items: Item[]): SelectedItem[] {
+  if (!Array.isArray(draftItems) || draftItems.length === 0) {
+    return [];
+  }
+
+  const itemsById = new Map(items.map((item) => [item.id, item]));
+
+  return draftItems.flatMap((draftItem) => {
+    const currentItem = itemsById.get(draftItem?.item?.id);
+    if (!currentItem) {
+      return [];
+    }
+
+    return [
+      {
+        item: currentItem,
+        newStock: draftItem.newStock,
+      },
+    ];
+  });
+}
+
 export function AdjustPageClient({ items, locations, team }: AdjustPageClientProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const { toast } = useToast();
+  const defaultLocation = locations.length > 0 ? locations[0].id.toString() : "";
   const [selectedLocation, setSelectedLocation] = useState<string>(
-    locations.length > 0 ? locations[0].id.toString() : ""
+    defaultLocation
   );
   const [itemSearch, setItemSearch] = useState("");
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
@@ -88,20 +111,23 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
     const draft = readLocalStorageJson<AdjustDraft>(draftStorageKey);
 
     if (draft) {
-      setSelectedLocation(draft.selectedLocation || "");
-      setSelectedItems(Array.isArray(draft.selectedItems) ? draft.selectedItems : []);
+      const hasValidLocation = locations.some(
+        (location) => location.id.toString() === draft.selectedLocation
+      );
+      setSelectedLocation(hasValidLocation ? draft.selectedLocation : defaultLocation);
+      setSelectedItems(reconcileDraftItems(draft.selectedItems, items));
       setNotes(draft.notes || "");
     }
 
     setHasLoadedDraft(true);
-  }, [draftStorageKey]);
+  }, [defaultLocation, draftStorageKey, items, locations]);
 
   useEffect(() => {
     if (!hasLoadedDraft) {
       return;
     }
 
-    if (selectedItems.length === 0 && notes.trim() === "") {
+    if (selectedItems.length === 0 && notes.trim() === "" && selectedLocation === defaultLocation) {
       removeLocalStorageEntry(draftStorageKey);
       return;
     }
@@ -111,7 +137,7 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
       selectedItems,
       notes,
     });
-  }, [draftStorageKey, hasLoadedDraft, notes, selectedItems, selectedLocation]);
+  }, [defaultLocation, draftStorageKey, hasLoadedDraft, notes, selectedItems, selectedLocation]);
 
   const handleAddItem = (item: Item) => {
     const exists = selectedItems.find((si) => si.item.id === item.id);

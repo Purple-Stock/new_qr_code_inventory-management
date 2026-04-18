@@ -58,12 +58,35 @@ interface StockInDraft {
   notes: string;
 }
 
+function reconcileDraftItems(draftItems: SelectedItem[] | undefined, items: Item[]): SelectedItem[] {
+  if (!Array.isArray(draftItems) || draftItems.length === 0) {
+    return [];
+  }
+
+  const itemsById = new Map(items.map((item) => [item.id, item]));
+
+  return draftItems.flatMap((draftItem) => {
+    const currentItem = itemsById.get(draftItem?.item?.id);
+    if (!currentItem) {
+      return [];
+    }
+
+    return [
+      {
+        item: currentItem,
+        quantity: draftItem.quantity,
+      },
+    ];
+  });
+}
+
 export function StockInPageClient({ items, locations, team }: StockInPageClientProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const { toast } = useToast();
+  const defaultLocation = locations.length > 0 ? locations[0].id.toString() : "";
   const [selectedLocation, setSelectedLocation] = useState<string>(
-    locations.length > 0 ? locations[0].id.toString() : ""
+    defaultLocation
   );
   const [availableItems, setAvailableItems] = useState<Item[]>(items);
   const [itemSearch, setItemSearch] = useState("");
@@ -98,20 +121,23 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
     const draft = readLocalStorageJson<StockInDraft>(draftStorageKey);
 
     if (draft) {
-      setSelectedLocation(draft.selectedLocation || "");
-      setSelectedItems(Array.isArray(draft.selectedItems) ? draft.selectedItems : []);
+      const hasValidLocation = locations.some(
+        (location) => location.id.toString() === draft.selectedLocation
+      );
+      setSelectedLocation(hasValidLocation ? draft.selectedLocation : defaultLocation);
+      setSelectedItems(reconcileDraftItems(draft.selectedItems, items));
       setNotes(draft.notes || "");
     }
 
     setHasLoadedDraft(true);
-  }, [draftStorageKey]);
+  }, [defaultLocation, draftStorageKey, items, locations]);
 
   useEffect(() => {
     if (!hasLoadedDraft) {
       return;
     }
 
-    if (selectedItems.length === 0 && notes.trim() === "") {
+    if (selectedItems.length === 0 && notes.trim() === "" && selectedLocation === defaultLocation) {
       removeLocalStorageEntry(draftStorageKey);
       return;
     }
@@ -121,7 +147,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
       selectedItems,
       notes,
     });
-  }, [draftStorageKey, hasLoadedDraft, notes, selectedItems, selectedLocation]);
+  }, [defaultLocation, draftStorageKey, hasLoadedDraft, notes, selectedItems, selectedLocation]);
 
   const normalizedSearch = itemSearch.trim().toLowerCase();
   const hasItemFilters = normalizedSearch.length > 0;

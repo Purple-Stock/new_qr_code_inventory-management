@@ -5,15 +5,19 @@ export function readLocalStorageJson<T>(key: string): T | null {
     return null;
   }
 
-  const value = window.localStorage.getItem(key);
-  if (!value) {
-    return null;
-  }
-
   try {
+    const value = window.localStorage.getItem(key);
+    if (!value) {
+      return null;
+    }
+
     return JSON.parse(value) as T;
   } catch {
-    window.localStorage.removeItem(key);
+    try {
+      window.localStorage.removeItem(key);
+    } catch {
+      // Ignore blocked storage and malformed entry cleanup failures.
+    }
     return null;
   }
 }
@@ -23,7 +27,11 @@ export function writeLocalStorageJson<T>(key: string, value: T) {
     return;
   }
 
-  window.localStorage.setItem(key, JSON.stringify(value));
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Ignore blocked or full storage so UI state keeps working.
+  }
 }
 
 export function removeLocalStorageEntry(key: string) {
@@ -31,5 +39,9 @@ export function removeLocalStorageEntry(key: string) {
     return;
   }
 
-  window.localStorage.removeItem(key);
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Ignore blocked storage so cleanup never breaks the page.
+  }
 }

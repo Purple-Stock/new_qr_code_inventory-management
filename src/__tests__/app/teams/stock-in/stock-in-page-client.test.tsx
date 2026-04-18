@@ -399,4 +399,61 @@ describe("StockInPageClient", () => {
       expect(window.localStorage.getItem("inventory-draft:stock-in:1")).toBeNull();
     });
   });
+
+  it("keeps a draft that only changed the selected location", async () => {
+    window.localStorage.setItem(
+      "inventory-draft:stock-in:1",
+      JSON.stringify({
+        selectedLocation: "11",
+        selectedItems: [],
+        notes: "",
+      })
+    );
+
+    render(
+      <StockInPageClient
+        team={baseTeam}
+        locations={[{ id: 10, name: "Main" }, { id: 11, name: "Overflow" }]}
+        items={[]}
+      />
+    );
+
+    await waitFor(() => {
+      expect(window.localStorage.getItem("inventory-draft:stock-in:1")).not.toBeNull();
+    });
+  });
+
+  it("ignores draft items that are no longer available", () => {
+    window.localStorage.setItem(
+      "inventory-draft:stock-in:1",
+      JSON.stringify({
+        selectedLocation: "10",
+        selectedItems: [
+          {
+            item: {
+              id: 999,
+              name: "Ghost printer",
+              sku: "GH-1",
+              barcode: "99999999",
+              currentStock: 5,
+              locationName: "Old",
+            },
+            quantity: 3,
+          },
+        ],
+        notes: "draft note",
+      })
+    );
+
+    render(
+      <StockInPageClient
+        team={baseTeam}
+        locations={[{ id: 10, name: "Main" }]}
+        items={[]}
+      />
+    );
+
+    expect(screen.queryByText("Ghost printer")).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Notes...")).toHaveValue("draft note");
+  });
 });

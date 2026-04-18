@@ -270,4 +270,38 @@ describe("StockOutPageClient", () => {
       expect(window.localStorage.getItem("inventory-draft:stock-out:29")).toBeNull();
     });
   });
+
+  it("validates restored drafts against current stock instead of stale saved stock", async () => {
+    window.localStorage.setItem(
+      "inventory-draft:stock-out:29",
+      JSON.stringify({
+        selectedLocation: "10",
+        selectedItems: [
+          {
+            item: {
+              ...baseItems[0],
+              currentStock: 99,
+            },
+            quantity: 15,
+          },
+        ],
+        notes: "draft stock out",
+      })
+    );
+
+    render(
+      <StockOutPageClient team={baseTeam} locations={baseLocations as any} items={baseItems} />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Remover Estoque" }));
+
+    await waitFor(() => {
+      expect(toastSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: "Quantidade excede estoque",
+        })
+      );
+    });
+    expect(mockedCreateStockOutAction).not.toHaveBeenCalled();
+  });
 });
