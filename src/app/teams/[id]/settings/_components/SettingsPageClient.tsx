@@ -95,6 +95,12 @@ export default function SettingsPageClient({
   const [billingStatus, setBillingStatus] = useState<string | null>(
     initialTeam.stripeSubscriptionStatus ?? null
   );
+  const [stripeCustomerId, setStripeCustomerId] = useState<string | null>(
+    initialTeam.stripeCustomerId ?? null
+  );
+  const [stripeSubscriptionId, setStripeSubscriptionId] = useState<string | null>(
+    initialTeam.stripeSubscriptionId ?? null
+  );
   const [itemCustomFieldSchema, setItemCustomFieldSchema] = useState<TeamCustomFieldSchemaRow[]>(
     (initialTeam.itemCustomFieldSchema ?? []).map((entry) => ({ ...entry, isExisting: true }))
   );
@@ -111,7 +117,8 @@ export default function SettingsPageClient({
     initialTeam.manualTrialEndsAt ?? null
   );
   const hasStripeSubscription = Boolean(billingStatus);
-  const hasActiveStripeSubscription = ["active", "trialing", "past_due", "canceling"].includes(
+  const hasManagedStripeSubscription = Boolean(stripeCustomerId && stripeSubscriptionId);
+  const hasActiveBilling = ["active", "trialing", "past_due", "canceling"].includes(
     billingStatus ?? ""
   );
   const hasActiveManualTrial = Boolean(
@@ -203,6 +210,8 @@ export default function SettingsPageClient({
 
         const teamResult = await fetchApiResult<{
           team: {
+            stripeCustomerId?: string | null;
+            stripeSubscriptionId?: string | null;
             stripeCurrentPeriodEnd?: string | null;
             manualTrialEndsAt?: string | null;
           };
@@ -210,6 +219,8 @@ export default function SettingsPageClient({
           fallbackError: "Could not refresh team data",
         });
         if (teamResult.ok) {
+          setStripeCustomerId(teamResult.data.team.stripeCustomerId ?? null);
+          setStripeSubscriptionId(teamResult.data.team.stripeSubscriptionId ?? null);
           setBillingPeriodEnd(teamResult.data.team.stripeCurrentPeriodEnd ?? null);
           setManualTrialEndsAt(teamResult.data.team.manualTrialEndsAt ?? null);
         }
@@ -948,7 +959,7 @@ export default function SettingsPageClient({
                       : ""}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {!hasActiveStripeSubscription ? (
+                    {!hasActiveBilling ? (
                       <Button
                         type="button"
                         onClick={handleStartCheckout}
@@ -958,7 +969,7 @@ export default function SettingsPageClient({
                         {isBillingLoading ? "Carregando..." : "Assinar plano Pro"}
                       </Button>
                     ) : null}
-                    {hasStripeSubscription ? (
+                    {hasManagedStripeSubscription ? (
                       <Button
                         type="button"
                         variant="outline"

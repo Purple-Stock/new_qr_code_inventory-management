@@ -1,6 +1,7 @@
 import { vi } from "vitest";
 import type Stripe from "stripe";
 import {
+  activateTeamManualBilling,
   createTeamStripeCheckoutSession,
   grantTeamManualTrial,
   processStripeWebhook,
@@ -13,11 +14,20 @@ vi.mock("@/lib/permissions", () => ({
 }));
 
 vi.mock("@/lib/db/teams", () => ({
+  activateTeamManualBilling: vi.fn(),
   grantTeamManualTrial: vi.fn(),
   getTeamByStripeCustomerId: vi.fn(),
   getTeamWithStats: vi.fn(),
   updateTeamStripeCustomerId: vi.fn(),
   updateTeamStripeSubscription: vi.fn(),
+}));
+
+vi.mock("@/lib/db/users", () => ({
+  findUserById: vi.fn(),
+}));
+
+vi.mock("@/lib/db/super-admin", () => ({
+  isSuperAdminUser: vi.fn(),
 }));
 
 vi.mock("@/lib/stripe", () => ({
@@ -29,12 +39,15 @@ vi.mock("@/lib/stripe", () => ({
 
 import { authorizeTeamPermission } from "@/lib/permissions";
 import {
+  activateTeamManualBilling as persistTeamManualBilling,
   grantTeamManualTrial as persistTeamManualTrial,
   getTeamByStripeCustomerId,
   getTeamWithStats,
   updateTeamStripeCustomerId,
   updateTeamStripeSubscription,
 } from "@/lib/db/teams";
+import { findUserById } from "@/lib/db/users";
+import { isSuperAdminUser } from "@/lib/db/super-admin";
 import {
   getStripeClient,
   getStripePriceId,
@@ -44,10 +57,13 @@ import {
 
 const mockedAuthorizeTeamPermission = vi.mocked(authorizeTeamPermission);
 const mockedPersistTeamManualTrial = vi.mocked(persistTeamManualTrial);
+const mockedPersistTeamManualBilling = vi.mocked(persistTeamManualBilling);
 const mockedGetTeamByStripeCustomerId = vi.mocked(getTeamByStripeCustomerId);
 const mockedGetTeamWithStats = vi.mocked(getTeamWithStats);
 const mockedUpdateTeamStripeCustomerId = vi.mocked(updateTeamStripeCustomerId);
 const mockedUpdateTeamStripeSubscription = vi.mocked(updateTeamStripeSubscription);
+const mockedFindUserById = vi.mocked(findUserById);
+const mockedIsSuperAdminUser = vi.mocked(isSuperAdminUser);
 const mockedGetStripeClient = vi.mocked(getStripeClient);
 const mockedGetStripePriceId = vi.mocked(getStripePriceId);
 const mockedGetStripeWebhookSecret = vi.mocked(getStripeWebhookSecret);
@@ -69,6 +85,7 @@ describe("billing service", () => {
     mockedGetStripePriceId.mockReturnValue("price_123");
     mockedGetStripeWebhookSecret.mockReturnValue("whsec_123");
     mockedGetStripeClient.mockReturnValue(stripeClientMock as unknown as Stripe);
+    mockedIsSuperAdminUser.mockResolvedValue(false);
   });
 
   it("creates a checkout session for an authorized team admin", async () => {
@@ -316,5 +333,59 @@ describe("billing service", () => {
     if (result.ok) return;
     expect(result.error.status).toBe(500);
     expect(result.error.errorCode).toBe(ERROR_CODES.INTERNAL_ERROR);
+  });
+
+  it("activates manual billing for a super admin", async () => {
+    mockedFindUserById.mockResolvedValue({
+      id: 50,
+      email: "ops@example.com",
+      role: "super_admin",
+    } as never);
+    mockedGetTeamWithStats.mockResolvedValue({
+      id: 3,
+      name: "PIX Team",
+    } as never);
+    mockedPersistTeamManualBilling.mockResolvedValue({
+      id: 3,
+      stripeSubscriptionStatus: "active",
+      stripeCurrentPeriodEnd: new Date("2026-04-10T00:00:00.000Z"),
+    } as never);
+
+    const result = await activateTeamManualBilling({
+      teamId: 3,
+      requestUserId: 50,
+      payload: { durationDays: 30, reason: "Pagamento PIX confirmado" },
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.subscriptionStatus).toBe("active");
+    expect(result.data.currentPeriodEnd).toBe("2026-04-10T00:00:00.000Z");
+    expect(mockedPersistTeamManualBilling).toHaveBeenCalledWith(
+      3,
+      expect.objectContaining({
+        stripeSubscriptionStatus: "active",
+      })
+    );
+  });
+
+  it("rejects manual billing activation without super admin access", async () => {
+    mockedFindUserById.mockResolvedValue({
+      id: 9,
+      email: "admin@example.com",
+      role: "admin",
+    } as never);
+
+    const result = await activateTeamManualBilling({
+      teamId: 3,
+      requestUserId: 9,
+      payload: { durationDays: 30 },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.status).toBe(403);
+    expect(result.error.errorCode).toBe(ERROR_CODES.INSUFFICIENT_PERMISSIONS);
+    expect(mockedPersistTeamManualBilling).not.toHaveBeenCalled();
   });
 });
