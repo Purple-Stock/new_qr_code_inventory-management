@@ -1,6 +1,17 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 /** @type {import('next').NextConfig} */
+const defaultDistDir = process.env.NODE_ENV === 'development' ? '.next-dev' : '.next';
+const distDir = process.env.NEXT_DIST_DIR?.trim() || defaultDistDir;
+const outputFileTracingRoot = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
+
 const nextConfig = {
-  distDir: process.env.NODE_ENV === 'development' ? '.next-dev' : '.next',
+  distDir,
+  outputFileTracingRoot,
   reactStrictMode: true,
   // PWA Configuration
   async headers() {
@@ -46,6 +57,6 @@ const nextConfig = {
     }
     return config;
   },
-}
+};
 
-export default nextConfig
+export default nextConfig;

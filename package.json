@@ -9,6 +9,8 @@
     "user:promote-super-admin": "node ./scripts/promote-super-admin.mjs",
     "db:seed": "tsx ./src/db/seed.ts",
     "dev": "next dev --webpack",
+    "dev:local-default": "NEXT_DIST_DIR=.next-dev-3001 PORT=3001 npm run dev",
+    "dev:local-prod": "node ./scripts/dev-with-env.mjs --env-file=.env.prod.local --port=3101",
     "check:architecture": "node ./scripts/check-architecture.mjs",
     "check:test-policy": "node ./scripts/check-test-policy.mjs",
     "lint:architecture": "eslint src/lib/services src/app/api --max-warnings=0",
@@ -53,6 +55,7 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.4.0",
     "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",

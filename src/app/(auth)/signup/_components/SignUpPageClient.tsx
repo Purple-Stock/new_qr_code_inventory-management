@@ -60,7 +60,7 @@ export default function SignUpPage() {
       )
 
       if (!result.ok) {
-        setError(t.auth.signup.signupError)
+        setError(result.error.error || t.auth.signup.signupError)
         setIsLoading(false)
         return
       }

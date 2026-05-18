@@ -7,6 +7,8 @@ import {
   listTeamItemsForUser,
   createTeamItem,
   lookupTeamItemsByCodeForUser,
+  previewTeamItemsCsvImport,
+  importTeamItemsCsv,
 } from "@/lib/services/items";
 import { ERROR_CODES } from "@/lib/errors";
 import { getTestDb, cleanupTestDb, clearTestDb } from "../../helpers/test-db";
@@ -26,6 +28,26 @@ describe("items service", () => {
   afterAll(() => {
     cleanupTestDb();
   });
+
+  async function seedTeamContext() {
+    const { drizzle } = getTestDb();
+    const [admin] = await drizzle
+      .insert(users)
+      .values({ email: "csv-import-admin@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "CSV Import Team", userId: admin.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: admin.id,
+      role: "admin",
+      status: "active",
+    });
+
+    return { drizzle, admin, team };
+  }
 
   it("updates an item when requester has write permission", async () => {
     const { drizzle } = getTestDb();
@@ -202,6 +224,144 @@ describe("items service", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.status).toBe(401);
+  });
+
+  it("previews valid CSV rows with resolved location ids", async () => {
+    const { drizzle, admin, team } = await seedTeamContext();
+    const [location] = await drizzle
+      .insert(locations)
+      .values({ teamId: team.id, name: "Warehouse A", description: null })
+      .returning();
+
+    const result = await previewTeamItemsCsvImport({
+      teamId: team.id,
+      requestUserId: admin.id,
+      payload: {
+        csvContent: "Name,SKU,Barcode,Type,Stock,Price,Location\nWidget A,SKU-1,ABC-1,Gadget,10,39.9,Warehouse A",
+      },
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.summary).toEqual({
+      totalRows: 1,
+      validRows: 1,
+      invalidRows: 0,
+    });
+    expect(result.data.rows).toHaveLength(1);
+    expect(result.data.rows[0]).toMatchObject({
+      line: 2,
+      status: "valid",
+      item: {
+        name: "Widget A",
+        sku: "SKU-1",
+        barcode: "ABC-1",
+        itemType: "Gadget",
+        currentStock: 10,
+        initialQuantity: 10,
+        price: 39.9,
+        locationId: location.id,
+      },
+      errors: [],
+    });
+  });
+
+  it("fails preview when required headers are missing", async () => {
+    const { admin, team } = await seedTeamContext();
+
+    const result = await previewTeamItemsCsvImport({
+      teamId: team.id,
+      requestUserId: admin.id,
+      payload: {
+        csvContent: "Name,SKU,Type,Stock,Price,Location\nWidget A,SKU-1,Gadget,10,39.9,Warehouse A",
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.status).toBe(400);
+    expect(result.error.errorCode).toBe(ERROR_CODES.VALIDATION_ERROR);
+    expect(result.error.error).toContain("Barcode");
+  });
+
+  it("marks invalid rows with actionable row errors", async () => {
+    const { admin, team } = await seedTeamContext();
+
+    const result = await previewTeamItemsCsvImport({
+      teamId: team.id,
+      requestUserId: admin.id,
+      payload: {
+        csvContent: "Name,SKU,Barcode,Type,Stock,Price,Location\nWidget A,SKU-1,,Gadget,abc,39.9,Missing Shelf",
+      },
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.summary).toEqual({
+      totalRows: 1,
+      validRows: 0,
+      invalidRows: 1,
+    });
+    expect(result.data.rows[0]).toMatchObject({
+      line: 2,
+      status: "invalid",
+    });
+    expect(result.data.rows[0].errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("Barcode is required"),
+        expect.stringContaining("Current stock must be a valid number"),
+        expect.stringContaining("Location"),
+      ])
+    );
+  });
+
+  it("imports valid CSV rows in a single batch", async () => {
+    const { drizzle, admin, team } = await seedTeamContext();
+    await drizzle
+      .insert(locations)
+      .values({ teamId: team.id, name: "Warehouse A", description: null })
+      .returning();
+
+    const result = await importTeamItemsCsv({
+      teamId: team.id,
+      requestUserId: admin.id,
+      payload: {
+        csvContent:
+          "Name,SKU,Barcode,Type,Stock,Price,Location\nWidget A,SKU-1,ABC-1,Gadget,10,39.9,Warehouse A\nWidget B,SKU-2,ABC-2,Gadget,3,19.5,Warehouse A",
+      },
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.summary).toEqual({
+      totalRows: 2,
+      importedRows: 2,
+      rejectedRows: 0,
+    });
+
+    const createdItems = await drizzle.select().from(items).where(eq(items.teamId, team.id));
+    expect(createdItems).toHaveLength(2);
+  });
+
+  it("does not create partial records when any row is invalid", async () => {
+    const { drizzle, admin, team } = await seedTeamContext();
+
+    const result = await importTeamItemsCsv({
+      teamId: team.id,
+      requestUserId: admin.id,
+      payload: {
+        csvContent:
+          "Name,SKU,Barcode,Type,Stock,Price,Location\nWidget A,SKU-1,ABC-1,Gadget,10,39.9,\nWidget B,SKU-2,,Gadget,3,19.5,",
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.status).toBe(400);
+    expect(result.error.error).toContain("1 invalid row");
+
+    const createdItems = await drizzle.select().from(items).where(eq(items.teamId, team.id));
+    expect(createdItems).toHaveLength(0);
   });
 
   it("returns item details when authorized", async () => {

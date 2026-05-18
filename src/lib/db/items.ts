@@ -123,6 +123,62 @@ export async function createItem(data: {
 }
 
 /**
+ * Create many items in a single transaction.
+ */
+export async function createItemsBulk(
+  data: Array<{
+    name: string;
+    sku?: string | null;
+    barcode: string;
+    cost?: number | null;
+    price?: number | null;
+    itemType?: string | null;
+    brand?: string | null;
+    photoData?: string | null;
+    teamId: number;
+    locationId?: number | null;
+    initialQuantity?: number;
+    currentStock?: number;
+    minimumStock?: number;
+    customFields?: Record<string, string> | null;
+  }>
+): Promise<Item[]> {
+  if (data.length === 0) {
+    return [];
+  }
+
+  return sqlite.transaction(async (tx) => {
+    const createdItems: Item[] = [];
+
+    for (const entry of data) {
+      const [item] = await tx
+        .insert(items)
+        .values({
+          name: entry.name,
+          sku: entry.sku || null,
+          barcode: entry.barcode,
+          cost: entry.cost || null,
+          price: entry.price || null,
+          itemType: entry.itemType || null,
+          brand: entry.brand || null,
+          photoData: entry.photoData || null,
+          teamId: entry.teamId,
+          locationId: entry.locationId || null,
+          initialQuantity: entry.initialQuantity || 0,
+          currentStock: entry.currentStock ?? entry.initialQuantity ?? 0,
+          minimumStock: entry.minimumStock || 0,
+          customFields: entry.customFields ?? null,
+        })
+        .returning();
+
+      createdItems.push(item);
+    }
+
+    return createdItems;
+  });
+}
+
+/**
  * Update an item
  */
 export async function updateItem(
