@@ -41,6 +41,7 @@ export type TeamDto = {
   name: string;
   notes: string | null;
   userId: number;
+  ownerEmail: string | null;
   companyId: number | null;
   companyName: string | null;
   labelCompanyInfo: string | null;
@@ -51,6 +52,8 @@ export type TeamDto = {
   stripePriceId: string | null;
   stripeCurrentPeriodEnd: string | null;
   manualTrialEndsAt: string | null;
+  adminPipelineStatus: "inactive" | "trial" | "risk" | "active" | "lost" | null;
+  adminLastEmailSentAt: string | null;
   itemCustomFieldSchema?: TeamItemCustomFieldSchemaEntry[] | null;
   itemCount: number;
   transactionCount: number;
