@@ -1,7 +1,7 @@
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 /**
- * Hash a password using bcrypt
+ * Hash a password using bcrypt-compatible bcryptjs
  * @param password Plain text password
  * @returns Hashed password
  */

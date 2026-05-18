@@ -17,6 +17,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 import { useTranslation } from "@/lib/i18n"
 import { fetchApiJsonResult } from "@/lib/api-client"
+import { ERROR_CODES } from "@/lib/errors"
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -30,6 +31,14 @@ export default function SignUpPage() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+
+  const getSignupErrorMessage = (errorCode?: string, fallbackMessage?: string) => {
+    if (errorCode === ERROR_CODES.EMAIL_ALREADY_IN_USE) {
+      return t.auth.signup.emailAlreadyInUse
+    }
+
+    return fallbackMessage || t.auth.signup.signupError
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -60,7 +69,7 @@ export default function SignUpPage() {
       )
 
       if (!result.ok) {
-        setError(t.auth.signup.signupError)
+        setError(getSignupErrorMessage(result.error.errorCode, result.error.error))
         setIsLoading(false)
         return
       }

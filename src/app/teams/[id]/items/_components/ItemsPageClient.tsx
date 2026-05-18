@@ -16,6 +16,7 @@ import { useToast } from "@/components/ui/use-toast-simple";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { ItemsList } from "./ItemsList";
 import { ItemsSearch } from "./ItemsSearch";
+import { ItemsCsvImportPanel } from "./ItemsCsvImportPanel";
 import { formatPrice } from "../_utils/formatPrice";
 import { downloadCsv, itemsToCsv } from "../_utils/exportItemsCsv";
 import type { Item, Team } from "../_types";
@@ -120,6 +121,36 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
             <span className="hidden sm:inline">{t.items.exportCsv}</span>
             <span className="sm:hidden">{t.items.exportCsvShort}</span>
           </Button>
+          <ItemsCsvImportPanel
+            teamId={teamId}
+            labels={{
+              title: t.items.importCsvTitle,
+              description: t.items.importCsvDescription,
+              openButton: t.items.importCsv,
+              closeButton: t.common.close,
+              downloadTemplate: t.items.importCsvTemplate,
+              selectFile: t.items.importCsvSelectFile,
+              previewButton: t.items.importCsvPreview,
+              importButton: t.items.importCsvSubmit,
+              importing: t.common.loading,
+              previewing: t.common.loading,
+              selectedFile: t.items.importCsvSelectedFile,
+              summary: t.items.importCsvSummary,
+              validRows: t.items.importCsvValidRows,
+              invalidRows: t.items.importCsvInvalidRows,
+              totalRows: t.items.importCsvTotalRows,
+              line: t.items.importCsvLine,
+              validBadge: t.items.importCsvValid,
+              invalidBadge: t.items.importCsvInvalid,
+              errorsTitle: t.items.importCsvErrorsTitle,
+              previewHelp: t.items.importCsvPreviewHelp,
+              importSuccess: t.items.importCsvSuccess,
+              templateSuccess: t.items.importCsvTemplateSuccess,
+              chooseFileError: t.items.importCsvChooseFileError,
+              importBlocked: t.items.importCsvBlocked,
+              noPreviewYet: t.items.importCsvNoPreview,
+            }}
+          />
           <Link
             href={`/teams/${teamId}/items/new`}
             className="flex-1 sm:flex-initial w-full sm:w-auto"
