@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { execSync } from "node:child_process";
 
 const ROOT = process.cwd();
 const SERVICES_DIR = path.join(ROOT, "src/lib/services");
@@ -18,13 +19,25 @@ function normalize(filePath) {
 function collectServiceFiles() {
   if (!fs.existsSync(SERVICES_DIR)) return [];
 
+  const trackedFiles = new Set(
+    execSync("git ls-files src/lib/services", {
+      cwd: ROOT,
+      encoding: "utf8",
+    })
+      .split("\n")
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0)
+      .map(normalize)
+  );
+
   return fs
     .readdirSync(SERVICES_DIR, { withFileTypes: true })
     .filter((entry) => entry.isFile())
     .map((entry) => entry.name)
     .filter((name) => name.endsWith(".ts"))
     .filter((name) => !SERVICE_FILES_EXCLUDED.has(name))
-    .map((name) => normalize(path.join("src/lib/services", name)));
+    .map((name) => normalize(path.join("src/lib/services", name)))
+    .filter((filePath) => trackedFiles.has(filePath));
 }
 
 function hasDedicatedSuite(serviceFile) {
