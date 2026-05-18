@@ -47,6 +47,7 @@ export function toTeamDto(
     name: string;
     notes: string | null;
     userId: number;
+    ownerEmail?: string | null;
     companyId: number | null;
     companyName?: string | null;
     createdAt: Date | string;
@@ -61,6 +62,8 @@ export function toTeamDto(
     stripePriceId: string | null;
     stripeCurrentPeriodEnd: Date | string | null;
     manualTrialEndsAt: Date | string | null;
+    adminPipelineStatus: "inactive" | "trial" | "risk" | "active" | "lost" | null;
+    adminLastEmailSentAt: Date | string | null;
     itemCustomFieldSchema: { key: string; label: string; active: boolean }[] | null;
     itemCount: number;
     transactionCount: number;
@@ -74,6 +77,7 @@ export function toTeamDto(
     name: team.name,
     notes: team.notes,
     userId: team.userId,
+    ownerEmail: team.ownerEmail ?? null,
     companyId: team.companyId,
     companyName: team.companyName ?? null,
     labelCompanyInfo: team.labelCompanyInfo ?? null,
@@ -86,6 +90,8 @@ export function toTeamDto(
       ? toIsoString(team.stripeCurrentPeriodEnd)
       : null,
     manualTrialEndsAt: team.manualTrialEndsAt ? toIsoString(team.manualTrialEndsAt) : null,
+    adminPipelineStatus: team.adminPipelineStatus ?? null,
+    adminLastEmailSentAt: team.adminLastEmailSentAt ? toIsoString(team.adminLastEmailSentAt) : null,
     itemCustomFieldSchema: team.itemCustomFieldSchema ?? null,
     itemCount: team.itemCount ?? 0,
     transactionCount: team.transactionCount ?? 0,
