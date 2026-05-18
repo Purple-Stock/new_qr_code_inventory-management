@@ -66,6 +66,7 @@
     "@vitest/coverage-v8": "^4.1.6",
     "autoprefixer": "^10.4.20",
     "drizzle-kit": "^1.0.0-rc.2",
+    "esbuild": "^0.28.0",
     "jsdom": "^27.0.1",
     "postcss": "^8.5.14",
     "tsx": "^4.19.3",
