@@ -728,6 +728,7 @@ export const en = {
       signInLink: "Sign In",
       passwordMismatch: "Passwords do not match",
       passwordMinLength: "Password must be at least 6 characters",
+      emailAlreadyInUse: "An account with this email already exists",
       signupError: "An error occurred during signup",
       unexpectedError: "An unexpected error occurred. Please try again.",
       accountCreatedRedirecting: "Account created successfully! Redirecting to login...",

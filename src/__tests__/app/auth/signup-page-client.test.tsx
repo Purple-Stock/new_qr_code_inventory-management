@@ -42,6 +42,7 @@ vi.mock("@/lib/i18n", () => ({
           passwordMismatch: "As senhas não coincidem",
           passwordMinLength: "A senha deve ter pelo menos 6 caracteres",
           passwordMinHint: "Mínimo de 6 caracteres",
+          emailAlreadyInUse: "Já existe uma conta com este e-mail",
           signupError: "Ocorreu um erro durante o cadastro",
           unexpectedError: "Ocorreu um erro inesperado. Tente novamente.",
           accountCreatedRedirecting: "Conta criada. Redirecionando...",
@@ -69,6 +70,7 @@ describe("SignUpPage", () => {
     mockedFetchApiJsonResult.mockResolvedValue({
       ok: false,
       error: {
+        errorCode: "EMAIL_ALREADY_IN_USE",
         error: "User with this email already exists",
       },
     } as any);
@@ -91,7 +93,7 @@ describe("SignUpPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Criar conta" }));
 
     await waitFor(() => {
-      expect(screen.getByText("User with this email already exists")).toBeInTheDocument();
+      expect(screen.getByText("Já existe uma conta com este e-mail")).toBeInTheDocument();
     });
   });
 });

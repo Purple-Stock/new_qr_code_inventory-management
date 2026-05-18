@@ -728,6 +728,7 @@ export const fr = {
       signInLink: "Se connecter",
       passwordMismatch: "Les mots de passe ne correspondent pas",
       passwordMinLength: "Le mot de passe doit contenir au moins 6 caractères",
+      emailAlreadyInUse: "Un compte avec cet e-mail existe déjà",
       signupError: "Une erreur est survenue pendant l'inscription",
       unexpectedError: "Une erreur inattendue est survenue. Veuillez réessayer.",
       accountCreatedRedirecting: "Compte créé avec succès ! Redirection vers la connexion...",

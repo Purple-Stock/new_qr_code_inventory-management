@@ -728,6 +728,7 @@ export const ptBR = {
       signInLink: "Entrar",
       passwordMismatch: "As senhas não coincidem",
       passwordMinLength: "A senha deve ter pelo menos 6 caracteres",
+      emailAlreadyInUse: "Já existe uma conta com este e-mail",
       signupError: "Ocorreu um erro durante o cadastro",
       unexpectedError: "Ocorreu um erro inesperado. Tente novamente.",
       accountCreatedRedirecting: "Conta criada com sucesso! Redirecionando para o login...",
