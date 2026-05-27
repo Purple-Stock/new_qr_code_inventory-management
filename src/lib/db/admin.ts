@@ -1,9 +1,15 @@
 import { and, count, desc, eq, inArray, or, sql, type SQL } from "drizzle-orm";
 import { sqlite } from "@/db/client";
-import { companies, items, stockTransactions, teamMembers, teams } from "@/db/schema";
+import { companies, items, stockTransactions, teamMembers, teams, users } from "@/db/schema";
+import {
+  getAdminTeamContactStatusesByIds,
+  getAdminTeamNotesByIds,
+  getAdminTeamPipelineStatusesByIds,
+} from "@/lib/db/admin-internal";
 
 type TeamRow = {
   team: typeof teams.$inferSelect;
+  ownerEmail: string | null;
   companyName: string | null;
 };
 
@@ -31,9 +37,11 @@ export async function getAdminTeamsWithStats(params: {
   const baseQuery = sqlite
     .select({
       team: teams,
+      ownerEmail: users.email,
       companyName: companies.name,
     })
     .from(teams)
+    .leftJoin(users, eq(teams.userId, users.id))
     .leftJoin(companies, eq(teams.companyId, companies.id));
 
   const rows: TeamRow[] = searchCondition
@@ -77,10 +85,19 @@ export async function getAdminTeamsWithStats(params: {
     transactionCounts.map((row) => [row.teamId, row.count])
   );
   const memberCountByTeam = new Map(memberCounts.map((row) => [row.teamId, row.count]));
+  const [noteByTeam, pipelineStatusByTeam, contactStatusByTeam] = await Promise.all([
+    getAdminTeamNotesByIds(teamIds),
+    getAdminTeamPipelineStatusesByIds(teamIds),
+    getAdminTeamContactStatusesByIds(teamIds),
+  ]);
 
   return {
     teams: rows.map((row) => ({
       ...row.team,
+      notes: noteByTeam.get(row.team.id) ?? null,
+      adminPipelineStatus: pipelineStatusByTeam.get(row.team.id) ?? null,
+      adminLastEmailSentAt: contactStatusByTeam.get(row.team.id)?.lastEmailSentAt ?? null,
+      ownerEmail: row.ownerEmail ?? null,
       companyName: row.companyName ?? null,
       itemCount: itemCountByTeam.get(row.team.id) || 0,
       transactionCount: transactionCountByTeam.get(row.team.id) || 0,
@@ -90,4 +107,36 @@ export async function getAdminTeamsWithStats(params: {
     })),
     total: countRow?.count ?? 0,
   };
+}
+
+export async function getAdminTeamsByIds(teamIds: number[]) {
+  if (teamIds.length === 0) {
+    return [];
+  }
+
+  const rows = await sqlite
+    .select({
+      team: teams,
+      ownerEmail: users.email,
+      companyName: companies.name,
+    })
+    .from(teams)
+    .leftJoin(users, eq(teams.userId, users.id))
+    .leftJoin(companies, eq(teams.companyId, companies.id))
+    .where(inArray(teams.id, teamIds));
+
+  const [noteByTeam, pipelineStatusByTeam, contactStatusByTeam] = await Promise.all([
+    getAdminTeamNotesByIds(teamIds),
+    getAdminTeamPipelineStatusesByIds(teamIds),
+    getAdminTeamContactStatusesByIds(teamIds),
+  ]);
+
+  return rows.map((row) => ({
+    ...row.team,
+    notes: noteByTeam.get(row.team.id) ?? null,
+    adminPipelineStatus: pipelineStatusByTeam.get(row.team.id) ?? null,
+    adminLastEmailSentAt: contactStatusByTeam.get(row.team.id)?.lastEmailSentAt ?? null,
+    ownerEmail: row.ownerEmail ?? null,
+    companyName: row.companyName ?? null,
+  }));
 }
