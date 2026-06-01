@@ -20,6 +20,7 @@ import { ERROR_CODES } from "@/lib/errors";
 import { logoutAndRedirectToLogin } from "@/lib/client-auth";
 import {
   readLocalStorageJson,
+  reconcileDraftItems,
   removeLocalStorageEntry,
   writeLocalStorageJson,
 } from "@/lib/local-storage";
@@ -58,27 +59,6 @@ interface StockInDraft {
   notes: string;
 }
 
-function reconcileDraftItems(draftItems: SelectedItem[] | undefined, items: Item[]): SelectedItem[] {
-  if (!Array.isArray(draftItems) || draftItems.length === 0) {
-    return [];
-  }
-
-  const itemsById = new Map(items.map((item) => [item.id, item]));
-
-  return draftItems.flatMap((draftItem) => {
-    const currentItem = itemsById.get(draftItem?.item?.id);
-    if (!currentItem) {
-      return [];
-    }
-
-    return [
-      {
-        item: currentItem,
-        quantity: draftItem.quantity,
-      },
-    ];
-  });
-}
 
 export function StockInPageClient({ items, locations, team }: StockInPageClientProps) {
   const router = useRouter();
