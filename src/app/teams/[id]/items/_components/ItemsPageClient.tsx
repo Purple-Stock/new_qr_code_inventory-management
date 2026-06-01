@@ -16,6 +16,7 @@ import { useToast } from "@/components/ui/use-toast-simple";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { ItemsList } from "./ItemsList";
 import { ItemsSearch } from "./ItemsSearch";
+import { ItemsCsvImportPanel } from "./ItemsCsvImportPanel";
 import { formatPrice } from "../_utils/formatPrice";
 import { downloadCsv, itemsToCsv } from "../_utils/exportItemsCsv";
 import type { Item, Team } from "../_types";
@@ -90,47 +91,79 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
             placeholder={t.items.searchPlaceholder}
           />
         </div>
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <Button
+              variant="outline"
+              data-tour="tour-categories"
+              className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm flex-1 sm:flex-initial touch-manipulation min-h-[40px] sm:min-h-0"
+            >
+              <span className="hidden sm:inline">{t.items.allCategories}</span>
+              <span className="sm:hidden">{t.items.categories}</span>
+              <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
+            </Button>
+            <Button
+              type="button"
+              onClick={handleExportCsv}
+              disabled={filteredItems.length === 0}
+              data-tour="tour-export"
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all h-10 sm:h-11 text-xs sm:text-sm flex-1 sm:flex-initial touch-manipulation min-h-[40px] sm:min-h-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">{t.items.exportCsv}</span>
+              <span className="sm:hidden">{t.items.exportCsvShort}</span>
+            </Button>
+            <ItemsCsvImportPanel
+              teamId={teamId}
+              labels={{
+                title: t.items.importCsvTitle,
+                description: t.items.importCsvDescription,
+                openButton: t.items.importCsv,
+                closeButton: t.common.close,
+                downloadTemplate: t.items.importCsvTemplate,
+                selectFile: t.items.importCsvSelectFile,
+                previewButton: t.items.importCsvPreview,
+                importButton: t.items.importCsvSubmit,
+                importing: t.common.loading,
+                previewing: t.common.loading,
+                selectedFile: t.items.importCsvSelectedFile,
+                summary: t.items.importCsvSummary,
+                validRows: t.items.importCsvValidRows,
+                invalidRows: t.items.importCsvInvalidRows,
+                totalRows: t.items.importCsvTotalRows,
+                line: t.items.importCsvLine,
+                validBadge: t.items.importCsvValid,
+                invalidBadge: t.items.importCsvInvalid,
+                errorsTitle: t.items.importCsvErrorsTitle,
+                previewHelp: t.items.importCsvPreviewHelp,
+                importSuccess: t.items.importCsvSuccess,
+                templateSuccess: t.items.importCsvTemplateSuccess,
+                chooseFileError: t.items.importCsvChooseFileError,
+                importBlocked: t.items.importCsvBlocked,
+                noPreviewYet: t.items.importCsvNoPreview,
+              }}
+            />
+            <Link
+              href={`/teams/${teamId}/items/new`}
+              className="flex-1 sm:flex-initial w-full sm:w-auto"
+              data-tour="tour-add-item"
+            >
+              <Button className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white shadow-lg hover:shadow-xl transition-all h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0">
+                <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">{t.items.addItem}</span>
+                <span className="sm:hidden">{t.items.addItemShort}</span>
+              </Button>
+            </Link>
+          </div>
           <Button
             variant="outline"
             onClick={() => setIsTutorialOpen(true)}
             data-tour="tour-tutorial"
-            className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm flex-1 sm:flex-initial touch-manipulation min-h-[40px] sm:min-h-0"
+            className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:ml-auto sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
           >
             <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
             {t.common.tutorial}
           </Button>
-          <Button
-            variant="outline"
-            data-tour="tour-categories"
-            className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm flex-1 sm:flex-initial touch-manipulation min-h-[40px] sm:min-h-0"
-          >
-            <span className="hidden sm:inline">{t.items.allCategories}</span>
-            <span className="sm:hidden">{t.items.categories}</span>
-            <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
-          </Button>
-          <Button
-            type="button"
-            onClick={handleExportCsv}
-            disabled={filteredItems.length === 0}
-            data-tour="tour-export"
-            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all h-10 sm:h-11 text-xs sm:text-sm flex-1 sm:flex-initial touch-manipulation min-h-[40px] sm:min-h-0 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-            <span className="hidden sm:inline">{t.items.exportCsv}</span>
-            <span className="sm:hidden">{t.items.exportCsvShort}</span>
-          </Button>
-          <Link
-            href={`/teams/${teamId}/items/new`}
-            className="flex-1 sm:flex-initial w-full sm:w-auto"
-            data-tour="tour-add-item"
-          >
-            <Button className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white shadow-lg hover:shadow-xl transition-all h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0">
-              <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">{t.items.addItem}</span>
-              <span className="sm:hidden">{t.items.addItemShort}</span>
-            </Button>
-          </Link>
         </div>
       </div>
 

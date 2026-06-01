@@ -4,6 +4,7 @@ import { ERROR_CODES } from "@/lib/errors";
 import { errorResponse, serviceErrorResponse, successResponse } from "@/lib/api-route";
 import { parseRouteParamId } from "@/lib/api-route";
 import { internalServiceError } from "@/lib/services/errors";
+import { isTrustedTeamLabelLogoUrl } from "@/lib/services/item-images";
 import { getTeamForUser } from "@/lib/services/teams";
 
 export async function GET(
@@ -39,6 +40,15 @@ export async function GET(
       return successResponse({ dataUrl: labelLogoUrl });
     }
 
+    const requestHost = request.headers.get("host");
+    if (!isTrustedTeamLabelLogoUrl(labelLogoUrl, requestHost)) {
+      return errorResponse(
+        "Label logo URL is not trusted",
+        422,
+        ERROR_CODES.LABEL_LOGO_FETCH_FAILED
+      );
+    }
+
     const logoResponse = await fetch(labelLogoUrl);
     if (!logoResponse.ok) {
       return errorResponse(
@@ -50,20 +60,29 @@ export async function GET(
 
     const arrayBuffer = await logoResponse.arrayBuffer();
     const sourceBuffer = Buffer.from(arrayBuffer);
+    const sourceContentType = logoResponse.headers?.get("content-type")?.split(";")[0]?.trim();
 
     // Normalize to PNG to maximize jsPDF compatibility (jpeg/png are safest).
     let outputBytes: Uint8Array = sourceBuffer;
     try {
       const { default: sharp } = await import("sharp");
       outputBytes = await sharp(sourceBuffer).png().toBuffer();
+      return successResponse({
+        dataUrl: `data:image/png;base64,${Buffer.from(outputBytes).toString("base64")}`,
+      });
     } catch {
-      outputBytes = sourceBuffer;
+      if (sourceContentType === "image/png" || sourceContentType === "image/jpeg") {
+        return successResponse({
+          dataUrl: `data:${sourceContentType};base64,${sourceBuffer.toString("base64")}`,
+        });
+      }
+
+      return errorResponse(
+        "Could not process label logo",
+        422,
+        ERROR_CODES.LABEL_LOGO_FETCH_FAILED
+      );
     }
-
-    const base64 = Buffer.from(outputBytes).toString("base64");
-    const dataUrl = `data:image/png;base64,${base64}`;
-
-    return successResponse({ dataUrl });
   } catch (error) {
     console.error("Error fetching label logo data:", error);
     return serviceErrorResponse(
