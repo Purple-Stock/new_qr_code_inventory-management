@@ -182,9 +182,8 @@ export function ItemsCsvImportPanel({ teamId, labels }: ItemsCsvImportPanelProps
     <div className="w-full sm:w-auto">
       <Button
         type="button"
-        variant="outline"
         onClick={() => setIsOpen(true)}
-        className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0"
+        className="w-full sm:w-auto bg-gradient-to-r from-sky-600 to-cyan-600 text-white shadow-lg shadow-sky-600/20 hover:from-sky-700 hover:to-cyan-700 hover:shadow-xl hover:shadow-sky-600/30 h-10 sm:h-11 text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0"
       >
         <FileUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
         {labels.openButton}
