@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState, type ChangeEvent } from "react";
-import { AlertCircle, Download, FileUp, RefreshCw, Upload } from "lucide-react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { AlertCircle, Download, FileUp, RefreshCw, Upload, X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,6 +86,27 @@ export function ItemsCsvImportPanel({ teamId, labels }: ItemsCsvImportPanelProps
     return Boolean(preview && preview.summary.totalRows > 0 && preview.summary.invalidRows === 0);
   }, [preview]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
   const handleDownloadTemplate = () => {
     downloadCsv(getItemsCsvTemplate(), "items-import-template.csv");
     toast({ variant: "success", title: labels.templateSuccess, description: "" });
@@ -162,126 +183,190 @@ export function ItemsCsvImportPanel({ teamId, labels }: ItemsCsvImportPanelProps
       <Button
         type="button"
         variant="outline"
-        onClick={() => setIsOpen((current) => !current)}
+        onClick={() => setIsOpen(true)}
         className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0"
       >
         <FileUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-        {isOpen ? labels.closeButton : labels.openButton}
+        {labels.openButton}
       </Button>
 
       {isOpen ? (
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-          <div className="flex flex-col gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">{labels.title}</h2>
-              <p className="mt-1 text-sm text-slate-600">{labels.description}</p>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button type="button" variant="outline" onClick={handleDownloadTemplate} className="border-slate-300">
-                <Download className="mr-2 h-4 w-4" />
-                {labels.downloadTemplate}
-              </Button>
-              <div className="flex-1">
-                <Input type="file" accept=".csv,text/csv" onChange={handleFileChange} />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4"
+          onClick={() => setIsOpen(false)}
+          role="presentation"
+        >
+          <div
+            className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="items-csv-import-modal-title"
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6">
+              <div>
+                <h2 id="items-csv-import-modal-title" className="text-xl font-bold text-slate-900">
+                  {labels.title}
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">{labels.description}</p>
               </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
               <Button
                 type="button"
-                onClick={handlePreview}
-                disabled={isPreviewing || !csvContent.trim()}
-                className="bg-slate-900 text-white hover:bg-slate-800"
+                variant="ghost"
+                onClick={() => setIsOpen(false)}
+                className="h-10 w-10 p-0 text-slate-500 hover:bg-slate-100"
+                aria-label={labels.closeButton}
               >
-                {isPreviewing ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                {isPreviewing ? labels.previewing : labels.previewButton}
+                <X className="h-5 w-5" />
               </Button>
-              <Button
-                type="button"
-                onClick={handleImport}
-                disabled={isImporting || !canImport}
-                className="bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-700 hover:to-green-700"
-              >
-                {isImporting ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}
-                {isImporting ? labels.importing : labels.importButton}
-              </Button>
-              {fileName ? <span className="text-sm text-slate-600">{labels.selectedFile}: {fileName}</span> : null}
             </div>
 
-            {preview ? (
-              <div className="space-y-4">
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{labels.totalRows}</p>
-                    <p className="mt-2 text-2xl font-semibold text-slate-900">{preview.summary.totalRows}</p>
-                  </div>
-                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-                    <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">{labels.validRows}</p>
-                    <p className="mt-2 text-2xl font-semibold text-emerald-900">{preview.summary.validRows}</p>
-                  </div>
-                  <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
-                    <p className="text-xs font-medium uppercase tracking-wide text-rose-700">{labels.invalidRows}</p>
-                    <p className="mt-2 text-2xl font-semibold text-rose-900">{preview.summary.invalidRows}</p>
+            <div className="overflow-y-auto p-5 sm:p-6">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleDownloadTemplate}
+                    className="border-slate-300"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    {labels.downloadTemplate}
+                  </Button>
+                  <div className="flex-1">
+                    <Input type="file" accept=".csv,text/csv" onChange={handleFileChange} />
                   </div>
                 </div>
 
-                {preview.summary.invalidRows > 0 ? (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>{labels.errorsTitle}</AlertTitle>
-                    <AlertDescription>{labels.importBlocked}</AlertDescription>
-                  </Alert>
-                ) : null}
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    type="button"
+                    onClick={handlePreview}
+                    disabled={isPreviewing || !csvContent.trim()}
+                    className="bg-slate-900 text-white hover:bg-slate-800"
+                  >
+                    {isPreviewing ? (
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="mr-2 h-4 w-4" />
+                    )}
+                    {isPreviewing ? labels.previewing : labels.previewButton}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleImport}
+                    disabled={isImporting || !canImport}
+                    className="bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-700 hover:to-green-700"
+                  >
+                    {isImporting ? (
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <FileUp className="mr-2 h-4 w-4" />
+                    )}
+                    {isImporting ? labels.importing : labels.importButton}
+                  </Button>
+                  {fileName ? (
+                    <span className="text-sm text-slate-600">
+                      {labels.selectedFile}: {fileName}
+                    </span>
+                  ) : null}
+                </div>
 
-                <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
-                  {preview.rows.map((row) => (
-                    <div
-                      key={`${row.line}-${row.status}`}
-                      className={`rounded-xl border p-4 ${
-                        row.status === "valid"
-                          ? "border-emerald-200 bg-emerald-50"
-                          : "border-rose-200 bg-rose-50"
-                      }`}
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="text-sm font-semibold text-slate-900">
-                          {labels.line} {row.line}
-                        </div>
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                {preview ? (
+                  <div className="space-y-4">
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                          {labels.totalRows}
+                        </p>
+                        <p className="mt-2 text-2xl font-semibold text-slate-900">
+                          {preview.summary.totalRows}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                        <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">
+                          {labels.validRows}
+                        </p>
+                        <p className="mt-2 text-2xl font-semibold text-emerald-900">
+                          {preview.summary.validRows}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
+                        <p className="text-xs font-medium uppercase tracking-wide text-rose-700">
+                          {labels.invalidRows}
+                        </p>
+                        <p className="mt-2 text-2xl font-semibold text-rose-900">
+                          {preview.summary.invalidRows}
+                        </p>
+                      </div>
+                    </div>
+
+                    {preview.summary.invalidRows > 0 ? (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>{labels.errorsTitle}</AlertTitle>
+                        <AlertDescription>{labels.importBlocked}</AlertDescription>
+                      </Alert>
+                    ) : null}
+
+                    <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
+                      {preview.rows.map((row) => (
+                        <div
+                          key={`${row.line}-${row.status}`}
+                          className={`rounded-xl border p-4 ${
                             row.status === "valid"
-                              ? "bg-emerald-600 text-white"
-                              : "bg-rose-600 text-white"
+                              ? "border-emerald-200 bg-emerald-50"
+                              : "border-rose-200 bg-rose-50"
                           }`}
                         >
-                          {row.status === "valid" ? labels.validBadge : labels.invalidBadge}
-                        </span>
-                      </div>
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="text-sm font-semibold text-slate-900">
+                              {labels.line} {row.line}
+                            </div>
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                row.status === "valid"
+                                  ? "bg-emerald-600 text-white"
+                                  : "bg-rose-600 text-white"
+                              }`}
+                            >
+                              {row.status === "valid" ? labels.validBadge : labels.invalidBadge}
+                            </span>
+                          </div>
 
-                      {row.item ? (
-                        <div className="mt-3 grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
-                          <div><strong>Name:</strong> {row.item.name ?? "-"}</div>
-                          <div><strong>Barcode:</strong> {row.item.barcode ?? "-"}</div>
-                          <div><strong>SKU:</strong> {row.item.sku ?? "-"}</div>
-                          <div><strong>Stock:</strong> {row.item.currentStock ?? 0}</div>
+                          {row.item ? (
+                            <div className="mt-3 grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
+                              <div>
+                                <strong>Name:</strong> {row.item.name ?? "-"}
+                              </div>
+                              <div>
+                                <strong>Barcode:</strong> {row.item.barcode ?? "-"}
+                              </div>
+                              <div>
+                                <strong>SKU:</strong> {row.item.sku ?? "-"}
+                              </div>
+                              <div>
+                                <strong>Stock:</strong> {row.item.currentStock ?? 0}
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {row.errors.length > 0 ? (
+                            <ul className="mt-3 space-y-1 text-sm text-rose-800">
+                              {row.errors.map((error) => (
+                                <li key={error}>• {error}</li>
+                              ))}
+                            </ul>
+                          ) : null}
                         </div>
-                      ) : null}
-
-                      {row.errors.length > 0 ? (
-                        <ul className="mt-3 space-y-1 text-sm text-rose-800">
-                          {row.errors.map((error) => (
-                            <li key={error}>• {error}</li>
-                          ))}
-                        </ul>
-                      ) : null}
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">{labels.noPreviewYet}</p>
+                )}
               </div>
-            ) : (
-              <p className="text-sm text-slate-500">{labels.noPreviewYet}</p>
-            )}
+            </div>
           </div>
         </div>
       ) : null}
