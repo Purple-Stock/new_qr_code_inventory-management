@@ -105,6 +105,17 @@ describe("admin service", () => {
         { teamId: teamB.id, userId: owner.id, role: "admin", status: "active" },
       ]);
 
+      const lastEmailSentAt = new Date("2026-05-01T12:00:00.000Z");
+      getAdminTeamPipelineStatusesByIdsMock.mockResolvedValue(
+        new Map([[teamB.id, "risk"]])
+      );
+      getAdminTeamContactStatusesByIdsMock.mockResolvedValue(
+        new Map([[teamB.id, { lastEmailSentAt }]])
+      );
+      getAdminTeamNotesByIdsMock.mockResolvedValue(
+        new Map([[teamB.id, "Nota interna beta"]])
+      );
+
       const result = await getAllTeamsForSuperAdmin({
         requestUserId: superAdmin.id,
         page: "1",
@@ -117,6 +128,12 @@ describe("admin service", () => {
       expect(result.data.teams).toHaveLength(1);
       expect(result.data.teams[0]?.name).toBe("Beta Team");
       expect(result.data.teams[0]?.companyName).toBe("Purple Holding");
+      expect(result.data.teams[0]?.ownerEmail).toBe("owner@example.com");
+      expect(result.data.teams[0]?.notes).toBe("Nota interna beta");
+      expect(result.data.teams[0]?.adminPipelineStatus).toBe("risk");
+      expect(result.data.teams[0]?.adminLastEmailSentAt).toBe(
+        lastEmailSentAt.toISOString()
+      );
       expect(result.data.pagination.total).toBe(1);
     });
 

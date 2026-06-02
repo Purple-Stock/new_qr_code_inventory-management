@@ -1,6 +1,8 @@
 import type { Item, StockTransaction } from "@/db/schema";
 import type { TransactionWithDetails } from "@/lib/db/stock-transactions";
 import type {
+  AdminPipelineStatus,
+  AdminTeamDto,
   AvailableUserDto,
   CompanyTeamDto,
   ItemDto,
@@ -131,6 +133,25 @@ export function toTeamDto(
     canDeleteTeam: team.canDeleteTeam,
     createdAt: toIsoString(team.createdAt),
     updatedAt: toIsoString(team.updatedAt),
+  };
+}
+
+export function toAdminTeamDto(
+  team: Parameters<typeof toTeamDto>[0] & {
+    ownerEmail?: string | null;
+    adminPipelineStatus?: AdminPipelineStatus | null;
+    adminLastEmailSentAt?: Date | string | null;
+  }
+): AdminTeamDto {
+  const base = toTeamDto(team);
+
+  return {
+    ...base,
+    ownerEmail: team.ownerEmail ?? null,
+    adminPipelineStatus: team.adminPipelineStatus ?? null,
+    adminLastEmailSentAt: team.adminLastEmailSentAt
+      ? toIsoString(team.adminLastEmailSentAt)
+      : null,
   };
 }
 

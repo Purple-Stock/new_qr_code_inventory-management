@@ -16,8 +16,8 @@ import {
   makeServiceError,
   validationServiceError,
 } from "@/lib/services/errors";
-import { toTeamDto } from "@/lib/services/mappers";
-import type { ServiceResult, TeamDto } from "@/lib/services/types";
+import { toAdminTeamDto } from "@/lib/services/mappers";
+import type { AdminTeamDto, ServiceResult } from "@/lib/services/types";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
@@ -251,7 +251,7 @@ export async function getAllTeamsForSuperAdmin(params: {
   search?: string;
 }): Promise<
   ServiceResult<{
-    teams: TeamDto[];
+    teams: AdminTeamDto[];
     pagination: {
       page: number;
       pageSize: number;
@@ -289,7 +289,7 @@ export async function getAllTeamsForSuperAdmin(params: {
     return {
       ok: true,
       data: {
-        teams: teams.map(toTeamDto),
+        teams: teams.map(toAdminTeamDto),
         pagination: {
           page,
           pageSize,
