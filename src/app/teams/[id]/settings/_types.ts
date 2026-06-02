@@ -13,6 +13,8 @@ export type Team = Pick<
   | "companyName"
   | "labelCompanyInfo"
   | "labelLogoUrl"
+  | "stripeCustomerId"
+  | "stripeSubscriptionId"
   | "itemCustomFieldSchema"
   | "stripeSubscriptionStatus"
   | "stripeCurrentPeriodEnd"
