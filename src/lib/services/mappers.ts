@@ -1,6 +1,8 @@
 import type { Item, StockTransaction } from "@/db/schema";
 import type { TransactionWithDetails } from "@/lib/db/stock-transactions";
 import type {
+  AdminPipelineStatus,
+  AdminTeamDto,
   AvailableUserDto,
   CompanyTeamDto,
   ItemDto,
@@ -13,9 +15,46 @@ import type {
 } from "@/lib/services/types";
 import type { ReportStats } from "@/lib/db/reports";
 
-function toIsoString(value: Date | string | null | undefined): string {
-  if (!value) return new Date(0).toISOString();
-  return typeof value === "string" ? new Date(value).toISOString() : value.toISOString();
+function toIsoString(value: Date | string | number | null | undefined): string {
+  if (value === null || value === undefined) {
+    return new Date(0).toISOString();
+  }
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? new Date(0).toISOString() : value.toISOString();
+  }
+
+  if (typeof value === "number") {
+    const timestampMs = value < 1e12 ? value * 1000 : value;
+    const date = new Date(timestampMs);
+    return Number.isNaN(date.getTime()) ? new Date(0).toISOString() : date.toISOString();
+  }
+
+  const sqliteTimestampMatch = value.match(
+    /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})(?:\.\d+)?$/
+  );
+  if (sqliteTimestampMatch) {
+    const parsedSqliteUtc = new Date(`${sqliteTimestampMatch[1]}T${sqliteTimestampMatch[2]}Z`);
+    if (!Number.isNaN(parsedSqliteUtc.getTime())) {
+      return parsedSqliteUtc.toISOString();
+    }
+  }
+
+  const parsedDirectly = new Date(value);
+  if (!Number.isNaN(parsedDirectly.getTime())) {
+    return parsedDirectly.toISOString();
+  }
+
+  const numericValue = Number(value);
+  if (Number.isFinite(numericValue)) {
+    const timestampMs = numericValue < 1e12 ? numericValue * 1000 : numericValue;
+    const date = new Date(timestampMs);
+    if (!Number.isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+  }
+
+  return new Date(0).toISOString();
 }
 
 export function toItemDto(item: Item & { locationName?: string | null }): ItemDto {
@@ -94,6 +133,25 @@ export function toTeamDto(
     canDeleteTeam: team.canDeleteTeam,
     createdAt: toIsoString(team.createdAt),
     updatedAt: toIsoString(team.updatedAt),
+  };
+}
+
+export function toAdminTeamDto(
+  team: Parameters<typeof toTeamDto>[0] & {
+    ownerEmail?: string | null;
+    adminPipelineStatus?: AdminPipelineStatus | null;
+    adminLastEmailSentAt?: Date | string | null;
+  }
+): AdminTeamDto {
+  const base = toTeamDto(team);
+
+  return {
+    ...base,
+    ownerEmail: team.ownerEmail ?? null,
+    adminPipelineStatus: team.adminPipelineStatus ?? null,
+    adminLastEmailSentAt: team.adminLastEmailSentAt
+      ? toIsoString(team.adminLastEmailSentAt)
+      : null,
   };
 }
 
