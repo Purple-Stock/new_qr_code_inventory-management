@@ -78,6 +78,8 @@ src/
 - `STRIPE_PRICE_ID` (obrigatório para billing): `price_id` do plano mensal por time.
 - `STRIPE_WEBHOOK_SECRET` (obrigatório para webhook): segredo do endpoint de webhook.
 - `APP_URL` ou `NEXT_PUBLIC_APP_URL` (recomendado): URL base usada em retornos do Checkout/Portal.
+- `RESEND_API_KEY` (obrigatório para campanha por email no admin): chave da API da Resend.
+- `RESEND_FROM_EMAIL` (obrigatório para campanha por email no admin): remetente validado na Resend, por exemplo `Purple Stock <contato@seudominio.com>`.
 
 ## Setup local
 
@@ -88,6 +90,29 @@ npm run dev
 ```
 
 Aplicação em `http://localhost:3000`.
+
+### Admin com dados de prod no ambiente local
+
+O `admin_panel` usa dois backends diferentes em desenvolvimento:
+
+- modo padrao -> `http://localhost:3001`
+- modo `PROD` -> `http://localhost:3101`
+
+Para o modo `PROD` funcionar no painel, suba uma segunda instancia deste app carregando `.env.prod.local`:
+
+```bash
+# terminal 1: backend padrao
+npm run dev:local-default
+
+# terminal 2: backend prod-local
+npm run dev:local-prod
+```
+
+O script `dev:local-prod` injeta as variaveis de `.env.prod.local` antes de iniciar o Next em `3101`, o que permite ao painel consultar o banco remoto configurado para prod sem trocar a instancia padrao de `3001`.
+
+Os scripts locais tambem separam o `distDir` do Next por porta (`.next-dev-3001` e `.next-dev-3101`). Isso evita o erro de lock quando duas instancias de `next dev` rodam ao mesmo tempo no mesmo workspace.
+
+Se preferir subir tudo junto a partir da raiz do workspace, use `./run-projects.sh`.
 
 Para Turso (remoto), configure:
 
@@ -108,9 +133,10 @@ TURSO_AUTH_TOKEN=<seu_token_turso>
 - `npm run db:rollback -- --steps=1`: faz rollback das últimas migrações aplicadas (requer arquivos `*.down.sql` correspondentes).
 - `npm run db:new -- <nome>`: cria par de migration `up/down` com próximo prefixo numérico.
 - `npm run verify:architecture`: checks arquiteturais + política de testes + lint de arquitetura + testes de arquitetura.
+- `npm run precommit:required`: validação pré-commit seletiva (`npm ci` quando dependências mudam e `verify:architecture` quando API/services mudam).
 - `npm run prepush:required`: validação obrigatória pré-push (`verify:architecture` + `build`).
 - `npm run prepush:full`: validação completa pré-push (`verify:architecture` + `test --runInBand` + `build`).
-- `npm run hooks:install`: ativa `.githooks/pre-push`.
+- `npm run hooks:install`: ativa `.githooks/pre-commit` e `.githooks/pre-push`.
 - `npm run hooks:uninstall`: remove hook local.
 
 ## Deploy no Amplify (Next SSR + Turso)
@@ -193,9 +219,12 @@ Observação: existe script `db:seed` no `package.json`, mas o arquivo `src/db/s
 - `POST /api/teams/:id/billing/portal`
 - `POST /api/stripe/webhook`
 - `GET /api/admin/teams` (somente `super_admin`, com paginação e busca)
+- `GET /api/admin/config/database-targets` (somente `super_admin`, mostra o alvo de banco para modo local e prod)
+- `POST /api/admin/email-campaigns/non-subscribers` (somente `super_admin`, envia campanha para clientes sem assinatura)
 
 ## Qualidade e CI
 
+- Hook de pre-commit executa `npm run precommit:required`.
 - Hook de pre-push executa `npm run prepush:required`.
 - Quando o ambiente local estiver alinhado para testes nativos, rode também `npm run prepush:full` antes do push.
 - GitHub Actions:

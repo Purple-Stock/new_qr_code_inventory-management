@@ -20,6 +20,7 @@ import { getUserIdFromRequest } from "@/lib/permissions";
 
 const mockedGetTeamForUser = vi.mocked(getTeamForUser);
 const mockedGetUserIdFromRequest = vi.mocked(getUserIdFromRequest);
+const originalS3PublicBaseUrl = process.env.S3_PUBLIC_BASE_URL;
 
 describe("/api/teams/[id]/labels/logo-data route", () => {
   beforeEach(() => {
@@ -27,11 +28,13 @@ describe("/api/teams/[id]/labels/logo-data route", () => {
     mockedGetUserIdFromRequest.mockReturnValue(1);
     vi.unstubAllGlobals();
     vi.doUnmock("sharp");
+    process.env.S3_PUBLIC_BASE_URL = originalS3PublicBaseUrl;
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.doUnmock("sharp");
+    process.env.S3_PUBLIC_BASE_URL = originalS3PublicBaseUrl;
   });
 
   it("returns 400 for invalid team ID", async () => {
@@ -88,6 +91,7 @@ describe("/api/teams/[id]/labels/logo-data route", () => {
   });
 
   it("returns 200 when team has remote logo URL", async () => {
+    process.env.S3_PUBLIC_BASE_URL = "https://cdn.example.com";
     mockedGetTeamForUser.mockResolvedValue({
       ok: true,
       data: {
@@ -104,6 +108,7 @@ describe("/api/teams/[id]/labels/logo-data route", () => {
       vi.fn().mockResolvedValue({
         ok: true,
         arrayBuffer: async () => remoteBytes.buffer,
+        headers: new Headers({ "content-type": "image/png" }),
       })
     );
 
@@ -118,7 +123,34 @@ describe("/api/teams/[id]/labels/logo-data route", () => {
     expect(json.dataUrl.startsWith("data:image/png;base64,")).toBe(true);
   });
 
+  it("rejects untrusted remote logo URLs", async () => {
+    process.env.S3_PUBLIC_BASE_URL = "https://cdn.example.com";
+    mockedGetTeamForUser.mockResolvedValue({
+      ok: true,
+      data: {
+        team: {
+          id: 1,
+          labelLogoUrl: "https://evil.example.com/logo.png",
+        },
+      },
+    } as never);
+
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const response = await GET(
+      new NextRequest("http://localhost:3000/api/teams/1/labels/logo-data"),
+      { params: Promise.resolve({ id: "1" }) }
+    );
+
+    expect(response.status).toBe(422);
+    const json = await response.json();
+    expect(json.errorCode).toBe(ERROR_CODES.LABEL_LOGO_FETCH_FAILED);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
   it("returns 422 when remote logo fetch fails", async () => {
+    process.env.S3_PUBLIC_BASE_URL = "https://cdn.example.com";
     mockedGetTeamForUser.mockResolvedValue({
       ok: true,
       data: {
@@ -146,7 +178,8 @@ describe("/api/teams/[id]/labels/logo-data route", () => {
     expect(json.errorCode).toBe(ERROR_CODES.LABEL_LOGO_FETCH_FAILED);
   });
 
-  it("falls back when sharp conversion fails", async () => {
+  it("falls back to the original JPEG data URL when sharp conversion fails", async () => {
+    process.env.S3_PUBLIC_BASE_URL = "https://cdn.example.com";
     mockedGetTeamForUser.mockResolvedValue({
       ok: true,
       data: {
@@ -163,6 +196,7 @@ describe("/api/teams/[id]/labels/logo-data route", () => {
       vi.fn().mockResolvedValue({
         ok: true,
         arrayBuffer: async () => source.buffer,
+        headers: new Headers({ "content-type": "image/jpeg" }),
       })
     );
 
@@ -184,6 +218,6 @@ describe("/api/teams/[id]/labels/logo-data route", () => {
     expect(response.status).toBe(200);
     const json = await response.json();
     const expectedBase64 = Buffer.from(source).toString("base64");
-    expect(json.dataUrl).toBe(`data:image/png;base64,${expectedBase64}`);
+    expect(json.dataUrl).toBe(`data:image/jpeg;base64,${expectedBase64}`);
   });
 });

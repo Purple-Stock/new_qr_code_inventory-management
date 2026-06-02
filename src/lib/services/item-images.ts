@@ -132,6 +132,41 @@ function resolvePublicUrl(params: {
   return `https://${params.bucket}.s3.${params.region}.amazonaws.com/${params.key}`;
 }
 
+export function getTeamLabelLogoPublicUrlPrefix(runtimeHost?: string | null): string | null {
+  const baseUrlFromEnv = resolveEnv("S3_PUBLIC_BASE_URL", runtimeHost);
+  if (baseUrlFromEnv) {
+    return baseUrlFromEnv.replace(/\/$/, "");
+  }
+
+  const bucket = resolveBucketName(runtimeHost);
+  if (!bucket) {
+    return null;
+  }
+
+  const region = resolveAwsRegion();
+  const endpoint =
+    process.env.S3_ENDPOINT?.trim() || process.env.AWS_S3_ENDPOINT?.trim() || undefined;
+
+  if (endpoint) {
+    return `${endpoint.replace(/\/$/, "")}/${bucket}`;
+  }
+
+  return `https://${bucket}.s3.${region}.amazonaws.com`;
+}
+
+export function isTrustedTeamLabelLogoUrl(url: string, runtimeHost?: string | null): boolean {
+  const prefix = getTeamLabelLogoPublicUrlPrefix(runtimeHost);
+  if (!prefix) {
+    return false;
+  }
+
+  try {
+    return new URL(url).href.startsWith(`${prefix}/`);
+  } catch {
+    return false;
+  }
+}
+
 function resolveAwsRegion(): string {
   return (
     process.env.AWS_REGION?.trim() ||
