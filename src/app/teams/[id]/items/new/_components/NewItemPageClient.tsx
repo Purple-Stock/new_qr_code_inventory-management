@@ -6,8 +6,8 @@ import { TeamLayout } from "@/components/shared/TeamLayout";
 import { FormPageShell } from "@/components/shared/FormPageShell";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import { useTranslation } from "@/lib/i18n";
-import { fetchApiJsonResult } from "@/lib/api-client";
-import { ItemForm, type ItemFormValues } from "../../_components/ItemForm";
+import { ItemForm } from "../../_components/ItemForm";
+import { useCreateItemForm } from "../../_hooks/useCreateItemForm";
 
 interface NewItemPageClientProps {
   teamId: number;
@@ -26,20 +26,24 @@ export default function NewItemPageClient({
   const { t } = useTranslation();
 
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
-  const [form, setForm] = useState<ItemFormValues>({
-    name: "",
-    sku: "",
-    barcode: "",
-    cost: "",
-    price: "",
-    itemType: "",
-    brand: "",
-    photoData: "",
-    customFields: {},
-  });
-  const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const {
+    form,
+    error,
+    isLoading,
+    updateField,
+    updateCustomField,
+    generateSKU,
+    generateBarcode,
+    handleSubmit,
+  } = useCreateItemForm({
+    teamId,
+    onSuccess: async () => {
+      setSuccess(t.itemForm.createSuccess);
+      await router.push(`/teams/${teamId}/items`);
+      router.refresh();
+    },
+  });
 
   const tourSteps: TourStep[] = [
     { target: "tour-new-item-tutorial", title: t.itemForm.tourTutorialTitle, description: t.itemForm.tourTutorialDesc },
@@ -53,87 +57,6 @@ export default function NewItemPageClient({
     { target: "tour-new-item-submit", title: t.itemForm.tourSubmitTitle, description: t.itemForm.tourSubmitDesc },
     { target: "tour-sidebar", title: t.itemForm.tourSidebarTitle, description: t.itemForm.tourSidebarDesc },
   ];
-
-  const updateField = (field: keyof ItemFormValues, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const updateCustomField = (fieldKey: string, value: string) => {
-    setForm((prev) => ({
-      ...prev,
-      customFields: { ...prev.customFields, [fieldKey]: value },
-    }));
-  };
-
-  const generateSKU = () => {
-    if (form.name.trim()) {
-      updateField(
-        "sku",
-        form.name.toUpperCase().replace(/\s+/g, "-").substring(0, 20)
-      );
-    }
-  };
-
-  const generateBarcode = () => {
-    updateField(
-      "barcode",
-      Math.floor(1000000000000 + Math.random() * 9000000000000).toString()
-    );
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-
-    if (!form.name.trim()) {
-      setError(t.itemForm.itemNameRequired);
-      return;
-    }
-    if (!form.barcode.trim()) {
-      setError(t.itemForm.barcodeRequired);
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const customFields = Object.fromEntries(
-        Object.entries(form.customFields)
-          .map(([key, value]) => [key, value.trim()])
-          .filter(([, value]) => value.length > 0)
-      );
-
-      const result = await fetchApiJsonResult(`/api/teams/${teamId}/items`, {
-        method: "POST",
-        body: {
-          name: form.name.trim(),
-          sku: form.sku.trim() || null,
-          barcode: form.barcode.trim(),
-          cost: form.cost ? parseFloat(form.cost) : null,
-          price: form.price ? parseFloat(form.price) : null,
-          itemType: form.itemType.trim() || null,
-          brand: form.brand.trim() || null,
-          photoData: form.photoData || null,
-          customFields: Object.keys(customFields).length > 0 ? customFields : null,
-        },
-        fallbackError: t.itemForm.unexpectedError,
-      });
-
-      if (!result.ok) {
-        setError(result.error.error || t.itemForm.unexpectedError);
-        setIsLoading(false);
-        return;
-      }
-
-      setSuccess(t.itemForm.createSuccess);
-      await router.push(`/teams/${teamId}/items`);
-      router.refresh();
-    } catch {
-      setError(t.itemForm.unexpectedError);
-      setIsLoading(false);
-    }
-  };
 
   return (
     <TeamLayout team={initialTeam} activeMenuItem="items">

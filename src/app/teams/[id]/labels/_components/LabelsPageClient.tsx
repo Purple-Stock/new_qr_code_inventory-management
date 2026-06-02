@@ -1,17 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Search,
   Info,
   Printer,
   Download,
+  Eye,
   CheckSquare,
   Square,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast-simple";
 import { useTranslation } from "@/lib/i18n";
 import { QRCodeDisplay } from "@/components/QRCodeDisplay";
 import { TeamLayout } from "@/components/shared/TeamLayout";
@@ -52,6 +55,8 @@ type LabelSizePreset =
   | "zebra_110x64"
   | "zebra_170x64";
 
+type QRSizePreset = "medium" | "large" | "extra_large" | "small" | "custom";
+
 const LABEL_SIZE_PRESETS: Record<
   Exclude<LabelSizePreset, "custom">,
   { widthCm: number; heightCm: number; label: string; zebra: boolean }
@@ -67,6 +72,7 @@ export default function LabelsPageClient({
   initialTeam,
   initialItems,
 }: LabelsPageClientProps) {
+  const { toast } = useToast();
   const [team] = useState<Team>(initialTeam);
   const [items] = useState<Item[]>(initialItems);
   const [isLoading] = useState(false);
@@ -77,6 +83,8 @@ export default function LabelsPageClient({
   const [customHeightCm, setCustomHeightCm] = useState("5");
   const [labelQuantityByItem, setLabelQuantityByItem] = useState<Record<number, number>>({});
   const [includeQRCode, setIncludeQRCode] = useState(true);
+  const [qrSizePreset, setQrSizePreset] = useState<QRSizePreset>("large");
+  const [customQRScale, setCustomQRScale] = useState("125");
   const [includeBarcode, setIncludeBarcode] = useState(false);
   const [includeItemName, setIncludeItemName] = useState(true);
   const [includeSKU, setIncludeSKU] = useState(true);
@@ -109,8 +117,8 @@ export default function LabelsPageClient({
   const [includeCompanyInfo, setIncludeCompanyInfo] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const { t } = useTranslation();
-  const labelsRef = useRef<HTMLDivElement>(null);
   const tourSteps: TourStep[] = [
     { target: "tour-labels-tutorial", title: t.labels.tourTutorialTitle, description: t.labels.tourTutorialDesc },
     { target: "tour-labels-settings", title: t.labels.tourSettingsTitle, description: t.labels.tourSettingsDesc },
@@ -157,11 +165,27 @@ export default function LabelsPageClient({
       }
       return next;
     });
-    setSelectedItems(new Set(filteredItems.map((item) => item.id)));
+    setSelectedItems((prev) => {
+      const next = new Set(prev);
+      for (const item of filteredItems) {
+        next.add(item.id);
+      }
+      return next;
+    });
   };
 
   const deselectAll = () => {
     setSelectedItems(new Set());
+  };
+
+  const deselectFilteredItems = () => {
+    setSelectedItems((prev) => {
+      const next = new Set(prev);
+      for (const item of filteredItems) {
+        next.delete(item.id);
+      }
+      return next;
+    });
   };
 
   const getSelectedItemsList = () => {
@@ -169,6 +193,19 @@ export default function LabelsPageClient({
   };
 
   const getItemQuantity = (itemId: number) => Math.max(1, labelQuantityByItem[itemId] ?? 1);
+  const getTotalLabelsCount = () =>
+    Array.from(selectedItems).reduce((total, itemId) => total + getItemQuantity(itemId), 0);
+
+  const totalSelectedLabels = getTotalLabelsCount();
+  const isCustomSize = labelSizePreset === "custom";
+  const previewItem = getSelectedItemsList()[0] ?? filteredItems[0] ?? items[0] ?? null;
+  const previewCustomFields = customFieldOptions
+    .filter((field) => includeCustomFieldKeys[field.key] && previewItem?.customFields?.[field.key])
+    .map((field) => ({
+      key: field.key,
+      label: customFieldLabelByKey.get(field.key) ?? field.key,
+      value: previewItem?.customFields?.[field.key] ?? "",
+    }));
 
   const updateItemQuantity = (itemId: number, rawValue: string) => {
     const parsed = Number.parseInt(rawValue, 10);
@@ -193,20 +230,90 @@ export default function LabelsPageClient({
     return { widthCm, heightCm };
   };
 
-  const resolveLogoDataUrl = async (): Promise<string | null> => {
+  const getQRScaleFactor = () => {
+    switch (qrSizePreset) {
+      case "small":
+        return 0.85;
+      case "medium":
+        return 1;
+      case "large":
+        return 1.25;
+      case "extra_large":
+        return 1.7;
+      case "custom": {
+        const parsed = Number.parseInt(customQRScale, 10);
+        const safeScale = Number.isFinite(parsed) ? Math.min(Math.max(parsed, 70), 180) : 125;
+        return safeScale / 100;
+      }
+      default:
+        return 1.25;
+    }
+  };
+
+  const getQRSizePresetLabel = () => {
+    switch (qrSizePreset) {
+      case "small":
+        return t.labels.small;
+      case "medium":
+        return t.labels.medium;
+      case "large":
+        return t.labels.large;
+      case "extra_large":
+        return t.labels.extraLarge;
+      case "custom":
+        return `${customQRScale}%`;
+      default:
+        return t.labels.large;
+    }
+  };
+
+  const getQRRenderWidth = (qrSize: number) => {
+    if (qrSizePreset === "extra_large") {
+      return 800;
+    }
+
+    return qrSize * 4;
+  };
+
+  const normalizedWidthCm = getLabelDimensionsCm().widthCm;
+  const normalizedHeightCm = getLabelDimensionsCm().heightCm;
+  const requestedWidthCm = parseCm(customWidthCm, normalizedWidthCm);
+  const requestedHeightCm = parseCm(customHeightCm, normalizedHeightCm);
+  const customDimensionsAdjusted =
+    isCustomSize &&
+    (requestedWidthCm !== normalizedWidthCm || requestedHeightCm !== normalizedHeightCm);
+  const qrScaleFactor = getQRScaleFactor();
+  const previewScaleStyle = {
+    transform: `scale(${Math.min(Math.max(qrScaleFactor, 0.85), 1.45)})`,
+  };
+  const previewSheetStyle = {
+    width: `${normalizedWidthCm}cm`,
+    height: `${normalizedHeightCm}cm`,
+    maxWidth: "none",
+  };
+
+  const resolveLogoDataUrl = async (): Promise<{
+    dataUrl: string | null;
+    failedToLoad: boolean;
+  }> => {
     try {
       const apiResponse = await fetch(`/api/teams/${team.id}/labels/logo-data`);
-      if (!apiResponse.ok) return null;
+      if (!apiResponse.ok) {
+        return {
+          dataUrl: null,
+          failedToLoad: apiResponse.status !== 404,
+        };
+      }
       const payload = (await apiResponse.json()) as {
         dataUrl?: string;
         data?: { dataUrl?: string };
       };
       if ("dataUrl" in payload) {
-        return payload.dataUrl ?? null;
+        return { dataUrl: payload.dataUrl ?? null, failedToLoad: false };
       }
-      return payload?.data?.dataUrl ?? null;
+      return { dataUrl: payload?.data?.dataUrl ?? null, failedToLoad: false };
     } catch {
-      return null;
+      return { dataUrl: null, failedToLoad: true };
     }
   };
 
@@ -221,9 +328,18 @@ export default function LabelsPageClient({
       const labelsToPrint = selectedItemsList.flatMap((item) =>
         Array.from({ length: getItemQuantity(item.id) }, () => item)
       );
-      const companyLogoDataUrl = await resolveLogoDataUrl();
+      const { dataUrl: companyLogoDataUrl, failedToLoad: logoLoadFailed } =
+        await resolveLogoDataUrl();
+      if (logoLoadFailed) {
+        toast({
+          variant: "destructive",
+          title: t.labels.logoLoadErrorTitle,
+          description: t.labels.logoLoadErrorDescription,
+        });
+      }
       const { widthCm, heightCm } = getLabelDimensionsCm();
       const isZebraLayout = labelSizePreset !== "custom" && LABEL_SIZE_PRESETS[labelSizePreset].zebra;
+      const invalidBarcodeItemIds = new Set<number>();
       const pdf = isZebraLayout
         ? new jsPDF({
             orientation: heightCm >= widthCm ? "p" : "l",
@@ -247,7 +363,6 @@ export default function LabelsPageClient({
       const rows = isZebraLayout
         ? 1
         : Math.max(1, Math.floor((availableHeight + verticalGap) / (labelHeight + verticalGap)));
-      let currentPage = 0;
       let currentRow = 0;
       let currentCol = 0;
 
@@ -257,7 +372,6 @@ export default function LabelsPageClient({
           // Check if we need a new page
           if (currentRow >= rows) {
             pdf.addPage();
-            currentPage++;
             currentRow = 0;
             currentCol = 0;
           }
@@ -279,11 +393,27 @@ export default function LabelsPageClient({
           const bodyFont = Math.max(6, Math.min(9, labelHeight * 0.12));
           const metaFont = Math.max(5, bodyFont - 1);
           const lineStep = Math.max(2.5, bodyFont * 0.45);
-          const qrSize = Math.max(14, Math.min(28, innerH * 0.46));
+          const baseQRSize = isZebraLayout
+            ? Math.min(34, Math.min(innerW * 0.58, innerH * 0.46))
+            : Math.min(28, Math.min(innerW * 0.42, innerH * 0.44));
+          const qrSize = Math.max(
+            16,
+            Math.min(baseQRSize * getQRScaleFactor(), Math.min(innerW * 0.82, innerH * 0.68))
+          );
           const logoSize = Math.max(8, Math.min(14, innerH * 0.24));
           const centerX = innerX + innerW / 2;
 
           let currentY = innerY;
+
+        const getClampedLines = (
+          text: string,
+          maxWidth: number,
+          maxLines: number
+        ): string[] => {
+          if (!text.trim()) return [];
+          const splitRaw = pdf.splitTextToSize(text, maxWidth);
+          return (Array.isArray(splitRaw) ? splitRaw : [splitRaw]).slice(0, maxLines);
+        };
 
         const addFittedText = (text: string, options: {
           fontSize: number;
@@ -296,8 +426,7 @@ export default function LabelsPageClient({
           if (!text.trim()) return 0;
           pdf.setFontSize(options.fontSize);
           pdf.setTextColor(...options.color);
-          const splitRaw = pdf.splitTextToSize(text, options.maxWidth);
-          const lines = (Array.isArray(splitRaw) ? splitRaw : [splitRaw]).slice(0, options.maxLines);
+          const lines = getClampedLines(text, options.maxWidth, options.maxLines);
           if (lines.length === 0) return 0;
           pdf.text(lines, options.x, options.y, {
             maxWidth: options.maxWidth,
@@ -315,8 +444,7 @@ export default function LabelsPageClient({
           if (!text.trim()) return 0;
           pdf.setFontSize(options.fontSize);
           pdf.setTextColor(...options.color);
-          const splitRaw = pdf.splitTextToSize(text, options.maxWidth);
-          const lines = (Array.isArray(splitRaw) ? splitRaw : [splitRaw]).slice(0, options.maxLines);
+          const lines = getClampedLines(text, options.maxWidth, options.maxLines);
           if (lines.length === 0) return 0;
           pdf.text(lines, centerX, options.y, {
             align: "center",
@@ -406,7 +534,7 @@ export default function LabelsPageClient({
         if (includeQRCode && item.barcode) {
           try {
             const qrDataUrl = await QRCode.toDataURL(item.barcode, {
-              width: qrSize * 4,
+              width: getQRRenderWidth(qrSize),
               margin: 1,
               color: {
                 dark: "#000000",
@@ -448,6 +576,7 @@ export default function LabelsPageClient({
         if (includeBarcode && item.barcode) {
           const ean13 = normalizeToEan13(item.barcode);
           if (!ean13) {
+            invalidBarcodeItemIds.add(item.id);
             const safeY = Math.min(currentY + lineStep, innerBottom - 0.8);
             addCenteredText(item.barcode, {
               fontSize: metaFont,
@@ -503,53 +632,77 @@ export default function LabelsPageClient({
           currentY += Math.max(lineStep, used * lineStep);
         }
 
-        for (const field of customFieldOptions) {
-          if (!includeCustomFieldKeys[field.key]) {
-            continue;
-          }
+        const companyEnabled =
+          includeCompanyInfo &&
+          (companyLogoDataUrl || team.companyName || team.labelCompanyInfo);
+        const rightTextX = companyLogoDataUrl ? innerX + logoSize + 2 : innerX;
+        const rightTextW = companyLogoDataUrl ? innerW - logoSize - 2 : innerW;
+        const companyNameLines = team.companyName
+          ? getClampedLines(team.companyName, rightTextW, 1)
+          : [];
+        const companyInfoLines = team.labelCompanyInfo
+          ? getClampedLines(team.labelCompanyInfo, rightTextW, 2)
+          : [];
+        const companyTextLineCount = companyNameLines.length + companyInfoLines.length;
+        const companyTextHeight = companyTextLineCount > 0 ? companyTextLineCount * lineStep : 0;
+        const companyBlockHeight = companyEnabled
+          ? Math.max(logoSize, companyTextHeight || logoSize)
+          : 0;
+        const companyBlockTop = companyEnabled ? innerBottom - companyBlockHeight : innerBottom;
 
-          const fieldValue = item.customFields?.[field.key];
-          if (!fieldValue || currentY + lineStep > innerBottom) {
-            continue;
-          }
+        const renderableCustomFields = customFieldOptions
+          .filter((field) => includeCustomFieldKeys[field.key])
+          .map((field) => {
+            const fieldValue = item.customFields?.[field.key];
+            if (!fieldValue) return null;
+            const fieldLabel = customFieldLabelByKey.get(field.key) ?? field.key;
+            const lines = getClampedLines(`${fieldLabel}: ${fieldValue}`, innerW, 2);
+            if (lines.length === 0) return null;
+            return {
+              key: field.key,
+              text: `${fieldLabel}: ${fieldValue}`,
+              lines,
+              height: Math.max(lineStep, lines.length * lineStep),
+            };
+          })
+          .filter((field): field is { key: string; text: string; lines: string[]; height: number } => Boolean(field));
 
-          const fieldLabel = customFieldLabelByKey.get(field.key) ?? field.key;
-          const availableLines = Math.max(1, Math.floor((innerBottom - currentY) / lineStep));
-          const used = addFittedText(`${fieldLabel}: ${fieldValue}`, {
+        const customFieldsHeight = renderableCustomFields.reduce((total, field) => total + field.height, 0);
+        const customFieldsStartY =
+          renderableCustomFields.length > 0
+            ? Math.max(currentY + 1.5, companyBlockTop - customFieldsHeight - (companyEnabled ? 3 : 0))
+            : currentY;
+
+        let fieldsY = customFieldsStartY;
+        for (const field of renderableCustomFields) {
+          if (fieldsY + lineStep > companyBlockTop) {
+            break;
+          }
+          const availableLines = Math.max(1, Math.floor((companyBlockTop - fieldsY) / lineStep));
+          const used = addFittedText(field.text, {
             fontSize: metaFont,
             maxWidth: innerW,
-            maxLines: Math.min(2, availableLines),
+            maxLines: Math.min(field.lines.length, availableLines),
             color: [80, 80, 80],
             x: innerX,
-            y: currentY + lineStep,
+            y: fieldsY + lineStep,
           });
-          currentY += Math.max(lineStep, used * lineStep);
+          fieldsY += Math.max(lineStep, used * lineStep);
         }
 
-        currentY += 1.5;
-
-        // Company block: logo left, company name and extras on the right
-        if (
-          includeCompanyInfo &&
-          (companyLogoDataUrl || team.companyName || team.labelCompanyInfo) &&
-          currentY + lineStep <= innerBottom
-        ) {
-          const companyBlockY = currentY;
-          const rightTextX = companyLogoDataUrl ? innerX + logoSize + 2 : innerX;
-          const rightTextW = companyLogoDataUrl ? innerW - logoSize - 2 : innerW;
-          let rightTextY = companyBlockY;
+        if (companyEnabled && companyBlockTop + lineStep <= innerBottom) {
+          let rightTextY = companyBlockTop;
 
           if (companyLogoDataUrl) {
             const logoFormat = companyLogoDataUrl.includes("data:image/jpeg") ? "JPEG" : "PNG";
-            pdf.addImage(companyLogoDataUrl, logoFormat, innerX, companyBlockY, logoSize, logoSize);
+            pdf.addImage(companyLogoDataUrl, logoFormat, innerX, companyBlockTop, logoSize, logoSize);
           }
 
-          if (team.companyName && rightTextY + lineStep <= innerBottom) {
-            const remainingLines = Math.max(1, Math.floor((innerBottom - rightTextY) / lineStep));
-            const used = addFittedText(team.companyName, {
+          if (companyNameLines.length > 0 && rightTextY + lineStep <= innerBottom) {
+            const used = addFittedText(team.companyName ?? "", {
               fontSize: bodyFont,
               maxWidth: rightTextW,
-              maxLines: Math.min(1, remainingLines),
+              maxLines: companyNameLines.length,
               color: [55, 65, 81],
               x: rightTextX,
               y: rightTextY + lineStep,
@@ -557,12 +710,11 @@ export default function LabelsPageClient({
             rightTextY += Math.max(lineStep, used * lineStep);
           }
 
-          if (team.labelCompanyInfo && rightTextY + lineStep <= innerBottom) {
-            const remainingLines = Math.max(1, Math.floor((innerBottom - rightTextY) / lineStep));
-            addFittedText(team.labelCompanyInfo, {
+          if (companyInfoLines.length > 0 && rightTextY + lineStep <= innerBottom) {
+            addFittedText(team.labelCompanyInfo ?? "", {
               fontSize: metaFont,
               maxWidth: rightTextW,
-              maxLines: Math.min(2, remainingLines),
+              maxLines: companyInfoLines.length,
               color: [107, 114, 128],
               x: rightTextX,
               y: rightTextY + lineStep,
@@ -580,8 +732,30 @@ export default function LabelsPageClient({
 
       // Save PDF
       pdf.save(`labels-${team.name || "items"}-${new Date().toISOString().split("T")[0]}.pdf`);
+      toast({
+        variant: "success",
+        title: t.labels.generateSuccessTitle,
+        description: t.labels.generateSuccessDescription
+          .replace("{count}", String(labelsToPrint.length))
+          .replace("{items}", String(selectedItemsList.length)),
+      });
+      if (invalidBarcodeItemIds.size > 0) {
+        toast({
+          variant: "destructive",
+          title: t.labels.invalidBarcodeTitle,
+          description: t.labels.invalidBarcodeDescription.replace(
+            "{count}",
+            String(invalidBarcodeItemIds.size)
+          ),
+        });
+      }
     } catch (error) {
       console.error("Error generating PDF:", error);
+      toast({
+        variant: "destructive",
+        title: t.labels.generateErrorTitle,
+        description: t.labels.generateErrorDescription,
+      });
     } finally {
       setIsGenerating(false);
     }
@@ -615,123 +789,230 @@ export default function LabelsPageClient({
           </div>
 
           {/* Settings Panel */}
-          <div className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6" data-tour="tour-labels-settings">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">{t.labels.selectItems}</h2>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4" data-tour="tour-labels-size">
-              <div>
-                <Label className="text-sm font-semibold text-gray-700 mb-2 block">
-                  {t.labels.labelSize}
-                </Label>
-                <select
-                  value={labelSizePreset}
-                  onChange={(e) => setLabelSizePreset(e.target.value as LabelSizePreset)}
-                  className="w-full h-11 text-base border border-gray-300 rounded-md px-3 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
-                >
-                  <option value="default_10x5">{t.labels.default10x5}</option>
-                  <option value="zebra_100x150">Zebra 100 x 150 mm</option>
-                  <option value="zebra_60x40">Zebra 60 x 40 mm</option>
-                  <option value="zebra_110x64">Zebra 110 x 64 mm</option>
-                  <option value="zebra_170x64">Zebra 170 x 64 mm</option>
-                  <option value="custom">{t.labels.customSize}</option>
-                </select>
-              </div>
-              <div>
-                <Label className="text-sm font-semibold text-gray-700 mb-2 block">
-                  {t.labels.widthCm}
-                </Label>
-                <Input
-                  type="text"
-                  value={labelSizePreset === "custom" ? customWidthCm : String(getLabelDimensionsCm().widthCm)}
-                  onChange={(e) => setCustomWidthCm(e.target.value)}
-                  disabled={labelSizePreset !== "custom"}
-                  className="h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
-                />
-              </div>
-              <div>
-                <Label className="text-sm font-semibold text-gray-700 mb-2 block">
-                  {t.labels.heightCm}
-                </Label>
-                <Input
-                  type="text"
-                  value={labelSizePreset === "custom" ? customHeightCm : String(getLabelDimensionsCm().heightCm)}
-                  onChange={(e) => setCustomHeightCm(e.target.value)}
-                  disabled={labelSizePreset !== "custom"}
-                  className="h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
-                />
-              </div>
-              <div className="flex items-end">
-                <div className="text-xs text-gray-600">
-                  {`${getLabelDimensionsCm().widthCm} x ${getLabelDimensionsCm().heightCm} cm`}
-                </div>
-              </div>
-            </div>
+	          <div className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6" data-tour="tour-labels-settings">
+	            <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+	              <div>
+	                <h2 className="text-lg font-bold text-gray-900">{t.labels.selectItems}</h2>
+	                <p className="mt-1 text-sm text-gray-600">{t.labels.settingsHelper}</p>
+	              </div>
+	              <div className="flex flex-wrap gap-2">
+	                <Button
+	                  type="button"
+	                  variant="outline"
+	                  onClick={() => setIsPreviewOpen(true)}
+	                  className="border-[#D6BCFA] bg-[#FAF5FF] text-[#6B21A8] hover:bg-[#F3E8FF]"
+	                >
+	                  <Eye className="mr-2 h-4 w-4" />
+	                  {t.labels.previewButton}
+	                </Button>
+	              </div>
+	            </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={includeQRCode}
-                  onChange={(e) => setIncludeQRCode(e.target.checked)}
-                  className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
-                />
-                <span className="text-sm text-gray-700">{t.labels.includeQRCode}</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={includeBarcode}
+	            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+	              <section className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 sm:p-5" data-tour="tour-labels-size">
+	                <div className="mb-4">
+	                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+	                    {t.labels.settingsFormatTitle}
+	                  </h3>
+	                  <p className="mt-1 text-sm text-slate-600">{t.labels.settingsFormatDescription}</p>
+	                </div>
+	                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(220px,1.1fr)_minmax(140px,0.8fr)_minmax(140px,0.8fr)]">
+	                  <div>
+	                    <Label className="text-sm font-semibold text-gray-700 mb-2 block">
+	                      {t.labels.labelSize}
+	                    </Label>
+	                    <select
+	                      aria-label={t.labels.labelSize}
+	                      value={labelSizePreset}
+	                      onChange={(e) => setLabelSizePreset(e.target.value as LabelSizePreset)}
+	                      className="w-full h-11 text-base border border-gray-300 rounded-md px-3 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+	                    >
+	                      <option value="default_10x5">{t.labels.default10x5}</option>
+	                      <option value="zebra_100x150">Zebra 100 x 150 mm</option>
+	                      <option value="zebra_60x40">Zebra 60 x 40 mm</option>
+	                      <option value="zebra_110x64">Zebra 110 x 64 mm</option>
+	                      <option value="zebra_170x64">Zebra 170 x 64 mm</option>
+	                      <option value="custom">{t.labels.customSize}</option>
+	                    </select>
+	                  </div>
+	                  <div>
+	                    <Label className="text-sm font-semibold text-gray-700 mb-2 block">
+	                      {t.labels.widthCm}
+	                    </Label>
+	                    <Input
+	                      type="text"
+	                      value={isCustomSize ? customWidthCm : String(normalizedWidthCm)}
+	                      onChange={(e) => setCustomWidthCm(e.target.value)}
+	                      disabled={!isCustomSize}
+	                      className="h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+	                    />
+	                  </div>
+	                  <div>
+	                    <Label className="text-sm font-semibold text-gray-700 mb-2 block">
+	                      {t.labels.heightCm}
+	                    </Label>
+	                    <Input
+	                      type="text"
+	                      value={isCustomSize ? customHeightCm : String(normalizedHeightCm)}
+	                      onChange={(e) => setCustomHeightCm(e.target.value)}
+	                      disabled={!isCustomSize}
+	                      className="h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+	                    />
+	                  </div>
+	                </div>
+	                <div className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
+	                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+	                    {t.labels.previewLabel}
+	                  </div>
+	                  <div className="mt-1 text-base font-semibold text-slate-800">
+	                    {`${normalizedWidthCm} x ${normalizedHeightCm} cm`}
+	                  </div>
+	                  {isCustomSize ? (
+	                    <div className="mt-2 text-xs text-slate-600">
+	                      <p>{t.labels.customSizeLimits}</p>
+	                      {customDimensionsAdjusted ? (
+	                        <p className="mt-1 text-amber-700">
+	                          {t.labels.customSizeAdjusted
+	                            .replace("{width}", String(normalizedWidthCm))
+	                            .replace("{height}", String(normalizedHeightCm))}
+	                        </p>
+	                      ) : null}
+	                    </div>
+	                  ) : null}
+	                </div>
+	              </section>
+
+	              <section className="rounded-2xl border border-[#E9D5FF] bg-gradient-to-br from-[#FAF5FF] via-white to-[#F8FAFC] p-4 sm:p-5">
+	                <div className="mb-4">
+	                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-[#7E22CE]">
+	                    {t.labels.settingsPreviewTitle}
+	                  </h3>
+	                  <p className="mt-1 text-sm text-slate-600">{t.labels.settingsPreviewDescription}</p>
+	                </div>
+	                <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
+	                  {previewItem ? (
+	                    <div className="mx-auto flex min-h-[280px] max-w-[220px] flex-col rounded-[24px] border border-slate-300 bg-white p-4 shadow-inner">
+	                      <div className="mb-3 flex items-start justify-between gap-3">
+	                        <div>
+	                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+	                            {team.name}
+	                          </p>
+	                          <h4 className="mt-1 text-sm font-semibold text-slate-900">
+	                            {previewItem.name || t.items.unnamedItem}
+	                          </h4>
+	                        </div>
+	                        <div className="rounded-full bg-[#F3E8FF] px-2 py-1 text-[10px] font-semibold text-[#7E22CE]">
+	                          {`${normalizedWidthCm} x ${normalizedHeightCm}`}
+	                        </div>
+	                      </div>
+	                      {includeQRCode && previewItem.barcode ? (
+	                        <div className="flex flex-1 items-center justify-center py-4">
+	                          <div
+	                            className="rounded-2xl border border-slate-200 bg-white p-3 transition-transform"
+	                            style={previewScaleStyle}
+	                          >
+	                            <QRCodeDisplay value={previewItem.barcode} size={88} />
+	                          </div>
+	                        </div>
+	                      ) : (
+	                        <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-400">
+	                          {t.labels.previewNoQr}
+	                        </div>
+	                      )}
+	                      <div className="space-y-1.5 border-t border-slate-200 pt-3 text-xs text-slate-600">
+	                        {includeSKU && previewItem.sku ? <p>{`SKU: ${previewItem.sku}`}</p> : null}
+	                        {includeBarcode && previewItem.barcode ? <p>{previewItem.barcode}</p> : null}
+	                        {includeStock && previewItem.currentStock !== null ? (
+	                          <p>{`Stock: ${previewItem.currentStock}`}</p>
+	                        ) : null}
+	                        {includeCompanyInfo && team.companyName ? (
+	                          <p className="pt-1 font-medium text-slate-800">{team.companyName}</p>
+	                        ) : null}
+	                      </div>
+	                    </div>
+	                  ) : (
+	                    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center text-sm text-slate-500">
+	                      {t.labels.previewEmpty}
+	                    </div>
+	                  )}
+	                </div>
+	              </section>
+	            </div>
+
+	            <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+	              <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+	                <div className="mb-4">
+	                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+	                    {t.labels.settingsContentTitle}
+	                  </h3>
+	                  <p className="mt-1 text-sm text-slate-600">{t.labels.settingsContentDescription}</p>
+	                </div>
+	                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+	                  <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-3 cursor-pointer">
+	                    <input
+	                      type="checkbox"
+	                      checked={includeQRCode}
+	                      onChange={(e) => setIncludeQRCode(e.target.checked)}
+	                      className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
+	                    />
+	                    <span className="text-sm text-gray-700">{t.labels.includeQRCode}</span>
+	                  </label>
+	                  <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-3 cursor-pointer">
+	                <input
+	                  type="checkbox"
+	                  checked={includeBarcode}
                   onChange={(e) => setIncludeBarcode(e.target.checked)}
                   className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
                 />
                 <span className="text-sm text-gray-700">{t.labels.includeBarcode}</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={includeItemName}
+	                  </label>
+	                  <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-3 cursor-pointer">
+	                <input
+	                  type="checkbox"
+	                  checked={includeItemName}
                   onChange={(e) => setIncludeItemName(e.target.checked)}
                   className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
                 />
                 <span className="text-sm text-gray-700">{t.labels.includeItemName}</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={includeSKU}
+	                  </label>
+	                  <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-3 cursor-pointer">
+	                <input
+	                  type="checkbox"
+	                  checked={includeSKU}
                   onChange={(e) => setIncludeSKU(e.target.checked)}
                   className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
                 />
                 <span className="text-sm text-gray-700">{t.labels.includeSKU}</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={includeStock}
+	                  </label>
+	                  <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-3 cursor-pointer">
+	                <input
+	                  type="checkbox"
+	                  checked={includeStock}
                   onChange={(e) => setIncludeStock(e.target.checked)}
                   className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
                 />
                 <span className="text-sm text-gray-700">{t.labels.includeStock}</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={includeCompanyInfo}
+	                  </label>
+	                  <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-3 cursor-pointer">
+	                <input
+	                  type="checkbox"
+	                  checked={includeCompanyInfo}
                   onChange={(e) => setIncludeCompanyInfo(e.target.checked)}
                   className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
                 />
                 <span className="text-sm text-gray-700">{t.labels.includeCompanyInfo}</span>
-              </label>
-              {customFieldOptions.length > 0 ? (
-                <div
-                  className="col-span-2 sm:col-span-3 lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
-                  data-tour="tour-labels-custom-fields"
-                >
-                  {customFieldOptions.map((field) => (
-                    <label key={field.key} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(includeCustomFieldKeys[field.key])}
+	                  </label>
+	                </div>
+	                {customFieldOptions.length > 0 ? (
+	                  <div
+	                    className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2"
+	                    data-tour="tour-labels-custom-fields"
+	                  >
+	                  {customFieldOptions.map((field) => (
+	                    <label key={field.key} className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-3 cursor-pointer">
+	                      <input
+	                        type="checkbox"
+	                        checked={Boolean(includeCustomFieldKeys[field.key])}
                         onChange={(e) =>
                           setIncludeCustomFieldKeys((prev) => ({
                             ...prev,
@@ -740,15 +1021,59 @@ export default function LabelsPageClient({
                         }
                         className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
                       />
-                      <span className="text-sm text-gray-700">
-                        {t.labels.includeCustomField}: {field.label}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          </div>
+	                      <span className="text-sm text-gray-700">
+	                        {t.labels.includeCustomField}: {field.label}
+	                      </span>
+	                    </label>
+	                  ))}
+	                  </div>
+	                ) : null}
+	              </section>
+
+	              <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+	                <div className="mb-4">
+	                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+	                    {t.labels.qrSizeLabel}
+	                  </h3>
+	                  <p className="mt-1 text-sm text-slate-600">{t.labels.qrPanelDescription}</p>
+	                </div>
+	                <div className="rounded-2xl border border-[#E9D5FF] bg-[#FAF5FF] p-4">
+	                  <Label className="text-sm font-semibold text-gray-700 mb-2 block">
+	                    {t.labels.qrSizeLabel}
+	                  </Label>
+	                  <select
+	                    aria-label={t.labels.qrSizeLabel}
+	                    value={qrSizePreset}
+	                    onChange={(e) => setQrSizePreset(e.target.value as QRSizePreset)}
+	                    className="w-full h-10 text-sm border border-gray-300 rounded-md px-3 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+	                  >
+	                    <option value="small">{t.labels.small}</option>
+	                    <option value="medium">{t.labels.medium}</option>
+	                    <option value="large">{t.labels.large}</option>
+	                    <option value="extra_large">{t.labels.extraLarge}</option>
+	                    <option value="custom">{t.labels.customSize}</option>
+	                  </select>
+	                  {qrSizePreset === "custom" ? (
+	                    <div className="mt-3">
+	                      <Input
+	                        type="number"
+	                        min={70}
+	                        max={180}
+	                        step={5}
+	                        value={customQRScale}
+	                        onChange={(e) => setCustomQRScale(e.target.value)}
+	                        className="h-10 text-sm"
+	                        aria-label={t.labels.qrScaleLabel}
+	                      />
+	                      <p className="mt-2 text-xs text-gray-500">{t.labels.qrScaleHint}</p>
+	                    </div>
+	                  ) : (
+	                    <p className="mt-3 text-xs text-gray-500">{t.labels.qrSizeHint}</p>
+	                  )}
+	                </div>
+	              </section>
+	            </div>
+	          </div>
 
           {/* Search Bar */}
           <div className="mb-4 sm:mb-6" data-tour="tour-labels-search">
@@ -782,10 +1107,19 @@ export default function LabelsPageClient({
               <Square className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               {t.labels.deselectAll}
             </Button>
-            <div className="ml-auto flex gap-2">
-              <Button
-                onClick={generatePDF}
-                disabled={selectedItems.size === 0 || isGenerating}
+	            <div className="ml-auto flex gap-2">
+	              <Button
+	                type="button"
+	                variant="outline"
+	                onClick={() => setIsPreviewOpen(true)}
+	                className="border-[#D6BCFA] text-[#6B21A8] hover:bg-[#FAF5FF] text-xs sm:text-sm"
+	              >
+	                <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+	                {t.labels.previewButton}
+	              </Button>
+	              <Button
+	                onClick={generatePDF}
+	                disabled={selectedItems.size === 0 || isGenerating}
                 className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#7C3AED] hover:to-[#6B21A8] text-white shadow-lg hover:shadow-xl transition-all text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0"
               >
                 {isGenerating ? (
@@ -817,7 +1151,7 @@ export default function LabelsPageClient({
                           if (e.target.checked) {
                             selectAll();
                           } else {
-                            deselectAll();
+                            deselectFilteredItems();
                           }
                         }}
                         className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
@@ -937,7 +1271,10 @@ export default function LabelsPageClient({
             <div className="mt-4 sm:mt-6 bg-purple-50 rounded-xl sm:rounded-2xl border border-purple-200 p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="text-sm sm:text-base font-semibold text-gray-700">
-                Selected: <span className="text-[#6B21A8]">{selectedItems.size}</span> {selectedItems.size === 1 ? "item" : "items"}
+                {t.labels.selectedItemsSummary.replace("{count}", String(selectedItems.size))}
+              </div>
+              <div className="text-sm sm:text-base font-semibold text-gray-700">
+                {t.labels.totalLabelsSummary.replace("{count}", String(totalSelectedLabels))}
               </div>
                 <Button
                   onClick={generatePDF}
@@ -959,11 +1296,150 @@ export default function LabelsPageClient({
               </div>
             </div>
           )}
-          <TutorialTour
-            isOpen={isTutorialOpen}
-            onClose={() => setIsTutorialOpen(false)}
-            steps={tourSteps}
-          />
+	          <TutorialTour
+	            isOpen={isTutorialOpen}
+	            onClose={() => setIsTutorialOpen(false)}
+	            steps={tourSteps}
+	          />
+            {isPreviewOpen ? (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4">
+                <div className="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-[28px] bg-white shadow-2xl">
+                  <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6">
+                    <div>
+                      <h2 className="text-xl font-bold text-slate-900">{t.labels.previewModalTitle}</h2>
+                      <p className="mt-1 text-sm text-slate-600">{t.labels.previewModalDescription}</p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setIsPreviewOpen(false)}
+                      className="h-10 w-10 p-0 text-slate-500 hover:bg-slate-100"
+                    >
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </div>
+                  <div className="grid gap-6 p-5 sm:grid-cols-[280px_minmax(0,1fr)] sm:p-6">
+                    <div className="rounded-3xl border border-[#E9D5FF] bg-gradient-to-br from-[#FAF5FF] to-white p-5">
+                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7E22CE]">
+                        {t.labels.previewLabel}
+                      </div>
+                      <div className="mt-2 text-lg font-semibold text-slate-900">
+                        {`${normalizedWidthCm} x ${normalizedHeightCm} cm`}
+                      </div>
+	                      <div className="mt-5 space-y-4 text-sm text-slate-600">
+	                        <div>
+	                          <p className="font-medium text-slate-900">{t.labels.qrSizeLabel}</p>
+	                          <p>{getQRSizePresetLabel()}</p>
+	                        </div>
+	                        <div>
+	                          <p className="font-medium text-slate-900">{t.labels.settingsContentTitle}</p>
+                          <p>
+                            {[
+                              includeQRCode ? t.labels.includeQRCode : null,
+                              includeBarcode ? t.labels.includeBarcode : null,
+                              includeItemName ? t.labels.includeItemName : null,
+                              includeSKU ? t.labels.includeSKU : null,
+                              includeStock ? t.labels.includeStock : null,
+                            ]
+                              .filter(Boolean)
+	                              .join(" • ")}
+	                          </p>
+	                        </div>
+                          <div>
+                            <p className="font-medium text-slate-900">{t.labels.previewScaleTitle}</p>
+                            <div className="mt-2 inline-flex rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-[#6B21A8] shadow-sm">
+                              {t.labels.previewScaleReal}
+                            </div>
+                          </div>
+                          <div>
+                            <p className="font-medium text-slate-900">{t.labels.previewScaleGuide}</p>
+                            <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 shadow-sm">
+                              <span className="block h-1 w-[1cm] rounded-full bg-[#6B21A8]" />
+                              <span className="text-xs font-medium text-slate-600">1 cm</span>
+                            </div>
+                            <p className="mt-2 text-xs text-slate-500">{t.labels.previewScaleDisclaimer}</p>
+                          </div>
+	                      </div>
+	                    </div>
+                    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 sm:p-6">
+                      {previewItem ? (
+                          <div className="flex max-h-[70vh] items-start justify-center overflow-auto rounded-[28px] border border-dashed border-slate-200 bg-white/70 p-4 sm:p-6">
+	                        <div
+                            data-testid="label-preview-sheet"
+                            className="flex flex-col rounded-[12px] border border-slate-300 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
+                            style={previewSheetStyle}
+                          >
+                            <div className="flex flex-1 flex-col">
+	                          {includeQRCode && previewItem.barcode ? (
+	                            <div className="flex items-start justify-center pt-2">
+	                              <div className="transition-transform" style={previewScaleStyle}>
+	                                <QRCodeDisplay value={previewItem.barcode} size={170} />
+	                              </div>
+	                            </div>
+	                          ) : (
+	                            <div className="flex min-h-[140px] items-center justify-center rounded-[12px] border border-dashed border-slate-200 bg-white px-6 py-8 text-center text-sm text-slate-400">
+	                              {t.labels.previewNoQr}
+	                            </div>
+	                          )}
+                              {includeItemName && (previewItem.name || t.items.unnamedItem) ? (
+                                <div className="pt-4 text-center">
+                                  <h3 className="text-[20px] font-medium leading-tight text-slate-800">
+                                    {previewItem.name || t.items.unnamedItem}
+                                  </h3>
+                                </div>
+                              ) : null}
+                              {includeSKU && previewItem.sku ? (
+                                <p className="pt-1 text-center text-[15px] text-slate-600">{`SKU: ${previewItem.sku}`}</p>
+                              ) : null}
+                              {includeBarcode && previewItem.barcode ? (
+                                <p className="pt-1 text-center text-[14px] text-slate-600">{previewItem.barcode}</p>
+                              ) : null}
+                              {includeStock && previewItem.currentStock !== null ? (
+                                <p className="pt-1 text-center text-[14px] text-slate-600">{`Stock: ${previewItem.currentStock}`}</p>
+                              ) : null}
+                              {previewCustomFields.length > 0 ? (
+                                <div className="pt-4 text-[14px] text-slate-600">
+                                  {previewCustomFields.map((field) => (
+                                    <p key={field.key} className="leading-snug">{`${field.label}: ${field.value}`}</p>
+                                  ))}
+                                </div>
+                              ) : null}
+                              <div className="mt-auto pt-5">
+                                {includeCompanyInfo && (team.labelLogoUrl || team.companyName || team.labelCompanyInfo) ? (
+                                  <div className="flex items-center gap-3 text-slate-600">
+                                    {team.labelLogoUrl ? (
+                                      <img
+                                        src={team.labelLogoUrl}
+                                        alt={team.companyName || team.name}
+                                        className="h-16 w-16 rounded-xl border border-slate-200 object-contain bg-white"
+                                      />
+                                    ) : (
+                                      <div className="h-16 w-16 rounded-xl border border-slate-200 bg-slate-100" />
+                                    )}
+                                    <div className="min-w-0">
+                                      {team.companyName ? (
+                                        <p className="text-[14px] font-medium leading-snug text-slate-700">{team.companyName}</p>
+                                      ) : null}
+                                      {team.labelCompanyInfo ? (
+                                        <p className="text-[13px] leading-snug text-slate-500">{team.labelCompanyInfo}</p>
+                                      ) : null}
+                                    </div>
+                                  </div>
+                                ) : null}
+                              </div>
+                            </div>
+	                        </div>
+                          </div>
+	                      ) : (
+	                        <div className="flex min-h-[360px] items-center justify-center rounded-[28px] border border-dashed border-slate-200 bg-white px-6 text-center text-sm text-slate-500">
+	                          {t.labels.previewEmpty}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
       </main>
     </TeamLayout>
   );

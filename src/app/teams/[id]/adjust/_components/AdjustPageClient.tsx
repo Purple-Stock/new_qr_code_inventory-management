@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Search, Info, ScanLine, Plus, Minus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,10 +16,19 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/ui/use-toast-simple";
+import { ERROR_CODES } from "@/lib/errors";
+import { logoutAndRedirectToLogin } from "@/lib/client-auth";
+import {
+  readLocalStorageJson,
+  reconcileDraftItems,
+  removeLocalStorageEntry,
+  writeLocalStorageJson,
+} from "@/lib/local-storage";
 import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import { createAdjustAction } from "../_actions/createStockTransaction";
+import { parseDecimalInput } from "@/lib/utils/parse-decimal-input";
 import type { Item, Location, Team } from "../_types";
 
 interface SelectedItem {
@@ -32,11 +42,20 @@ interface AdjustPageClientProps {
   team: Team;
 }
 
+interface AdjustDraft {
+  selectedLocation: string;
+  selectedItems: SelectedItem[];
+  notes: string;
+}
+
+
 export function AdjustPageClient({ items, locations, team }: AdjustPageClientProps) {
+  const router = useRouter();
   const { t } = useTranslation();
   const { toast } = useToast();
+  const defaultLocation = locations.length > 0 ? locations[0].id.toString() : "";
   const [selectedLocation, setSelectedLocation] = useState<string>(
-    locations.length > 0 ? locations[0].id.toString() : ""
+    defaultLocation
   );
   const [itemSearch, setItemSearch] = useState("");
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
@@ -44,6 +63,8 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [hasLoadedDraft, setHasLoadedDraft] = useState(false);
+  const draftStorageKey = `inventory-draft:adjust:${team.id}`;
   const tourSteps: TourStep[] = [
     { target: "tour-adjust-tutorial", title: t.adjust.tourTutorialTitle, description: t.adjust.tourTutorialDesc },
     { target: "tour-adjust-location", title: t.adjust.tourLocationTitle, description: t.adjust.tourLocationDesc },
@@ -65,6 +86,38 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
         item.barcode?.toLowerCase().includes(normalizedSearch)
     );
   });
+
+  useEffect(() => {
+    const draft = readLocalStorageJson<AdjustDraft>(draftStorageKey);
+
+    if (draft) {
+      const hasValidLocation = locations.some(
+        (location) => location.id.toString() === draft.selectedLocation
+      );
+      setSelectedLocation(hasValidLocation ? draft.selectedLocation : defaultLocation);
+      setSelectedItems(reconcileDraftItems(draft.selectedItems, items));
+      setNotes(draft.notes || "");
+    }
+
+    setHasLoadedDraft(true);
+  }, [defaultLocation, draftStorageKey, items, locations]);
+
+  useEffect(() => {
+    if (!hasLoadedDraft) {
+      return;
+    }
+
+    if (selectedItems.length === 0 && notes.trim() === "" && selectedLocation === defaultLocation) {
+      removeLocalStorageEntry(draftStorageKey);
+      return;
+    }
+
+    writeLocalStorageJson<AdjustDraft>(draftStorageKey, {
+      selectedLocation,
+      selectedItems,
+      notes,
+    });
+  }, [defaultLocation, draftStorageKey, hasLoadedDraft, notes, selectedItems, selectedLocation]);
 
   const handleAddItem = (item: Item) => {
     const exists = selectedItems.find((si) => si.item.id === item.id);
@@ -150,12 +203,22 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
         )
       );
 
-      const hasError = results.some((r) => !r.success);
-      if (hasError) {
+      const firstError = results.find((r) => !r.success);
+      if (firstError) {
+        if (firstError.errorCode === ERROR_CODES.USER_NOT_AUTHENTICATED) {
+          await logoutAndRedirectToLogin({
+            message: firstError.error || "User not authenticated",
+            title: t.common.error,
+            toast,
+            router,
+          });
+          return;
+        }
+
         toast({
           variant: "destructive",
           title: t.common.error,
-          description: t.adjust.partialAdjustError,
+          description: firstError.error || t.adjust.partialAdjustError,
         });
         return;
       }
@@ -167,6 +230,7 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
       });
 
       // Reset form
+      removeLocalStorageEntry(draftStorageKey);
       setSelectedItems([]);
       setNotes("");
       setItemSearch("");
@@ -353,9 +417,13 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
                         <Input
                           type="number"
                           min="0"
+                          step="0.1"
                           value={selectedItem.newStock}
                           onChange={(e) =>
-                            handleStockChange(selectedItem.item.id, parseInt(e.target.value) || 0)
+                            handleStockChange(
+                              selectedItem.item.id,
+                              parseDecimalInput(e.target.value)
+                            )
                           }
                           className="w-20 sm:w-24 h-9 sm:h-10 text-center text-sm font-semibold border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
                         />

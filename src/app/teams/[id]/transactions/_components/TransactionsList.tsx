@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { Trash2 } from "lucide-react";
+import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/ui/use-toast-simple";
 import { deleteTransactionAction } from "../_actions/deleteTransaction";
@@ -12,6 +14,7 @@ interface TransactionsListProps {
   transactions: TransactionWithDetails[];
   teamId: number;
   onDelete: () => void;
+  canDeleteTransactions: boolean;
   onSearchByTransferGroup?: (transferGroupId: string) => void;
 }
 
@@ -19,17 +22,37 @@ export function TransactionsList({
   transactions,
   teamId,
   onDelete,
+  canDeleteTransactions,
   onSearchByTransferGroup,
 }: TransactionsListProps) {
   const { language, t } = useTranslation();
   const { toast } = useToast();
+  const [transactionToDelete, setTransactionToDelete] = useState<TransactionWithDetails | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeletingTransaction, setIsDeletingTransaction] = useState(false);
 
-  const handleDelete = async (transactionId: number) => {
-    if (!confirm(t.transactions.deleteConfirm)) {
+  const closeDeleteModal = () => {
+    if (isDeletingTransaction) {
       return;
     }
 
-    const result = await deleteTransactionAction(teamId, transactionId);
+    setIsDeleteModalOpen(false);
+    setTransactionToDelete(null);
+  };
+
+  const handleDeleteClick = (transaction: TransactionWithDetails) => {
+    setTransactionToDelete(transaction);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!transactionToDelete) {
+      return;
+    }
+
+    setIsDeletingTransaction(true);
+
+    const result = await deleteTransactionAction(teamId, transactionToDelete.id);
 
     if (!result.success) {
       toast({
@@ -37,6 +60,7 @@ export function TransactionsList({
         title: t.common.error,
         description: t.transactions.failedToDeleteTransaction,
       });
+      setIsDeletingTransaction(false);
       return;
     }
 
@@ -46,6 +70,8 @@ export function TransactionsList({
       description: t.transactions.transactionDeleted,
     });
 
+    setIsDeletingTransaction(false);
+    closeDeleteModal();
     onDelete();
   };
 
@@ -141,20 +167,94 @@ export function TransactionsList({
                   {transaction.user?.email || "-"}
                 </td>
                 <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-right">
-                  <button
-                    onClick={() => handleDelete(transaction.id)}
-                    className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
-                    aria-label="Delete transaction"
-                    title="Delete transaction"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  {canDeleteTransactions ? (
+                    <button
+                      onClick={() => handleDeleteClick(transaction)}
+                      className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
+                      aria-label="Delete transaction"
+                      title="Delete transaction"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  ) : null}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={closeDeleteModal}
+        onConfirm={handleDeleteConfirm}
+        title={t.transactions.deleteModalTitle}
+        description={t.transactions.deleteModalDescription}
+        confirmLabel={t.transactions.deleteModalConfirm}
+        isDeleting={isDeletingTransaction}
+      >
+        {transactionToDelete ? (
+          <dl className="rounded-xl border border-red-100 bg-red-50/40 p-4 text-sm text-gray-700">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="min-w-0 rounded-lg bg-white/80 p-3 shadow-sm">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                  {t.transactions.deleteModalType}
+                </dt>
+                <dd className="mt-1 text-base font-semibold text-gray-900 break-words">
+                  {getTransactionTypeLabel(transactionToDelete.transactionType, t, transactionToDelete)}
+                </dd>
+              </div>
+              <div className="min-w-0 rounded-lg bg-white/80 p-3 shadow-sm">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                  {t.transactions.deleteModalQuantity}
+                </dt>
+                <dd className="mt-1 text-base font-semibold text-gray-900 break-words">
+                  {formatQuantity(transactionToDelete.quantity, transactionToDelete.transactionType)}
+                </dd>
+              </div>
+              <div className="min-w-0 rounded-lg bg-white/80 p-3 shadow-sm">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                  {t.transactions.deleteModalItem}
+                </dt>
+                <dd className="mt-1 text-base font-semibold text-gray-900 break-words">
+                  {transactionToDelete.item?.name || "-"}
+                </dd>
+              </div>
+              <div className="min-w-0 rounded-lg bg-white/80 p-3 shadow-sm">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                  {t.transactions.deleteModalLocation}
+                </dt>
+                <dd className="mt-1 text-base font-semibold text-gray-900 break-words">
+                  {formatLocation(transactionToDelete, t)}
+                </dd>
+              </div>
+              <div className="min-w-0 rounded-lg bg-white/80 p-3 shadow-sm">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                  {t.transactions.deleteModalDate}
+                </dt>
+                <dd className="mt-1 text-base font-semibold text-gray-900 break-words">
+                  {formatDate(transactionToDelete.createdAt, language)}
+                </dd>
+              </div>
+              <div className="min-w-0 rounded-lg bg-white/80 p-3 shadow-sm md:col-span-2">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                  {t.transactions.deleteModalUser}
+                </dt>
+                <dd className="mt-1 text-base font-semibold text-gray-900 break-all">
+                  {transactionToDelete.user?.email || "-"}
+                </dd>
+              </div>
+            </div>
+            <div className="mt-3 rounded-lg bg-white/80 p-3 shadow-sm">
+              <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                {t.transactions.deleteModalNotes}
+              </dt>
+              <dd className="mt-1 text-base font-semibold text-gray-900 break-words">
+                {transactionToDelete.notes || t.common.noNotes}
+              </dd>
+            </div>
+          </dl>
+        ) : null}
+      </DeleteConfirmModal>
     </div>
   );
 }

@@ -250,6 +250,17 @@ export type StockTransactionType =
   | "move"
   | "count";
 export type StockTransactionDestinationKind = "location" | "team" | "external";
+export type ExtensionEventName =
+  | "extension_installed"
+  | "extension_opened"
+  | "login_started"
+  | "login_completed"
+  | "team_selected"
+  | "lookup_used"
+  | "item_created"
+  | "transaction_created"
+  | "open_webapp_clicked"
+  | "trial_started";
 
 // Stock Transactions table
 export const stockTransactions = sqliteTable(
@@ -357,6 +368,29 @@ export const webhooks = sqliteTable(
   })
 );
 
+export const extensionEvents = sqliteTable(
+  "extension_events",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    eventName: text("event_name").$type<ExtensionEventName>().notNull(),
+    anonymousId: text("anonymous_id"),
+    source: text("source").notNull().default("chrome_extension"),
+    userId: integer("user_id").references(() => users.id),
+    teamId: integer("team_id").references(() => teams.id),
+    metadata: text("metadata", { mode: "json" }).$type<Record<string, unknown> | null>().default(null),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => ({
+    eventNameIdx: index("index_extension_events_on_event_name").on(table.eventName),
+    anonymousIdIdx: index("index_extension_events_on_anonymous_id").on(table.anonymousId),
+    userIdIdx: index("index_extension_events_on_user_id").on(table.userId),
+    teamIdIdx: index("index_extension_events_on_team_id").on(table.teamId),
+    createdAtIdx: index("index_extension_events_on_created_at").on(table.createdAt),
+  })
+);
+
 // Type exports
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -390,6 +424,9 @@ export type NewApiKey = typeof apiKeys.$inferInsert;
 
 export type Webhook = typeof webhooks.$inferSelect;
 export type NewWebhook = typeof webhooks.$inferInsert;
+
+export type ExtensionEvent = typeof extensionEvents.$inferSelect;
+export type NewExtensionEvent = typeof extensionEvents.$inferInsert;
 
 // Relations (optional, for easier querying)
 export const usersRelations = relations(users, ({ many }) => ({
@@ -518,6 +555,17 @@ export const apiKeysRelations = relations(apiKeys, ({ one }) => ({
   user: one(users, {
     fields: [apiKeys.userId],
     references: [users.id],
+  }),
+}));
+
+export const extensionEventsRelations = relations(extensionEvents, ({ one }) => ({
+  user: one(users, {
+    fields: [extensionEvents.userId],
+    references: [users.id],
+  }),
+  team: one(teams, {
+    fields: [extensionEvents.teamId],
+    references: [teams.id],
   }),
 }));
 

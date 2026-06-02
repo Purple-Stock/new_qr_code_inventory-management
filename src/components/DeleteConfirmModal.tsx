@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { AlertTriangle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
@@ -15,6 +16,8 @@ interface DeleteConfirmModalProps {
   isDeleting?: boolean;
   secondaryConfirmLabel?: string;
   isSecondaryDeleting?: boolean;
+  confirmLabel?: string;
+  children?: ReactNode;
 }
 
 export function DeleteConfirmModal({
@@ -28,6 +31,8 @@ export function DeleteConfirmModal({
   isDeleting = false,
   secondaryConfirmLabel,
   isSecondaryDeleting = false,
+  confirmLabel,
+  children,
 }: DeleteConfirmModalProps) {
   const { t } = useTranslation();
 
@@ -86,6 +91,7 @@ export function DeleteConfirmModal({
                   : t.teamSelection.deleteConfirm
                 }
               </p>
+              {children ? <div className="mt-4">{children}</div> : null}
             </div>
           </div>
         </div>
@@ -124,7 +130,7 @@ export function DeleteConfirmModal({
               </>
             ) : (
               <>
-                {t.common.delete}
+                {confirmLabel || t.common.delete}
               </>
             )}
           </Button>

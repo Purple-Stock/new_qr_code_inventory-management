@@ -937,7 +937,7 @@ export default function SettingsPageClient({
                     Assinatura do time
                   </h2>
                   <p className="text-sm text-gray-600 mb-4">
-                    Plano Pro: R$ 29,90 por time/mês.
+                    Plano Pro: R$ 59 por time/mês.
                   </p>
                   {billingRequired ? (
                     <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mb-4">

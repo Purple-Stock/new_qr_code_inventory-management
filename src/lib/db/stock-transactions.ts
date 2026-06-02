@@ -1,13 +1,64 @@
 import { randomUUID } from "crypto";
 import { sqlite } from "@/db/client";
 import { stockTransactions, items, users, locations, teams } from "@/db/schema";
-import { eq, desc, and, inArray } from "drizzle-orm";
+import { eq, desc, and, inArray, asc } from "drizzle-orm";
 import { hasAffectedRows } from "./mutation-result";
 import type {
   StockTransaction,
   StockTransactionType,
   StockTransactionDestinationKind,
 } from "@/db/schema";
+
+type TransactionExecutor = Parameters<typeof sqlite.transaction>[0] extends (
+  tx: infer T
+) => Promise<unknown>
+  ? T
+  : typeof sqlite;
+
+function applyTransactionToStock(
+  stock: number,
+  transaction: Pick<StockTransaction, "transactionType" | "quantity">
+) {
+  switch (transaction.transactionType) {
+    case "stock_in":
+      return stock + transaction.quantity;
+    case "stock_out":
+      return stock - transaction.quantity;
+    case "adjust":
+    case "count":
+      return transaction.quantity;
+    case "move":
+    default:
+      return stock;
+  }
+}
+
+async function recalculateItemCurrentStock(tx: TransactionExecutor, itemId: number) {
+  const [item] = await tx.select().from(items).where(eq(items.id, itemId)).limit(1);
+
+  if (!item) {
+    return;
+  }
+
+  const itemTransactions = await tx
+    .select()
+    .from(stockTransactions)
+    .where(eq(stockTransactions.itemId, itemId))
+    .orderBy(asc(stockTransactions.createdAt), asc(stockTransactions.id));
+
+  const recalculatedStock = itemTransactions.reduce(
+    (stock, transaction) => applyTransactionToStock(stock, transaction),
+    item.initialQuantity || 0
+  );
+
+  await tx
+    .update(items)
+    .set({
+      currentStock: Math.max(0, recalculatedStock),
+      updatedAt: new Date(),
+    })
+    .where(eq(items.id, itemId));
+}
 
 /**
  * Create a stock transaction and update item stock
@@ -578,11 +629,47 @@ export async function deleteStockTransaction(
   transactionId: number,
   teamId: number
 ): Promise<boolean> {
-  const result = await sqlite
-    .delete(stockTransactions)
-    .where(and(eq(stockTransactions.id, transactionId), eq(stockTransactions.teamId, teamId)));
+  return sqlite.transaction(async (tx) => {
+    const [transaction] = await tx
+      .select()
+      .from(stockTransactions)
+      .where(and(eq(stockTransactions.id, transactionId), eq(stockTransactions.teamId, teamId)))
+      .limit(1);
 
-  return hasAffectedRows(result);
+    if (!transaction) {
+      return false;
+    }
+
+    const transactionIdsToDelete = [transaction.id];
+    const affectedItemIds = [transaction.itemId];
+
+    if (transaction.linkedTransactionId) {
+      const [linkedTransaction] = await tx
+        .select()
+        .from(stockTransactions)
+        .where(eq(stockTransactions.id, transaction.linkedTransactionId))
+        .limit(1);
+
+      if (linkedTransaction) {
+        transactionIdsToDelete.push(linkedTransaction.id);
+        affectedItemIds.push(linkedTransaction.itemId);
+      }
+    }
+
+    const result = await tx
+      .delete(stockTransactions)
+      .where(inArray(stockTransactions.id, transactionIdsToDelete));
+
+    if (!hasAffectedRows(result)) {
+      return false;
+    }
+
+    for (const itemId of [...new Set(affectedItemIds)]) {
+      await recalculateItemCurrentStock(tx, itemId);
+    }
+
+    return true;
+  });
 }
 
 export async function deleteItemStockTransactions(

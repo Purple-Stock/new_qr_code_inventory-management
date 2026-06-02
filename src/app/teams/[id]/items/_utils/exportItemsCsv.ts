@@ -1,5 +1,15 @@
 import type { Item } from "../_types";
 
+export const ITEMS_CSV_TEMPLATE_HEADERS = [
+  "Name",
+  "SKU",
+  "Barcode",
+  "Type",
+  "Stock",
+  "Price",
+  "Location",
+] as const;
+
 function escapeCsvField(value: string | number | null | undefined): string {
   if (value == null) return "";
   const s = String(value);
@@ -50,4 +60,8 @@ export function downloadCsv(csv: string, filename: string): void {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+export function getItemsCsvTemplate(): string {
+  return ITEMS_CSV_TEMPLATE_HEADERS.join(",");
 }

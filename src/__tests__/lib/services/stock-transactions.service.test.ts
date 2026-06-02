@@ -160,6 +160,328 @@ describe("stock-transactions service", () => {
     expect(result.ok).toBe(true);
   });
 
+  it("allows an operator to delete a transaction within the same team", async () => {
+    const { drizzle } = getTestDb();
+    const [owner] = await drizzle
+      .insert(users)
+      .values({ email: "stock-owner@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [operator] = await drizzle
+      .insert(users)
+      .values({ email: "stock-operator@example.com", passwordHash: "hash", role: "operator" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Stock Operator Team", userId: owner.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values([
+      {
+        teamId: team.id,
+        userId: owner.id,
+        role: "admin",
+        status: "active",
+      },
+      {
+        teamId: team.id,
+        userId: operator.id,
+        role: "operator",
+        status: "active",
+      },
+    ]);
+    const [location] = await drizzle
+      .insert(locations)
+      .values({ name: "Operator Main", description: null, teamId: team.id })
+      .returning();
+    const [item] = await drizzle
+      .insert(items)
+      .values({
+        name: "Item Operator Delete",
+        barcode: "stock-operator-delete",
+        teamId: team.id,
+        locationId: location.id,
+        initialQuantity: 0,
+        currentStock: 5,
+      })
+      .returning();
+    const [transaction] = await drizzle
+      .insert(stockTransactions)
+      .values({
+        itemId: item.id,
+        teamId: team.id,
+        transactionType: "stock_out",
+        quantity: 1,
+        userId: owner.id,
+      })
+      .returning();
+
+    const result = await deleteTeamTransaction({
+      teamId: team.id,
+      transactionId: transaction.id,
+      requestUserId: operator.id,
+    });
+
+    expect(result.ok).toBe(true);
+  });
+
+  it("restores item stock after deleting a stock out transaction", async () => {
+    const { drizzle } = getTestDb();
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "stock-restore@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Stock Restore Team", userId: user.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+    const [location] = await drizzle
+      .insert(locations)
+      .values({ name: "Restore Main", description: null, teamId: team.id })
+      .returning();
+    const [item] = await drizzle
+      .insert(items)
+      .values({
+        name: "Item Restore",
+        barcode: "stock-restore-barcode",
+        teamId: team.id,
+        locationId: location.id,
+        initialQuantity: 10,
+        currentStock: 10,
+      })
+      .returning();
+
+    const createResult = await createTeamStockTransaction({
+      teamId: team.id,
+      requestUserId: user.id,
+      payload: {
+        itemId: item.id,
+        transactionType: "stock_out",
+        quantity: 2,
+        notes: "remove 2",
+      },
+    });
+
+    expect(createResult.ok).toBe(true);
+    if (!createResult.ok) return;
+
+    const [afterCreate] = await drizzle
+      .select()
+      .from(items)
+      .where(eq(items.id, item.id))
+      .limit(1);
+
+    expect(afterCreate.currentStock).toBe(8);
+
+    const deleteResult = await deleteTeamTransaction({
+      teamId: team.id,
+      transactionId: createResult.data.transaction.id,
+      requestUserId: user.id,
+    });
+
+    expect(deleteResult.ok).toBe(true);
+
+    const [afterDelete] = await drizzle
+      .select()
+      .from(items)
+      .where(eq(items.id, item.id))
+      .limit(1);
+
+    expect(afterDelete.currentStock).toBe(10);
+  });
+
+  it("restores adjusted stock after deleting a later stock out transaction", async () => {
+    const { drizzle } = getTestDb();
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "stock-adjust-restore@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Stock Adjust Restore Team", userId: user.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+    const [location] = await drizzle
+      .insert(locations)
+      .values({ name: "Adjust Restore Main", description: null, teamId: team.id })
+      .returning();
+    const [item] = await drizzle
+      .insert(items)
+      .values({
+        name: "Item Adjust Restore",
+        barcode: "stock-adjust-restore",
+        teamId: team.id,
+        locationId: location.id,
+        initialQuantity: 4,
+        currentStock: 4,
+      })
+      .returning();
+
+    const adjustResult = await createTeamStockTransaction({
+      teamId: team.id,
+      requestUserId: user.id,
+      payload: {
+        itemId: item.id,
+        transactionType: "adjust",
+        quantity: 10,
+        notes: "adjust to 10",
+        locationId: location.id,
+      },
+    });
+
+    expect(adjustResult.ok).toBe(true);
+    if (!adjustResult.ok) return;
+
+    const stockOutResult = await createTeamStockTransaction({
+      teamId: team.id,
+      requestUserId: user.id,
+      payload: {
+        itemId: item.id,
+        transactionType: "stock_out",
+        quantity: 2,
+        notes: "remove 2",
+      },
+    });
+
+    expect(stockOutResult.ok).toBe(true);
+    if (!stockOutResult.ok) return;
+
+    const [afterStockOut] = await drizzle
+      .select()
+      .from(items)
+      .where(eq(items.id, item.id))
+      .limit(1);
+
+    expect(afterStockOut.currentStock).toBe(8);
+
+    const deleteResult = await deleteTeamTransaction({
+      teamId: team.id,
+      transactionId: stockOutResult.data.transaction.id,
+      requestUserId: user.id,
+    });
+
+    expect(deleteResult.ok).toBe(true);
+
+    const [afterDelete] = await drizzle
+      .select()
+      .from(items)
+      .where(eq(items.id, item.id))
+      .limit(1);
+
+    expect(afterDelete.currentStock).toBe(10);
+  });
+
+  it("restores both teams stock when deleting an inter-team transfer transaction", async () => {
+    const { drizzle } = getTestDb();
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "transfer-delete@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [company] = await drizzle
+      .insert(companies)
+      .values({ name: "Delete Transfer Co", slug: "delete-transfer-co" })
+      .returning();
+    const [sourceTeam] = await drizzle
+      .insert(teams)
+      .values({ name: "Source Delete", userId: user.id, companyId: company.id })
+      .returning();
+    const [destinationTeam] = await drizzle
+      .insert(teams)
+      .values({ name: "Destination Delete", userId: user.id, companyId: company.id })
+      .returning();
+    await drizzle.insert(teamMembers).values([
+      { teamId: sourceTeam.id, userId: user.id, role: "admin", status: "active" },
+      { teamId: destinationTeam.id, userId: user.id, role: "admin", status: "active" },
+    ]);
+    const [sourceLocation] = await drizzle
+      .insert(locations)
+      .values({ name: "Source Main", description: null, teamId: sourceTeam.id })
+      .returning();
+    const [destinationLocation] = await drizzle
+      .insert(locations)
+      .values({ name: "Default Location", description: null, teamId: destinationTeam.id })
+      .returning();
+    const [sourceItem] = await drizzle
+      .insert(items)
+      .values({
+        name: "Transfer Delete Item",
+        barcode: "transfer-delete-item",
+        sku: "TDI-001",
+        teamId: sourceTeam.id,
+        locationId: sourceLocation.id,
+        initialQuantity: 10,
+        currentStock: 10,
+      })
+      .returning();
+
+    const createResult = await createTeamStockTransaction({
+      teamId: sourceTeam.id,
+      requestUserId: user.id,
+      payload: {
+        itemId: sourceItem.id,
+        transactionType: "move",
+        quantity: 3,
+        sourceLocationId: sourceLocation.id,
+        destinationKind: "team",
+        destinationTeamId: destinationTeam.id,
+        notes: "transfer 3",
+      },
+    });
+
+    expect(createResult.ok).toBe(true);
+    if (!createResult.ok) return;
+
+    const [sourceItemAfterCreate] = await drizzle
+      .select()
+      .from(items)
+      .where(eq(items.id, sourceItem.id))
+      .limit(1);
+    const [destinationItemAfterCreate] = await drizzle
+      .select()
+      .from(items)
+      .where(eq(items.teamId, destinationTeam.id))
+      .limit(1);
+
+    expect(sourceItemAfterCreate.currentStock).toBe(7);
+    expect(destinationItemAfterCreate.currentStock).toBe(3);
+    expect(destinationItemAfterCreate.locationId).toBe(destinationLocation.id);
+
+    const deleteResult = await deleteTeamTransaction({
+      teamId: sourceTeam.id,
+      transactionId: createResult.data.transaction.id,
+      requestUserId: user.id,
+    });
+
+    expect(deleteResult.ok).toBe(true);
+
+    const [sourceItemAfterDelete] = await drizzle
+      .select()
+      .from(items)
+      .where(eq(items.id, sourceItem.id))
+      .limit(1);
+    const destinationItemsAfterDelete = await drizzle
+      .select()
+      .from(items)
+      .where(eq(items.teamId, destinationTeam.id));
+    const destinationTransactionsAfterDelete = await drizzle
+      .select()
+      .from(stockTransactions)
+      .where(eq(stockTransactions.teamId, destinationTeam.id));
+
+    expect(sourceItemAfterDelete.currentStock).toBe(10);
+    expect(destinationTransactionsAfterDelete).toHaveLength(0);
+    expect(destinationItemsAfterDelete[0]?.currentStock ?? 0).toBe(0);
+  });
+
   it("creates linked transactions when transferring between teams from same company", async () => {
     const { drizzle } = getTestDb();
     const [user] = await drizzle
