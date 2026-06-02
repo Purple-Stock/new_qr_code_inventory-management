@@ -44,6 +44,7 @@ if (!shouldRunCi && !shouldRunArchitecture) {
 
 if (shouldRunCi) {
   run("npm ci", "npm ci");
+  run("npm run check:dependencies", "dependency security check");
 }
 
 if (shouldRunArchitecture) {

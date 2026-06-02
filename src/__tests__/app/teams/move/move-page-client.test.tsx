@@ -384,4 +384,128 @@ describe("MovePageClient", () => {
       );
     });
   });
+
+  it("restores an unsaved draft from localStorage and clears it after success", async () => {
+    mockedCreateMoveAction.mockResolvedValue({ success: true, transaction: { id: 99 } } as any);
+
+    window.localStorage.setItem(
+      "inventory-draft:move:1",
+      JSON.stringify({
+        activeTab: "team",
+        sourceLocation: "10",
+        destinationLocation: "",
+        destinationTeamId: "2",
+        selectedItems: [
+          {
+            item: {
+              id: 100,
+              name: "Printer",
+              sku: "PR-1",
+              barcode: "ABC",
+              currentStock: 5,
+              locationName: "A",
+            },
+            quantity: 2,
+          },
+        ],
+        notes: "draft move",
+      })
+    );
+
+    render(
+      <MovePageClient
+        team={{ id: 1, name: "Direct" }}
+        locations={[{ id: 10, name: "A" }, { id: 11, name: "B" }]}
+        destinationTeams={[{ id: 2, name: "DPS" }]}
+        items={[
+          {
+            id: 100,
+            name: "Printer",
+            sku: "PR-1",
+            barcode: "ABC",
+            currentStock: 5,
+            locationName: "A",
+          },
+        ]}
+      />
+    );
+
+    expect(screen.getByText("Printer")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("2")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Notes...")).toHaveValue("draft move");
+
+    fireEvent.click(screen.getByRole("button", { name: "Transfer Between Teams" }));
+
+    await waitFor(() => {
+      expect(mockedCreateMoveAction).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({
+          itemId: 100,
+          quantity: 2,
+          sourceLocationId: 10,
+          destinationKind: "team",
+          destinationTeamId: 2,
+          notes: "draft move",
+        })
+      );
+      expect(window.localStorage.getItem("inventory-draft:move:1")).toBeNull();
+    });
+  });
+
+  it("validates restored move drafts against current stock instead of stale saved stock", async () => {
+    mockedCreateMoveAction.mockResolvedValue({ success: true, transaction: { id: 99 } } as any);
+
+    window.localStorage.setItem(
+      "inventory-draft:move:1",
+      JSON.stringify({
+        activeTab: "team",
+        sourceLocation: "10",
+        destinationLocation: "",
+        destinationTeamId: "2",
+        selectedItems: [
+          {
+            item: {
+              id: 100,
+              name: "Printer",
+              sku: "PR-1",
+              barcode: "ABC",
+              currentStock: 99,
+              locationName: "A",
+            },
+            quantity: 15,
+          },
+        ],
+        notes: "draft move",
+      })
+    );
+
+    render(
+      <MovePageClient
+        team={{ id: 1, name: "Direct" }}
+        locations={[{ id: 10, name: "A" }, { id: 11, name: "B" }]}
+        destinationTeams={[{ id: 2, name: "DPS" }]}
+        items={[
+          {
+            id: 100,
+            name: "Printer",
+            sku: "PR-1",
+            barcode: "ABC",
+            currentStock: 10,
+            locationName: "A",
+          },
+        ]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Transfer Between Teams" }));
+
+    await waitFor(() => {
+      expect(toastSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: "Quantity exceeds stock",
+        })
+      );
+    });
+    expect(mockedCreateMoveAction).not.toHaveBeenCalled();
+  });
 });

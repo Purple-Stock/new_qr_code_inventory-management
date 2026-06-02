@@ -12,12 +12,13 @@
     "dev:local-default": "dotenv -e .env.local -- next dev --webpack --port 3001 --dist-dir .next-dev-3001",
     "dev:local-prod": "dotenv -e .env.prod.local -- next dev --webpack --port 3101 --dist-dir .next-dev-3101",
     "check:architecture": "node ./scripts/check-architecture.mjs",
+    "check:dependencies": "node ./scripts/check-dependencies.mjs",
     "check:test-policy": "node ./scripts/check-test-policy.mjs",
     "lint:architecture": "eslint src/lib/services src/app/api --max-warnings=0",
     "test:architecture": "vitest run src/__tests__/scripts/check-architecture.test.ts",
     "verify:architecture": "npm run check:architecture && npm run check:test-policy && npm run lint:architecture && npm run test:architecture",
     "precommit:required": "node ./scripts/pre-commit.mjs",
-    "prepush:required": "npm run verify:architecture && npm run build",
+    "prepush:required": "npm run check:dependencies && npm run verify:architecture && npm run build",
     "prepush:full": "npm run verify:architecture && npm test && npm run build",
     "hooks:install": "git config core.hooksPath .githooks",
     "hooks:uninstall": "git config --unset core.hooksPath",
@@ -30,7 +31,7 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1048.0",
+    "@aws-sdk/client-s3": "^3.1057.0",
     "@libsql/client": "^0.17.3",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-select": "^2.2.6",
@@ -39,7 +40,7 @@
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "dotenv": "^17.2.4",
+    "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "html2canvas": "^1.4.1",
     "html5-qrcode": "^2.3.8",
@@ -61,22 +62,22 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@types/qrcode": "^1.5.6",
-    "@types/react": "19.2.9",
-    "@typescript-eslint/eslint-plugin": "^8.59.3",
-    "@typescript-eslint/parser": "^8.59.3",
-    "@vitest/coverage-v8": "^4.1.6",
-    "autoprefixer": "^10.4.20",
+    "@types/react": "^19.2.15",
+    "@typescript-eslint/eslint-plugin": "^8.60.0",
+    "@typescript-eslint/parser": "^8.60.0",
+    "@vitest/coverage-v8": "^4.1.7",
+    "autoprefixer": "^10.5.0",
     "dotenv-cli": "^11.0.0",
     "drizzle-kit": "^1.0.0-rc.2",
     "esbuild": "^0.28.0",
-    "jsdom": "^27.0.1",
-    "postcss": "^8.5.14",
-    "tsx": "^4.19.3",
+    "jsdom": "^29.1.1",
+    "postcss": "^8.5.15",
+    "tsx": "^4.22.4",
     "typescript": "5.9.3",
-    "vitest": "^4.1.6"
+    "vitest": "^4.1.7"
   },
   "overrides": {
     "dompurify": "^3.4.5",
-    "postcss": "^8.5.14"
+    "postcss": "^8.5.15"
   }
 }
