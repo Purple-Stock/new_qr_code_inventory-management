@@ -231,4 +231,77 @@ describe("StockOutPageClient", () => {
       );
     });
   });
+
+  it("restores an unsaved draft from localStorage and clears it after success", async () => {
+    window.localStorage.setItem(
+      "inventory-draft:stock-out:29",
+      JSON.stringify({
+        selectedLocation: "10",
+        selectedItems: [
+          {
+            item: baseItems[0],
+            quantity: 2,
+          },
+        ],
+        notes: "draft stock out",
+      })
+    );
+
+    render(
+      <StockOutPageClient team={baseTeam} locations={baseLocations as any} items={baseItems} />
+    );
+
+    expect(screen.getByText("CAP CALABRESA")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("2")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Digite uma nota.")).toHaveValue("draft stock out");
+
+    fireEvent.click(screen.getByRole("button", { name: "Remover Estoque" }));
+
+    await waitFor(() => {
+      expect(mockedCreateStockOutAction).toHaveBeenCalledWith(
+        29,
+        expect.objectContaining({
+          itemId: 1,
+          quantity: 2,
+          locationId: 10,
+          notes: "draft stock out",
+        })
+      );
+      expect(window.localStorage.getItem("inventory-draft:stock-out:29")).toBeNull();
+    });
+  });
+
+  it("validates restored drafts against current stock instead of stale saved stock", async () => {
+    window.localStorage.setItem(
+      "inventory-draft:stock-out:29",
+      JSON.stringify({
+        selectedLocation: "10",
+        selectedItems: [
+          {
+            item: {
+              ...baseItems[0],
+              currentStock: 99,
+            },
+            quantity: 15,
+          },
+        ],
+        notes: "draft stock out",
+      })
+    );
+
+    render(
+      <StockOutPageClient team={baseTeam} locations={baseLocations as any} items={baseItems} />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Remover Estoque" }));
+
+    await waitFor(() => {
+      expect(toastSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: "Quantidade excede estoque",
+        })
+      );
+    });
+    expect(mockedCreateStockOutAction).not.toHaveBeenCalled();
+  });
 });

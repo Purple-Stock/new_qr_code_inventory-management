@@ -18,6 +18,12 @@ import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/ui/use-toast-simple";
 import { ERROR_CODES } from "@/lib/errors";
 import { logoutAndRedirectToLogin } from "@/lib/client-auth";
+import {
+  readLocalStorageJson,
+  reconcileDraftItems,
+  removeLocalStorageEntry,
+  writeLocalStorageJson,
+} from "@/lib/local-storage";
 import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
@@ -47,12 +53,20 @@ function normalizeItemForStockIn(item: ItemDto): Item {
   };
 }
 
+interface StockInDraft {
+  selectedLocation: string;
+  selectedItems: SelectedItem[];
+  notes: string;
+}
+
+
 export function StockInPageClient({ items, locations, team }: StockInPageClientProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const { toast } = useToast();
+  const defaultLocation = locations.length > 0 ? locations[0].id.toString() : "";
   const [selectedLocation, setSelectedLocation] = useState<string>(
-    locations.length > 0 ? locations[0].id.toString() : ""
+    defaultLocation
   );
   const [availableItems, setAvailableItems] = useState<Item[]>(items);
   const [itemSearch, setItemSearch] = useState("");
@@ -63,10 +77,12 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [isCreateItemModalOpen, setIsCreateItemModalOpen] = useState(false);
+  const [hasLoadedDraft, setHasLoadedDraft] = useState(false);
   const [createItemInitialValues, setCreateItemInitialValues] = useState({
     name: "",
     barcode: "",
   });
+  const draftStorageKey = `inventory-draft:stock-in:${team.id}`;
   const tourSteps: TourStep[] = [
     { target: "tour-stock-in-tutorial", title: t.stockIn.tourTutorialTitle, description: t.stockIn.tourTutorialDesc },
     { target: "tour-stock-in-location", title: t.stockIn.tourLocationTitle, description: t.stockIn.tourLocationDesc },
@@ -80,6 +96,38 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
   useEffect(() => {
     setAvailableItems(items);
   }, [items]);
+
+  useEffect(() => {
+    const draft = readLocalStorageJson<StockInDraft>(draftStorageKey);
+
+    if (draft) {
+      const hasValidLocation = locations.some(
+        (location) => location.id.toString() === draft.selectedLocation
+      );
+      setSelectedLocation(hasValidLocation ? draft.selectedLocation : defaultLocation);
+      setSelectedItems(reconcileDraftItems(draft.selectedItems, items));
+      setNotes(draft.notes || "");
+    }
+
+    setHasLoadedDraft(true);
+  }, [defaultLocation, draftStorageKey, items, locations]);
+
+  useEffect(() => {
+    if (!hasLoadedDraft) {
+      return;
+    }
+
+    if (selectedItems.length === 0 && notes.trim() === "" && selectedLocation === defaultLocation) {
+      removeLocalStorageEntry(draftStorageKey);
+      return;
+    }
+
+    writeLocalStorageJson<StockInDraft>(draftStorageKey, {
+      selectedLocation,
+      selectedItems,
+      notes,
+    });
+  }, [defaultLocation, draftStorageKey, hasLoadedDraft, notes, selectedItems, selectedLocation]);
 
   const normalizedSearch = itemSearch.trim().toLowerCase();
   const hasItemFilters = normalizedSearch.length > 0;
@@ -243,6 +291,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
         description: t.stockIn.stockAddedSuccess,
       });
 
+      removeLocalStorageEntry(draftStorageKey);
       setSelectedItems([]);
       setNotes("");
       setItemSearch("");
