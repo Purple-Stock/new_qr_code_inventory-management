@@ -61,6 +61,19 @@ export type TeamDto = {
   updatedAt: string;
 };
 
+export type AdminPipelineStatus =
+  | "inactive"
+  | "trial"
+  | "risk"
+  | "active"
+  | "lost";
+
+export type AdminTeamDto = TeamDto & {
+  ownerEmail: string | null;
+  adminPipelineStatus: AdminPipelineStatus | null;
+  adminLastEmailSentAt: string | null;
+};
+
 export type LocationDto = {
   id: number;
   name: string;
