@@ -1,6 +1,6 @@
 import { sqlite } from "@/db/client";
 import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { hashPassword, verifyPassword } from "@/lib/auth";
 import type { User, UserRole } from "@/db/schema";
 
@@ -135,6 +135,17 @@ export async function clearResetPasswordToken(userId: number): Promise<User> {
  */
 export async function listUsers(): Promise<User[]> {
   return sqlite.select().from(users);
+}
+
+/**
+ * List platform users with admin-level roles.
+ */
+export async function listAdminUsers(): Promise<User[]> {
+  return sqlite
+    .select()
+    .from(users)
+    .where(eq(users.role, "admin"))
+    .orderBy(asc(users.email));
 }
 
 /**

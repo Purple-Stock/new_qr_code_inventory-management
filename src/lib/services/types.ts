@@ -95,6 +95,12 @@ export type AvailableUserDto = {
   email: string;
 };
 
+export type AdminUserDto = {
+  id: number;
+  email: string;
+  role: string;
+};
+
 export type CompanyTeamDto = {
   id: number;
   name: string;
