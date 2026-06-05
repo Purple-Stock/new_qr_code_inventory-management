@@ -57,6 +57,7 @@ vi.mock("@/lib/db/admin-internal", () => ({
 
 import {
   createTeamForUserAsSuperAdmin,
+  deleteTeamAsSuperAdmin,
   getAdminUsersForSuperAdmin,
   getAllTeamsForSuperAdmin,
   markAdminClientEmailSent,
@@ -64,6 +65,7 @@ import {
   sendNonSubscriberCampaign,
   updateAdminTeamNote,
   updateAdminTeamPipelineStatus,
+  updateTeamAsSuperAdmin,
 } from "@/lib/services/admin";
 
 describe("admin service", () => {
@@ -346,6 +348,153 @@ describe("admin service", () => {
         expect(blankTeamNameResult.error.status).toBe(400);
         expect(blankTeamNameResult.error.errorCode).toBe(ERROR_CODES.VALIDATION_ERROR);
       }
+    });
+  });
+
+  describe("updateTeamAsSuperAdmin", () => {
+    it("updates team name and company name for super admin", async () => {
+      const { drizzle } = getTestDb();
+
+      const [superAdmin] = await drizzle
+        .insert(users)
+        .values({ email: "super-admin@example.com", passwordHash: "hash", role: "admin" })
+        .returning();
+      await drizzle.insert(superAdminUsers).values({ userId: superAdmin.id });
+
+      const [owner] = await drizzle
+        .insert(users)
+        .values({ email: "owner@example.com", passwordHash: "hash", role: "admin" })
+        .returning();
+
+      const [company] = await drizzle
+        .insert(companies)
+        .values({ name: "Old Company", slug: "old-company" })
+        .returning();
+
+      const [team] = await drizzle
+        .insert(teams)
+        .values({
+          name: "Old Team",
+          userId: owner.id,
+          companyId: company.id,
+          notes: "Old notes",
+        })
+        .returning();
+
+      const result = await updateTeamAsSuperAdmin({
+        requestUserId: superAdmin.id,
+        teamId: team.id,
+        payload: {
+          name: "Updated Team",
+          companyName: "Updated Company",
+          notes: "Updated notes",
+        },
+      });
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.data.team.name).toBe("Updated Team");
+      expect(result.data.team.companyName).toBe("Updated Company");
+
+      const [updatedTeamRow] = await drizzle
+        .select()
+        .from(teams)
+        .where(eq(teams.id, team.id));
+      expect(updatedTeamRow?.notes).toBe("Updated notes");
+    });
+
+    it("returns 404 for non-existent team", async () => {
+      const { drizzle } = getTestDb();
+
+      const [superAdmin] = await drizzle
+        .insert(users)
+        .values({ email: "super-admin@example.com", passwordHash: "hash", role: "admin" })
+        .returning();
+      await drizzle.insert(superAdminUsers).values({ userId: superAdmin.id });
+
+      const result = await updateTeamAsSuperAdmin({
+        requestUserId: superAdmin.id,
+        teamId: 99999,
+        payload: { name: "Missing Team" },
+      });
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.status).toBe(404);
+    });
+  });
+
+  describe("deleteTeamAsSuperAdmin", () => {
+    it("deletes a team without active subscription", async () => {
+      const { drizzle } = getTestDb();
+
+      const [superAdmin] = await drizzle
+        .insert(users)
+        .values({ email: "super-admin@example.com", passwordHash: "hash", role: "admin" })
+        .returning();
+      await drizzle.insert(superAdminUsers).values({ userId: superAdmin.id });
+
+      const [owner] = await drizzle
+        .insert(users)
+        .values({ email: "owner@example.com", passwordHash: "hash", role: "admin" })
+        .returning();
+
+      const [team] = await drizzle
+        .insert(teams)
+        .values({ name: "Disposable Team", userId: owner.id })
+        .returning();
+
+      const result = await deleteTeamAsSuperAdmin({
+        requestUserId: superAdmin.id,
+        teamId: team.id,
+      });
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.data.teamId).toBe(team.id);
+
+      const remaining = await drizzle.select().from(teams).where(eq(teams.id, team.id));
+      expect(remaining).toHaveLength(0);
+    });
+
+    it("blocks delete for active subscription unless forced", async () => {
+      const { drizzle } = getTestDb();
+
+      const [superAdmin] = await drizzle
+        .insert(users)
+        .values({ email: "super-admin@example.com", passwordHash: "hash", role: "admin" })
+        .returning();
+      await drizzle.insert(superAdminUsers).values({ userId: superAdmin.id });
+
+      const [owner] = await drizzle
+        .insert(users)
+        .values({ email: "owner@example.com", passwordHash: "hash", role: "admin" })
+        .returning();
+
+      const [team] = await drizzle
+        .insert(teams)
+        .values({
+          name: "Active Subscription Team",
+          userId: owner.id,
+          stripeSubscriptionStatus: "active",
+        })
+        .returning();
+
+      const blocked = await deleteTeamAsSuperAdmin({
+        requestUserId: superAdmin.id,
+        teamId: team.id,
+      });
+      const forced = await deleteTeamAsSuperAdmin({
+        requestUserId: superAdmin.id,
+        teamId: team.id,
+        payload: { force: true },
+      });
+
+      expect(blocked.ok).toBe(false);
+      if (!blocked.ok) {
+        expect(blocked.error.status).toBe(409);
+      }
+      expect(forced.ok).toBe(true);
     });
   });
 
