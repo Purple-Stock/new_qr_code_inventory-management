@@ -7,7 +7,10 @@ import { cleanupTestDb, clearTestDb, getTestDb } from "../../helpers/test-db";
 vi.mock("@/db/client", async () => {
   const { getTestDb } = await import("../../helpers/test-db");
   const { drizzle } = getTestDb();
-  return { sqlite: drizzle };
+  return {
+    sqlite: drizzle,
+    waitForDatabase: async () => undefined,
+  };
 });
 
 const { getAdminTeamsWithStatsMock, getAdminTeamsByIdsMock } = vi.hoisted(() => ({

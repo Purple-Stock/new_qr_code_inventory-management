@@ -16,6 +16,7 @@ describe("mappers", () => {
       stripeSubscriptionId: null,
       stripeSubscriptionStatus: "active",
       stripePriceId: null,
+      billingPlanKey: null,
       stripeCurrentPeriodEnd: null,
       manualTrialEndsAt: null,
       itemCustomFieldSchema: null,
@@ -28,5 +29,6 @@ describe("mappers", () => {
 
     expect(dto.createdAt).toBe("2026-01-24T18:24:07.000Z");
     expect(dto.updatedAt).toBe("2026-06-01T13:18:44.000Z");
+    expect(dto.billingPlanLabel).toBe("Sem plano");
   });
 });

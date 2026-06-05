@@ -36,7 +36,15 @@ export default async function globalSetup() {
 
   try {
     await client.execute("PRAGMA foreign_keys = ON");
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS _migrations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        filename TEXT NOT NULL UNIQUE,
+        applied_at INTEGER NOT NULL
+      )
+    `);
 
+    const now = Math.floor(Date.now() / 1000);
     const migrationFiles = listMigrationFiles();
     for (const file of migrationFiles) {
       const sql = fs.readFileSync(path.join(migrationsDir, file), "utf8");
@@ -46,7 +54,17 @@ export default async function globalSetup() {
         continue;
       }
 
-      await client.batch([{ sql: "PRAGMA foreign_keys = ON" }, ...statements], "write");
+      await client.batch(
+        [
+          { sql: "PRAGMA foreign_keys = ON" },
+          ...statements,
+          {
+            sql: "INSERT OR IGNORE INTO _migrations (filename, applied_at) VALUES (?, ?)",
+            args: [file, now],
+          },
+        ],
+        "write"
+      );
     }
   } finally {
     client.close();

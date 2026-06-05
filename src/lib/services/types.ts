@@ -49,6 +49,8 @@ export type TeamDto = {
   stripeSubscriptionId: string | null;
   stripeSubscriptionStatus: string | null;
   stripePriceId: string | null;
+  billingPlanKey: string | null;
+  billingPlanLabel: string;
   stripeCurrentPeriodEnd: string | null;
   manualTrialEndsAt: string | null;
   itemCustomFieldSchema?: TeamItemCustomFieldSchemaEntry[] | null;

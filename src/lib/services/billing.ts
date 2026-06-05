@@ -11,6 +11,10 @@ import {
   updateTeamStripeSubscription,
 } from "@/lib/db/teams";
 import {
+  inferManualBillingPlanKey,
+  isKnownBillingPlanKey,
+} from "@/lib/billing-plans";
+import {
   parseTeamManualActivationPayload,
   parseTeamManualTrialPayload,
 } from "@/lib/contracts/schemas";
@@ -209,11 +213,24 @@ export async function activateTeamManualBilling(params: {
     return { ok: false, error: validationServiceError(parsed.error) };
   }
 
+  const billingPlanKey =
+    parsed.data.planKey ??
+    inferManualBillingPlanKey(parsed.data.durationDays) ??
+    null;
+
+  if (parsed.data.planKey && !isKnownBillingPlanKey(parsed.data.planKey)) {
+    return {
+      ok: false,
+      error: validationServiceError("Invalid billing plan key"),
+    };
+  }
+
   try {
     const currentPeriodEnd = new Date(Date.now() + parsed.data.durationDays * DAY_IN_MS);
     const updatedTeam = await persistTeamManualBilling(params.teamId, {
       stripeSubscriptionStatus: "active",
       stripeCurrentPeriodEnd: currentPeriodEnd,
+      billingPlanKey,
     });
 
     const persistedPeriodEnd = toDate(updatedTeam.stripeCurrentPeriodEnd);
@@ -228,6 +245,7 @@ export async function activateTeamManualBilling(params: {
       teamId: params.teamId,
       requestUserId: params.requestUserId,
       durationDays: parsed.data.durationDays,
+      billingPlanKey,
       reason: parsed.data.reason,
       currentPeriodEnd: persistedPeriodEnd.toISOString(),
       at: new Date().toISOString(),

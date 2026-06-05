@@ -365,6 +365,40 @@ describe("billing service", () => {
       3,
       expect.objectContaining({
         stripeSubscriptionStatus: "active",
+        billingPlanKey: null,
+      })
+    );
+  });
+
+  it("stores promo plan key for 90-day manual activations", async () => {
+    mockedFindUserById.mockResolvedValue({
+      id: 50,
+      email: "ops@example.com",
+      role: "super_admin",
+    } as never);
+    mockedGetTeamWithStats.mockResolvedValue({
+      id: 44,
+      name: "Biamakeup",
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+    } as never);
+    mockedPersistTeamManualBilling.mockResolvedValue({
+      id: 44,
+      stripeSubscriptionStatus: "active",
+      stripeCurrentPeriodEnd: new Date("2026-09-03T00:00:00.000Z"),
+    } as never);
+
+    const result = await activateTeamManualBilling({
+      teamId: 44,
+      requestUserId: 50,
+      payload: { durationDays: 90, reason: "Promo vendedora" },
+    });
+
+    expect(result.ok).toBe(true);
+    expect(mockedPersistTeamManualBilling).toHaveBeenCalledWith(
+      44,
+      expect.objectContaining({
+        billingPlanKey: "promo_90d_120",
       })
     );
   });

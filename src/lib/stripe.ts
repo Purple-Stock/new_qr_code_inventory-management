@@ -10,6 +10,10 @@ export function getStripePriceId(): string | null {
   return process.env.STRIPE_PRICE_ID ?? null;
 }
 
+export function getLegacyStripePriceId(): string | null {
+  return process.env.STRIPE_PRICE_ID_LEGACY ?? null;
+}
+
 export function getStripeWebhookSecret(): string | null {
   return process.env.STRIPE_WEBHOOK_SECRET ?? null;
 }

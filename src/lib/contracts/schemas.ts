@@ -348,6 +348,7 @@ export function parseTeamManualTrialPayload(body: unknown): ValidationResult<{
 export function parseTeamManualActivationPayload(body: unknown): ValidationResult<{
   durationDays: number;
   reason: string | null;
+  planKey: string | null;
 }> {
   if (!isRecord(body)) {
     return { ok: false, error: "Invalid request payload" };
@@ -372,11 +373,21 @@ export function parseTeamManualActivationPayload(body: unknown): ValidationResul
     return { ok: false, error: "Reason must have at most 200 characters" };
   }
 
+  const planKeyParsed = parseOptionalTrimmedString(body.planKey);
+  if (!planKeyParsed.ok) {
+    return { ok: false, error: "Plan key must be a string" };
+  }
+
+  if (planKeyParsed.data && planKeyParsed.data.length > 64) {
+    return { ok: false, error: "Plan key must have at most 64 characters" };
+  }
+
   return {
     ok: true,
     data: {
       durationDays,
       reason: reasonParsed.data ?? null,
+      planKey: planKeyParsed.data ?? null,
     },
   };
 }

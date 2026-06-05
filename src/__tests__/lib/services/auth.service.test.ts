@@ -7,9 +7,14 @@ import { createUser } from "@/lib/db/users";
 
 const { drizzle } = getTestDb();
 
-vi.doMock("@/db/client", () => ({
-  sqlite: drizzle,
-}));
+vi.mock("@/db/client", async () => {
+  const { getTestDb } = await import("../../helpers/test-db");
+  const { drizzle } = getTestDb();
+  return {
+    sqlite: drizzle,
+    waitForDatabase: async () => undefined,
+  };
+});
 
 describe("auth service", () => {
   beforeEach(async () => {
