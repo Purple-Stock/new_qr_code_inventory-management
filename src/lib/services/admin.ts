@@ -1,5 +1,8 @@
-import { findUserById } from "@/lib/db/users";
+import { randomBytes } from "node:crypto";
+import { findUserByEmail, findUserById, createUser, listAdminUsers } from "@/lib/db/users";
 import { getAdminTeamsByIds, getAdminTeamsWithStats } from "@/lib/db/admin";
+import { ensureActiveCompanyForUser, getActiveCompanyIdForUser } from "@/lib/db/companies";
+import { createTeam, getTeamWithStats } from "@/lib/db/teams";
 import {
   ADMIN_PIPELINE_STATUSES,
   type AdminPipelineStatus,
@@ -11,17 +14,67 @@ import {
 import { isSuperAdminUser } from "@/lib/db/super-admin";
 import { ERROR_CODES } from "@/lib/errors";
 import { sendResendEmail } from "@/lib/email/resend";
+import { isValidEmail, normalizeEmail } from "@/lib/validation";
 import {
   internalServiceError,
   makeServiceError,
   validationServiceError,
 } from "@/lib/services/errors";
 import { toAdminTeamDto } from "@/lib/services/mappers";
-import type { AdminTeamDto, ServiceResult } from "@/lib/services/types";
+import type { AdminTeamDto, AdminUserDto, ServiceResult } from "@/lib/services/types";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
+
+type CreateTeamForUserPayload = {
+  email: string;
+  teamName: string;
+  notes: string | null;
+};
+
+type CreateTeamForUserAsSuperAdminResult = {
+  team: AdminTeamDto;
+  user:
+    | { id: number; email: string; created: false }
+    | { id: number; email: string; created: true; temporaryPassword: string };
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function parseCreateTeamForUserPayload(payload: unknown): ServiceResult<CreateTeamForUserPayload> {
+  if (!isRecord(payload)) {
+    return { ok: false, error: validationServiceError("Invalid request payload") };
+  }
+
+  if (typeof payload.email !== "string") {
+    return { ok: false, error: validationServiceError("Email is required") };
+  }
+
+  const email = normalizeEmail(payload.email);
+  if (!isValidEmail(email)) {
+    return { ok: false, error: validationServiceError("Invalid email format") };
+  }
+
+  if (typeof payload.teamName !== "string") {
+    return { ok: false, error: validationServiceError("Team name is required") };
+  }
+
+  const teamName = payload.teamName.trim();
+  if (!teamName) {
+    return { ok: false, error: validationServiceError("Team name is required") };
+  }
+
+  if (payload.notes !== undefined && payload.notes !== null && typeof payload.notes !== "string") {
+    return { ok: false, error: validationServiceError("Notes must be a string") };
+  }
+
+  const notes = typeof payload.notes === "string" ? payload.notes.trim() || null : null;
+
+  return { ok: true, data: { email, teamName, notes } };
+}
 
 function isEmailInSuperAdminAllowlist(email: string): boolean {
   const raw = process.env.SUPER_ADMIN_EMAILS?.trim();
@@ -300,9 +353,132 @@ export async function getAllTeamsForSuperAdmin(params: {
     };
   } catch (error) {
     console.error("Error fetching teams for super admin:", error);
+    const message = error instanceof Error ? error.message : String(error);
     return {
       ok: false,
-      error: internalServiceError("An error occurred while fetching teams for super admin"),
+      error: internalServiceError(`An error occurred while fetching teams for super admin: ${message}`),
+    };
+  }
+}
+
+export async function getAdminUsersForSuperAdmin(params: {
+  requestUserId: number | null;
+}): Promise<ServiceResult<{ users: AdminUserDto[] }>> {
+  const access = await ensureSuperAdminAccess(params.requestUserId);
+  if (!access.ok) {
+    return access;
+  }
+
+  try {
+    const rows = await listAdminUsers();
+
+    console.info("[AUDIT] super_admin_read_admin_users", {
+      requestUserId: params.requestUserId,
+      total: rows.length,
+      at: new Date().toISOString(),
+    });
+
+    return {
+      ok: true,
+      data: {
+        users: rows.map((user) => ({
+          id: user.id,
+          email: user.email,
+          role: user.role,
+        })),
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching admin users for super admin:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      ok: false,
+      error: internalServiceError(
+        `An error occurred while fetching admin users for super admin: ${message}`
+      ),
+    };
+  }
+}
+
+export async function createTeamForUserAsSuperAdmin(params: {
+  requestUserId: number | null;
+  payload: unknown;
+}): Promise<ServiceResult<CreateTeamForUserAsSuperAdminResult>> {
+  try {
+    const access = await ensureSuperAdminAccess(params.requestUserId);
+    if (!access.ok) {
+      return access;
+    }
+
+    const parsed = parseCreateTeamForUserPayload(params.payload);
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    let targetUser = await findUserByEmail(parsed.data.email);
+    let user: CreateTeamForUserAsSuperAdminResult["user"];
+
+    if (targetUser) {
+      user = { id: targetUser.id, email: targetUser.email, created: false };
+    } else {
+      const temporaryPassword = randomBytes(18).toString("base64url");
+      targetUser = await createUser({
+        email: parsed.data.email,
+        password: temporaryPassword,
+        role: "admin",
+      });
+      user = {
+        id: targetUser.id,
+        email: targetUser.email,
+        created: true,
+        temporaryPassword,
+      };
+    }
+
+    let companyId = await getActiveCompanyIdForUser(targetUser.id);
+    if (!companyId) {
+      companyId = await ensureActiveCompanyForUser(targetUser.id);
+    }
+
+    const team = await createTeam({
+      name: parsed.data.teamName,
+      notes: parsed.data.notes,
+      userId: targetUser.id,
+      companyId,
+    });
+    const teamStats = await getTeamWithStats(team.id);
+    if (!teamStats) {
+      return {
+        ok: false,
+        error: internalServiceError("An error occurred while creating the team for user"),
+      };
+    }
+
+    console.info("[AUDIT] super_admin_create_team_for_user", {
+      requestUserId: params.requestUserId,
+      targetUserId: targetUser.id,
+      teamId: team.id,
+      createdUser: user.created,
+      at: new Date().toISOString(),
+    });
+
+    return {
+      ok: true,
+      data: {
+        team: toAdminTeamDto({
+          ...teamStats,
+          ownerEmail: targetUser.email,
+          adminPipelineStatus: null,
+          adminLastEmailSentAt: null,
+        }),
+        user,
+      },
+    };
+  } catch (error) {
+    console.error("Error creating team for user as super admin:", error);
+    return {
+      ok: false,
+      error: internalServiceError("An error occurred while creating the team for user"),
     };
   }
 }
