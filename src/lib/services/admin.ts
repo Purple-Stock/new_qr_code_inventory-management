@@ -1,5 +1,13 @@
-import { findUserById } from "@/lib/db/users";
+import { randomBytes } from "node:crypto";
+import { findUserByEmail, findUserById, createUser, listAdminUsers } from "@/lib/db/users";
 import { getAdminTeamsByIds, getAdminTeamsWithStats } from "@/lib/db/admin";
+import {
+  ensureActiveCompanyForUser,
+  getActiveCompanyIdForUser,
+  updateCompanyName,
+} from "@/lib/db/companies";
+import { createTeam, deleteTeam, getTeamWithStats, updateTeam } from "@/lib/db/teams";
+import { isUniqueConstraintError } from "@/lib/error-utils";
 import {
   ADMIN_PIPELINE_STATUSES,
   type AdminPipelineStatus,
@@ -11,17 +19,75 @@ import {
 import { isSuperAdminUser } from "@/lib/db/super-admin";
 import { ERROR_CODES } from "@/lib/errors";
 import { sendResendEmail } from "@/lib/email/resend";
+import { isValidEmail, normalizeEmail } from "@/lib/validation";
 import {
+  conflictValidationServiceError,
   internalServiceError,
   makeServiceError,
+  notFoundServiceError,
   validationServiceError,
 } from "@/lib/services/errors";
 import { toAdminTeamDto } from "@/lib/services/mappers";
-import type { AdminTeamDto, ServiceResult } from "@/lib/services/types";
+import type { AdminTeamDto, AdminUserDto, ServiceResult } from "@/lib/services/types";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
+const BLOCKED_TEAM_DELETE_SUBSCRIPTION_STATUSES = new Set([
+  "active",
+  "trialing",
+  "past_due",
+  "canceling",
+]);
+
+type CreateTeamForUserPayload = {
+  email: string;
+  teamName: string;
+  notes: string | null;
+};
+
+type CreateTeamForUserAsSuperAdminResult = {
+  team: AdminTeamDto;
+  user:
+    | { id: number; email: string; created: false }
+    | { id: number; email: string; created: true; temporaryPassword: string };
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function parseCreateTeamForUserPayload(payload: unknown): ServiceResult<CreateTeamForUserPayload> {
+  if (!isRecord(payload)) {
+    return { ok: false, error: validationServiceError("Invalid request payload") };
+  }
+
+  if (typeof payload.email !== "string") {
+    return { ok: false, error: validationServiceError("Email is required") };
+  }
+
+  const email = normalizeEmail(payload.email);
+  if (!isValidEmail(email)) {
+    return { ok: false, error: validationServiceError("Invalid email format") };
+  }
+
+  if (typeof payload.teamName !== "string") {
+    return { ok: false, error: validationServiceError("Team name is required") };
+  }
+
+  const teamName = payload.teamName.trim();
+  if (!teamName) {
+    return { ok: false, error: validationServiceError("Team name is required") };
+  }
+
+  if (payload.notes !== undefined && payload.notes !== null && typeof payload.notes !== "string") {
+    return { ok: false, error: validationServiceError("Notes must be a string") };
+  }
+
+  const notes = typeof payload.notes === "string" ? payload.notes.trim() || null : null;
+
+  return { ok: true, data: { email, teamName, notes } };
+}
 
 function isEmailInSuperAdminAllowlist(email: string): boolean {
   const raw = process.env.SUPER_ADMIN_EMAILS?.trim();
@@ -300,9 +366,341 @@ export async function getAllTeamsForSuperAdmin(params: {
     };
   } catch (error) {
     console.error("Error fetching teams for super admin:", error);
+    const message = error instanceof Error ? error.message : String(error);
     return {
       ok: false,
-      error: internalServiceError("An error occurred while fetching teams for super admin"),
+      error: internalServiceError(`An error occurred while fetching teams for super admin: ${message}`),
+    };
+  }
+}
+
+export async function getAdminUsersForSuperAdmin(params: {
+  requestUserId: number | null;
+}): Promise<ServiceResult<{ users: AdminUserDto[] }>> {
+  const access = await ensureSuperAdminAccess(params.requestUserId);
+  if (!access.ok) {
+    return access;
+  }
+
+  try {
+    const rows = await listAdminUsers();
+
+    console.info("[AUDIT] super_admin_read_admin_users", {
+      requestUserId: params.requestUserId,
+      total: rows.length,
+      at: new Date().toISOString(),
+    });
+
+    return {
+      ok: true,
+      data: {
+        users: rows.map((user) => ({
+          id: user.id,
+          email: user.email,
+          role: user.role,
+        })),
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching admin users for super admin:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      ok: false,
+      error: internalServiceError(
+        `An error occurred while fetching admin users for super admin: ${message}`
+      ),
+    };
+  }
+}
+
+export async function createTeamForUserAsSuperAdmin(params: {
+  requestUserId: number | null;
+  payload: unknown;
+}): Promise<ServiceResult<CreateTeamForUserAsSuperAdminResult>> {
+  try {
+    const access = await ensureSuperAdminAccess(params.requestUserId);
+    if (!access.ok) {
+      return access;
+    }
+
+    const parsed = parseCreateTeamForUserPayload(params.payload);
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    let targetUser = await findUserByEmail(parsed.data.email);
+    let user: CreateTeamForUserAsSuperAdminResult["user"];
+
+    if (targetUser) {
+      user = { id: targetUser.id, email: targetUser.email, created: false };
+    } else {
+      const temporaryPassword = randomBytes(18).toString("base64url");
+      targetUser = await createUser({
+        email: parsed.data.email,
+        password: temporaryPassword,
+        role: "admin",
+      });
+      user = {
+        id: targetUser.id,
+        email: targetUser.email,
+        created: true,
+        temporaryPassword,
+      };
+    }
+
+    let companyId = await getActiveCompanyIdForUser(targetUser.id);
+    if (!companyId) {
+      companyId = await ensureActiveCompanyForUser(targetUser.id);
+    }
+
+    const team = await createTeam({
+      name: parsed.data.teamName,
+      notes: parsed.data.notes,
+      userId: targetUser.id,
+      companyId,
+    });
+    const teamStats = await getTeamWithStats(team.id);
+    if (!teamStats) {
+      return {
+        ok: false,
+        error: internalServiceError("An error occurred while creating the team for user"),
+      };
+    }
+
+    console.info("[AUDIT] super_admin_create_team_for_user", {
+      requestUserId: params.requestUserId,
+      targetUserId: targetUser.id,
+      teamId: team.id,
+      createdUser: user.created,
+      at: new Date().toISOString(),
+    });
+
+    return {
+      ok: true,
+      data: {
+        team: toAdminTeamDto({
+          ...teamStats,
+          ownerEmail: targetUser.email,
+          adminPipelineStatus: null,
+          adminLastEmailSentAt: null,
+        }),
+        user,
+      },
+    };
+  } catch (error) {
+    console.error("Error creating team for user as super admin:", error);
+    return {
+      ok: false,
+      error: internalServiceError("An error occurred while creating the team for user"),
+    };
+  }
+}
+
+function parseAdminTeamUpdatePayload(payload: unknown): ServiceResult<{
+  name?: string;
+  notes?: string | null;
+  companyName?: string;
+}> {
+  if (!isRecord(payload)) {
+    return { ok: false, error: validationServiceError("Invalid request payload") };
+  }
+
+  const result: {
+    name?: string;
+    notes?: string | null;
+    companyName?: string;
+  } = {};
+
+  if (payload.name !== undefined) {
+    if (typeof payload.name !== "string") {
+      return { ok: false, error: validationServiceError("Team name must be a string") };
+    }
+    const name = payload.name.trim();
+    if (!name) {
+      return { ok: false, error: validationServiceError("Team name is required") };
+    }
+    result.name = name;
+  }
+
+  if (payload.notes !== undefined) {
+    if (payload.notes !== null && typeof payload.notes !== "string") {
+      return { ok: false, error: validationServiceError("Notes must be a string") };
+    }
+    result.notes = typeof payload.notes === "string" ? payload.notes.trim() || null : null;
+  }
+
+  if (payload.companyName !== undefined) {
+    if (typeof payload.companyName !== "string") {
+      return { ok: false, error: validationServiceError("Company name must be a string") };
+    }
+    const companyName = payload.companyName.trim();
+    if (!companyName) {
+      return { ok: false, error: validationServiceError("Company name is required") };
+    }
+    result.companyName = companyName;
+  }
+
+  if (Object.keys(result).length === 0) {
+    return { ok: false, error: validationServiceError("At least one field must be provided") };
+  }
+
+  return { ok: true, data: result };
+}
+
+function parseAdminTeamDeletePayload(payload: unknown): ServiceResult<{ force: boolean }> {
+  if (payload === undefined || payload === null) {
+    return { ok: true, data: { force: false } };
+  }
+
+  if (!isRecord(payload)) {
+    return { ok: false, error: validationServiceError("Invalid request payload") };
+  }
+
+  if (payload.force !== undefined && typeof payload.force !== "boolean") {
+    return { ok: false, error: validationServiceError("force must be a boolean") };
+  }
+
+  return { ok: true, data: { force: payload.force === true } };
+}
+
+export async function updateTeamAsSuperAdmin(params: {
+  requestUserId: number | null;
+  teamId: number;
+  payload: unknown;
+}): Promise<ServiceResult<{ team: AdminTeamDto }>> {
+  const access = await ensureSuperAdminAccess(params.requestUserId);
+  if (!access.ok) {
+    return access;
+  }
+
+  const parsed = parseAdminTeamUpdatePayload(params.payload);
+  if (!parsed.ok) {
+    return parsed;
+  }
+
+  const existingTeam = await getTeamWithStats(params.teamId);
+  if (!existingTeam) {
+    return {
+      ok: false,
+      error: notFoundServiceError(ERROR_CODES.TEAM_NOT_FOUND, "Team not found"),
+    };
+  }
+
+  try {
+    const { companyName, ...teamFields } = parsed.data;
+
+    if (Object.keys(teamFields).length > 0) {
+      await updateTeam(params.teamId, teamFields);
+    }
+
+    if (companyName !== undefined) {
+      if (!existingTeam.companyId) {
+        return {
+          ok: false,
+          error: validationServiceError("Team is not linked to a company"),
+        };
+      }
+      await updateCompanyName(existingTeam.companyId, companyName);
+    }
+
+    const [updatedTeam] = await getAdminTeamsByIds([params.teamId]);
+    if (!updatedTeam) {
+      return {
+        ok: false,
+        error: notFoundServiceError(ERROR_CODES.TEAM_NOT_FOUND, "Team not found"),
+      };
+    }
+
+    console.info("[AUDIT] super_admin_update_team", {
+      requestUserId: params.requestUserId,
+      teamId: params.teamId,
+      fields: Object.keys(parsed.data),
+      at: new Date().toISOString(),
+    });
+
+    return {
+      ok: true,
+      data: { team: toAdminTeamDto(updatedTeam) },
+    };
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return {
+        ok: false,
+        error: conflictValidationServiceError("A team with this name already exists"),
+      };
+    }
+
+    console.error("Error updating team as super admin:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      ok: false,
+      error: internalServiceError(`An error occurred while updating the team: ${message}`),
+    };
+  }
+}
+
+export async function deleteTeamAsSuperAdmin(params: {
+  requestUserId: number | null;
+  teamId: number;
+  payload?: unknown;
+}): Promise<ServiceResult<{ teamId: number }>> {
+  const access = await ensureSuperAdminAccess(params.requestUserId);
+  if (!access.ok) {
+    return access;
+  }
+
+  const parsed = parseAdminTeamDeletePayload(params.payload);
+  if (!parsed.ok) {
+    return parsed;
+  }
+
+  const existingTeam = await getTeamWithStats(params.teamId);
+  if (!existingTeam) {
+    return {
+      ok: false,
+      error: notFoundServiceError(ERROR_CODES.TEAM_NOT_FOUND, "Team not found"),
+    };
+  }
+
+  if (
+    !parsed.data.force &&
+    existingTeam.stripeSubscriptionStatus &&
+    BLOCKED_TEAM_DELETE_SUBSCRIPTION_STATUSES.has(existingTeam.stripeSubscriptionStatus)
+  ) {
+    return {
+      ok: false,
+      error: makeServiceError(
+        409,
+        ERROR_CODES.VALIDATION_ERROR,
+        "Cannot delete team while subscription is active. Use force=true to override."
+      ),
+    };
+  }
+
+  try {
+    const deleted = await deleteTeam(params.teamId);
+    if (!deleted) {
+      return {
+        ok: false,
+        error: internalServiceError("Failed to delete team"),
+      };
+    }
+
+    console.info("[AUDIT] super_admin_delete_team", {
+      requestUserId: params.requestUserId,
+      teamId: params.teamId,
+      forced: parsed.data.force,
+      subscriptionStatus: existingTeam.stripeSubscriptionStatus ?? null,
+      at: new Date().toISOString(),
+    });
+
+    return { ok: true, data: { teamId: params.teamId } };
+  } catch (error) {
+    console.error("Error deleting team as super admin:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      ok: false,
+      error: internalServiceError(`An error occurred while deleting the team: ${message}`),
     };
   }
 }

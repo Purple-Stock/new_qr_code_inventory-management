@@ -295,6 +295,33 @@ export async function updateTeamStripeSubscription(
   return updatedTeam;
 }
 
+export async function activateTeamManualBilling(
+  teamId: number,
+  data: {
+    stripeSubscriptionStatus: string;
+    stripeCurrentPeriodEnd: Date;
+  }
+): Promise<Team> {
+  const [updatedTeam] = await sqlite
+    .update(teams)
+    .set({
+      stripeSubscriptionId: null,
+      stripeSubscriptionStatus: data.stripeSubscriptionStatus,
+      stripePriceId: null,
+      stripeCurrentPeriodEnd: data.stripeCurrentPeriodEnd,
+      manualTrialEndsAt: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(teams.id, teamId))
+    .returning();
+
+  if (!updatedTeam) {
+    throw new Error("Team not found");
+  }
+
+  return updatedTeam;
+}
+
 export async function grantTeamManualTrial(
   teamId: number,
   data: {
