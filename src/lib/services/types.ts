@@ -99,6 +99,8 @@ export type AdminUserDto = {
   id: number;
   email: string;
   role: string;
+  companyName: string | null;
+  createdAt: string;
 };
 
 export type CompanyTeamDto = {

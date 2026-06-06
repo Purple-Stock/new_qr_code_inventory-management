@@ -1,6 +1,6 @@
 import { sqlite } from "@/db/client";
 import { companies, companyMembers, users } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 export async function getActiveCompanyIdForUser(userId: number): Promise<number | null> {
   const [membership] = await sqlite
@@ -122,4 +122,77 @@ export async function ensureActiveCompanyForUser(userId: number): Promise<number
 
     return company.id;
   });
+}
+
+export async function createCompanyForUserWithName(
+  userId: number,
+  companyName: string
+): Promise<number> {
+  const normalizedName = companyName.trim();
+  if (!normalizedName) {
+    throw new Error("Company name is required");
+  }
+
+  return sqlite.transaction(async (tx) => {
+    const [membership] = await tx
+      .select({ companyId: companyMembers.companyId })
+      .from(companyMembers)
+      .where(
+        and(eq(companyMembers.userId, userId), eq(companyMembers.status, "active"))
+      )
+      .limit(1);
+
+    if (membership?.companyId) {
+      throw new Error("User already has an active company");
+    }
+
+    const slug = await buildUniqueCompanySlug(tx, normalizedName);
+    const [company] = await tx
+      .insert(companies)
+      .values({
+        name: normalizedName,
+        slug,
+      })
+      .returning();
+
+    await tx.insert(companyMembers).values({
+      companyId: company.id,
+      userId,
+      role: "owner",
+      status: "active",
+    });
+
+    return company.id;
+  });
+}
+
+export async function getPrimaryCompanyNamesByUserIds(
+  userIds: number[]
+): Promise<Map<number, string>> {
+  if (userIds.length === 0) {
+    return new Map();
+  }
+
+  const rows = await sqlite
+    .select({
+      userId: companyMembers.userId,
+      companyName: companies.name,
+    })
+    .from(companyMembers)
+    .innerJoin(companies, eq(companyMembers.companyId, companies.id))
+    .where(
+      and(
+        inArray(companyMembers.userId, userIds),
+        eq(companyMembers.status, "active")
+      )
+    );
+
+  const namesByUserId = new Map<number, string>();
+  for (const row of rows) {
+    if (!namesByUserId.has(row.userId)) {
+      namesByUserId.set(row.userId, row.companyName);
+    }
+  }
+
+  return namesByUserId;
 }
