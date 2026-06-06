@@ -1,11 +1,24 @@
 import { randomBytes } from "node:crypto";
-import { findUserByEmail, findUserById, createUser, listAdminUsers } from "@/lib/db/users";
+import {
+  countTeamsOwnedByUser,
+  createUser,
+  deleteUserAccount,
+  findUserByEmail,
+  findUserById,
+  listUsersOrdered,
+  updateUserEmail,
+  updateUserPassword,
+  updateUserRole,
+} from "@/lib/db/users";
+import type { UserRole } from "@/db/schema";
 import { getAdminTeamsByIds, getAdminTeamsWithStats } from "@/lib/db/admin";
 import {
   ensureActiveCompanyForUser,
   getActiveCompanyIdForUser,
+  getPrimaryCompanyNamesByUserIds,
   updateCompanyName,
 } from "@/lib/db/companies";
+import { onboardCompanyOwner } from "@/lib/db/onboarding";
 import { createTeam, deleteTeam, getTeamWithStats, updateTeam } from "@/lib/db/teams";
 import { isUniqueConstraintError } from "@/lib/error-utils";
 import {
@@ -52,6 +65,153 @@ type CreateTeamForUserAsSuperAdminResult = {
     | { id: number; email: string; created: false }
     | { id: number; email: string; created: true; temporaryPassword: string };
 };
+
+const MANAGEABLE_USER_ROLES = new Set<UserRole>(["admin", "operator", "viewer"]);
+
+type CreateUserPayload = {
+  email: string;
+  companyName: string;
+  password?: string;
+};
+
+type UpdateUserPayload = {
+  email?: string;
+  role?: UserRole;
+  companyName?: string;
+  password?: string;
+};
+
+function toAdminUserDto(
+  user: {
+    id: number;
+    email: string;
+    role: string;
+    createdAt: Date | string;
+  },
+  companyName: string | null = null
+): AdminUserDto {
+  const createdAt =
+    user.createdAt instanceof Date
+      ? user.createdAt.toISOString()
+      : new Date(user.createdAt).toISOString();
+
+  return {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    companyName,
+    createdAt,
+  };
+}
+
+function parseManageableUserRole(value: unknown): ServiceResult<UserRole> {
+  if (typeof value !== "string") {
+    return { ok: false, error: validationServiceError("Role is required") };
+  }
+
+  if (!MANAGEABLE_USER_ROLES.has(value as UserRole)) {
+    return { ok: false, error: validationServiceError("Invalid user role") };
+  }
+
+  return { ok: true, data: value as UserRole };
+}
+
+function parseCreateUserPayload(payload: unknown): ServiceResult<CreateUserPayload> {
+  if (!isRecord(payload)) {
+    return { ok: false, error: validationServiceError("Invalid request payload") };
+  }
+
+  if (typeof payload.email !== "string") {
+    return { ok: false, error: validationServiceError("Email is required") };
+  }
+
+  const email = normalizeEmail(payload.email);
+  if (!isValidEmail(email)) {
+    return { ok: false, error: validationServiceError("Invalid email format") };
+  }
+
+  if (typeof payload.companyName !== "string") {
+    return { ok: false, error: validationServiceError("Company name is required") };
+  }
+
+  const companyName = payload.companyName.trim();
+  if (!companyName) {
+    return { ok: false, error: validationServiceError("Company name is required") };
+  }
+
+  if (payload.password !== undefined && payload.password !== null) {
+    if (typeof payload.password !== "string" || payload.password.trim().length < 6) {
+      return {
+        ok: false,
+        error: validationServiceError("Password must be at least 6 characters"),
+      };
+    }
+  }
+
+  const password =
+    typeof payload.password === "string" && payload.password.trim()
+      ? payload.password.trim()
+      : undefined;
+
+  return {
+    ok: true,
+    data: { email, companyName, password },
+  };
+}
+
+function parseUpdateUserPayload(payload: unknown): ServiceResult<UpdateUserPayload> {
+  if (!isRecord(payload)) {
+    return { ok: false, error: validationServiceError("Invalid request payload") };
+  }
+
+  const parsed: UpdateUserPayload = {};
+
+  if (payload.email !== undefined) {
+    if (typeof payload.email !== "string") {
+      return { ok: false, error: validationServiceError("Email must be a string") };
+    }
+    const email = normalizeEmail(payload.email);
+    if (!isValidEmail(email)) {
+      return { ok: false, error: validationServiceError("Invalid email format") };
+    }
+    parsed.email = email;
+  }
+
+  if (payload.role !== undefined) {
+    const roleResult = parseManageableUserRole(payload.role);
+    if (!roleResult.ok) {
+      return roleResult;
+    }
+    parsed.role = roleResult.data;
+  }
+
+  if (payload.password !== undefined && payload.password !== null) {
+    if (typeof payload.password !== "string" || payload.password.trim().length < 8) {
+      return {
+        ok: false,
+        error: validationServiceError("Password must be at least 8 characters"),
+      };
+    }
+    parsed.password = payload.password.trim();
+  }
+
+  if (payload.companyName !== undefined) {
+    if (typeof payload.companyName !== "string") {
+      return { ok: false, error: validationServiceError("Company name must be a string") };
+    }
+    const companyName = payload.companyName.trim();
+    if (!companyName) {
+      return { ok: false, error: validationServiceError("Company name is required") };
+    }
+    parsed.companyName = companyName;
+  }
+
+  if (!parsed.email && !parsed.role && !parsed.password && !parsed.companyName) {
+    return { ok: false, error: validationServiceError("No fields to update") };
+  }
+
+  return { ok: true, data: parsed };
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -383,7 +543,10 @@ export async function getAdminUsersForSuperAdmin(params: {
   }
 
   try {
-    const rows = await listAdminUsers();
+    const rows = await listUsersOrdered();
+    const companyNamesByUserId = await getPrimaryCompanyNamesByUserIds(
+      rows.map((user) => user.id)
+    );
 
     console.info("[AUDIT] super_admin_read_admin_users", {
       requestUserId: params.requestUserId,
@@ -394,11 +557,9 @@ export async function getAdminUsersForSuperAdmin(params: {
     return {
       ok: true,
       data: {
-        users: rows.map((user) => ({
-          id: user.id,
-          email: user.email,
-          role: user.role,
-        })),
+        users: rows.map((user) =>
+          toAdminUserDto(user, companyNamesByUserId.get(user.id) ?? null)
+        ),
       },
     };
   } catch (error) {
@@ -409,6 +570,241 @@ export async function getAdminUsersForSuperAdmin(params: {
       error: internalServiceError(
         `An error occurred while fetching admin users for super admin: ${message}`
       ),
+    };
+  }
+}
+
+export async function createUserAsSuperAdmin(params: {
+  requestUserId: number | null;
+  payload: unknown;
+}): Promise<
+  ServiceResult<{
+    user: AdminUserDto;
+    temporaryPassword: string;
+  }>
+> {
+  const access = await ensureSuperAdminAccess(params.requestUserId);
+  if (!access.ok) {
+    return access;
+  }
+
+  const parsed = parseCreateUserPayload(params.payload);
+  if (!parsed.ok) {
+    return parsed;
+  }
+
+  const existingUser = await findUserByEmail(parsed.data.email);
+  if (existingUser) {
+    return {
+      ok: false,
+      error: conflictValidationServiceError("A user with this email already exists"),
+    };
+  }
+
+  try {
+    const temporaryPassword =
+      parsed.data.password ?? randomBytes(18).toString("base64url");
+    const { user: createdUser, company } = await onboardCompanyOwner({
+      email: parsed.data.email,
+      password: temporaryPassword,
+      companyName: parsed.data.companyName,
+    });
+
+    console.info("[AUDIT] super_admin_create_user", {
+      requestUserId: params.requestUserId,
+      userId: createdUser.id,
+      email: createdUser.email,
+      role: createdUser.role,
+      companyId: company.id,
+      companyName: company.name,
+      at: new Date().toISOString(),
+    });
+
+    return {
+      ok: true,
+      data: {
+        user: toAdminUserDto(createdUser, company.name),
+        temporaryPassword,
+      },
+    };
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return {
+        ok: false,
+        error: conflictValidationServiceError("A user with this email already exists"),
+      };
+    }
+
+    console.error("Error creating user as super admin:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      ok: false,
+      error: internalServiceError(`An error occurred while creating the user: ${message}`),
+    };
+  }
+}
+
+export async function updateUserAsSuperAdmin(params: {
+  requestUserId: number | null;
+  userId: number;
+  payload: unknown;
+}): Promise<ServiceResult<{ user: AdminUserDto }>> {
+  const access = await ensureSuperAdminAccess(params.requestUserId);
+  if (!access.ok) {
+    return access;
+  }
+
+  const parsed = parseUpdateUserPayload(params.payload);
+  if (!parsed.ok) {
+    return parsed;
+  }
+
+  const existingUser = await findUserById(params.userId);
+  if (!existingUser) {
+    return {
+      ok: false,
+      error: notFoundServiceError(ERROR_CODES.USER_NOT_FOUND, "User not found"),
+    };
+  }
+
+  try {
+    let updatedUser = existingUser;
+
+    if (parsed.data.email && parsed.data.email !== existingUser.email) {
+      const duplicate = await findUserByEmail(parsed.data.email);
+      if (duplicate && duplicate.id !== existingUser.id) {
+        return {
+          ok: false,
+          error: conflictValidationServiceError("A user with this email already exists"),
+        };
+      }
+
+      const emailUpdated = await updateUserEmail(existingUser.id, parsed.data.email);
+      if (!emailUpdated) {
+        return {
+          ok: false,
+          error: internalServiceError("Failed to update user email"),
+        };
+      }
+      updatedUser = emailUpdated;
+    }
+
+    if (parsed.data.role && parsed.data.role !== updatedUser.role) {
+      updatedUser = await updateUserRole(updatedUser.id, parsed.data.role);
+    }
+
+    if (parsed.data.password) {
+      updatedUser = await updateUserPassword(updatedUser.id, parsed.data.password);
+    }
+
+    let companyName = (await getPrimaryCompanyNamesByUserIds([updatedUser.id])).get(
+      updatedUser.id
+    ) ?? null;
+
+    if (parsed.data.companyName) {
+      const companyId = await getActiveCompanyIdForUser(updatedUser.id);
+      if (!companyId) {
+        return {
+          ok: false,
+          error: validationServiceError("User is not linked to a company"),
+        };
+      }
+      await updateCompanyName(companyId, parsed.data.companyName);
+      companyName = parsed.data.companyName;
+    }
+
+    console.info("[AUDIT] super_admin_update_user", {
+      requestUserId: params.requestUserId,
+      userId: updatedUser.id,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      companyName,
+      at: new Date().toISOString(),
+    });
+
+    return {
+      ok: true,
+      data: { user: toAdminUserDto(updatedUser, companyName) },
+    };
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return {
+        ok: false,
+        error: conflictValidationServiceError("A user with this email already exists"),
+      };
+    }
+
+    console.error("Error updating user as super admin:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      ok: false,
+      error: internalServiceError(`An error occurred while updating the user: ${message}`),
+    };
+  }
+}
+
+export async function deleteUserAsSuperAdmin(params: {
+  requestUserId: number | null;
+  userId: number;
+}): Promise<ServiceResult<{ userId: number }>> {
+  const access = await ensureSuperAdminAccess(params.requestUserId);
+  if (!access.ok) {
+    return access;
+  }
+
+  if (params.requestUserId === params.userId) {
+    return {
+      ok: false,
+      error: makeServiceError(
+        409,
+        ERROR_CODES.VALIDATION_ERROR,
+        "Cannot delete the authenticated user"
+      ),
+    };
+  }
+
+  const existingUser = await findUserById(params.userId);
+  if (!existingUser) {
+    return {
+      ok: false,
+      error: notFoundServiceError(ERROR_CODES.USER_NOT_FOUND, "User not found"),
+    };
+  }
+
+  const ownedTeams = await countTeamsOwnedByUser(params.userId);
+  if (ownedTeams > 0) {
+    return {
+      ok: false,
+      error: makeServiceError(
+        409,
+        ERROR_CODES.VALIDATION_ERROR,
+        "Cannot delete user who owns teams. Reassign or delete teams first."
+      ),
+    };
+  }
+
+  try {
+    const deleted = await deleteUserAccount(params.userId);
+    if (!deleted) {
+      return {
+        ok: false,
+        error: internalServiceError("Failed to delete user"),
+      };
+    }
+
+    console.info("[AUDIT] super_admin_delete_user", {
+      requestUserId: params.requestUserId,
+      userId: params.userId,
+      at: new Date().toISOString(),
+    });
+
+    return { ok: true, data: { userId: params.userId } };
+  } catch (error) {
+    console.error("Error deleting user as super admin:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      ok: false,
+      error: internalServiceError(`An error occurred while deleting the user: ${message}`),
     };
   }
 }
