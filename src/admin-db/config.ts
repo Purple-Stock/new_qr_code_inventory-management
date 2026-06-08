@@ -11,11 +11,18 @@ export function getAdminDatabaseUrl(): string {
     return configured;
   }
 
+  // Fall back to the main database URL so admin tables live alongside the
+  // main schema when a dedicated admin DB is not explicitly configured.
+  const mainDbUrl = process.env.DATABASE_URL?.trim();
+  if (mainDbUrl && mainDbUrl.length > 0) {
+    return mainDbUrl;
+  }
+
   return `file:${defaultAdminDatabasePath}`;
 }
 
 export function getAdminDatabaseAuthToken(databaseUrl: string): string | undefined {
-  const token = process.env.ADMIN_DATABASE_AUTH_TOKEN?.trim();
+  const token = (process.env.ADMIN_DATABASE_AUTH_TOKEN ?? process.env.TURSO_AUTH_TOKEN)?.trim();
   const isRemoteLibsql = databaseUrl.startsWith("libsql://");
 
   if (token && token.length > 0) {
@@ -23,7 +30,9 @@ export function getAdminDatabaseAuthToken(databaseUrl: string): string | undefin
   }
 
   if (isRemoteLibsql && process.env.NODE_ENV === "production") {
-    throw new Error("ADMIN_DATABASE_AUTH_TOKEN must be set in production for libsql:// ADMIN_DATABASE_URL");
+    throw new Error(
+      "TURSO_AUTH_TOKEN (or ADMIN_DATABASE_AUTH_TOKEN) must be set in production for a libsql:// database URL"
+    );
   }
 
   return undefined;
