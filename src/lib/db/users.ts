@@ -1,6 +1,7 @@
 import { sqlite } from "@/db/client";
-import { users } from "@/db/schema";
-import { asc, eq } from "drizzle-orm";
+import { companyMembers, superAdminUsers, teamMembers, teams, users } from "@/db/schema";
+import { asc, count, eq } from "drizzle-orm";
+import { hasAffectedRows } from "./mutation-result";
 import { hashPassword, verifyPassword } from "@/lib/auth";
 import type { User, UserRole } from "@/db/schema";
 
@@ -135,6 +136,39 @@ export async function clearResetPasswordToken(userId: number): Promise<User> {
  */
 export async function listUsers(): Promise<User[]> {
   return sqlite.select().from(users);
+}
+
+/**
+ * List all users ordered by email for admin management screens.
+ */
+export async function listUsersOrdered(): Promise<User[]> {
+  return sqlite.select().from(users).orderBy(asc(users.email));
+}
+
+/**
+ * Count teams owned by a user (teams.user_id).
+ */
+export async function countTeamsOwnedByUser(userId: number): Promise<number> {
+  const [row] = await sqlite
+    .select({ count: count() })
+    .from(teams)
+    .where(eq(teams.userId, userId));
+
+  return row?.count ?? 0;
+}
+
+/**
+ * Delete a user and related membership rows.
+ */
+export async function deleteUserAccount(userId: number): Promise<boolean> {
+  return sqlite.transaction(async (tx) => {
+    await tx.delete(teamMembers).where(eq(teamMembers.userId, userId));
+    await tx.delete(companyMembers).where(eq(companyMembers.userId, userId));
+    await tx.delete(superAdminUsers).where(eq(superAdminUsers.userId, userId));
+
+    const result = await tx.delete(users).where(eq(users.id, userId));
+    return hasAffectedRows(result);
+  });
 }
 
 /**

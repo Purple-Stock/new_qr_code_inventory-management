@@ -57,7 +57,9 @@ vi.mock("@/lib/db/admin-internal", () => ({
 
 import {
   createTeamForUserAsSuperAdmin,
+  createUserAsSuperAdmin,
   deleteTeamAsSuperAdmin,
+  deleteUserAsSuperAdmin,
   getAdminUsersForSuperAdmin,
   getAllTeamsForSuperAdmin,
   markAdminClientEmailSent,
@@ -66,6 +68,7 @@ import {
   updateAdminTeamNote,
   updateAdminTeamPipelineStatus,
   updateTeamAsSuperAdmin,
+  updateUserAsSuperAdmin,
 } from "@/lib/services/admin";
 
 describe("admin service", () => {
@@ -499,7 +502,7 @@ describe("admin service", () => {
   });
 
   describe("getAdminUsersForSuperAdmin", () => {
-    it("returns admin users sorted by email", async () => {
+    it("returns all platform users sorted by email with createdAt", async () => {
       const { drizzle } = getTestDb();
 
       const [superAdmin] = await drizzle
@@ -524,10 +527,23 @@ describe("admin service", () => {
 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
-      expect(result.data.users).toEqual([
-        { id: owner.id, email: "owner@example.com", role: "admin" },
-        { id: superAdmin.id, email: "super-admin@example.com", role: "admin" },
+      expect(result.data.users).toHaveLength(4);
+      expect(result.data.users.map((user) => user.email)).toEqual([
+        "operator@example.com",
+        "owner@example.com",
+        "super-admin@example.com",
+        "viewer@example.com",
       ]);
+      expect(result.data.users[0]).toEqual(
+        expect.objectContaining({
+          id: expect.any(Number),
+          email: "operator@example.com",
+          role: "operator",
+          companyName: null,
+          createdAt: expect.any(String),
+        })
+      );
+      expect(result.data.users.some((user) => user.id === owner.id)).toBe(true);
     });
 
     it("rejects non-super-admin requesters", async () => {
@@ -546,6 +562,224 @@ describe("admin service", () => {
       if (result.ok) return;
       expect(result.error.status).toBe(403);
       expect(result.error.errorCode).toBe(ERROR_CODES.INSUFFICIENT_PERMISSIONS);
+    });
+  });
+
+  describe("createUserAsSuperAdmin", () => {
+    it("creates a platform user with company and generated temporary password", async () => {
+      const { drizzle } = getTestDb();
+
+      const [superAdmin] = await drizzle
+        .insert(users)
+        .values({ email: "super-admin@example.com", passwordHash: "hash", role: "admin" })
+        .returning();
+      await drizzle.insert(superAdminUsers).values({ userId: superAdmin.id });
+
+      const result = await createUserAsSuperAdmin({
+        requestUserId: superAdmin.id,
+        payload: {
+          email: "new-user@example.com",
+          companyName: "Acme Operacoes",
+        },
+      });
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.data.user.email).toBe("new-user@example.com");
+      expect(result.data.user.role).toBe("admin");
+      expect(result.data.user.companyName).toBe("Acme Operacoes");
+      expect(result.data.temporaryPassword).toEqual(expect.any(String));
+      expect(result.data.temporaryPassword.length).toBeGreaterThan(8);
+
+      const created = await drizzle
+        .select()
+        .from(users)
+        .where(eq(users.email, "new-user@example.com"));
+      expect(created).toHaveLength(1);
+
+      const [membership] = await drizzle
+        .select({ companyName: companies.name })
+        .from(companyMembers)
+        .innerJoin(companies, eq(companyMembers.companyId, companies.id))
+        .where(eq(companyMembers.userId, created[0]!.id));
+      expect(membership?.companyName).toBe("Acme Operacoes");
+    });
+
+    it("requires company name", async () => {
+      const { drizzle } = getTestDb();
+
+      const [superAdmin] = await drizzle
+        .insert(users)
+        .values({ email: "super-admin@example.com", passwordHash: "hash", role: "admin" })
+        .returning();
+      await drizzle.insert(superAdminUsers).values({ userId: superAdmin.id });
+
+      const result = await createUserAsSuperAdmin({
+        requestUserId: superAdmin.id,
+        payload: { email: "new-user@example.com" },
+      });
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.status).toBe(400);
+    });
+
+    it("rejects duplicate email", async () => {
+      const { drizzle } = getTestDb();
+
+      const [superAdmin] = await drizzle
+        .insert(users)
+        .values({ email: "super-admin@example.com", passwordHash: "hash", role: "admin" })
+        .returning();
+      await drizzle.insert(superAdminUsers).values({ userId: superAdmin.id });
+
+      await drizzle
+        .insert(users)
+        .values({ email: "existing@example.com", passwordHash: "hash", role: "admin" });
+
+      const result = await createUserAsSuperAdmin({
+        requestUserId: superAdmin.id,
+        payload: {
+          email: "existing@example.com",
+          companyName: "Empresa Existente",
+        },
+      });
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.status).toBe(409);
+    });
+  });
+
+  describe("updateUserAsSuperAdmin", () => {
+    it("updates email and role", async () => {
+      const { drizzle } = getTestDb();
+
+      const [superAdmin] = await drizzle
+        .insert(users)
+        .values({ email: "super-admin@example.com", passwordHash: "hash", role: "admin" })
+        .returning();
+      await drizzle.insert(superAdminUsers).values({ userId: superAdmin.id });
+
+      const [target] = await drizzle
+        .insert(users)
+        .values({ email: "target@example.com", passwordHash: "hash", role: "viewer" })
+        .returning();
+
+      const [company] = await drizzle
+        .insert(companies)
+        .values({ name: "Empresa Alvo", slug: "empresa-alvo" })
+        .returning();
+      await drizzle.insert(companyMembers).values({
+        companyId: company.id,
+        userId: target.id,
+        role: "owner",
+        status: "active",
+      });
+
+      const result = await updateUserAsSuperAdmin({
+        requestUserId: superAdmin.id,
+        userId: target.id,
+        payload: {
+          email: "updated@example.com",
+          role: "admin",
+          companyName: "Empresa Atualizada",
+        },
+      });
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.data.user).toEqual(
+        expect.objectContaining({
+          id: target.id,
+          email: "updated@example.com",
+          role: "admin",
+          companyName: "Empresa Atualizada",
+        })
+      );
+    });
+  });
+
+  describe("deleteUserAsSuperAdmin", () => {
+    it("deletes a user without owned teams", async () => {
+      const { drizzle } = getTestDb();
+
+      const [superAdmin] = await drizzle
+        .insert(users)
+        .values({ email: "super-admin@example.com", passwordHash: "hash", role: "admin" })
+        .returning();
+      await drizzle.insert(superAdminUsers).values({ userId: superAdmin.id });
+
+      const [target] = await drizzle
+        .insert(users)
+        .values({ email: "delete-me@example.com", passwordHash: "hash", role: "admin" })
+        .returning();
+
+      const result = await deleteUserAsSuperAdmin({
+        requestUserId: superAdmin.id,
+        userId: target.id,
+      });
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.data.userId).toBe(target.id);
+
+      const remaining = await drizzle.select().from(users).where(eq(users.id, target.id));
+      expect(remaining).toHaveLength(0);
+    });
+
+    it("blocks deleting the authenticated super admin", async () => {
+      const { drizzle } = getTestDb();
+
+      const [superAdmin] = await drizzle
+        .insert(users)
+        .values({ email: "super-admin@example.com", passwordHash: "hash", role: "admin" })
+        .returning();
+      await drizzle.insert(superAdminUsers).values({ userId: superAdmin.id });
+
+      const result = await deleteUserAsSuperAdmin({
+        requestUserId: superAdmin.id,
+        userId: superAdmin.id,
+      });
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.status).toBe(409);
+    });
+
+    it("blocks deleting users who own teams", async () => {
+      const { drizzle } = getTestDb();
+
+      const [superAdmin] = await drizzle
+        .insert(users)
+        .values({ email: "super-admin@example.com", passwordHash: "hash", role: "admin" })
+        .returning();
+      await drizzle.insert(superAdminUsers).values({ userId: superAdmin.id });
+
+      const [owner] = await drizzle
+        .insert(users)
+        .values({ email: "owner@example.com", passwordHash: "hash", role: "admin" })
+        .returning();
+
+      const [company] = await drizzle
+        .insert(companies)
+        .values({ name: "Purple Holding", slug: "purple-holding" })
+        .returning();
+
+      await drizzle.insert(teams).values({
+        name: "Owned Team",
+        userId: owner.id,
+        companyId: company.id,
+      });
+
+      const result = await deleteUserAsSuperAdmin({
+        requestUserId: superAdmin.id,
+        userId: owner.id,
+      });
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.status).toBe(409);
     });
   });
 
