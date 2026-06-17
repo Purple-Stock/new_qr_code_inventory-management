@@ -80,6 +80,7 @@ export const teams = sqliteTable(
     stripeSubscriptionId: text("stripe_subscription_id"),
     stripeSubscriptionStatus: text("stripe_subscription_status"),
     stripePriceId: text("stripe_price_id"),
+    billingPlanKey: text("billing_plan_key"),
     stripeCurrentPeriodEnd: integer("stripe_current_period_end", { mode: "timestamp" }),
     manualTrialEndsAt: integer("manual_trial_ends_at", { mode: "timestamp" }),
     manualTrialGrantsCount: integer("manual_trial_grants_count").notNull().default(0),

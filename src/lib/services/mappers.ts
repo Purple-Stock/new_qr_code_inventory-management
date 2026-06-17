@@ -1,3 +1,4 @@
+import { resolveTeamBillingPlan } from "@/lib/billing-plans";
 import type { Item, StockTransaction } from "@/db/schema";
 import type { TransactionWithDetails } from "@/lib/db/stock-transactions";
 import type {
@@ -98,6 +99,7 @@ export function toTeamDto(
     stripeSubscriptionId: string | null;
     stripeSubscriptionStatus: string | null;
     stripePriceId: string | null;
+    billingPlanKey?: string | null;
     stripeCurrentPeriodEnd: Date | string | null;
     manualTrialEndsAt: Date | string | null;
     itemCustomFieldSchema: { key: string; label: string; active: boolean }[] | null;
@@ -108,6 +110,15 @@ export function toTeamDto(
     canDeleteTeam: boolean;
   }>
 ): TeamDto {
+  const billingPlan = resolveTeamBillingPlan({
+    billingPlanKey: team.billingPlanKey ?? null,
+    stripeSubscriptionId: team.stripeSubscriptionId ?? null,
+    stripeSubscriptionStatus: team.stripeSubscriptionStatus ?? null,
+    stripePriceId: team.stripePriceId ?? null,
+    stripeCurrentPeriodEnd: team.stripeCurrentPeriodEnd ?? null,
+    manualTrialEndsAt: team.manualTrialEndsAt ?? null,
+  });
+
   return {
     id: team.id,
     name: team.name,
@@ -121,6 +132,8 @@ export function toTeamDto(
     stripeSubscriptionId: team.stripeSubscriptionId ?? null,
     stripeSubscriptionStatus: team.stripeSubscriptionStatus ?? null,
     stripePriceId: team.stripePriceId ?? null,
+    billingPlanKey: billingPlan.billingPlanKey,
+    billingPlanLabel: billingPlan.billingPlanLabel,
     stripeCurrentPeriodEnd: team.stripeCurrentPeriodEnd
       ? toIsoString(team.stripeCurrentPeriodEnd)
       : null,

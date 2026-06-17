@@ -300,6 +300,7 @@ export async function activateTeamManualBilling(
   data: {
     stripeSubscriptionStatus: string;
     stripeCurrentPeriodEnd: Date;
+    billingPlanKey?: string | null;
   }
 ): Promise<Team> {
   const [updatedTeam] = await sqlite
@@ -308,6 +309,7 @@ export async function activateTeamManualBilling(
       stripeSubscriptionId: null,
       stripeSubscriptionStatus: data.stripeSubscriptionStatus,
       stripePriceId: null,
+      billingPlanKey: data.billingPlanKey ?? null,
       stripeCurrentPeriodEnd: data.stripeCurrentPeriodEnd,
       manualTrialEndsAt: null,
       updatedAt: new Date(),

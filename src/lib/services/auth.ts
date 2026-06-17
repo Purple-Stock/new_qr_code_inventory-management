@@ -1,3 +1,4 @@
+import { waitForDatabase } from "@/db/client";
 import { verifyUserCredentials, findUserByEmail } from "@/lib/db/users";
 import { onboardCompanyOwner } from "@/lib/db/onboarding";
 import { parseLoginPayload, parseSignupPayload } from "@/lib/contracts/schemas";
@@ -28,6 +29,7 @@ export async function loginUser(params: {
   const { email, password } = parsed.data;
 
   try {
+    await waitForDatabase();
     const user = await verifyUserCredentials(email, password);
     if (!user) {
       return {
@@ -63,6 +65,7 @@ export async function signupUser(params: {
   const { email: normalizedEmail, password, companyName } = parsed.data;
 
   try {
+    await waitForDatabase();
     const existingUser = await findUserByEmail(normalizedEmail);
     if (existingUser) {
       return {

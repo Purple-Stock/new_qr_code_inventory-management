@@ -1,5 +1,5 @@
 import { and, count, desc, eq, inArray, or, sql, type SQL } from "drizzle-orm";
-import { sqlite } from "@/db/client";
+import { sqlite, waitForDatabase } from "@/db/client";
 import { companies, items, stockTransactions, teamMembers, teams, users } from "@/db/schema";
 import {
   getAdminTeamContactStatusesByIds,
@@ -31,6 +31,8 @@ export async function getAdminTeamsWithStats(params: {
   pageSize: number;
   search?: string;
 }) {
+  await waitForDatabase();
+
   const offset = (params.page - 1) * params.pageSize;
   const searchCondition = buildSearchCondition(params.search);
 
@@ -113,6 +115,8 @@ export async function getAdminTeamsByIds(teamIds: number[]) {
   if (teamIds.length === 0) {
     return [];
   }
+
+  await waitForDatabase();
 
   const rows = await sqlite
     .select({
