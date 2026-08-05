@@ -110,3 +110,12 @@ npm run dev -- --port 3001
 - `develop` → `staging.purplestock.com.br`
 - `main` → `app.purplestock.com.br`
 - Stripe env is app-level; trial needs **code deploy only**, not env changes
+
+## Google Play TWA (PWA wrapper)
+
+- Packaging lives in sibling dir: `purple-stock/twa/` (Bubblewrap).
+- Package ID: `com.purplestock.app`.
+- Host: `https://app.purplestock.com.br`.
+- Digital Asset Links: `public/.well-known/assetlinks.json` (must deploy real Play App Signing SHA-256).
+- Do not invent a second package id unless Play listing is separate from Expo mobile.
+- Build AAB: see `purple-stock/twa/README.md` (`npm run init` → fix assetlinks → `npm run build`).
