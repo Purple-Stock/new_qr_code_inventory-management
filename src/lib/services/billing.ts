@@ -33,6 +33,8 @@ import {
 const MANUAL_TRIAL_DEFAULT_DAYS = 14;
 const MANUAL_TRIAL_MAX_GRANTS = 3;
 const MANUAL_TRIAL_COOLDOWN_DAYS = 90;
+/** Free trial on Stripe Checkout (card collected, first charge after trial). Matches LP copy. */
+const STRIPE_CHECKOUT_TRIAL_DAYS = 7;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 function getAppBaseUrl(origin: string | null): string {
@@ -409,12 +411,15 @@ export async function createTeamStripeCheckoutSession(params: {
           quantity: 1,
         },
       ],
+      // Total is R$0 during trial; still require a card so billing starts after 7 days.
+      payment_method_collection: "always",
       success_url: `${baseUrl}/teams/${team.id}/settings?billing=success`,
       cancel_url: `${baseUrl}/teams/${team.id}/settings?billing=cancel`,
       metadata: {
         teamId: String(team.id),
       },
       subscription_data: {
+        trial_period_days: STRIPE_CHECKOUT_TRIAL_DAYS,
         metadata: {
           teamId: String(team.id),
         },
