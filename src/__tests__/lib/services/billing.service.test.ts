@@ -2,12 +2,14 @@ import { vi } from "vitest";
 import type Stripe from "stripe";
 import {
   activateTeamManualBilling,
+  buildTeamSubscriptionCheckoutSessionParams,
   createTeamStripeCheckoutSession,
   grantTeamManualTrial,
   processStripeWebhook,
   syncTeamStripeSubscriptionFromProvider,
 } from "@/lib/services/billing";
 import { ERROR_CODES } from "@/lib/errors";
+import { STRIPE_CHECKOUT_TRIAL_DAYS } from "@/lib/stripe";
 
 vi.mock("@/lib/permissions", () => ({
   authorizeTeamPermission: vi.fn(),
@@ -35,6 +37,7 @@ vi.mock("@/lib/stripe", () => ({
   getStripePriceId: vi.fn(),
   getStripeWebhookSecret: vi.fn(),
   isStripeConfigured: vi.fn(),
+  STRIPE_CHECKOUT_TRIAL_DAYS: 7,
 }));
 
 import { authorizeTeamPermission } from "@/lib/permissions";
@@ -123,11 +126,26 @@ describe("billing service", () => {
         mode: "subscription",
         payment_method_collection: "always",
         subscription_data: expect.objectContaining({
-          trial_period_days: 7,
+          trial_period_days: STRIPE_CHECKOUT_TRIAL_DAYS,
           metadata: { teamId: "10" },
         }),
       })
     );
+  });
+
+  it("builds checkout params with trial and forced card collection", () => {
+    const params = buildTeamSubscriptionCheckoutSessionParams({
+      customerId: "cus_abc",
+      stripePriceId: "price_123",
+      teamId: 42,
+      baseUrl: "https://app.example.com",
+    });
+
+    expect(params.mode).toBe("subscription");
+    expect(params.payment_method_collection).toBe("always");
+    expect(params.subscription_data?.trial_period_days).toBe(STRIPE_CHECKOUT_TRIAL_DAYS);
+    expect(params.metadata).toEqual({ teamId: "42" });
+    expect(params.line_items).toEqual([{ price: "price_123", quantity: 1 }]);
   });
 
   it("returns auth error when requester cannot update the team", async () => {
