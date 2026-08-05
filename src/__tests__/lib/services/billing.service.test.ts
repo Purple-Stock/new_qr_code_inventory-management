@@ -118,6 +118,16 @@ describe("billing service", () => {
     if (!result.ok) return;
     expect(result.data.url).toBe("https://checkout.stripe.com/c/pay_test");
     expect(mockedUpdateTeamStripeCustomerId).toHaveBeenCalledWith(10, "cus_123");
+    expect(stripeClientMock.checkout.sessions.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "subscription",
+        payment_method_collection: "always",
+        subscription_data: expect.objectContaining({
+          trial_period_days: 7,
+          metadata: { teamId: "10" },
+        }),
+      })
+    );
   });
 
   it("returns auth error when requester cannot update the team", async () => {
