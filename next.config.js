@@ -13,7 +13,7 @@ const nextConfig = {
   distDir,
   outputFileTracingRoot,
   reactStrictMode: true,
-  // PWA Configuration
+  // PWA + TWA (Digital Asset Links must be public JSON, not cached forever)
   async headers() {
     return [
       {
@@ -34,7 +34,24 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            value: 'public, max-age=3600, must-revalidate',
+          },
+          {
+            key: 'Content-Type',
+            value: 'application/manifest+json; charset=utf-8',
+          },
+        ],
+      },
+      {
+        source: '/.well-known/assetlinks.json',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/json; charset=utf-8',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=300, must-revalidate',
           },
         ],
       },

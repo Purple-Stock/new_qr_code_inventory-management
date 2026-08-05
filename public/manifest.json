@@ -1,34 +1,54 @@
 {
+  "id": "/",
   "name": "Purple Stock - Your Inventory Simplified",
   "short_name": "Purple Stock",
   "description": "Inventory management system with QR code support",
-  "start_url": "/",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "start_url": "/?utm_source=twa",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "browser"],
   "background_color": "#6B21A8",
   "theme_color": "#6B21A8",
   "orientation": "portrait-primary",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/android-chrome-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/apple-touch-icon.png",
       "sizes": "180x180",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icon.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "categories": ["business", "productivity"],
@@ -38,15 +58,16 @@
       "name": "Items",
       "short_name": "Items",
       "description": "View all items",
-      "url": "/teams/1/items",
+      "url": "/team_selection",
       "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
     },
     {
       "name": "Locations",
       "short_name": "Locations",
       "description": "Manage locations",
-      "url": "/teams/1/locations",
+      "url": "/team_selection",
       "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
     }
   ]
 }
+
