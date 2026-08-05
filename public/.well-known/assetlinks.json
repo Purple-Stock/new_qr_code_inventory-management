@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.purplestock.app",
+      "sha256_cert_fingerprints": [
+        "01:E1:24:10:FD:C5:03:29:8E:FD:27:E7:DD:45:89:F6:0E:DE:53:3C:46:48:A9:19:B1:1C:6D:E4:96:4B:D3:E3"
+      ]
+    }
+  }
+]
