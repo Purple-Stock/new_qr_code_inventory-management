@@ -1,94 +1,112 @@
-# AGENTS.md
+# AGENTS.md — Purple Stock Next (app)
 
-Guia operacional para agentes e contribuidores no diretório `next/`.
+Dense rules for coding agents in `purple-stock/next-qr-code-invetory-management/`.
 
-## Objetivo
+## Architecture (enforced)
 
-Preservar a arquitetura em camadas do Purple Stock:
+- Layers: `app` (HTTP/UI) → `services` (business) → `lib/db` (data) → `db` (schema/migrations).
+- **Never** import `@/lib/db/*` from `src/app/*` (including API routes).
+- API routes: parse params → call service → `successResponse` / `serviceErrorResponse` (`@/lib/api-route`).
+- Payload parse/validation lives in the service (or `lib/contracts/schemas`), not the route.
+- Dynamic IDs: `parseRouteParamId` / `parseRouteParamIds`.
+- `await request.json()` requires `try/catch` on the route.
+- No explicit `any` in `src/lib/services/*` or `src/app/api/*`.
+- Guard: `npm run verify:architecture` (`scripts/check-architecture.mjs`).
 
-- `app` adapta HTTP/UI.
-- `services` concentra regra de negócio.
-- `lib/db` executa acesso a dados.
-- `db` define schema/migrações.
+## Clean code for agents
 
-## Regras obrigatórias
+- Functions: prefer 4–20 lines. Files: under **500** lines (target 200–300).
+- One responsibility per module. Prefer `services/billing/*` splits over growing god files.
+- Names: greppable and unique. Avoid `data`, `handler`, `Manager`, `util`.
+- Types explicit. No `any` on public boundaries.
+- Early returns; max ~2 control-flow indent levels.
+- Errors must include context (what failed + relevant ids/values).
+- Comments: **WHY** / provenance only. Keep intent comments on refactor.
+- No unjustified duplication; extract shared helpers.
+- Formatter: Prettier project defaults. Do not bikeshed style.
 
-1. Não acessar `@/lib/db/*` diretamente em `src/app/*` (incluindo API routes).
-2. Toda API route deve delegar regra de negócio para `@/lib/services/*`.
-3. API routes devem usar helpers de `@/lib/api-route` para resposta.
-4. Validação/parsing de payload fica na camada de serviço.
-5. Rotas dinâmicas devem parsear IDs com `parseRouteParamId` ou `parseRouteParamIds`.
-6. Se usar `await request.json()`, o arquivo da rota precisa de `try/catch`.
-7. Evitar `any` explícito em `src/lib/services/*` e `src/app/api/*`.
+## Billing / Stripe (domain map)
 
-Essas regras são verificadas por `scripts/check-architecture.mjs`.
+| Concern | Path |
+|---|---|
+| Facade (stable imports) | `src/lib/services/billing.ts` |
+| Manual trial / PIX-style activation | `src/lib/services/billing/manual-billing.ts` |
+| Checkout + portal | `src/lib/services/billing/stripe-checkout.ts` |
+| Provider sync | `src/lib/services/billing/stripe-subscription-sync.ts` |
+| Webhooks | `src/lib/services/billing/stripe-webhook.ts` |
+| Shared Stripe mapping helpers | `src/lib/services/billing/stripe-shared.ts` |
+| Env + trial constant | `src/lib/stripe.ts` (`STRIPE_CHECKOUT_TRIAL_DAYS`) |
+| Access gate | `src/lib/services/subscription-access.ts` |
 
-## Fluxo padrão para novas features
+Rules:
 
-1. Criar ou estender funções de leitura/escrita em `src/lib/db/<dominio>.ts`.
-2. Implementar caso de uso em `src/lib/services/<dominio>.ts`:
-   - parse de payload;
-   - autorização;
-   - chamada de DB;
-   - retorno `ServiceResult`.
-3. Adaptar rota em `src/app/api/.../route.ts`:
-   - parse de params;
-   - chamada do service;
-   - `successResponse` ou `serviceErrorResponse`.
-4. Em páginas, manter `page.tsx` como Server Component e interatividade em `/_components/*Client.tsx`.
-5. Adicionar testes dedicados do service e da rota.
+- Checkout trial is **session-level** (`trial_period_days`), not a new Product/Price.
+- Do not invent a second `STRIPE_PRICE_ID` for trial.
+- `payment_method_collection: "always"` is required so card is collected when amount is R$0.
+- Amplify app env holds live Stripe keys; staging may share live keys — do not complete accidental live payments in tests.
 
-## Autorização e multi-tenant
+## Auth / multi-tenant
 
-- Leitura de sessão: `getUserIdFromRequest` (`src/lib/permissions.ts`).
-- Acesso a time: `authorizeTeamAccess`.
-- Permissões por operação: `authorizeTeamPermission` ou `authorizePermission`.
-- Nunca retornar dados de um time sem membership ativo.
+- Session user: `getUserIdFromRequest` (`src/lib/permissions.ts`).
+- Team access: `authorizeTeamAccess` / `authorizeTeamPermission`.
+- Never return another team's data without active membership.
 
-## Banco e migrações
+## Feature flow
 
-- Schema Drizzle: `src/db/schema.ts`.
-- Migrações SQL: `src/db/migrations/*.sql`.
-- Runner: `npm run db:migrate`.
-- Inicialização automática do banco ocorre em `src/db/client.ts` via `ensureDatabase()`.
+1. DB helpers in `src/lib/db/<domain>.ts`.
+2. Service in `src/lib/services/<domain>.ts` (or `services/<domain>/*` + facade): parse → auth → db → `ServiceResult`.
+3. Route in `src/app/api/.../route.ts` as thin adapter.
+4. Pages: Server Component + `/_components/*Client.tsx` for interactivity.
+5. Tests: service suite + route suite.
 
-## Qualidade mínima antes de concluir trabalho
-
-Execute:
+## Commands (one-shot)
 
 ```bash
 npm run verify:architecture
 npm test -- --runInBand
+npm run check:dependencies   # npm audit gate used by CI
+npm run build                # when build/config/billing surfaces change
 ```
 
-Se houver alteração de build/configuração relevante, execute também:
+Local app:
 
 ```bash
-npm run build
+npm run dev -- --port 3001
+# or: npm run dev:local-default
 ```
 
-## Política de testes
+## Tests
 
-- Cada módulo em `src/lib/services/*.ts` precisa de suíte dedicada:
-  - `src/__tests__/lib/services/<nome>.service.test.ts`
-- Cobrir cenários de:
-  - sucesso;
-  - falha de validação;
-  - falha de autorização;
-  - falha inesperada.
+- Each top-level `src/lib/services/*.ts` needs `src/__tests__/lib/services/<name>.service.test.ts`.
+- Submodules under `services/<domain>/` are covered via the facade suite (e.g. `billing.service.test.ts`).
+- Cover success, validation fail, auth fail, unexpected fail.
+- Mock Stripe/DB with named fakes/mocks; keep suites headless (no interactive secrets).
+- Policy: `scripts/check-test-policy.mjs`.
 
-A regra é validada por `scripts/check-test-policy.mjs`.
+## DB
 
-## Convenções úteis
+- Schema: `src/db/schema.ts`
+- Migrations: `src/db/migrations/*.sql` + `npm run db:migrate`
+- Client init: `src/db/client.ts` (`ensureDatabase()`)
 
-- IDs em rotas são numéricos.
-- Erros devem carregar `errorCode` consistente (`src/lib/errors.ts`).
-- Preferir composição via `src/lib/services/mappers.ts` para DTOs.
-- Revalidar rotas (`revalidatePath`) quando escrita impactar páginas cacheadas.
+## Env (billing)
 
-## Não fazer
+- `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`
+- `APP_URL` / `NEXT_PUBLIC_APP_URL` for Checkout/Portal return URLs
+- `SESSION_SECRET` required in production
 
-- Não mover regra de negócio para route handler.
-- Não usar `NextResponse.json` direto em API route.
-- Não criar resposta manual com `new Response(...)` em API route.
-- Não criar bypass de autorização para operações de time.
+## Do not
+
+- Business rules in route handlers
+- `NextResponse.json` / raw `new Response(...)` in API routes
+- Auth bypass for team operations
+- Grow `billing.ts` / `items.ts` / `admin.ts` past 500 lines without a split plan
+- Delete WHY/provenance comments “for cleanliness”
+- Create Stripe Product/Price just to change trial length
+
+## Deploy notes (Amplify)
+
+- App id: `d1c0tcuisic1or` (`new_qr_code_inventory-management`)
+- `develop` → `staging.purplestock.com.br`
+- `main` → `app.purplestock.com.br`
+- Stripe env is app-level; trial needs **code deploy only**, not env changes
