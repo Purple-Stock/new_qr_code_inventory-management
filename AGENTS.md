@@ -114,7 +114,7 @@ npm run dev -- --port 3001
 ## Google Play TWA (PWA wrapper)
 
 - Packaging lives in sibling dir: `purple-stock/twa/` (Bubblewrap).
-- Package ID: `com.purplestock.app`.
+- Package ID: `com.purple.stock.app`.
 - Host: `https://app.purplestock.com.br`.
 - Digital Asset Links: `public/.well-known/assetlinks.json` (must deploy real Play App Signing SHA-256).
 - Do not invent a second package id unless Play listing is separate from Expo mobile.
