@@ -38,9 +38,17 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     ".next-dev/types/**/*.ts",
-    ".next-dev/dev/types/**/*.ts"
+    ".next-dev/dev/types/**/*.ts",
+    ".next-dev-3001/types/**/*.ts",
+    ".next-dev-3001/dev/types/**/*.ts",
+    ".next-dev-3101/types/**/*.ts",
+    ".next-dev-3101/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "src/__tests__",
+    "e2e",
+    "vitest.config.ts",
+    "scripts"
   ]
 }
