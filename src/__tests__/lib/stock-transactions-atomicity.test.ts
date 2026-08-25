@@ -90,7 +90,10 @@ describe("createStockTransaction atomicity", () => {
 
     const [user] = await drizzle
       .insert(users)
-      .values({ email: "stock-atomic-transfer@example.com", passwordHash: "hash" })
+      .values({
+        email: "stock-atomic-transfer@example.com",
+        passwordHash: "hash",
+      })
       .returning();
     const [company] = await drizzle
       .insert(companies)
@@ -108,7 +111,11 @@ describe("createStockTransaction atomicity", () => {
     });
     const [sourceLocation] = await drizzle
       .insert(locations)
-      .values({ name: "Atomic Source", description: null, teamId: sourceTeam.id })
+      .values({
+        name: "Atomic Source",
+        description: null,
+        teamId: sourceTeam.id,
+      })
       .returning();
     const [sourceItem] = await drizzle
       .insert(items)
@@ -146,5 +153,250 @@ describe("createStockTransaction atomicity", () => {
 
     expect(freshSource.currentStock).toBe(7);
     expect(allTransactions).toHaveLength(0);
+  });
+
+  it("rejects moving an item from a location where it is not currently stored", async () => {
+    const { drizzle } = getTestDb();
+
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "grauna-move@example.com", passwordHash: "hash" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Audiovisual", userId: user.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+    const [grauna] = await drizzle
+      .insert(locations)
+      .values({ name: "Graúna", description: null, teamId: team.id })
+      .returning();
+    const [ariel] = await drizzle
+      .insert(locations)
+      .values({ name: "Ariel", description: null, teamId: team.id })
+      .returning();
+    const [junior] = await drizzle
+      .insert(locations)
+      .values({ name: "Júnior", description: null, teamId: team.id })
+      .returning();
+    const [camera] = await drizzle
+      .insert(items)
+      .values({
+        name: "SONY ZVE-10 B",
+        barcode: "6584599408468",
+        teamId: team.id,
+        locationId: ariel.id,
+        initialQuantity: 1,
+        currentStock: 1,
+      })
+      .returning();
+
+    await expect(
+      createStockTransaction({
+        itemId: camera.id,
+        teamId: team.id,
+        transactionType: "move",
+        quantity: 1,
+        userId: user.id,
+        sourceLocationId: grauna.id,
+        destinationLocationId: junior.id,
+        destinationKind: "location",
+      })
+    ).rejects.toThrow(/currently at Ariel/i);
+
+    const [freshCamera] = await drizzle
+      .select()
+      .from(items)
+      .where(eq(items.id, camera.id))
+      .limit(1);
+    const rows = await drizzle
+      .select()
+      .from(stockTransactions)
+      .where(eq(stockTransactions.itemId, camera.id));
+
+    expect(freshCamera.locationId).toBe(ariel.id);
+    expect(rows).toHaveLength(0);
+  });
+
+  it("moves an item when the source location matches its current location", async () => {
+    const { drizzle } = getTestDb();
+
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "valid-move@example.com", passwordHash: "hash" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Audiovisual Valid", userId: user.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+    const [grauna] = await drizzle
+      .insert(locations)
+      .values({ name: "Graúna", description: null, teamId: team.id })
+      .returning();
+    const [ariel] = await drizzle
+      .insert(locations)
+      .values({ name: "Ariel", description: null, teamId: team.id })
+      .returning();
+    const [camera] = await drizzle
+      .insert(items)
+      .values({
+        name: "SONY ZVE-10 B",
+        barcode: "valid-move-camera",
+        teamId: team.id,
+        locationId: grauna.id,
+        initialQuantity: 1,
+        currentStock: 1,
+      })
+      .returning();
+
+    const transaction = await createStockTransaction({
+      itemId: camera.id,
+      teamId: team.id,
+      transactionType: "move",
+      quantity: 1,
+      userId: user.id,
+      sourceLocationId: grauna.id,
+      destinationLocationId: ariel.id,
+      destinationKind: "location",
+    });
+
+    const [freshCamera] = await drizzle
+      .select()
+      .from(items)
+      .where(eq(items.id, camera.id))
+      .limit(1);
+
+    expect(transaction.transactionType).toBe("move");
+    expect(freshCamera.locationId).toBe(ariel.id);
+    expect(freshCamera.currentStock).toBe(1);
+  });
+
+  it("does not teleport existing units when stocking in at another location", async () => {
+    const { drizzle } = getTestDb();
+
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "teleport-in@example.com", passwordHash: "hash" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Audiovisual Stock", userId: user.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+    const [locationA] = await drizzle
+      .insert(locations)
+      .values({ name: "A", description: null, teamId: team.id })
+      .returning();
+    const [locationB] = await drizzle
+      .insert(locations)
+      .values({ name: "B", description: null, teamId: team.id })
+      .returning();
+    const [cable] = await drizzle
+      .insert(items)
+      .values({
+        name: "XLR Cable",
+        barcode: "xlr-teleport",
+        teamId: team.id,
+        locationId: locationB.id,
+        initialQuantity: 7,
+        currentStock: 7,
+      })
+      .returning();
+
+    await expect(
+      createStockTransaction({
+        itemId: cable.id,
+        teamId: team.id,
+        transactionType: "stock_in",
+        quantity: 3,
+        userId: user.id,
+        destinationLocationId: locationA.id,
+      })
+    ).rejects.toThrow(/currently at B/i);
+
+    const [freshCable] = await drizzle
+      .select()
+      .from(items)
+      .where(eq(items.id, cable.id))
+      .limit(1);
+    const rows = await drizzle
+      .select()
+      .from(stockTransactions)
+      .where(eq(stockTransactions.itemId, cable.id));
+
+    expect(freshCable.currentStock).toBe(7);
+    expect(freshCable.locationId).toBe(locationB.id);
+    expect(rows).toHaveLength(0);
+  });
+
+  it("rejects stocking in above the item maximum quantity", async () => {
+    const { drizzle } = getTestDb();
+
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "max-stock@example.com", passwordHash: "hash" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Unique Gear", userId: user.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+    const [grauna] = await drizzle
+      .insert(locations)
+      .values({ name: "Graúna", description: null, teamId: team.id })
+      .returning();
+    const [camera] = await drizzle
+      .insert(items)
+      .values({
+        name: "SONY ZVE-10 B",
+        barcode: "unique-sony",
+        teamId: team.id,
+        locationId: grauna.id,
+        initialQuantity: 1,
+        currentStock: 1,
+        maximumStock: 1,
+      })
+      .returning();
+
+    await expect(
+      createStockTransaction({
+        itemId: camera.id,
+        teamId: team.id,
+        transactionType: "stock_in",
+        quantity: 1,
+        userId: user.id,
+        destinationLocationId: grauna.id,
+      })
+    ).rejects.toThrow(/maximum quantity of 1/i);
+
+    const [freshCamera] = await drizzle
+      .select()
+      .from(items)
+      .where(eq(items.id, camera.id))
+      .limit(1);
+
+    expect(freshCamera.currentStock).toBe(1);
+    expect(freshCamera.locationId).toBe(grauna.id);
   });
 });

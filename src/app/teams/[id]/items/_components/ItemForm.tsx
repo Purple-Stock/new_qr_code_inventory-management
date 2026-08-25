@@ -16,6 +16,7 @@ export interface ItemFormValues {
   brand: string;
   photoData: string;
   customFields: Record<string, string>;
+  uniqueEquipment: boolean;
 }
 
 export interface CustomFieldSchemaEntry {
@@ -34,6 +35,7 @@ interface ItemFormProps {
   mode: "create" | "edit";
   onSubmit: (e: React.FormEvent) => void;
   onValueChange: (field: keyof ItemFormValues, value: string) => void;
+  onUniqueEquipmentChange: (uniqueEquipment: boolean) => void;
   onCustomFieldChange: (fieldKey: string, value: string) => void;
   onGenerateSKU: () => void;
   onGenerateBarcode: () => void;
@@ -49,11 +51,14 @@ export function ItemForm({
   mode,
   onSubmit,
   onValueChange,
+  onUniqueEquipmentChange,
   onCustomFieldChange,
   onGenerateSKU,
   onGenerateBarcode,
 }: ItemFormProps) {
-  const activeCustomFieldSchema = customFieldSchema.filter((field) => field.active);
+  const activeCustomFieldSchema = customFieldSchema.filter(
+    (field) => field.active
+  );
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -72,7 +77,9 @@ export function ItemForm({
   return (
     <form onSubmit={onSubmit} className="space-y-8">
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">{t.itemForm.itemInformation}</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">
+          {t.itemForm.itemInformation}
+        </h2>
         <div className="space-y-6">
           <div className="space-y-2" data-tour="tour-new-item-name">
             <Label htmlFor="name" className="text-gray-900">
@@ -114,7 +121,10 @@ export function ItemForm({
               >
                 {t.itemForm.generate}
               </button>
-              <button type="button" className="p-2 text-gray-400 hover:text-gray-600">
+              <button
+                type="button"
+                className="p-2 text-gray-400 hover:text-gray-600"
+              >
                 <QrCode className="h-5 w-5" />
               </button>
             </div>
@@ -143,7 +153,10 @@ export function ItemForm({
               >
                 {t.itemForm.generate}
               </button>
-              <button type="button" className="p-2 text-gray-400 hover:text-gray-600">
+              <button
+                type="button"
+                className="p-2 text-gray-400 hover:text-gray-600"
+              >
                 <QrCode className="h-5 w-5" />
               </button>
             </div>
@@ -178,7 +191,10 @@ export function ItemForm({
             ) : null}
           </div>
 
-          <div className="grid grid-cols-2 gap-4" data-tour="tour-new-item-pricing">
+          <div
+            className="grid grid-cols-2 gap-4"
+            data-tour="tour-new-item-pricing"
+          >
             <div className="space-y-2">
               <Label htmlFor="cost" className="text-gray-900">
                 {t.itemForm.costLabel}
@@ -190,7 +206,9 @@ export function ItemForm({
                   type="text"
                   placeholder="0.00"
                   value={values.cost}
-                  onChange={(e) => onValueChange("cost", e.target.value.replace(/[^\d.]/g, ""))}
+                  onChange={(e) =>
+                    onValueChange("cost", e.target.value.replace(/[^\d.]/g, ""))
+                  }
                   className="w-full pl-10"
                 />
               </div>
@@ -206,7 +224,12 @@ export function ItemForm({
                   type="text"
                   placeholder="0.00"
                   value={values.price}
-                  onChange={(e) => onValueChange("price", e.target.value.replace(/[^\d.]/g, ""))}
+                  onChange={(e) =>
+                    onValueChange(
+                      "price",
+                      e.target.value.replace(/[^\d.]/g, "")
+                    )
+                  }
                   className="w-full pl-10"
                 />
               </div>
@@ -215,8 +238,13 @@ export function ItemForm({
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm p-6" data-tour="tour-new-item-attributes">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">{t.itemForm.itemAttributes}</h2>
+      <div
+        className="bg-white rounded-lg shadow-sm p-6"
+        data-tour="tour-new-item-attributes"
+      >
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">
+          {t.itemForm.itemAttributes}
+        </h2>
         <div className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="itemType" className="text-gray-900">
@@ -250,18 +278,45 @@ export function ItemForm({
               />
             </div>
           </div>
+          <div className="space-y-2" data-tour="tour-new-item-unique">
+            <label htmlFor="uniqueEquipment" className="flex items-start gap-3">
+              <input
+                id="uniqueEquipment"
+                type="checkbox"
+                checked={values.uniqueEquipment}
+                onChange={(event) =>
+                  onUniqueEquipmentChange(event.target.checked)
+                }
+                className="mt-1 h-4 w-4 rounded border-gray-300 text-[#6B21A8] focus:ring-[#6B21A8]"
+              />
+              <span>
+                <span className="block text-gray-900 font-medium">
+                  {t.itemForm.uniqueEquipmentLabel}
+                </span>
+                <span className="block text-sm text-gray-500">
+                  {t.itemForm.uniqueEquipmentHelp}
+                </span>
+              </span>
+            </label>
+          </div>
         </div>
       </div>
 
       {activeCustomFieldSchema.length > 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-6" data-tour="tour-new-item-custom-fields">
+        <div
+          className="bg-white rounded-lg shadow-sm p-6"
+          data-tour="tour-new-item-custom-fields"
+        >
           <h2 className="text-xl font-semibold text-gray-900 mb-6">
             {t.itemForm.customFieldsTitle}
           </h2>
           <div className="space-y-4">
             {activeCustomFieldSchema.map((field) => (
               <div key={field.key} className="space-y-2">
-                <Label htmlFor={`custom-field-${field.key}`} className="text-gray-900">
+                <Label
+                  htmlFor={`custom-field-${field.key}`}
+                  className="text-gray-900"
+                >
                   {field.label}
                 </Label>
                 <Input
@@ -269,7 +324,9 @@ export function ItemForm({
                   type="text"
                   placeholder={t.itemForm.customFieldPlaceholder}
                   value={values.customFields[field.key] ?? ""}
-                  onChange={(e) => onCustomFieldChange(field.key, e.target.value)}
+                  onChange={(e) =>
+                    onCustomFieldChange(field.key, e.target.value)
+                  }
                   className="w-full"
                 />
               </div>
@@ -278,7 +335,10 @@ export function ItemForm({
         </div>
       ) : null}
 
-      <div className="flex items-center gap-4 pt-4" data-tour="tour-new-item-submit">
+      <div
+        className="flex items-center gap-4 pt-4"
+        data-tour="tour-new-item-submit"
+      >
         <Button
           type="submit"
           disabled={isLoading}
@@ -289,8 +349,8 @@ export function ItemForm({
               ? t.itemForm.creating
               : t.itemForm.createAction
             : isLoading
-            ? t.itemForm.updating
-            : t.itemForm.updateAction}
+              ? t.itemForm.updating
+              : t.itemForm.updateAction}
         </Button>
         {cancelHref ? (
           <Link href={cancelHref}>

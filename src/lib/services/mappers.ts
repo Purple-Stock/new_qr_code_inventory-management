@@ -21,20 +21,26 @@ function toIsoString(value: Date | string | number | null | undefined): string {
   }
 
   if (value instanceof Date) {
-    return Number.isNaN(value.getTime()) ? new Date(0).toISOString() : value.toISOString();
+    return Number.isNaN(value.getTime())
+      ? new Date(0).toISOString()
+      : value.toISOString();
   }
 
   if (typeof value === "number") {
     const timestampMs = value < 1e12 ? value * 1000 : value;
     const date = new Date(timestampMs);
-    return Number.isNaN(date.getTime()) ? new Date(0).toISOString() : date.toISOString();
+    return Number.isNaN(date.getTime())
+      ? new Date(0).toISOString()
+      : date.toISOString();
   }
 
   const sqliteTimestampMatch = value.match(
     /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})(?:\.\d+)?$/
   );
   if (sqliteTimestampMatch) {
-    const parsedSqliteUtc = new Date(`${sqliteTimestampMatch[1]}T${sqliteTimestampMatch[2]}Z`);
+    const parsedSqliteUtc = new Date(
+      `${sqliteTimestampMatch[1]}T${sqliteTimestampMatch[2]}Z`
+    );
     if (!Number.isNaN(parsedSqliteUtc.getTime())) {
       return parsedSqliteUtc.toISOString();
     }
@@ -47,7 +53,8 @@ function toIsoString(value: Date | string | number | null | undefined): string {
 
   const numericValue = Number(value);
   if (Number.isFinite(numericValue)) {
-    const timestampMs = numericValue < 1e12 ? numericValue * 1000 : numericValue;
+    const timestampMs =
+      numericValue < 1e12 ? numericValue * 1000 : numericValue;
     const date = new Date(timestampMs);
     if (!Number.isNaN(date.getTime())) {
       return date.toISOString();
@@ -57,7 +64,9 @@ function toIsoString(value: Date | string | number | null | undefined): string {
   return new Date(0).toISOString();
 }
 
-export function toItemDto(item: Item & { locationName?: string | null }): ItemDto {
+export function toItemDto(
+  item: Item & { locationName?: string | null }
+): ItemDto {
   return {
     id: item.id,
     name: item.name,
@@ -71,6 +80,7 @@ export function toItemDto(item: Item & { locationName?: string | null }): ItemDt
     initialQuantity: item.initialQuantity,
     currentStock: item.currentStock,
     minimumStock: item.minimumStock,
+    maximumStock: item.maximumStock ?? null,
     customFields: item.customFields ?? null,
     teamId: item.teamId,
     locationId: item.locationId,
@@ -100,7 +110,8 @@ export function toTeamDto(
     stripePriceId: string | null;
     stripeCurrentPeriodEnd: Date | string | null;
     manualTrialEndsAt: Date | string | null;
-    itemCustomFieldSchema: { key: string; label: string; active: boolean }[] | null;
+    itemCustomFieldSchema:
+      { key: string; label: string; active: boolean }[] | null;
     itemCount: number;
     transactionCount: number;
     memberCount: number;
@@ -124,7 +135,9 @@ export function toTeamDto(
     stripeCurrentPeriodEnd: team.stripeCurrentPeriodEnd
       ? toIsoString(team.stripeCurrentPeriodEnd)
       : null,
-    manualTrialEndsAt: team.manualTrialEndsAt ? toIsoString(team.manualTrialEndsAt) : null,
+    manualTrialEndsAt: team.manualTrialEndsAt
+      ? toIsoString(team.manualTrialEndsAt)
+      : null,
     itemCustomFieldSchema: team.itemCustomFieldSchema ?? null,
     itemCount: team.itemCount ?? 0,
     transactionCount: team.transactionCount ?? 0,
@@ -187,21 +200,29 @@ export function toManagedUserDto(member: {
   };
 }
 
-export function toAvailableUserDto(user: { id: number; email: string }): AvailableUserDto {
+export function toAvailableUserDto(user: {
+  id: number;
+  email: string;
+}): AvailableUserDto {
   return {
     id: user.id,
     email: user.email,
   };
 }
 
-export function toCompanyTeamDto(team: { id: number; name: string }): CompanyTeamDto {
+export function toCompanyTeamDto(team: {
+  id: number;
+  name: string;
+}): CompanyTeamDto {
   return {
     id: team.id,
     name: team.name,
   };
 }
 
-export function toStockTransactionDto(transaction: StockTransaction): StockTransactionDto {
+export function toStockTransactionDto(
+  transaction: StockTransaction
+): StockTransactionDto {
   return {
     id: transaction.id,
     itemId: transaction.itemId,
@@ -222,7 +243,9 @@ export function toStockTransactionDto(transaction: StockTransaction): StockTrans
   };
 }
 
-export function toTransactionDto(transaction: TransactionWithDetails): TransactionDto {
+export function toTransactionDto(
+  transaction: TransactionWithDetails
+): TransactionDto {
   return {
     id: transaction.id,
     itemId: transaction.itemId,

@@ -14,7 +14,8 @@ interface NewItemPageClientProps {
   initialTeam: {
     id: number;
     name: string;
-    itemCustomFieldSchema?: { key: string; label: string; active: boolean }[] | null;
+    itemCustomFieldSchema?:
+      { key: string; label: string; active: boolean }[] | null;
   };
 }
 
@@ -32,6 +33,7 @@ export default function NewItemPageClient({
     error,
     isLoading,
     updateField,
+    updateUniqueEquipment,
     updateCustomField,
     generateSKU,
     generateBarcode,
@@ -46,16 +48,56 @@ export default function NewItemPageClient({
   });
 
   const tourSteps: TourStep[] = [
-    { target: "tour-new-item-tutorial", title: t.itemForm.tourTutorialTitle, description: t.itemForm.tourTutorialDesc },
-    { target: "tour-new-item-name", title: t.itemForm.tourNameTitle, description: t.itemForm.tourNameDesc },
-    { target: "tour-new-item-sku", title: t.itemForm.tourSkuTitle, description: t.itemForm.tourSkuDesc },
-    { target: "tour-new-item-barcode", title: t.itemForm.tourBarcodeTitle, description: t.itemForm.tourBarcodeDesc },
-    { target: "tour-new-item-photo", title: t.itemForm.tourPhotoTitle, description: t.itemForm.tourPhotoDesc },
-    { target: "tour-new-item-pricing", title: t.itemForm.tourPricingTitle, description: t.itemForm.tourPricingDesc },
-    { target: "tour-new-item-attributes", title: t.itemForm.tourAttributesTitle, description: t.itemForm.tourAttributesDesc },
-    { target: "tour-new-item-custom-fields", title: t.itemForm.tourCustomFieldsTitle, description: t.itemForm.tourCustomFieldsDesc },
-    { target: "tour-new-item-submit", title: t.itemForm.tourSubmitTitle, description: t.itemForm.tourSubmitDesc },
-    { target: "tour-sidebar", title: t.itemForm.tourSidebarTitle, description: t.itemForm.tourSidebarDesc },
+    {
+      target: "tour-new-item-tutorial",
+      title: t.itemForm.tourTutorialTitle,
+      description: t.itemForm.tourTutorialDesc,
+    },
+    {
+      target: "tour-new-item-name",
+      title: t.itemForm.tourNameTitle,
+      description: t.itemForm.tourNameDesc,
+    },
+    {
+      target: "tour-new-item-sku",
+      title: t.itemForm.tourSkuTitle,
+      description: t.itemForm.tourSkuDesc,
+    },
+    {
+      target: "tour-new-item-barcode",
+      title: t.itemForm.tourBarcodeTitle,
+      description: t.itemForm.tourBarcodeDesc,
+    },
+    {
+      target: "tour-new-item-photo",
+      title: t.itemForm.tourPhotoTitle,
+      description: t.itemForm.tourPhotoDesc,
+    },
+    {
+      target: "tour-new-item-pricing",
+      title: t.itemForm.tourPricingTitle,
+      description: t.itemForm.tourPricingDesc,
+    },
+    {
+      target: "tour-new-item-attributes",
+      title: t.itemForm.tourAttributesTitle,
+      description: t.itemForm.tourAttributesDesc,
+    },
+    {
+      target: "tour-new-item-custom-fields",
+      title: t.itemForm.tourCustomFieldsTitle,
+      description: t.itemForm.tourCustomFieldsDesc,
+    },
+    {
+      target: "tour-new-item-submit",
+      title: t.itemForm.tourSubmitTitle,
+      description: t.itemForm.tourSubmitDesc,
+    },
+    {
+      target: "tour-sidebar",
+      title: t.itemForm.tourSidebarTitle,
+      description: t.itemForm.tourSidebarDesc,
+    },
   ];
 
   return (
@@ -79,6 +121,7 @@ export default function NewItemPageClient({
             mode="create"
             onSubmit={handleSubmit}
             onValueChange={updateField}
+            onUniqueEquipmentChange={updateUniqueEquipment}
             onCustomFieldChange={updateCustomField}
             onGenerateSKU={generateSKU}
             onGenerateBarcode={generateBarcode}

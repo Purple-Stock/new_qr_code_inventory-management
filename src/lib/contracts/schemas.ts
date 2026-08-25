@@ -1,9 +1,11 @@
 import type { StockTransactionType } from "@/db/schema";
-import type { ItemCustomFields, TeamItemCustomFieldSchemaEntry } from "@/db/schema";
+import type {
+  ItemCustomFields,
+  TeamItemCustomFieldSchemaEntry,
+} from "@/db/schema";
 
 export type ValidationResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: string };
+  { ok: true; data: T } | { ok: false; error: string };
 
 export function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
@@ -71,7 +73,9 @@ function parseNumber(value: unknown, field: string): ValidationResult<number> {
   return { ok: false, error: `${field} must be a valid number` };
 }
 
-function parseOptionalNumber(value: unknown): ValidationResult<number | undefined> {
+function parseOptionalNumber(
+  value: unknown
+): ValidationResult<number | undefined> {
   if (value === undefined || value === null || value === "") {
     return { ok: true, data: undefined };
   }
@@ -82,7 +86,9 @@ function parseOptionalNumber(value: unknown): ValidationResult<number | undefine
   return { ok: true, data: parsed.data };
 }
 
-function parseNullableNumber(value: unknown): ValidationResult<number | null | undefined> {
+function parseNullableNumber(
+  value: unknown
+): ValidationResult<number | null | undefined> {
   if (value === undefined) {
     return { ok: true, data: undefined };
   }
@@ -153,10 +159,16 @@ export function parseSignupPayload(body: unknown): ValidationResult<{
 
   const emailParsed = parseRequiredTrimmedString(body.email, "Email");
   const passwordParsed = parseRequiredTrimmedString(body.password, "Password");
-  const companyNameParsed = parseRequiredTrimmedString(body.companyName, "Company name");
+  const companyNameParsed = parseRequiredTrimmedString(
+    body.companyName,
+    "Company name"
+  );
 
   if (!emailParsed.ok || !passwordParsed.ok || !companyNameParsed.ok) {
-    return { ok: false, error: "Email, password and company name are required" };
+    return {
+      ok: false,
+      error: "Email, password and company name are required",
+    };
   }
 
   const normalizedEmail = normalizeEmail(emailParsed.data);
@@ -240,7 +252,10 @@ export function parseTeamUpdatePayload(body: unknown): ValidationResult<{
   }
 
   if (body.companyName !== undefined) {
-    const companyNameParsed = parseRequiredTrimmedString(body.companyName, "Company name");
+    const companyNameParsed = parseRequiredTrimmedString(
+      body.companyName,
+      "Company name"
+    );
     if (!companyNameParsed.ok) {
       return { ok: false, error: "Company name is required" };
     }
@@ -248,7 +263,9 @@ export function parseTeamUpdatePayload(body: unknown): ValidationResult<{
   }
 
   if (body.labelCompanyInfo !== undefined) {
-    const labelCompanyInfoParsed = parseOptionalTrimmedString(body.labelCompanyInfo);
+    const labelCompanyInfoParsed = parseOptionalTrimmedString(
+      body.labelCompanyInfo
+    );
     if (!labelCompanyInfoParsed.ok) {
       return { ok: false, error: "Label company info must be a string" };
     }
@@ -262,10 +279,15 @@ export function parseTeamUpdatePayload(body: unknown): ValidationResult<{
     }
 
     const labelLogoUrl = labelLogoUrlParsed.data ?? null;
-    const isDataUrl = labelLogoUrl ? labelLogoUrl.startsWith("data:image/") : false;
+    const isDataUrl = labelLogoUrl
+      ? labelLogoUrl.startsWith("data:image/")
+      : false;
     const isHttpUrl = labelLogoUrl ? /^https?:\/\//i.test(labelLogoUrl) : false;
     if (labelLogoUrl && !isDataUrl && !isHttpUrl) {
-      return { ok: false, error: "Label logo must be an image data URL or HTTP URL" };
+      return {
+        ok: false,
+        error: "Label logo must be an image data URL or HTTP URL",
+      };
     }
 
     payload.labelLogoUrl = labelLogoUrl;
@@ -285,13 +307,26 @@ export function parseTeamUpdatePayload(body: unknown): ValidationResult<{
           return { ok: false, error: "Invalid custom field schema format" };
         }
 
-        const keyParsed = parseRequiredTrimmedString(entry.key, "Custom field key");
-        const labelParsed = parseRequiredTrimmedString(entry.label, "Custom field label");
-        if (!keyParsed.ok || !labelParsed.ok || typeof entry.active !== "boolean") {
+        const keyParsed = parseRequiredTrimmedString(
+          entry.key,
+          "Custom field key"
+        );
+        const labelParsed = parseRequiredTrimmedString(
+          entry.label,
+          "Custom field label"
+        );
+        if (
+          !keyParsed.ok ||
+          !labelParsed.ok ||
+          typeof entry.active !== "boolean"
+        ) {
           return { ok: false, error: "Invalid custom field schema entry" };
         }
         if (seenKeys.has(keyParsed.data)) {
-          return { ok: false, error: "Custom field schema contains duplicate keys" };
+          return {
+            ok: false,
+            error: "Custom field schema contains duplicate keys",
+          };
         }
 
         seenKeys.add(keyParsed.data);
@@ -319,12 +354,22 @@ export function parseTeamManualTrialPayload(body: unknown): ValidationResult<{
 
   const durationParsed = parseOptionalInteger(body.durationDays);
   if (!durationParsed.ok || durationParsed.data === null) {
-    return { ok: false, error: "Duration must be an integer between 1 and 30 days" };
+    return {
+      ok: false,
+      error: "Duration must be an integer between 1 and 30 days",
+    };
   }
 
   const durationDays = durationParsed.data ?? 14;
-  if (!Number.isInteger(durationDays) || durationDays < 1 || durationDays > 30) {
-    return { ok: false, error: "Duration must be an integer between 1 and 30 days" };
+  if (
+    !Number.isInteger(durationDays) ||
+    durationDays < 1 ||
+    durationDays > 30
+  ) {
+    return {
+      ok: false,
+      error: "Duration must be an integer between 1 and 30 days",
+    };
   }
 
   const reasonParsed = parseOptionalTrimmedString(body.reason);
@@ -345,7 +390,9 @@ export function parseTeamManualTrialPayload(body: unknown): ValidationResult<{
   };
 }
 
-export function parseTeamManualActivationPayload(body: unknown): ValidationResult<{
+export function parseTeamManualActivationPayload(
+  body: unknown
+): ValidationResult<{
   durationDays: number;
   reason: string | null;
 }> {
@@ -355,12 +402,22 @@ export function parseTeamManualActivationPayload(body: unknown): ValidationResul
 
   const durationParsed = parseOptionalInteger(body.durationDays);
   if (!durationParsed.ok) {
-    return { ok: false, error: "Duration must be an integer between 1 and 365 days" };
+    return {
+      ok: false,
+      error: "Duration must be an integer between 1 and 365 days",
+    };
   }
 
   const durationDays = durationParsed.data ?? 30;
-  if (!Number.isInteger(durationDays) || durationDays < 1 || durationDays > 365) {
-    return { ok: false, error: "Duration must be an integer between 1 and 365 days" };
+  if (
+    !Number.isInteger(durationDays) ||
+    durationDays < 1 ||
+    durationDays > 365
+  ) {
+    return {
+      ok: false,
+      error: "Duration must be an integer between 1 and 365 days",
+    };
   }
 
   const reasonParsed = parseOptionalTrimmedString(body.reason);
@@ -420,6 +477,7 @@ export type ItemWritePayload = {
   initialQuantity?: number;
   currentStock?: number;
   minimumStock?: number;
+  maximumStock?: number | null;
   customFields?: ItemCustomFields | null;
 };
 
@@ -459,7 +517,8 @@ export function parseItemPayload(
   if (!itemTypeParsed.ok) {
     return { ok: false, error: "Item type must be a string" };
   }
-  if (body.itemType !== undefined) payload.itemType = itemTypeParsed.data ?? null;
+  if (body.itemType !== undefined)
+    payload.itemType = itemTypeParsed.data ?? null;
 
   const brandParsed = parseOptionalTrimmedString(body.brand);
   if (!brandParsed.ok) {
@@ -476,7 +535,10 @@ export function parseItemPayload(
     const isDataUrl = photoData ? photoData.startsWith("data:image/") : false;
     const isHttpUrl = photoData ? /^https?:\/\//i.test(photoData) : false;
     if (photoData && !isDataUrl && !isHttpUrl) {
-      return { ok: false, error: "Photo data must be an image data URL or HTTP URL" };
+      return {
+        ok: false,
+        error: "Photo data must be an image data URL or HTTP URL",
+      };
     }
     payload.photoData = photoData;
   }
@@ -497,7 +559,8 @@ export function parseItemPayload(
   if (!locationIdParsed.ok) {
     return { ok: false, error: "Location ID must be an integer" };
   }
-  if (body.locationId !== undefined) payload.locationId = locationIdParsed.data ?? null;
+  if (body.locationId !== undefined)
+    payload.locationId = locationIdParsed.data ?? null;
 
   const initialQuantityParsed = parseOptionalNumber(body.initialQuantity);
   if (!initialQuantityParsed.ok) {
@@ -511,7 +574,8 @@ export function parseItemPayload(
   if (!currentStockParsed.ok) {
     return { ok: false, error: "Current stock must be a valid number" };
   }
-  if (body.currentStock !== undefined) payload.currentStock = currentStockParsed.data;
+  if (body.currentStock !== undefined)
+    payload.currentStock = currentStockParsed.data;
 
   const minimumStockParsed = parseOptionalNumber(body.minimumStock);
   if (!minimumStockParsed.ok) {
@@ -519,6 +583,17 @@ export function parseItemPayload(
   }
   if (body.minimumStock !== undefined) {
     payload.minimumStock = minimumStockParsed.data ?? 0;
+  }
+
+  const maximumStockParsed = parseNullableNumber(body.maximumStock);
+  if (!maximumStockParsed.ok) {
+    return { ok: false, error: "Maximum stock must be a valid number" };
+  }
+  if (body.maximumStock !== undefined) {
+    if (maximumStockParsed.data != null && maximumStockParsed.data < 0) {
+      return { ok: false, error: "Maximum stock must be zero or greater" };
+    }
+    payload.maximumStock = maximumStockParsed.data ?? null;
   }
 
   if (body.customFields !== undefined) {
@@ -531,7 +606,10 @@ export function parseItemPayload(
       for (const [key, value] of Object.entries(body.customFields)) {
         const normalizedKey = key.trim();
         if (!normalizedKey || typeof value !== "string") {
-          return { ok: false, error: "Item custom fields must contain only string values" };
+          return {
+            ok: false,
+            error: "Item custom fields must contain only string values",
+          };
         }
         parsedCustomFields[normalizedKey] = value.trim();
       }
@@ -593,9 +671,15 @@ export function parseStockTransactionPayload(body: unknown): ValidationResult<{
 
   const locationIdParsed = parseOptionalInteger(body.locationId);
   const sourceLocationIdParsed = parseOptionalInteger(body.sourceLocationId);
-  const destinationLocationIdParsed = parseOptionalInteger(body.destinationLocationId);
+  const destinationLocationIdParsed = parseOptionalInteger(
+    body.destinationLocationId
+  );
   const destinationTeamIdParsed = parseOptionalInteger(body.destinationTeamId);
-  if (!locationIdParsed.ok || !sourceLocationIdParsed.ok || !destinationLocationIdParsed.ok) {
+  if (
+    !locationIdParsed.ok ||
+    !sourceLocationIdParsed.ok ||
+    !destinationLocationIdParsed.ok
+  ) {
     return { ok: false, error: "Location IDs must be integers" };
   }
   if (!destinationTeamIdParsed.ok) {
@@ -603,7 +687,11 @@ export function parseStockTransactionPayload(body: unknown): ValidationResult<{
   }
 
   let destinationKind: "location" | "team" | "external" | null = null;
-  if (body.destinationKind !== undefined && body.destinationKind !== null && body.destinationKind !== "") {
+  if (
+    body.destinationKind !== undefined &&
+    body.destinationKind !== null &&
+    body.destinationKind !== ""
+  ) {
     if (
       body.destinationKind !== "location" &&
       body.destinationKind !== "team" &&
@@ -614,20 +702,33 @@ export function parseStockTransactionPayload(body: unknown): ValidationResult<{
     destinationKind = body.destinationKind;
   }
 
-  const destinationLabelParsed = parseOptionalTrimmedString(body.destinationLabel);
+  const destinationLabelParsed = parseOptionalTrimmedString(
+    body.destinationLabel
+  );
   if (!destinationLabelParsed.ok) {
     return { ok: false, error: "Destination label must be a string" };
   }
-  const transferGroupIdParsed = parseOptionalTrimmedString(body.transferGroupId);
+  const transferGroupIdParsed = parseOptionalTrimmedString(
+    body.transferGroupId
+  );
   if (!transferGroupIdParsed.ok) {
     return { ok: false, error: "Transfer group ID must be a string" };
   }
 
   if (destinationKind === "team" && !destinationTeamIdParsed.data) {
-    return { ok: false, error: "Destination team is required for team transfer" };
+    return {
+      ok: false,
+      error: "Destination team is required for team transfer",
+    };
   }
-  if (destinationKind === "external" && !(destinationLabelParsed.data ?? null)) {
-    return { ok: false, error: "Destination label is required for external transfer" };
+  if (
+    destinationKind === "external" &&
+    !(destinationLabelParsed.data ?? null)
+  ) {
+    return {
+      ok: false,
+      error: "Destination label is required for external transfer",
+    };
   }
 
   return {
@@ -657,9 +758,18 @@ export function parsePasswordChangePayload(body: unknown): ValidationResult<{
     return { ok: false, error: "PASSWORD_FIELDS_REQUIRED" };
   }
 
-  const currentParsed = parseRequiredTrimmedString(body.currentPassword, "currentPassword");
-  const nextParsed = parseRequiredTrimmedString(body.newPassword, "newPassword");
-  const confirmParsed = parseRequiredTrimmedString(body.confirmPassword, "confirmPassword");
+  const currentParsed = parseRequiredTrimmedString(
+    body.currentPassword,
+    "currentPassword"
+  );
+  const nextParsed = parseRequiredTrimmedString(
+    body.newPassword,
+    "newPassword"
+  );
+  const confirmParsed = parseRequiredTrimmedString(
+    body.confirmPassword,
+    "confirmPassword"
+  );
   if (!currentParsed.ok || !nextParsed.ok || !confirmParsed.ok) {
     return { ok: false, error: "PASSWORD_FIELDS_REQUIRED" };
   }

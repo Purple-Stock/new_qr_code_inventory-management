@@ -487,6 +487,12 @@ export const en = {
     cameraError: "Could not access camera. Please check permissions.",
     imageError: "Could not read QR code from image. Please try another image.",
     sameLocationError: "Source and destination locations must be different",
+    currentlyAtLocation: "Currently at {location}",
+    itemNotAtSourceLocation:
+      "Cannot move {item} from {source} because it is currently at {actual}. Move it from {actual}, or return it to {source} first.",
+    itemNotAtSourceLocationUnknown:
+      "Cannot move {item} from {source} because it is not at that location.",
+    unknownLocation: "an unknown location",
     partialMoveError: "Some items could not be moved. Please try again.",
     partialTeamTransferError:
       "Some items could not be transferred between teams. Please try again.",
@@ -759,6 +765,9 @@ export const en = {
     priceLabel: "Price",
     typeLabel: "Type",
     brandLabel: "Brand",
+    uniqueEquipmentLabel: "Unique equipment",
+    uniqueEquipmentHelp:
+      "Caps quantity at 1 so this physical unit can be tracked without duplicate stock.",
     customFieldsTitle: "Custom item fields",
     customFieldPlaceholder: "Enter value",
     generate: "Generate",

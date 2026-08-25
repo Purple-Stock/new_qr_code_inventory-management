@@ -487,6 +487,12 @@ export const ptBR = {
     cameraError: "Não foi possível acessar a câmera. Verifique as permissões.",
     imageError: "Não foi possível ler o QR code da imagem. Tente outra imagem.",
     sameLocationError: "As localizações de origem e destino devem ser diferentes",
+    currentlyAtLocation: "Está em {location}",
+    itemNotAtSourceLocation:
+      "Não é possível mover {item} de {source} porque o item está em {actual}. Mova a partir de {actual}, ou devolva para {source} primeiro.",
+    itemNotAtSourceLocationUnknown:
+      "Não é possível mover {item} de {source} porque o item não está nessa localização.",
+    unknownLocation: "uma localização desconhecida",
     partialMoveError: "Alguns itens não puderam ser movidos. Tente novamente.",
     partialTeamTransferError:
       "Alguns itens não puderam ser transferidos entre times. Tente novamente.",
@@ -759,6 +765,9 @@ export const ptBR = {
     priceLabel: "Preço",
     typeLabel: "Tipo",
     brandLabel: "Marca",
+    uniqueEquipmentLabel: "Equipamento único",
+    uniqueEquipmentHelp:
+      "Fixa a quantidade máxima em 1 para rastrear esta peça e evitar cadastro duplicado.",
     customFieldsTitle: "Campos customizáveis",
     customFieldPlaceholder: "Digite o valor",
     generate: "Gerar",

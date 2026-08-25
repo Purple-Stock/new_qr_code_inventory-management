@@ -12,7 +12,14 @@ import {
 } from "@/lib/services/items";
 import { ERROR_CODES } from "@/lib/errors";
 import { getTestDb, cleanupTestDb, clearTestDb } from "../../helpers/test-db";
-import { items, locations, stockTransactions, teamMembers, teams, users } from "@/db/schema";
+import {
+  items,
+  locations,
+  stockTransactions,
+  teamMembers,
+  teams,
+  users,
+} from "@/db/schema";
 
 const { drizzle } = getTestDb();
 
@@ -33,7 +40,11 @@ describe("items service", () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "csv-import-admin@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "csv-import-admin@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -53,7 +64,11 @@ describe("items service", () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "items-admin@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "items-admin@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -82,11 +97,55 @@ describe("items service", () => {
     expect(result.data.item.name).toBe("New Name");
   });
 
+  it("rejects creating unique equipment above the maximum quantity", async () => {
+    const { drizzle } = getTestDb();
+    const [admin] = await drizzle
+      .insert(users)
+      .values({
+        email: "unique-item-admin@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Unique Items", userId: admin.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: admin.id,
+      role: "admin",
+      status: "active",
+    });
+
+    const result = await createTeamItem({
+      teamId: team.id,
+      requestUserId: admin.id,
+      payload: {
+        name: "SONY ZVE-10 B",
+        barcode: "unique-create-sony",
+        maximumStock: 1,
+        initialQuantity: 2,
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.status).toBe(409);
+    expect(result.error.errorCode).toBe(
+      ERROR_CODES.ITEM_MAXIMUM_STOCK_EXCEEDED
+    );
+  });
+
   it("returns 404 when deleting non-existing item", async () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "items-admin-2@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "items-admin-2@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -115,7 +174,11 @@ describe("items service", () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "items-admin-has-tx@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "items-admin-has-tx@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -159,7 +222,11 @@ describe("items service", () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "items-admin-force-delete@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "items-admin-force-delete@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -173,7 +240,11 @@ describe("items service", () => {
     });
     const [item] = await drizzle
       .insert(items)
-      .values({ name: "Item Force", barcode: "barcode-item-force", teamId: team.id })
+      .values({
+        name: "Item Force",
+        barcode: "barcode-item-force",
+        teamId: team.id,
+      })
       .returning();
     await drizzle.insert(stockTransactions).values({
       itemId: item.id,
@@ -194,7 +265,10 @@ describe("items service", () => {
     });
 
     expect(result.ok).toBe(true);
-    const deletedItem = await drizzle.select().from(items).where(eq(items.id, item.id));
+    const deletedItem = await drizzle
+      .select()
+      .from(items)
+      .where(eq(items.id, item.id));
     const deletedTransactions = await drizzle
       .select()
       .from(stockTransactions)
@@ -237,7 +311,8 @@ describe("items service", () => {
       teamId: team.id,
       requestUserId: admin.id,
       payload: {
-        csvContent: "Name,SKU,Barcode,Type,Stock,Price,Location\nWidget A,SKU-1,ABC-1,Gadget,10,39.9,Warehouse A",
+        csvContent:
+          "Name,SKU,Barcode,Type,Stock,Price,Location\nWidget A,SKU-1,ABC-1,Gadget,10,39.9,Warehouse A",
       },
     });
 
@@ -273,7 +348,8 @@ describe("items service", () => {
       teamId: team.id,
       requestUserId: admin.id,
       payload: {
-        csvContent: "Name,SKU,Type,Stock,Price,Location\nWidget A,SKU-1,Gadget,10,39.9,Warehouse A",
+        csvContent:
+          "Name,SKU,Type,Stock,Price,Location\nWidget A,SKU-1,Gadget,10,39.9,Warehouse A",
       },
     });
 
@@ -291,7 +367,8 @@ describe("items service", () => {
       teamId: team.id,
       requestUserId: admin.id,
       payload: {
-        csvContent: "Name,SKU,Barcode,Type,Stock,Price,Location\nWidget A,SKU-1,,Gadget,abc,39.9,Missing Shelf",
+        csvContent:
+          "Name,SKU,Barcode,Type,Stock,Price,Location\nWidget A,SKU-1,,Gadget,abc,39.9,Missing Shelf",
       },
     });
 
@@ -339,7 +416,10 @@ describe("items service", () => {
       rejectedRows: 0,
     });
 
-    const createdItems = await drizzle.select().from(items).where(eq(items.teamId, team.id));
+    const createdItems = await drizzle
+      .select()
+      .from(items)
+      .where(eq(items.teamId, team.id));
     expect(createdItems).toHaveLength(2);
   });
 
@@ -360,7 +440,10 @@ describe("items service", () => {
     expect(result.error.status).toBe(400);
     expect(result.error.error).toContain("1 invalid row");
 
-    const createdItems = await drizzle.select().from(items).where(eq(items.teamId, team.id));
+    const createdItems = await drizzle
+      .select()
+      .from(items)
+      .where(eq(items.teamId, team.id));
     expect(createdItems).toHaveLength(0);
   });
 
@@ -368,7 +451,11 @@ describe("items service", () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "items-details@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "items-details@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -382,7 +469,11 @@ describe("items service", () => {
     });
     const [item] = await drizzle
       .insert(items)
-      .values({ name: "Test Item", barcode: "barcode-details", teamId: team.id })
+      .values({
+        name: "Test Item",
+        barcode: "barcode-details",
+        teamId: team.id,
+      })
       .returning();
 
     const result = await getTeamItemDetails({
@@ -400,11 +491,19 @@ describe("items service", () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "items-details-2@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "items-details-2@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
-      .values({ name: "Items Details Team 2", userId: admin.id, companyId: null })
+      .values({
+        name: "Items Details Team 2",
+        userId: admin.id,
+        companyId: null,
+      })
       .returning();
     await drizzle.insert(teamMembers).values({
       teamId: team.id,
@@ -429,7 +528,11 @@ describe("items service", () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "items-team1@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "items-team1@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team1] = await drizzle
       .insert(teams)
@@ -447,7 +550,11 @@ describe("items service", () => {
     });
     const [item] = await drizzle
       .insert(items)
-      .values({ name: "Team 2 Item", barcode: "barcode-team2", teamId: team2.id })
+      .values({
+        name: "Team 2 Item",
+        barcode: "barcode-team2",
+        teamId: team2.id,
+      })
       .returning();
 
     const result = await getTeamItemDetails({
@@ -465,7 +572,11 @@ describe("items service", () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "items-list@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "items-list@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -496,7 +607,11 @@ describe("items service", () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "items-create@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "items-create@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -524,7 +639,11 @@ describe("items service", () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "items-create-custom@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "items-create-custom@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -562,7 +681,11 @@ describe("items service", () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "items-create-custom-schema@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "items-create-custom-schema@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -570,7 +693,9 @@ describe("items service", () => {
         name: "Items Custom Schema Team",
         userId: admin.id,
         companyId: null,
-        itemCustomFieldSchema: [{ key: "medidor_total", label: "Medidor total", active: true }],
+        itemCustomFieldSchema: [
+          { key: "medidor_total", label: "Medidor total", active: true },
+        ],
       })
       .returning();
     await drizzle.insert(teamMembers).values({
@@ -603,7 +728,11 @@ describe("items service", () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "items-update-custom-schema@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "items-update-custom-schema@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -611,7 +740,9 @@ describe("items service", () => {
         name: "Items Update Schema Team",
         userId: admin.id,
         companyId: null,
-        itemCustomFieldSchema: [{ key: "medidor_total", label: "Medidor total", active: true }],
+        itemCustomFieldSchema: [
+          { key: "medidor_total", label: "Medidor total", active: true },
+        ],
       })
       .returning();
     await drizzle.insert(teamMembers).values({
@@ -622,7 +753,11 @@ describe("items service", () => {
     });
     const [item] = await drizzle
       .insert(items)
-      .values({ name: "Printer", barcode: "barcode-printer-schema-update", teamId: team.id })
+      .values({
+        name: "Printer",
+        barcode: "barcode-printer-schema-update",
+        teamId: team.id,
+      })
       .returning();
 
     const result = await updateTeamItem({
@@ -646,7 +781,11 @@ describe("items service", () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "items-update-legacy-custom@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "items-update-legacy-custom@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -654,7 +793,9 @@ describe("items service", () => {
         name: "Items Legacy Schema Team",
         userId: admin.id,
         companyId: null,
-        itemCustomFieldSchema: [{ key: "contador_total", label: "Contador total", active: true }],
+        itemCustomFieldSchema: [
+          { key: "contador_total", label: "Contador total", active: true },
+        ],
       })
       .returning();
     await drizzle.insert(teamMembers).values({
@@ -686,14 +827,20 @@ describe("items service", () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect((result.data.item as any).customFields).toEqual({ medidor_total: "9999" });
+    expect((result.data.item as any).customFields).toEqual({
+      medidor_total: "9999",
+    });
   });
 
   it("returns validation error for invalid payload", async () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "items-valid@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "items-valid@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -721,7 +868,11 @@ describe("items service", () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "items-no-auth@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "items-no-auth@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -749,7 +900,11 @@ describe("items service", () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "items-team-switch@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "items-team-switch@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team1] = await drizzle
       .insert(teams)
@@ -767,7 +922,11 @@ describe("items service", () => {
     });
     const [item] = await drizzle
       .insert(items)
-      .values({ name: "Team B Item", barcode: "barcode-team-b", teamId: team2.id })
+      .values({
+        name: "Team B Item",
+        barcode: "barcode-team-b",
+        teamId: team2.id,
+      })
       .returning();
 
     const result = await updateTeamItem({
@@ -786,7 +945,11 @@ describe("items service", () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "items-delete-team@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "items-delete-team@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team1] = await drizzle
       .insert(teams)
@@ -804,7 +967,11 @@ describe("items service", () => {
     });
     const [item] = await drizzle
       .insert(items)
-      .values({ name: "Team Y Item", barcode: "barcode-team-y", teamId: team2.id })
+      .values({
+        name: "Team Y Item",
+        barcode: "barcode-team-y",
+        teamId: team2.id,
+      })
       .returning();
 
     const result = await deleteTeamItemById({
@@ -847,7 +1014,11 @@ describe("items service", () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "lookup-empty@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "lookup-empty@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -875,7 +1046,11 @@ describe("items service", () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "lookup-one@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "lookup-one@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -922,7 +1097,11 @@ describe("items service", () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle
       .insert(users)
-      .values({ email: "lookup-many@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "lookup-many@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -936,8 +1115,20 @@ describe("items service", () => {
     });
 
     await drizzle.insert(items).values([
-      { name: "Machine A", sku: "M-A", barcode: "DUP-001", teamId: team.id, currentStock: 1 },
-      { name: "Machine B", sku: "M-B", barcode: "DUP-001", teamId: team.id, currentStock: 2 },
+      {
+        name: "Machine A",
+        sku: "M-A",
+        barcode: "DUP-001",
+        teamId: team.id,
+        currentStock: 1,
+      },
+      {
+        name: "Machine B",
+        sku: "M-B",
+        barcode: "DUP-001",
+        teamId: team.id,
+        currentStock: 2,
+      },
     ]);
 
     const result = await lookupTeamItemsByCodeForUser({

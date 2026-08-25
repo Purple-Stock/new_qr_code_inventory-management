@@ -15,7 +15,10 @@ export default async function EditItemPage({ params }: PageProps) {
     notFound();
   }
 
-  const { team, item, subscriptionRequired } = await getTeamItemEditData(teamId, itemId);
+  const { team, item, subscriptionRequired } = await getTeamItemEditData(
+    teamId,
+    itemId
+  );
 
   if (subscriptionRequired) {
     redirect(`/teams/${teamId}/settings?billing=required`);
@@ -40,6 +43,7 @@ export default async function EditItemPage({ params }: PageProps) {
         brand: item.brand ?? "",
         photoData: item.photoData ?? "",
         customFields: item.customFields ?? {},
+        uniqueEquipment: item.maximumStock === 1,
       }}
     />
   );
