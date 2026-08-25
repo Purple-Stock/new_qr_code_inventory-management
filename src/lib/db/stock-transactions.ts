@@ -4,6 +4,10 @@ import { stockTransactions, items, users, locations, teams } from "@/db/schema";
 import { eq, desc, and, inArray, asc } from "drizzle-orm";
 import { hasAffectedRows } from "./mutation-result";
 import { ItemNotAtSourceLocationError } from "./item-not-at-source-location-error";
+import {
+  ItemMaximumStockExceededError,
+  ItemStockAtAnotherLocationError,
+} from "./item-stock-conflict-errors";
 import type {
   StockTransaction,
   StockTransactionType,
@@ -51,6 +55,56 @@ async function assertItemIsAtSourceLocation(
     itemName: item.name,
     claimedSourceName,
     actualLocationName,
+  });
+}
+
+async function assertStockInDoesNotTeleport(
+  tx: TransactionExecutor,
+  item: {
+    name: string | null;
+    locationId: number | null;
+    currentStock: number | null;
+  },
+  destinationLocationId: number | null
+): Promise<void> {
+  const currentStock = item.currentStock || 0;
+  if (
+    currentStock <= 0 ||
+    destinationLocationId == null ||
+    item.locationId == null ||
+    item.locationId === destinationLocationId
+  ) {
+    return;
+  }
+
+  const [claimedDestinationName, actualLocationName] = await Promise.all([
+    getLocationNameById(tx, destinationLocationId),
+    getLocationNameById(tx, item.locationId),
+  ]);
+
+  throw new ItemStockAtAnotherLocationError({
+    itemName: item.name,
+    claimedDestinationName,
+    actualLocationName,
+  });
+}
+
+function assertMaximumStockNotExceeded(
+  item: {
+    name: string | null;
+    currentStock: number | null;
+    maximumStock: number | null;
+  },
+  newStock: number
+): void {
+  if (item.maximumStock == null || newStock <= item.maximumStock) {
+    return;
+  }
+
+  throw new ItemMaximumStockExceededError({
+    itemName: item.name,
+    maximumStock: item.maximumStock,
+    currentStock: item.currentStock || 0,
   });
 }
 
@@ -157,6 +211,11 @@ export async function createStockTransaction(data: {
     let newLocationId = item.locationId;
 
     if (data.transactionType === "stock_in") {
+      await assertStockInDoesNotTeleport(
+        tx,
+        item,
+        data.destinationLocationId ?? null
+      );
       newStock += data.quantity;
       if (data.destinationLocationId) {
         newLocationId = data.destinationLocationId;
@@ -167,6 +226,11 @@ export async function createStockTransaction(data: {
       }
       newStock -= data.quantity;
     } else if (data.transactionType === "adjust") {
+      await assertStockInDoesNotTeleport(
+        tx,
+        item,
+        data.destinationLocationId ?? null
+      );
       newStock = data.quantity;
       if (data.destinationLocationId) {
         newLocationId = data.destinationLocationId;
@@ -181,6 +245,8 @@ export async function createStockTransaction(data: {
         newLocationId = data.destinationLocationId;
       }
     }
+
+    assertMaximumStockNotExceeded(item, newStock);
 
     const [transaction] = await tx
       .insert(stockTransactions)
@@ -327,6 +393,7 @@ async function createInterTeamTransferTransaction(data: {
           initialQuantity: 0,
           currentStock: 0,
           minimumStock: sourceItem.minimumStock,
+          maximumStock: sourceItem.maximumStock,
           customFields: sourceItem.customFields,
           teamId: data.destinationTeamId,
           locationId: destinationLocation.id,
@@ -391,10 +458,14 @@ async function createInterTeamTransferTransaction(data: {
       })
       .where(eq(items.id, sourceItem.id));
 
+    const destinationNewStock =
+      (destinationItem.currentStock || 0) + data.quantity;
+    assertMaximumStockNotExceeded(destinationItem, destinationNewStock);
+
     await tx
       .update(items)
       .set({
-        currentStock: (destinationItem.currentStock || 0) + data.quantity,
+        currentStock: destinationNewStock,
         locationId: destinationLocation.id,
         updatedAt: new Date(),
       })

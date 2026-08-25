@@ -765,6 +765,9 @@ export const ptBR = {
     priceLabel: "Preço",
     typeLabel: "Tipo",
     brandLabel: "Marca",
+    uniqueEquipmentLabel: "Equipamento único",
+    uniqueEquipmentHelp:
+      "Fixa a quantidade máxima em 1 para rastrear esta peça e evitar cadastro duplicado.",
     customFieldsTitle: "Campos customizáveis",
     customFieldPlaceholder: "Digite o valor",
     generate: "Gerar",

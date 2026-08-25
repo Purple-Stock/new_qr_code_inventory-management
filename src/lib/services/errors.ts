@@ -10,8 +10,15 @@ export function makeServiceError(
   return { status, errorCode, error };
 }
 
-export function authServiceError(params: { status: number; error: string }): ServiceError {
-  return makeServiceError(params.status, authErrorToCode(params.error), params.error);
+export function authServiceError(params: {
+  status: number;
+  error: string;
+}): ServiceError {
+  return makeServiceError(
+    params.status,
+    authErrorToCode(params.error),
+    params.error
+  );
 }
 
 export function validationServiceError(error: string): ServiceError {
@@ -22,11 +29,32 @@ export function conflictValidationServiceError(error: string): ServiceError {
   return makeServiceError(409, ERROR_CODES.VALIDATION_ERROR, error);
 }
 
-export function itemNotAtSourceLocationServiceError(error: string): ServiceError {
+export function itemNotAtSourceLocationServiceError(
+  error: string
+): ServiceError {
   return makeServiceError(409, ERROR_CODES.ITEM_NOT_AT_SOURCE_LOCATION, error);
 }
 
-export function notFoundServiceError(errorCode: ErrorCode, error: string): ServiceError {
+export function itemStockAtAnotherLocationServiceError(
+  error: string
+): ServiceError {
+  return makeServiceError(
+    409,
+    ERROR_CODES.ITEM_STOCK_AT_ANOTHER_LOCATION,
+    error
+  );
+}
+
+export function itemMaximumStockExceededServiceError(
+  error: string
+): ServiceError {
+  return makeServiceError(409, ERROR_CODES.ITEM_MAXIMUM_STOCK_EXCEEDED, error);
+}
+
+export function notFoundServiceError(
+  errorCode: ErrorCode,
+  error: string
+): ServiceError {
   return makeServiceError(404, errorCode, error);
 }
 

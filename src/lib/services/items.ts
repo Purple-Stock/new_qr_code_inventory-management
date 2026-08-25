@@ -13,20 +13,28 @@ import { getTeamLocations } from "@/lib/db/locations";
 import { deleteItemStockTransactions } from "@/lib/db/stock-transactions";
 import { ERROR_CODES } from "@/lib/errors";
 import { isUniqueConstraintError } from "@/lib/error-utils";
-import { authorizeTeamAccess, authorizeTeamPermission } from "@/lib/permissions";
+import {
+  authorizeTeamAccess,
+  authorizeTeamPermission,
+} from "@/lib/permissions";
 import { parseItemPayload } from "@/lib/contracts/schemas";
 import { uploadItemImageToS3 } from "@/lib/services/item-images";
 import type { ItemDto, ServiceResult } from "@/lib/services/types";
 import {
   authServiceError,
   conflictValidationServiceError,
+  itemMaximumStockExceededServiceError,
   internalServiceError,
   makeServiceError,
   notFoundServiceError,
   validationServiceError,
 } from "@/lib/services/errors";
+import { buildItemMaximumStockExceededMessage } from "@/lib/db/item-stock-conflict-errors";
 import { toItemDto } from "@/lib/services/mappers";
-import type { ItemCustomFields, TeamItemCustomFieldSchemaEntry } from "@/db/schema";
+import type {
+  ItemCustomFields,
+  TeamItemCustomFieldSchemaEntry,
+} from "@/db/schema";
 
 export type ItemLookupCandidateDto = Pick<
   ItemDto,
@@ -85,7 +93,13 @@ type ItemWritePayload = {
 const CSV_HEADER_ALIASES: Record<string, string[]> = {
   name: ["name", "nome", "nom"],
   sku: ["sku"],
-  barcode: ["barcode", "codigo de barras", "código de barras", "code-barres", "code barres"],
+  barcode: [
+    "barcode",
+    "codigo de barras",
+    "código de barras",
+    "code-barres",
+    "code barres",
+  ],
   type: ["type", "tipo"],
   stock: ["stock", "estoque"],
   price: ["price", "preco", "preço", "prix"],
@@ -154,7 +168,9 @@ function parseCsv(input: string): string[][] {
   return rows.filter((row) => row.length > 1 || row[0]?.trim() !== "");
 }
 
-function parseCsvImportPayload(payload: unknown): { ok: true; csvContent: string } | { ok: false; error: string } {
+function parseCsvImportPayload(
+  payload: unknown
+): { ok: true; csvContent: string } | { ok: false; error: string } {
   if (!payload || typeof payload !== "object" || !("csvContent" in payload)) {
     return { ok: false, error: "CSV content is required" };
   }
@@ -172,7 +188,9 @@ function mapHeaderIndexes(headers: string[]): Map<string, number> {
   const headerIndexes = new Map<string, number>();
 
   for (const [canonicalKey, aliases] of Object.entries(CSV_HEADER_ALIASES)) {
-    const headerIndex = normalizedHeaders.findIndex((header) => aliases.includes(header));
+    const headerIndex = normalizedHeaders.findIndex((header) =>
+      aliases.includes(header)
+    );
     if (headerIndex >= 0) {
       headerIndexes.set(canonicalKey, headerIndex);
     }
@@ -181,7 +199,11 @@ function mapHeaderIndexes(headers: string[]): Map<string, number> {
   return headerIndexes;
 }
 
-function getCsvCell(row: string[], headerIndexes: Map<string, number>, key: string): string {
+function getCsvCell(
+  row: string[],
+  headerIndexes: Map<string, number>,
+  key: string
+): string {
   const index = headerIndexes.get(key);
   if (index === undefined) {
     return "";
@@ -212,7 +234,9 @@ async function buildItemCsvImportPreview(params: {
 
   const [headers, ...dataRows] = parsedRows;
   const headerIndexes = mapHeaderIndexes(headers);
-  const missingHeaders = ["name", "barcode"].filter((key) => !headerIndexes.has(key));
+  const missingHeaders = ["name", "barcode"].filter(
+    (key) => !headerIndexes.has(key)
+  );
   if (missingHeaders.length > 0) {
     const displayLabels: Record<string, string> = {
       name: "Name",
@@ -228,7 +252,9 @@ async function buildItemCsvImportPreview(params: {
 
   const teamLocations = await getTeamLocations(params.teamId);
   const locationsByName = new Map(
-    teamLocations.map((location) => [normalizeCsvHeader(location.name), location.id] as const)
+    teamLocations.map(
+      (location) => [normalizeCsvHeader(location.name), location.id] as const
+    )
   );
 
   const rows: ItemCsvImportRow[] = dataRows.map((row, index) => {
@@ -238,7 +264,9 @@ async function buildItemCsvImportPreview(params: {
     const rawStock = getCsvCell(row, headerIndexes, "stock");
     const rawPrice = getCsvCell(row, headerIndexes, "price");
     const rawLocation = getCsvCell(row, headerIndexes, "location");
-    const locationId = rawLocation ? locationsByName.get(normalizeCsvHeader(rawLocation)) ?? null : null;
+    const locationId = rawLocation
+      ? (locationsByName.get(normalizeCsvHeader(rawLocation)) ?? null)
+      : null;
 
     const candidatePayload = {
       name: rawName || undefined,
@@ -296,8 +324,10 @@ async function buildItemCsvImportPreview(params: {
       status: "valid",
       item: {
         ...validation.data,
-        initialQuantity: validation.data.currentStock ?? validation.data.initialQuantity ?? 0,
-        currentStock: validation.data.currentStock ?? validation.data.initialQuantity ?? 0,
+        initialQuantity:
+          validation.data.currentStock ?? validation.data.initialQuantity ?? 0,
+        currentStock:
+          validation.data.currentStock ?? validation.data.initialQuantity ?? 0,
       },
       errors: [],
     };
@@ -320,7 +350,8 @@ async function buildItemCsvImportPreview(params: {
 }
 
 function mapImageUploadError(error: unknown): string {
-  const message = error instanceof Error ? error.message : "Image upload failed";
+  const message =
+    error instanceof Error ? error.message : "Image upload failed";
   if (/accessdenied|forbidden|not authorized/i.test(message)) {
     return "Image upload failed: S3 permission denied";
   }
@@ -341,7 +372,9 @@ function validateCustomFieldsAgainstActiveSchema(params: {
     return null;
   }
 
-  const activeKeys = new Set(schema.filter((entry) => entry.active).map((entry) => entry.key));
+  const activeKeys = new Set(
+    schema.filter((entry) => entry.active).map((entry) => entry.key)
+  );
   const legacyKeys = new Set((params.allowedLegacyKeys ?? []).filter(Boolean));
   const invalidKeys = Object.keys(params.customFields).filter(
     (key) => !activeKeys.has(key) && !legacyKeys.has(key)
@@ -377,7 +410,11 @@ export async function getTeamItemDetails(params: {
   if (item.teamId !== params.teamId) {
     return {
       ok: false,
-      error: makeServiceError(403, ERROR_CODES.FORBIDDEN, "Item does not belong to this team"),
+      error: makeServiceError(
+        403,
+        ERROR_CODES.FORBIDDEN,
+        "Item does not belong to this team"
+      ),
     };
   }
 
@@ -429,7 +466,10 @@ export async function lookupTeamItemsByCodeForUser(params: {
   }
 
   try {
-    const foundItems = await getTeamItemsByBarcode(params.teamId, normalizedCode);
+    const foundItems = await getTeamItemsByBarcode(
+      params.teamId,
+      normalizedCode
+    );
     const items = foundItems.map((item) => {
       const dto = toItemDto(item);
       return {
@@ -448,7 +488,9 @@ export async function lookupTeamItemsByCodeForUser(params: {
   } catch {
     return {
       ok: false,
-      error: internalServiceError("An error occurred while looking up items by code"),
+      error: internalServiceError(
+        "An error occurred while looking up items by code"
+      ),
     };
   }
 }
@@ -486,7 +528,9 @@ export async function previewTeamItemsCsvImport(params: {
   } catch {
     return {
       ok: false,
-      error: internalServiceError("An error occurred while previewing CSV import"),
+      error: internalServiceError(
+        "An error occurred while previewing CSV import"
+      ),
     };
   }
 }
@@ -535,7 +579,10 @@ export async function importTeamItemsCsv(params: {
   }
 
   const validRows = preview.data.rows
-    .filter((row): row is ItemCsvImportRow & { item: ItemWritePayload } => row.status === "valid" && row.item !== null)
+    .filter(
+      (row): row is ItemCsvImportRow & { item: ItemWritePayload } =>
+        row.status === "valid" && row.item !== null
+    )
     .map((row) => row.item);
 
   try {
@@ -604,10 +651,12 @@ export async function createTeamItem(params: {
 
   try {
     const payload = parsed.data;
-    const customFieldsValidationError = validateCustomFieldsAgainstActiveSchema({
-      customFields: payload.customFields,
-      schema: auth.team?.itemCustomFieldSchema ?? null,
-    });
+    const customFieldsValidationError = validateCustomFieldsAgainstActiveSchema(
+      {
+        customFields: payload.customFields,
+        schema: auth.team?.itemCustomFieldSchema ?? null,
+      }
+    );
     if (customFieldsValidationError) {
       return {
         ok: false,
@@ -631,6 +680,20 @@ export async function createTeamItem(params: {
       }
     }
 
+    const openingStock = payload.currentStock ?? payload.initialQuantity ?? 0;
+    if (payload.maximumStock != null && openingStock > payload.maximumStock) {
+      return {
+        ok: false,
+        error: itemMaximumStockExceededServiceError(
+          buildItemMaximumStockExceededMessage({
+            itemName: payload.name ?? null,
+            maximumStock: payload.maximumStock,
+            currentStock: openingStock,
+          })
+        ),
+      };
+    }
+
     const item = await createItem({
       name: payload.name!,
       sku: payload.sku ?? null,
@@ -645,6 +708,7 @@ export async function createTeamItem(params: {
       initialQuantity: payload.initialQuantity ?? 0,
       currentStock: payload.currentStock ?? undefined,
       minimumStock: payload.minimumStock ?? 0,
+      maximumStock: payload.maximumStock ?? null,
       customFields: payload.customFields ?? null,
     });
 
@@ -696,7 +760,11 @@ export async function updateTeamItem(
   if (existingItem.teamId !== params.teamId) {
     return {
       ok: false,
-      error: makeServiceError(403, ERROR_CODES.FORBIDDEN, "Item does not belong to this team"),
+      error: makeServiceError(
+        403,
+        ERROR_CODES.FORBIDDEN,
+        "Item does not belong to this team"
+      ),
     };
   }
 
@@ -734,6 +802,22 @@ export async function updateTeamItem(
       }
     }
 
+    if (
+      payload.maximumStock != null &&
+      (existingItem.currentStock || 0) > payload.maximumStock
+    ) {
+      return {
+        ok: false,
+        error: itemMaximumStockExceededServiceError(
+          buildItemMaximumStockExceededMessage({
+            itemName: payload.name ?? existingItem.name,
+            maximumStock: payload.maximumStock,
+            currentStock: existingItem.currentStock || 0,
+          })
+        ),
+      };
+    }
+
     const item = await updateItem(params.itemId, {
       name: payload.name,
       sku: payload.sku,
@@ -744,6 +828,7 @@ export async function updateTeamItem(
       brand: payload.brand,
       photoData,
       locationId: payload.locationId,
+      maximumStock: payload.maximumStock,
       customFields: payload.customFields,
     });
 
@@ -752,7 +837,9 @@ export async function updateTeamItem(
     if (isUniqueConstraintError(error)) {
       return {
         ok: false,
-        error: conflictValidationServiceError("An item with this barcode already exists"),
+        error: conflictValidationServiceError(
+          "An item with this barcode already exists"
+        ),
       };
     }
     return {
@@ -791,7 +878,11 @@ export async function deleteTeamItemById(
   if (existingItem.teamId !== params.teamId) {
     return {
       ok: false,
-      error: makeServiceError(403, ERROR_CODES.FORBIDDEN, "Item does not belong to this team"),
+      error: makeServiceError(
+        403,
+        ERROR_CODES.FORBIDDEN,
+        "Item does not belong to this team"
+      ),
     };
   }
 
@@ -803,7 +894,9 @@ export async function deleteTeamItemById(
       } catch {
         return {
           ok: false,
-          error: internalServiceError("An error occurred while deleting item transactions"),
+          error: internalServiceError(
+            "An error occurred while deleting item transactions"
+          ),
         };
       }
     } else {

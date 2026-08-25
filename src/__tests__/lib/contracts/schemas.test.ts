@@ -25,6 +25,21 @@ describe("contracts/schemas custom fields", () => {
     });
   });
 
+  it("parses unique equipment maximumStock", () => {
+    const parsed = parseItemPayload(
+      {
+        name: "SONY ZVE-10 B",
+        barcode: "6584599408468",
+        maximumStock: 1,
+      },
+      "create"
+    );
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.data.maximumStock).toBe(1);
+  });
+
   it("rejects non-string values in item customFields", () => {
     const parsed = parseItemPayload(
       {

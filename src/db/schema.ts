@@ -29,7 +29,9 @@ export const users = sqliteTable(
     passwordHash: text("password_hash").notNull(),
     role: text("role").$type<UserRole>().notNull().default("admin"),
     resetPasswordToken: text("reset_password_token"),
-    resetPasswordSentAt: integer("reset_password_sent_at", { mode: "timestamp" }),
+    resetPasswordSentAt: integer("reset_password_sent_at", {
+      mode: "timestamp",
+    }),
     rememberCreatedAt: integer("remember_created_at", { mode: "timestamp" }),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
@@ -40,9 +42,9 @@ export const users = sqliteTable(
   },
   (table) => ({
     emailIdx: uniqueIndex("index_users_on_email").on(table.email),
-    resetPasswordTokenIdx: uniqueIndex("index_users_on_reset_password_token").on(
-      table.resetPasswordToken
-    ),
+    resetPasswordTokenIdx: uniqueIndex(
+      "index_users_on_reset_password_token"
+    ).on(table.resetPasswordToken),
   })
 );
 
@@ -80,10 +82,16 @@ export const teams = sqliteTable(
     stripeSubscriptionId: text("stripe_subscription_id"),
     stripeSubscriptionStatus: text("stripe_subscription_status"),
     stripePriceId: text("stripe_price_id"),
-    stripeCurrentPeriodEnd: integer("stripe_current_period_end", { mode: "timestamp" }),
+    stripeCurrentPeriodEnd: integer("stripe_current_period_end", {
+      mode: "timestamp",
+    }),
     manualTrialEndsAt: integer("manual_trial_ends_at", { mode: "timestamp" }),
-    manualTrialGrantsCount: integer("manual_trial_grants_count").notNull().default(0),
-    manualTrialLastGrantedAt: integer("manual_trial_last_granted_at", { mode: "timestamp" }),
+    manualTrialGrantsCount: integer("manual_trial_grants_count")
+      .notNull()
+      .default(0),
+    manualTrialLastGrantedAt: integer("manual_trial_last_granted_at", {
+      mode: "timestamp",
+    }),
     labelCompanyInfo: text("label_company_info"),
     labelLogoUrl: text("label_logo_url"),
     itemCustomFieldSchema: text("item_custom_field_schema", { mode: "json" })
@@ -102,9 +110,9 @@ export const teams = sqliteTable(
     stripeCustomerIdIdx: uniqueIndex("index_teams_on_stripe_customer_id").on(
       table.stripeCustomerId
     ),
-    stripeSubscriptionIdIdx: uniqueIndex("index_teams_on_stripe_subscription_id").on(
-      table.stripeSubscriptionId
-    ),
+    stripeSubscriptionIdIdx: uniqueIndex(
+      "index_teams_on_stripe_subscription_id"
+    ).on(table.stripeSubscriptionId),
   })
 );
 
@@ -119,7 +127,10 @@ export const companyMembers = sqliteTable(
       .notNull()
       .references(() => users.id),
     role: text("role").$type<CompanyMemberRole>().notNull().default("member"),
-    status: text("status").$type<MembershipStatus>().notNull().default("active"),
+    status: text("status")
+      .$type<MembershipStatus>()
+      .notNull()
+      .default("active"),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .$defaultFn(() => new Date()),
@@ -129,7 +140,9 @@ export const companyMembers = sqliteTable(
   },
   (table) => ({
     companyUserPk: primaryKey({ columns: [table.companyId, table.userId] }),
-    companyIdIdx: index("index_company_members_on_company_id").on(table.companyId),
+    companyIdIdx: index("index_company_members_on_company_id").on(
+      table.companyId
+    ),
     userIdIdx: index("index_company_members_on_user_id").on(table.userId),
   })
 );
@@ -145,7 +158,10 @@ export const teamMembers = sqliteTable(
       .notNull()
       .references(() => users.id),
     role: text("role").$type<TeamMemberRole>().notNull().default("viewer"),
-    status: text("status").$type<MembershipStatus>().notNull().default("active"),
+    status: text("status")
+      .$type<MembershipStatus>()
+      .notNull()
+      .default("active"),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .$defaultFn(() => new Date()),
@@ -174,7 +190,9 @@ export const superAdminUsers = sqliteTable(
       .$defaultFn(() => new Date()),
   },
   (table) => ({
-    userIdIdx: uniqueIndex("index_super_admin_users_on_user_id").on(table.userId),
+    userIdIdx: uniqueIndex("index_super_admin_users_on_user_id").on(
+      table.userId
+    ),
   })
 );
 
@@ -220,6 +238,7 @@ export const items = sqliteTable(
     initialQuantity: integer("initial_quantity").default(0),
     currentStock: real("current_stock").default(0.0), // decimal(10, 2) -> real
     minimumStock: real("minimum_stock").default(0.0), // decimal(10, 2) -> real
+    maximumStock: real("maximum_stock"),
     customFields: text("custom_fields", { mode: "json" })
       .$type<ItemCustomFields | null>()
       .default(null),
@@ -244,11 +263,7 @@ export const items = sqliteTable(
 
 // Stock Transaction Type enum (as text in SQLite)
 export type StockTransactionType =
-  | "stock_in"
-  | "stock_out"
-  | "adjust"
-  | "move"
-  | "count";
+  "stock_in" | "stock_out" | "adjust" | "move" | "count";
 export type StockTransactionDestinationKind = "location" | "team" | "external";
 export type ExtensionEventName =
   | "extension_installed"
@@ -273,7 +288,9 @@ export const stockTransactions = sqliteTable(
     teamId: integer("team_id")
       .notNull()
       .references(() => teams.id),
-    transactionType: text("transaction_type").$type<StockTransactionType>().notNull(),
+    transactionType: text("transaction_type")
+      .$type<StockTransactionType>()
+      .notNull(),
     quantity: real("quantity").notNull(), // decimal(10, 2) -> real
     notes: text("notes"),
     userId: integer("user_id")
@@ -285,9 +302,12 @@ export const stockTransactions = sqliteTable(
     destinationLocationId: integer("destination_location_id").references(
       () => locations.id
     ),
-    destinationKind: text("destination_kind").$type<StockTransactionDestinationKind>(),
+    destinationKind:
+      text("destination_kind").$type<StockTransactionDestinationKind>(),
     destinationLabel: text("destination_label"),
-    counterpartyTeamId: integer("counterparty_team_id").references(() => teams.id),
+    counterpartyTeamId: integer("counterparty_team_id").references(
+      () => teams.id
+    ),
     linkedTransactionId: integer("linked_transaction_id"),
     transferGroupId: text("transfer_group_id"),
     createdAt: integer("created_at", { mode: "timestamp" })
@@ -299,27 +319,26 @@ export const stockTransactions = sqliteTable(
   },
   (table) => ({
     itemIdIdx: index("index_stock_transactions_on_item_id").on(table.itemId),
-    itemIdCreatedAtIdx: index("index_stock_transactions_on_item_id_and_created_at").on(
-      table.itemId,
-      table.createdAt
-    ),
+    itemIdCreatedAtIdx: index(
+      "index_stock_transactions_on_item_id_and_created_at"
+    ).on(table.itemId, table.createdAt),
     teamIdIdx: index("index_stock_transactions_on_team_id").on(table.teamId),
     userIdIdx: index("index_stock_transactions_on_user_id").on(table.userId),
-    transactionTypeIdx: index("index_stock_transactions_on_transaction_type").on(
-      table.transactionType
-    ),
-    sourceLocationIdIdx: index("index_stock_transactions_on_source_location_id").on(
-      table.sourceLocationId
-    ),
+    transactionTypeIdx: index(
+      "index_stock_transactions_on_transaction_type"
+    ).on(table.transactionType),
+    sourceLocationIdIdx: index(
+      "index_stock_transactions_on_source_location_id"
+    ).on(table.sourceLocationId),
     destinationLocationIdIdx: index(
       "index_stock_transactions_on_destination_location_id"
     ).on(table.destinationLocationId),
-    counterpartyTeamIdIdx: index("index_stock_transactions_on_counterparty_team_id").on(
-      table.counterpartyTeamId
-    ),
-    transferGroupIdIdx: index("index_stock_transactions_on_transfer_group_id").on(
-      table.transferGroupId
-    ),
+    counterpartyTeamIdIdx: index(
+      "index_stock_transactions_on_counterparty_team_id"
+    ).on(table.counterpartyTeamId),
+    transferGroupIdIdx: index(
+      "index_stock_transactions_on_transfer_group_id"
+    ).on(table.transferGroupId),
   })
 );
 
@@ -377,17 +396,25 @@ export const extensionEvents = sqliteTable(
     source: text("source").notNull().default("chrome_extension"),
     userId: integer("user_id").references(() => users.id),
     teamId: integer("team_id").references(() => teams.id),
-    metadata: text("metadata", { mode: "json" }).$type<Record<string, unknown> | null>().default(null),
+    metadata: text("metadata", { mode: "json" })
+      .$type<Record<string, unknown> | null>()
+      .default(null),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .$defaultFn(() => new Date()),
   },
   (table) => ({
-    eventNameIdx: index("index_extension_events_on_event_name").on(table.eventName),
-    anonymousIdIdx: index("index_extension_events_on_anonymous_id").on(table.anonymousId),
+    eventNameIdx: index("index_extension_events_on_event_name").on(
+      table.eventName
+    ),
+    anonymousIdIdx: index("index_extension_events_on_anonymous_id").on(
+      table.anonymousId
+    ),
     userIdIdx: index("index_extension_events_on_user_id").on(table.userId),
     teamIdIdx: index("index_extension_events_on_team_id").on(table.teamId),
-    createdAtIdx: index("index_extension_events_on_created_at").on(table.createdAt),
+    createdAtIdx: index("index_extension_events_on_created_at").on(
+      table.createdAt
+    ),
   })
 );
 
@@ -480,12 +507,15 @@ export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
   }),
 }));
 
-export const superAdminUsersRelations = relations(superAdminUsers, ({ one }) => ({
-  user: one(users, {
-    fields: [superAdminUsers.userId],
-    references: [users.id],
-  }),
-}));
+export const superAdminUsersRelations = relations(
+  superAdminUsers,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [superAdminUsers.userId],
+      references: [users.id],
+    }),
+  })
+);
 
 export const locationsRelations = relations(locations, ({ one, many }) => ({
   team: one(teams, {
@@ -558,16 +588,19 @@ export const apiKeysRelations = relations(apiKeys, ({ one }) => ({
   }),
 }));
 
-export const extensionEventsRelations = relations(extensionEvents, ({ one }) => ({
-  user: one(users, {
-    fields: [extensionEvents.userId],
-    references: [users.id],
-  }),
-  team: one(teams, {
-    fields: [extensionEvents.teamId],
-    references: [teams.id],
-  }),
-}));
+export const extensionEventsRelations = relations(
+  extensionEvents,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [extensionEvents.userId],
+      references: [users.id],
+    }),
+    team: one(teams, {
+      fields: [extensionEvents.teamId],
+      references: [teams.id],
+    }),
+  })
+);
 
 export const webhooksRelations = relations(webhooks, ({ one }) => ({
   team: one(teams, {

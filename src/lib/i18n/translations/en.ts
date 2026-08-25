@@ -765,6 +765,9 @@ export const en = {
     priceLabel: "Price",
     typeLabel: "Type",
     brandLabel: "Brand",
+    uniqueEquipmentLabel: "Unique equipment",
+    uniqueEquipmentHelp:
+      "Caps quantity at 1 so this physical unit can be tracked without duplicate stock.",
     customFieldsTitle: "Custom item fields",
     customFieldPlaceholder: "Enter value",
     generate: "Generate",

@@ -12,8 +12,7 @@ export type ServiceError = {
 };
 
 export type ServiceResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: ServiceError };
+  { ok: true; data: T } | { ok: false; error: ServiceError };
 
 export type ItemDto = {
   id: number;
@@ -28,6 +27,7 @@ export type ItemDto = {
   initialQuantity: number | null;
   currentStock: number | null;
   minimumStock: number | null;
+  maximumStock: number | null;
   customFields?: ItemCustomFields | null;
   teamId: number;
   locationId: number | null;
@@ -62,11 +62,7 @@ export type TeamDto = {
 };
 
 export type AdminPipelineStatus =
-  | "inactive"
-  | "trial"
-  | "risk"
-  | "active"
-  | "lost";
+  "inactive" | "trial" | "risk" | "active" | "lost";
 
 export type AdminTeamDto = TeamDto & {
   ownerEmail: string | null;

@@ -15,7 +15,8 @@ interface EditItemPageClientProps {
   initialTeam: {
     id: number;
     name: string;
-    itemCustomFieldSchema?: { key: string; label: string; active: boolean }[] | null;
+    itemCustomFieldSchema?:
+      { key: string; label: string; active: boolean }[] | null;
   };
   initialForm: ItemFormValues;
 }
@@ -35,20 +36,64 @@ export default function EditItemPageClient({
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const tourSteps: TourStep[] = [
-    { target: "tour-edit-item-tutorial", title: t.itemForm.tourEditTutorialTitle, description: t.itemForm.tourEditTutorialDesc },
-    { target: "tour-new-item-name", title: t.itemForm.tourNameTitle, description: t.itemForm.tourNameDesc },
-    { target: "tour-new-item-sku", title: t.itemForm.tourSkuTitle, description: t.itemForm.tourSkuDesc },
-    { target: "tour-new-item-barcode", title: t.itemForm.tourBarcodeTitle, description: t.itemForm.tourBarcodeDesc },
-    { target: "tour-new-item-photo", title: t.itemForm.tourPhotoTitle, description: t.itemForm.tourPhotoDesc },
-    { target: "tour-new-item-pricing", title: t.itemForm.tourPricingTitle, description: t.itemForm.tourPricingDesc },
-    { target: "tour-new-item-attributes", title: t.itemForm.tourAttributesTitle, description: t.itemForm.tourAttributesDesc },
-    { target: "tour-new-item-custom-fields", title: t.itemForm.tourCustomFieldsTitle, description: t.itemForm.tourCustomFieldsDesc },
-    { target: "tour-new-item-submit", title: t.itemForm.tourEditSubmitTitle, description: t.itemForm.tourEditSubmitDesc },
-    { target: "tour-sidebar", title: t.itemForm.tourSidebarTitle, description: t.itemForm.tourSidebarDesc },
+    {
+      target: "tour-edit-item-tutorial",
+      title: t.itemForm.tourEditTutorialTitle,
+      description: t.itemForm.tourEditTutorialDesc,
+    },
+    {
+      target: "tour-new-item-name",
+      title: t.itemForm.tourNameTitle,
+      description: t.itemForm.tourNameDesc,
+    },
+    {
+      target: "tour-new-item-sku",
+      title: t.itemForm.tourSkuTitle,
+      description: t.itemForm.tourSkuDesc,
+    },
+    {
+      target: "tour-new-item-barcode",
+      title: t.itemForm.tourBarcodeTitle,
+      description: t.itemForm.tourBarcodeDesc,
+    },
+    {
+      target: "tour-new-item-photo",
+      title: t.itemForm.tourPhotoTitle,
+      description: t.itemForm.tourPhotoDesc,
+    },
+    {
+      target: "tour-new-item-pricing",
+      title: t.itemForm.tourPricingTitle,
+      description: t.itemForm.tourPricingDesc,
+    },
+    {
+      target: "tour-new-item-attributes",
+      title: t.itemForm.tourAttributesTitle,
+      description: t.itemForm.tourAttributesDesc,
+    },
+    {
+      target: "tour-new-item-custom-fields",
+      title: t.itemForm.tourCustomFieldsTitle,
+      description: t.itemForm.tourCustomFieldsDesc,
+    },
+    {
+      target: "tour-new-item-submit",
+      title: t.itemForm.tourEditSubmitTitle,
+      description: t.itemForm.tourEditSubmitDesc,
+    },
+    {
+      target: "tour-sidebar",
+      title: t.itemForm.tourSidebarTitle,
+      description: t.itemForm.tourSidebarDesc,
+    },
   ];
 
   const updateField = (field: keyof ItemFormValues, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const updateUniqueEquipment = (uniqueEquipment: boolean) => {
+    setForm((prev) => ({ ...prev, uniqueEquipment }));
   };
 
   const updateCustomField = (fieldKey: string, value: string) => {
@@ -97,24 +142,29 @@ export default function EditItemPageClient({
           .filter(([, value]) => value.length > 0)
       );
 
-      const result = await fetchApiJsonResult(`/api/teams/${teamId}/items/${itemId}`, {
-        method: "PUT",
-        body: {
-          name: form.name.trim(),
-          sku: form.sku.trim() || null,
-          barcode: form.barcode.trim(),
-          cost: form.cost ? parseFloat(form.cost) : null,
-          price: form.price ? parseFloat(form.price) : null,
-          itemType: form.itemType.trim() || null,
-          brand: form.brand.trim() || null,
-          photoData: form.photoData || null,
-          customFields: Object.keys(customFields).length > 0 ? customFields : null,
-        },
-        fallbackError: t.itemForm.unexpectedError,
-      });
+      const result = await fetchApiJsonResult(
+        `/api/teams/${teamId}/items/${itemId}`,
+        {
+          method: "PUT",
+          body: {
+            name: form.name.trim(),
+            sku: form.sku.trim() || null,
+            barcode: form.barcode.trim(),
+            cost: form.cost ? parseFloat(form.cost) : null,
+            price: form.price ? parseFloat(form.price) : null,
+            itemType: form.itemType.trim() || null,
+            brand: form.brand.trim() || null,
+            photoData: form.photoData || null,
+            maximumStock: form.uniqueEquipment ? 1 : null,
+            customFields:
+              Object.keys(customFields).length > 0 ? customFields : null,
+          },
+          fallbackError: t.itemForm.unexpectedError,
+        }
+      );
 
       if (!result.ok) {
-        setError(t.itemForm.unexpectedError);
+        setError(result.error.error || t.itemForm.unexpectedError);
         setIsLoading(false);
         return;
       }
@@ -149,6 +199,7 @@ export default function EditItemPageClient({
             mode="edit"
             onSubmit={handleSubmit}
             onValueChange={updateField}
+            onUniqueEquipmentChange={updateUniqueEquipment}
             onCustomFieldChange={updateCustomField}
             onGenerateSKU={generateSKU}
             onGenerateBarcode={generateBarcode}

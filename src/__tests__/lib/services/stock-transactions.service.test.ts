@@ -953,4 +953,131 @@ describe("stock-transactions service", () => {
       .limit(1);
     expect(freshCamera.locationId).toBe(ariel.id);
   });
+
+  it("returns 409 when stocking in at a location that does not hold the item", async () => {
+    const { drizzle } = getTestDb();
+    const [user] = await drizzle
+      .insert(users)
+      .values({
+        email: "stock-in-teleport@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Audiovisual In", userId: user.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+    const [locationA] = await drizzle
+      .insert(locations)
+      .values({ name: "A", description: null, teamId: team.id })
+      .returning();
+    const [locationB] = await drizzle
+      .insert(locations)
+      .values({ name: "B", description: null, teamId: team.id })
+      .returning();
+    const [cable] = await drizzle
+      .insert(items)
+      .values({
+        name: "XLR Cable",
+        barcode: "xlr-service-teleport",
+        teamId: team.id,
+        locationId: locationB.id,
+        initialQuantity: 7,
+        currentStock: 7,
+      })
+      .returning();
+
+    const result = await createTeamStockTransaction({
+      teamId: team.id,
+      requestUserId: user.id,
+      payload: {
+        itemId: cable.id,
+        transactionType: "stock_in",
+        quantity: 3,
+        locationId: locationA.id,
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.status).toBe(409);
+    expect(result.error.errorCode).toBe(
+      ERROR_CODES.ITEM_STOCK_AT_ANOTHER_LOCATION
+    );
+    expect(result.error.error).toMatch(/XLR Cable/);
+    expect(result.error.error).toMatch(/B/);
+
+    const [freshCable] = await drizzle
+      .select()
+      .from(items)
+      .where(eq(items.id, cable.id))
+      .limit(1);
+    expect(freshCable.currentStock).toBe(7);
+    expect(freshCable.locationId).toBe(locationB.id);
+  });
+
+  it("returns 409 when stocking in would exceed the item maximum quantity", async () => {
+    const { drizzle } = getTestDb();
+    const [user] = await drizzle
+      .insert(users)
+      .values({
+        email: "max-stock-service@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Unique Service", userId: user.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+    const [grauna] = await drizzle
+      .insert(locations)
+      .values({ name: "Graúna", description: null, teamId: team.id })
+      .returning();
+    const [camera] = await drizzle
+      .insert(items)
+      .values({
+        name: "SONY ZVE-10 B",
+        barcode: "unique-sony-service",
+        teamId: team.id,
+        locationId: grauna.id,
+        initialQuantity: 1,
+        currentStock: 1,
+        maximumStock: 1,
+      })
+      .returning();
+
+    const result = await createTeamStockTransaction({
+      teamId: team.id,
+      requestUserId: user.id,
+      payload: {
+        itemId: camera.id,
+        transactionType: "stock_in",
+        quantity: 1,
+        locationId: grauna.id,
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.status).toBe(409);
+    expect(result.error.errorCode).toBe(
+      ERROR_CODES.ITEM_MAXIMUM_STOCK_EXCEEDED
+    );
+    expect(result.error.error).toMatch(/SONY ZVE-10 B/);
+    expect(result.error.error).toMatch(/1/);
+  });
 });

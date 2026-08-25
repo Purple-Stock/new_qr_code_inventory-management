@@ -8,12 +8,18 @@ import type { ServiceResult, StockTransactionDto } from "@/lib/services/types";
 import {
   authServiceError,
   internalServiceError,
+  itemMaximumStockExceededServiceError,
   itemNotAtSourceLocationServiceError,
+  itemStockAtAnotherLocationServiceError,
   makeServiceError,
   notFoundServiceError,
   validationServiceError,
 } from "@/lib/services/errors";
 import { ItemNotAtSourceLocationError } from "@/lib/db/item-not-at-source-location-error";
+import {
+  ItemMaximumStockExceededError,
+  ItemStockAtAnotherLocationError,
+} from "@/lib/db/item-stock-conflict-errors";
 import { deleteStockTransaction } from "@/lib/db/stock-transactions";
 import { toStockTransactionDto } from "@/lib/services/mappers";
 
@@ -125,6 +131,18 @@ export async function createTeamStockTransaction(params: {
       return {
         ok: false,
         error: itemNotAtSourceLocationServiceError(error.message),
+      };
+    }
+    if (error instanceof ItemStockAtAnotherLocationError) {
+      return {
+        ok: false,
+        error: itemStockAtAnotherLocationServiceError(error.message),
+      };
+    }
+    if (error instanceof ItemMaximumStockExceededError) {
+      return {
+        ok: false,
+        error: itemMaximumStockExceededServiceError(error.message),
       };
     }
 

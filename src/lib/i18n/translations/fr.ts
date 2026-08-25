@@ -765,6 +765,9 @@ export const fr = {
     priceLabel: "Prix",
     typeLabel: "Type",
     brandLabel: "Marque",
+    uniqueEquipmentLabel: "Équipement unique",
+    uniqueEquipmentHelp:
+      "Limite la quantité à 1 pour suivre cette pièce et éviter un stock en double.",
     customFieldsTitle: "Champs personnalisés",
     customFieldPlaceholder: "Saisissez la valeur",
     generate: "Générer",
