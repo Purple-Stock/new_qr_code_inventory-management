@@ -35,7 +35,11 @@ describe("stock-transactions service", () => {
     const { drizzle } = getTestDb();
     const [user] = await drizzle
       .insert(users)
-      .values({ email: "stock-service@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "stock-service@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -82,7 +86,11 @@ describe("stock-transactions service", () => {
     const { drizzle } = getTestDb();
     const [user] = await drizzle
       .insert(users)
-      .values({ email: "stock-invalid@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "stock-invalid@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -113,7 +121,11 @@ describe("stock-transactions service", () => {
     const { drizzle } = getTestDb();
     const [user] = await drizzle
       .insert(users)
-      .values({ email: "stock-delete@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "stock-delete@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -164,15 +176,27 @@ describe("stock-transactions service", () => {
     const { drizzle } = getTestDb();
     const [owner] = await drizzle
       .insert(users)
-      .values({ email: "stock-owner@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "stock-owner@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [operator] = await drizzle
       .insert(users)
-      .values({ email: "stock-operator@example.com", passwordHash: "hash", role: "operator" })
+      .values({
+        email: "stock-operator@example.com",
+        passwordHash: "hash",
+        role: "operator",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
-      .values({ name: "Stock Operator Team", userId: owner.id, companyId: null })
+      .values({
+        name: "Stock Operator Team",
+        userId: owner.id,
+        companyId: null,
+      })
       .returning();
     await drizzle.insert(teamMembers).values([
       {
@@ -227,7 +251,11 @@ describe("stock-transactions service", () => {
     const { drizzle } = getTestDb();
     const [user] = await drizzle
       .insert(users)
-      .values({ email: "stock-restore@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "stock-restore@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
@@ -298,11 +326,19 @@ describe("stock-transactions service", () => {
     const { drizzle } = getTestDb();
     const [user] = await drizzle
       .insert(users)
-      .values({ email: "stock-adjust-restore@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "stock-adjust-restore@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [team] = await drizzle
       .insert(teams)
-      .values({ name: "Stock Adjust Restore Team", userId: user.id, companyId: null })
+      .values({
+        name: "Stock Adjust Restore Team",
+        userId: user.id,
+        companyId: null,
+      })
       .returning();
     await drizzle.insert(teamMembers).values({
       teamId: team.id,
@@ -312,7 +348,11 @@ describe("stock-transactions service", () => {
     });
     const [location] = await drizzle
       .insert(locations)
-      .values({ name: "Adjust Restore Main", description: null, teamId: team.id })
+      .values({
+        name: "Adjust Restore Main",
+        description: null,
+        teamId: team.id,
+      })
       .returning();
     const [item] = await drizzle
       .insert(items)
@@ -384,7 +424,11 @@ describe("stock-transactions service", () => {
     const { drizzle } = getTestDb();
     const [user] = await drizzle
       .insert(users)
-      .values({ email: "transfer-delete@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "transfer-delete@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [company] = await drizzle
       .insert(companies)
@@ -396,11 +440,25 @@ describe("stock-transactions service", () => {
       .returning();
     const [destinationTeam] = await drizzle
       .insert(teams)
-      .values({ name: "Destination Delete", userId: user.id, companyId: company.id })
+      .values({
+        name: "Destination Delete",
+        userId: user.id,
+        companyId: company.id,
+      })
       .returning();
     await drizzle.insert(teamMembers).values([
-      { teamId: sourceTeam.id, userId: user.id, role: "admin", status: "active" },
-      { teamId: destinationTeam.id, userId: user.id, role: "admin", status: "active" },
+      {
+        teamId: sourceTeam.id,
+        userId: user.id,
+        role: "admin",
+        status: "active",
+      },
+      {
+        teamId: destinationTeam.id,
+        userId: user.id,
+        role: "admin",
+        status: "active",
+      },
     ]);
     const [sourceLocation] = await drizzle
       .insert(locations)
@@ -408,7 +466,11 @@ describe("stock-transactions service", () => {
       .returning();
     const [destinationLocation] = await drizzle
       .insert(locations)
-      .values({ name: "Default Location", description: null, teamId: destinationTeam.id })
+      .values({
+        name: "Default Location",
+        description: null,
+        teamId: destinationTeam.id,
+      })
       .returning();
     const [sourceItem] = await drizzle
       .insert(items)
@@ -486,7 +548,11 @@ describe("stock-transactions service", () => {
     const { drizzle } = getTestDb();
     const [user] = await drizzle
       .insert(users)
-      .values({ email: "transfer-success@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "transfer-success@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [company] = await drizzle
       .insert(companies)
@@ -501,8 +567,18 @@ describe("stock-transactions service", () => {
       .values({ name: "DPS", userId: user.id, companyId: company.id })
       .returning();
     await drizzle.insert(teamMembers).values([
-      { teamId: sourceTeam.id, userId: user.id, role: "admin", status: "active" },
-      { teamId: destinationTeam.id, userId: user.id, role: "admin", status: "active" },
+      {
+        teamId: sourceTeam.id,
+        userId: user.id,
+        role: "admin",
+        status: "active",
+      },
+      {
+        teamId: destinationTeam.id,
+        userId: user.id,
+        role: "admin",
+        status: "active",
+      },
     ]);
     const [sourceLocation] = await drizzle
       .insert(locations)
@@ -510,7 +586,11 @@ describe("stock-transactions service", () => {
       .returning();
     await drizzle
       .insert(locations)
-      .values({ name: "DPS Main", description: null, teamId: destinationTeam.id })
+      .values({
+        name: "DPS Main",
+        description: null,
+        teamId: destinationTeam.id,
+      })
       .returning();
     const [sourceItem] = await drizzle
       .insert(items)
@@ -564,7 +644,11 @@ describe("stock-transactions service", () => {
     const { drizzle } = getTestDb();
     const [user] = await drizzle
       .insert(users)
-      .values({ email: "transfer-batch@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "transfer-batch@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [company] = await drizzle
       .insert(companies)
@@ -579,8 +663,18 @@ describe("stock-transactions service", () => {
       .values({ name: "DPS", userId: user.id, companyId: company.id })
       .returning();
     await drizzle.insert(teamMembers).values([
-      { teamId: sourceTeam.id, userId: user.id, role: "admin", status: "active" },
-      { teamId: destinationTeam.id, userId: user.id, role: "admin", status: "active" },
+      {
+        teamId: sourceTeam.id,
+        userId: user.id,
+        role: "admin",
+        status: "active",
+      },
+      {
+        teamId: destinationTeam.id,
+        userId: user.id,
+        role: "admin",
+        status: "active",
+      },
     ]);
     const [sourceLocation] = await drizzle
       .insert(locations)
@@ -588,7 +682,11 @@ describe("stock-transactions service", () => {
       .returning();
     await drizzle
       .insert(locations)
-      .values({ name: "DPS Main", description: null, teamId: destinationTeam.id })
+      .values({
+        name: "DPS Main",
+        description: null,
+        teamId: destinationTeam.id,
+      })
       .returning();
     const [sourceItemA] = await drizzle
       .insert(items)
@@ -644,7 +742,11 @@ describe("stock-transactions service", () => {
     const { drizzle } = getTestDb();
     const [user] = await drizzle
       .insert(users)
-      .values({ email: "transfer-company@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "transfer-company@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [companyA] = await drizzle
       .insert(companies)
@@ -663,8 +765,18 @@ describe("stock-transactions service", () => {
       .values({ name: "Destination", userId: user.id, companyId: companyB.id })
       .returning();
     await drizzle.insert(teamMembers).values([
-      { teamId: sourceTeam.id, userId: user.id, role: "admin", status: "active" },
-      { teamId: destinationTeam.id, userId: user.id, role: "admin", status: "active" },
+      {
+        teamId: sourceTeam.id,
+        userId: user.id,
+        role: "admin",
+        status: "active",
+      },
+      {
+        teamId: destinationTeam.id,
+        userId: user.id,
+        role: "admin",
+        status: "active",
+      },
     ]);
     const [sourceLocation] = await drizzle
       .insert(locations)
@@ -705,7 +817,11 @@ describe("stock-transactions service", () => {
     const { drizzle } = getTestDb();
     const [user] = await drizzle
       .insert(users)
-      .values({ email: "transfer-membership@example.com", passwordHash: "hash", role: "admin" })
+      .values({
+        email: "transfer-membership@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
       .returning();
     const [company] = await drizzle
       .insert(companies)
@@ -717,7 +833,11 @@ describe("stock-transactions service", () => {
       .returning();
     const [destinationTeam] = await drizzle
       .insert(teams)
-      .values({ name: "Restricted Team", userId: user.id, companyId: company.id })
+      .values({
+        name: "Restricted Team",
+        userId: user.id,
+        companyId: company.id,
+      })
       .returning();
     await drizzle.insert(teamMembers).values({
       teamId: sourceTeam.id,
@@ -757,5 +877,80 @@ describe("stock-transactions service", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.status).toBe(403);
+  });
+
+  it("returns 409 when moving an item that is not at the claimed source location", async () => {
+    const { drizzle } = getTestDb();
+    const [user] = await drizzle
+      .insert(users)
+      .values({
+        email: "grauna-service-move@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Audiovisual", userId: user.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+    const [grauna] = await drizzle
+      .insert(locations)
+      .values({ name: "Graúna", description: null, teamId: team.id })
+      .returning();
+    const [ariel] = await drizzle
+      .insert(locations)
+      .values({ name: "Ariel", description: null, teamId: team.id })
+      .returning();
+    const [junior] = await drizzle
+      .insert(locations)
+      .values({ name: "Júnior", description: null, teamId: team.id })
+      .returning();
+    const [camera] = await drizzle
+      .insert(items)
+      .values({
+        name: "SONY ZVE-10 B",
+        barcode: "6584599408468",
+        teamId: team.id,
+        locationId: ariel.id,
+        initialQuantity: 1,
+        currentStock: 1,
+      })
+      .returning();
+
+    const result = await createTeamStockTransaction({
+      teamId: team.id,
+      requestUserId: user.id,
+      payload: {
+        itemId: camera.id,
+        transactionType: "move",
+        quantity: 1,
+        sourceLocationId: grauna.id,
+        destinationLocationId: junior.id,
+        destinationKind: "location",
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.status).toBe(409);
+    expect(result.error.errorCode).toBe(
+      ERROR_CODES.ITEM_NOT_AT_SOURCE_LOCATION
+    );
+    expect(result.error.error).toMatch(/SONY ZVE-10 B/);
+    expect(result.error.error).toMatch(/Graúna/);
+    expect(result.error.error).toMatch(/Ariel/);
+
+    const [freshCamera] = await drizzle
+      .select()
+      .from(items)
+      .where(eq(items.id, camera.id))
+      .limit(1);
+    expect(freshCamera.locationId).toBe(ariel.id);
   });
 });

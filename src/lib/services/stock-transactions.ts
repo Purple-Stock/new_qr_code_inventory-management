@@ -8,10 +8,12 @@ import type { ServiceResult, StockTransactionDto } from "@/lib/services/types";
 import {
   authServiceError,
   internalServiceError,
+  itemNotAtSourceLocationServiceError,
   makeServiceError,
   notFoundServiceError,
   validationServiceError,
 } from "@/lib/services/errors";
+import { ItemNotAtSourceLocationError } from "@/lib/db/item-not-at-source-location-error";
 import { deleteStockTransaction } from "@/lib/db/stock-transactions";
 import { toStockTransactionDto } from "@/lib/services/mappers";
 
@@ -59,7 +61,9 @@ export async function createTeamStockTransaction(params: {
       if (!destinationTeamId) {
         return {
           ok: false,
-          error: validationServiceError("Destination team is required for team transfer"),
+          error: validationServiceError(
+            "Destination team is required for team transfer"
+          ),
         };
       }
 
@@ -78,7 +82,9 @@ export async function createTeamStockTransaction(params: {
       ) {
         return {
           ok: false,
-          error: validationServiceError("Destination team must belong to the same company"),
+          error: validationServiceError(
+            "Destination team must belong to the same company"
+          ),
         };
       }
 
@@ -100,20 +106,35 @@ export async function createTeamStockTransaction(params: {
       notes: payload.notes,
       userId: auth.user.id,
       sourceLocationId:
-        payload.sourceLocationId ?? (payload.transactionType === "move" ? null : null),
-      destinationLocationId: payload.destinationLocationId ?? (payload.locationId ?? null),
+        payload.sourceLocationId ??
+        (payload.transactionType === "move" ? null : null),
+      destinationLocationId:
+        payload.destinationLocationId ?? payload.locationId ?? null,
       destinationKind: payload.destinationKind,
       destinationLabel: payload.destinationLabel,
       destinationTeamId: payload.destinationTeamId,
       transferGroupId: payload.transferGroupId,
     });
 
-    return { ok: true, data: { transaction: toStockTransactionDto(transaction) } };
+    return {
+      ok: true,
+      data: { transaction: toStockTransactionDto(transaction) },
+    };
   } catch (error: unknown) {
+    if (error instanceof ItemNotAtSourceLocationError) {
+      return {
+        ok: false,
+        error: itemNotAtSourceLocationServiceError(error.message),
+      };
+    }
+
     return {
       ok: false,
       error: internalServiceError(
-        getErrorMessage(error, "An error occurred while creating stock transaction")
+        getErrorMessage(
+          error,
+          "An error occurred while creating stock transaction"
+        )
       ),
     };
   }
@@ -142,18 +163,27 @@ export async function deleteTeamTransaction(params: {
   }
 
   try {
-    const deleted = await deleteStockTransaction(params.transactionId, params.teamId);
+    const deleted = await deleteStockTransaction(
+      params.transactionId,
+      params.teamId
+    );
     if (!deleted) {
       return {
         ok: false,
-        error: makeServiceError(404, ERROR_CODES.VALIDATION_ERROR, "Transaction not found"),
+        error: makeServiceError(
+          404,
+          ERROR_CODES.VALIDATION_ERROR,
+          "Transaction not found"
+        ),
       };
     }
     return { ok: true, data: null };
   } catch {
     return {
       ok: false,
-      error: internalServiceError("An error occurred while deleting transaction"),
+      error: internalServiceError(
+        "An error occurred while deleting transaction"
+      ),
     };
   }
 }

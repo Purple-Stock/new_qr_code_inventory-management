@@ -22,6 +22,10 @@ export function conflictValidationServiceError(error: string): ServiceError {
   return makeServiceError(409, ERROR_CODES.VALIDATION_ERROR, error);
 }
 
+export function itemNotAtSourceLocationServiceError(error: string): ServiceError {
+  return makeServiceError(409, ERROR_CODES.ITEM_NOT_AT_SOURCE_LOCATION, error);
+}
+
 export function notFoundServiceError(errorCode: ErrorCode, error: string): ServiceError {
   return makeServiceError(404, errorCode, error);
 }

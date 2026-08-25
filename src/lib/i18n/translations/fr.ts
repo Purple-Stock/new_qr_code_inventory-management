@@ -487,6 +487,12 @@ export const fr = {
     cameraError: "Impossible d'accéder à la caméra. Veuillez vérifier les permissions.",
     imageError: "Impossible de lire le QR code de l'image. Veuillez essayer une autre image.",
     sameLocationError: "Les emplacements source et de destination doivent être différents",
+    currentlyAtLocation: "Actuellement à {location}",
+    itemNotAtSourceLocation:
+      "Impossible de déplacer {item} depuis {source} car il se trouve actuellement à {actual}. Déplacez-le depuis {actual}, ou ramenez-le d'abord à {source}.",
+    itemNotAtSourceLocationUnknown:
+      "Impossible de déplacer {item} depuis {source} car il n'est pas à cet emplacement.",
+    unknownLocation: "un emplacement inconnu",
     partialMoveError: "Certains articles n'ont pas pu être déplacés. Veuillez réessayer.",
     partialTeamTransferError:
       "Certains articles n'ont pas pu être transférés entre équipes. Veuillez réessayer.",

@@ -3,6 +3,7 @@ import { sqlite } from "@/db/client";
 import { stockTransactions, items, users, locations, teams } from "@/db/schema";
 import { eq, desc, and, inArray, asc } from "drizzle-orm";
 import { hasAffectedRows } from "./mutation-result";
+import { ItemNotAtSourceLocationError } from "./item-not-at-source-location-error";
 import type {
   StockTransaction,
   StockTransactionType,
@@ -14,6 +15,44 @@ type TransactionExecutor = Parameters<typeof sqlite.transaction>[0] extends (
 ) => Promise<unknown>
   ? T
   : typeof sqlite;
+
+async function getLocationNameById(
+  tx: TransactionExecutor,
+  locationId: number | null
+): Promise<string | null> {
+  if (locationId == null) {
+    return null;
+  }
+
+  const [location] = await tx
+    .select({ name: locations.name })
+    .from(locations)
+    .where(eq(locations.id, locationId))
+    .limit(1);
+
+  return location?.name ?? null;
+}
+
+async function assertItemIsAtSourceLocation(
+  tx: TransactionExecutor,
+  item: { name: string | null; locationId: number | null },
+  sourceLocationId: number | null
+): Promise<void> {
+  if (sourceLocationId != null && item.locationId === sourceLocationId) {
+    return;
+  }
+
+  const [claimedSourceName, actualLocationName] = await Promise.all([
+    getLocationNameById(tx, sourceLocationId),
+    getLocationNameById(tx, item.locationId),
+  ]);
+
+  throw new ItemNotAtSourceLocationError({
+    itemName: item.name,
+    claimedSourceName,
+    actualLocationName,
+  });
+}
 
 function applyTransactionToStock(
   stock: number,
@@ -33,8 +72,15 @@ function applyTransactionToStock(
   }
 }
 
-async function recalculateItemCurrentStock(tx: TransactionExecutor, itemId: number) {
-  const [item] = await tx.select().from(items).where(eq(items.id, itemId)).limit(1);
+async function recalculateItemCurrentStock(
+  tx: TransactionExecutor,
+  itemId: number
+) {
+  const [item] = await tx
+    .select()
+    .from(items)
+    .where(eq(items.id, itemId))
+    .limit(1);
 
   if (!item) {
     return;
@@ -126,6 +172,11 @@ export async function createStockTransaction(data: {
         newLocationId = data.destinationLocationId;
       }
     } else if (data.transactionType === "move") {
+      await assertItemIsAtSourceLocation(
+        tx,
+        item,
+        data.sourceLocationId ?? null
+      );
       if (data.destinationLocationId) {
         newLocationId = data.destinationLocationId;
       }
@@ -176,8 +227,15 @@ async function createInterTeamTransferTransaction(data: {
   return sqlite.transaction(async (tx) => {
     const [sourceTeam, destinationTeam] = await Promise.all([
       tx.select().from(teams).where(eq(teams.id, data.sourceTeamId)).limit(1),
-      tx.select().from(teams).where(eq(teams.id, data.destinationTeamId)).limit(1),
-    ]).then(([sourceRows, destinationRows]) => [sourceRows[0], destinationRows[0]]);
+      tx
+        .select()
+        .from(teams)
+        .where(eq(teams.id, data.destinationTeamId))
+        .limit(1),
+    ]).then(([sourceRows, destinationRows]) => [
+      sourceRows[0],
+      destinationRows[0],
+    ]);
 
     if (!destinationTeam) {
       throw new Error("Destination team not found");
@@ -195,12 +253,19 @@ async function createInterTeamTransferTransaction(data: {
     const [sourceItem] = await tx
       .select()
       .from(items)
-      .where(and(eq(items.id, data.sourceItemId), eq(items.teamId, data.sourceTeamId)))
+      .where(
+        and(
+          eq(items.id, data.sourceItemId),
+          eq(items.teamId, data.sourceTeamId)
+        )
+      )
       .limit(1);
 
     if (!sourceItem) {
       throw new Error("Item not found for team");
     }
+
+    await assertItemIsAtSourceLocation(tx, sourceItem, data.sourceLocationId);
 
     const sourceCurrentStock = sourceItem.currentStock || 0;
     if (sourceCurrentStock < data.quantity) {
@@ -211,7 +276,10 @@ async function createInterTeamTransferTransaction(data: {
       .select()
       .from(locations)
       .where(
-        and(eq(locations.teamId, data.destinationTeamId), eq(locations.name, "Default Location"))
+        and(
+          eq(locations.teamId, data.destinationTeamId),
+          eq(locations.name, "Default Location")
+        )
       )
       .limit(1);
 
@@ -235,7 +303,10 @@ async function createInterTeamTransferTransaction(data: {
             .select()
             .from(items)
             .where(
-              and(eq(items.teamId, data.destinationTeamId), eq(items.barcode, sourceItem.barcode))
+              and(
+                eq(items.teamId, data.destinationTeamId),
+                eq(items.barcode, sourceItem.barcode)
+              )
             )
             .limit(1)
         )[0]
@@ -301,7 +372,10 @@ async function createInterTeamTransferTransaction(data: {
 
     await tx
       .update(stockTransactions)
-      .set({ linkedTransactionId: destinationTransaction.id, updatedAt: new Date() })
+      .set({
+        linkedTransactionId: destinationTransaction.id,
+        updatedAt: new Date(),
+      })
       .where(eq(stockTransactions.id, sourceTransaction.id));
 
     await tx
@@ -417,10 +491,16 @@ export async function getTeamStockTransactionsWithDetails(
       ? sqlite.select().from(users).where(inArray(users.id, userIds))
       : Promise.resolve([]),
     allLocationIds.length > 0
-      ? sqlite.select().from(locations).where(inArray(locations.id, allLocationIds))
+      ? sqlite
+          .select()
+          .from(locations)
+          .where(inArray(locations.id, allLocationIds))
       : Promise.resolve([]),
     counterpartyTeamIds.length > 0
-      ? sqlite.select().from(teams).where(inArray(teams.id, counterpartyTeamIds))
+      ? sqlite
+          .select()
+          .from(teams)
+          .where(inArray(teams.id, counterpartyTeamIds))
       : Promise.resolve([]),
   ]);
 
@@ -436,25 +516,32 @@ export async function getTeamStockTransactionsWithDetails(
     transactions = allTransactions.filter((t) => {
       const item = itemsMap.get(t.itemId);
       const user = usersMap.get(t.userId);
-      const sourceLoc = t.sourceLocationId ? locationsMap.get(t.sourceLocationId) : null;
-      const destLoc = t.destinationLocationId ? locationsMap.get(t.destinationLocationId) : null;
-      const counterpartyTeam = t.counterpartyTeamId ? teamsMap.get(t.counterpartyTeamId) : null;
+      const sourceLoc = t.sourceLocationId
+        ? locationsMap.get(t.sourceLocationId)
+        : null;
+      const destLoc = t.destinationLocationId
+        ? locationsMap.get(t.destinationLocationId)
+        : null;
+      const counterpartyTeam = t.counterpartyTeamId
+        ? teamsMap.get(t.counterpartyTeamId)
+        : null;
 
       const matchesSearch =
         !normalizedSearch ||
         Boolean(
           item?.name?.toLowerCase().includes(normalizedSearch) ||
-            item?.sku?.toLowerCase().includes(normalizedSearch) ||
-            item?.barcode?.toLowerCase().includes(normalizedSearch) ||
-            user?.email?.toLowerCase().includes(normalizedSearch) ||
-            sourceLoc?.name?.toLowerCase().includes(normalizedSearch) ||
-            destLoc?.name?.toLowerCase().includes(normalizedSearch) ||
-            t.destinationLabel?.toLowerCase().includes(normalizedSearch) ||
-            t.transferGroupId?.toLowerCase().includes(normalizedSearch) ||
-            counterpartyTeam?.name?.toLowerCase().includes(normalizedSearch)
+          item?.sku?.toLowerCase().includes(normalizedSearch) ||
+          item?.barcode?.toLowerCase().includes(normalizedSearch) ||
+          user?.email?.toLowerCase().includes(normalizedSearch) ||
+          sourceLoc?.name?.toLowerCase().includes(normalizedSearch) ||
+          destLoc?.name?.toLowerCase().includes(normalizedSearch) ||
+          t.destinationLabel?.toLowerCase().includes(normalizedSearch) ||
+          t.transferGroupId?.toLowerCase().includes(normalizedSearch) ||
+          counterpartyTeam?.name?.toLowerCase().includes(normalizedSearch)
         );
       const matchesSku =
-        !normalizedSku || Boolean(item?.sku?.toLowerCase().includes(normalizedSku));
+        !normalizedSku ||
+        Boolean(item?.sku?.toLowerCase().includes(normalizedSku));
 
       return matchesSearch && matchesSku;
     });
@@ -463,9 +550,15 @@ export async function getTeamStockTransactionsWithDetails(
   return transactions.map((t) => {
     const item = itemsMap.get(t.itemId);
     const user = usersMap.get(t.userId);
-    const sourceLoc = t.sourceLocationId ? locationsMap.get(t.sourceLocationId) : null;
-    const destLoc = t.destinationLocationId ? locationsMap.get(t.destinationLocationId) : null;
-    const counterpartyTeam = t.counterpartyTeamId ? teamsMap.get(t.counterpartyTeamId) : null;
+    const sourceLoc = t.sourceLocationId
+      ? locationsMap.get(t.sourceLocationId)
+      : null;
+    const destLoc = t.destinationLocationId
+      ? locationsMap.get(t.destinationLocationId)
+      : null;
+    const counterpartyTeam = t.counterpartyTeamId
+      ? teamsMap.get(t.counterpartyTeamId)
+      : null;
 
     return {
       id: t.id,
@@ -523,7 +616,9 @@ export async function getTeamStockTransactionsWithDetails(
 /**
  * Get stock transactions for a team (simple version)
  */
-export async function getTeamStockTransactions(teamId: number): Promise<StockTransaction[]> {
+export async function getTeamStockTransactions(
+  teamId: number
+): Promise<StockTransaction[]> {
   return await sqlite
     .select()
     .from(stockTransactions)
@@ -541,7 +636,12 @@ export async function getItemStockTransactionsWithDetails(
   const allTransactions = await sqlite
     .select()
     .from(stockTransactions)
-    .where(and(eq(stockTransactions.teamId, teamId), eq(stockTransactions.itemId, itemId)))
+    .where(
+      and(
+        eq(stockTransactions.teamId, teamId),
+        eq(stockTransactions.itemId, itemId)
+      )
+    )
     .orderBy(desc(stockTransactions.createdAt));
 
   const itemIds = [...new Set(allTransactions.map((t) => t.itemId))];
@@ -570,10 +670,16 @@ export async function getItemStockTransactionsWithDetails(
       ? sqlite.select().from(users).where(inArray(users.id, userIds))
       : Promise.resolve([]),
     allLocationIds.length > 0
-      ? sqlite.select().from(locations).where(inArray(locations.id, allLocationIds))
+      ? sqlite
+          .select()
+          .from(locations)
+          .where(inArray(locations.id, allLocationIds))
       : Promise.resolve([]),
     counterpartyTeamIds.length > 0
-      ? sqlite.select().from(teams).where(inArray(teams.id, counterpartyTeamIds))
+      ? sqlite
+          .select()
+          .from(teams)
+          .where(inArray(teams.id, counterpartyTeamIds))
       : Promise.resolve([]),
   ]);
 
@@ -585,9 +691,15 @@ export async function getItemStockTransactionsWithDetails(
   return allTransactions.map((t) => {
     const item = itemsMap.get(t.itemId);
     const user = usersMap.get(t.userId);
-    const sourceLoc = t.sourceLocationId ? locationsMap.get(t.sourceLocationId) : null;
-    const destLoc = t.destinationLocationId ? locationsMap.get(t.destinationLocationId) : null;
-    const counterpartyTeam = t.counterpartyTeamId ? teamsMap.get(t.counterpartyTeamId) : null;
+    const sourceLoc = t.sourceLocationId
+      ? locationsMap.get(t.sourceLocationId)
+      : null;
+    const destLoc = t.destinationLocationId
+      ? locationsMap.get(t.destinationLocationId)
+      : null;
+    const counterpartyTeam = t.counterpartyTeamId
+      ? teamsMap.get(t.counterpartyTeamId)
+      : null;
 
     return {
       id: t.id,
@@ -610,8 +722,12 @@ export async function getItemStockTransactionsWithDetails(
         ? { id: item.id, name: item.name, sku: item.sku, barcode: item.barcode }
         : null,
       user: user ? { id: user.id, email: user.email } : null,
-      sourceLocation: sourceLoc ? { id: sourceLoc.id, name: sourceLoc.name } : null,
-      destinationLocation: destLoc ? { id: destLoc.id, name: destLoc.name } : null,
+      sourceLocation: sourceLoc
+        ? { id: sourceLoc.id, name: sourceLoc.name }
+        : null,
+      destinationLocation: destLoc
+        ? { id: destLoc.id, name: destLoc.name }
+        : null,
       counterpartyTeam: counterpartyTeam
         ? {
             id: counterpartyTeam.id,
@@ -633,7 +749,12 @@ export async function deleteStockTransaction(
     const [transaction] = await tx
       .select()
       .from(stockTransactions)
-      .where(and(eq(stockTransactions.id, transactionId), eq(stockTransactions.teamId, teamId)))
+      .where(
+        and(
+          eq(stockTransactions.id, transactionId),
+          eq(stockTransactions.teamId, teamId)
+        )
+      )
       .limit(1);
 
     if (!transaction) {
@@ -678,5 +799,10 @@ export async function deleteItemStockTransactions(
 ): Promise<void> {
   await sqlite
     .delete(stockTransactions)
-    .where(and(eq(stockTransactions.teamId, teamId), eq(stockTransactions.itemId, itemId)));
+    .where(
+      and(
+        eq(stockTransactions.teamId, teamId),
+        eq(stockTransactions.itemId, itemId)
+      )
+    );
 }
