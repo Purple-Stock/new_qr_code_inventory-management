@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatItemNotAtSourceMessage,
+  interpolateTemplate,
   itemIsAtSourceLocation,
 } from "@/app/teams/[id]/move/_utils/itemAtSourceLocation";
 
@@ -33,5 +34,13 @@ describe("formatItemNotAtSourceMessage", () => {
     expect(message).toBe(
       "Cannot move SONY ZVE-10 B from Graúna because it is currently at Ariel."
     );
+  });
+});
+
+describe("interpolateTemplate", () => {
+  it("replaces placeholders without String.replaceAll", () => {
+    expect(
+      interpolateTemplate("Currently at {location}", { location: "Ariel" })
+    ).toBe("Currently at Ariel");
   });
 });

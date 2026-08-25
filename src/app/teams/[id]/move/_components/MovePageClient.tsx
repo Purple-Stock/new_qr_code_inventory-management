@@ -33,6 +33,7 @@ import { createMoveAction } from "../_actions/createStockTransaction";
 import { parseDecimalInput } from "@/lib/utils/parse-decimal-input";
 import {
   formatItemNotAtSourceMessage,
+  interpolateTemplate,
   itemIsAtSourceLocation,
 } from "../_utils/itemAtSourceLocation";
 import type {
@@ -787,10 +788,9 @@ export function MovePageClient({
                       )}
                       {!atSource && (
                         <div className="text-xs text-amber-800 mt-1">
-                          {t.move.currentlyAtLocation.replaceAll(
-                            "{location}",
-                            item.locationName || t.move.unknownLocation
-                          )}
+                          {interpolateTemplate(t.move.currentlyAtLocation, {
+                            location: item.locationName || t.move.unknownLocation,
+                          })}
                         </div>
                       )}
                     </button>
