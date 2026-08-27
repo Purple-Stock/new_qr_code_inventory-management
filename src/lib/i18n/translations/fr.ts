@@ -487,6 +487,12 @@ export const fr = {
     cameraError: "Impossible d'accéder à la caméra. Veuillez vérifier les permissions.",
     imageError: "Impossible de lire le QR code de l'image. Veuillez essayer une autre image.",
     sameLocationError: "Les emplacements source et de destination doivent être différents",
+    currentlyAtLocation: "Actuellement à {location}",
+    itemNotAtSourceLocation:
+      "Impossible de déplacer {item} depuis {source} car il se trouve actuellement à {actual}. Déplacez-le depuis {actual}, ou ramenez-le d'abord à {source}.",
+    itemNotAtSourceLocationUnknown:
+      "Impossible de déplacer {item} depuis {source} car il n'est pas à cet emplacement.",
+    unknownLocation: "un emplacement inconnu",
     partialMoveError: "Certains articles n'ont pas pu être déplacés. Veuillez réessayer.",
     partialTeamTransferError:
       "Certains articles n'ont pas pu être transférés entre équipes. Veuillez réessayer.",
@@ -759,6 +765,12 @@ export const fr = {
     priceLabel: "Prix",
     typeLabel: "Type",
     brandLabel: "Marque",
+    maximumStockLabel: "Quantité maximale",
+    maximumStockHelp:
+      "Laissez vide pour illimité. Utilisez 1 pour un article unique.",
+    maximumStockPlaceholder: "Sans limite",
+    maximumStockInvalid:
+      "La quantité maximale doit être un nombre supérieur ou égal à zéro",
     customFieldsTitle: "Champs personnalisés",
     customFieldPlaceholder: "Saisissez la valeur",
     generate: "Générer",
@@ -790,6 +802,9 @@ export const fr = {
     tourPricingDesc: "Renseignez le coût et le prix de vente pour suivre la marge et la valeur de l'article.",
     tourAttributesTitle: "Type et marque",
     tourAttributesDesc: "Utilisez ces attributs optionnels pour organiser les filtres et rapports.",
+    tourMaximumStockTitle: "Quantité maximale",
+    tourMaximumStockDesc:
+      "Définissez combien d'unités cet article peut avoir. Laissez vide pour un stock illimité, ou saisissez 1 pour une pièce unique.",
     tourCustomFieldsTitle: "Champs personnalisés",
     tourCustomFieldsDesc:
       "Renseignez les champs personnalisés de l'équipe, comme les compteurs de l'article.",

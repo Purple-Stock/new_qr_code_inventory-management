@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { formatMaximumStockInput } from "@/lib/item-maximum-stock";
 import { getTeamItemEditData } from "@/lib/services/team-dashboard";
 import EditItemPageClient from "./_components/EditItemPageClient";
 
@@ -15,7 +16,10 @@ export default async function EditItemPage({ params }: PageProps) {
     notFound();
   }
 
-  const { team, item, subscriptionRequired } = await getTeamItemEditData(teamId, itemId);
+  const { team, item, subscriptionRequired } = await getTeamItemEditData(
+    teamId,
+    itemId
+  );
 
   if (subscriptionRequired) {
     redirect(`/teams/${teamId}/settings?billing=required`);
@@ -40,6 +44,7 @@ export default async function EditItemPage({ params }: PageProps) {
         brand: item.brand ?? "",
         photoData: item.photoData ?? "",
         customFields: item.customFields ?? {},
+        maximumStock: formatMaximumStockInput(item.maximumStock),
       }}
     />
   );

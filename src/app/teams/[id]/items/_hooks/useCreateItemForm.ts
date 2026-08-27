@@ -5,6 +5,7 @@ import { fetchApiJsonResult } from "@/lib/api-client";
 import { useTranslation } from "@/lib/i18n";
 import type { ItemDto } from "@/lib/services/types";
 import type { ItemFormValues } from "../_components/ItemForm";
+import { buildItemWriteBody } from "../_lib/item-write-body";
 
 export function createEmptyItemFormValues(
   overrides: Partial<ItemFormValues> = {}
@@ -21,6 +22,7 @@ export function createEmptyItemFormValues(
     brand: "",
     photoData: "",
     customFields: {},
+    maximumStock: "",
   };
 
   return {
@@ -95,33 +97,23 @@ export function useCreateItemForm({
       return;
     }
 
+    const payload = buildItemWriteBody(form);
+    if (!payload.ok) {
+      setError(t.itemForm.maximumStockInvalid);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const customFields = Object.fromEntries(
-        Object.entries(form.customFields)
-          .map(([key, value]) => [key, value.trim()])
-          .filter(([, value]) => value.length > 0)
-      );
-
-      const result = await fetchApiJsonResult<{ message: string; item: ItemDto }>(
-        `/api/teams/${teamId}/items`,
-        {
-          method: "POST",
-          body: {
-            name: form.name.trim(),
-            sku: form.sku.trim() || null,
-            barcode: form.barcode.trim(),
-            cost: form.cost ? parseFloat(form.cost) : null,
-            price: form.price ? parseFloat(form.price) : null,
-            itemType: form.itemType.trim() || null,
-            brand: form.brand.trim() || null,
-            photoData: form.photoData || null,
-            customFields: Object.keys(customFields).length > 0 ? customFields : null,
-          },
-          fallbackError: t.itemForm.unexpectedError,
-        }
-      );
+      const result = await fetchApiJsonResult<{
+        message: string;
+        item: ItemDto;
+      }>(`/api/teams/${teamId}/items`, {
+        method: "POST",
+        body: payload.body,
+        fallbackError: t.itemForm.unexpectedError,
+      });
 
       if (!result.ok) {
         setError(result.error.error || t.itemForm.unexpectedError);

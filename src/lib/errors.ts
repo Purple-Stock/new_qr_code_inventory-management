@@ -11,6 +11,9 @@ export const ERROR_CODES = {
   TEAM_NOT_FOUND: "TEAM_NOT_FOUND",
   ITEM_NOT_FOUND: "ITEM_NOT_FOUND",
   LOCATION_NOT_FOUND: "LOCATION_NOT_FOUND",
+  ITEM_NOT_AT_SOURCE_LOCATION: "ITEM_NOT_AT_SOURCE_LOCATION",
+  ITEM_STOCK_AT_ANOTHER_LOCATION: "ITEM_STOCK_AT_ANOTHER_LOCATION",
+  ITEM_MAXIMUM_STOCK_EXCEEDED: "ITEM_MAXIMUM_STOCK_EXCEEDED",
   EMAIL_ALREADY_IN_USE: "EMAIL_ALREADY_IN_USE",
   TEAM_MEMBER_NOT_FOUND: "TEAM_MEMBER_NOT_FOUND",
   LAST_ADMIN_CANNOT_BE_REMOVED: "LAST_ADMIN_CANNOT_BE_REMOVED",
@@ -46,6 +49,9 @@ const ERROR_MESSAGES: Record<ErrorCode, string> = {
   TEAM_NOT_FOUND: "Team not found",
   ITEM_NOT_FOUND: "Item not found",
   LOCATION_NOT_FOUND: "Location not found",
+  ITEM_NOT_AT_SOURCE_LOCATION: "Item is not at the selected source location",
+  ITEM_STOCK_AT_ANOTHER_LOCATION: "Item stock is currently at another location",
+  ITEM_MAXIMUM_STOCK_EXCEEDED: "Item exceeds its maximum quantity",
   EMAIL_ALREADY_IN_USE: "Email already in use",
   TEAM_MEMBER_NOT_FOUND: "Team member not found",
   LAST_ADMIN_CANNOT_BE_REMOVED: "Last admin cannot be removed",
@@ -77,9 +83,11 @@ export function errorPayload(
 }
 
 export function authErrorToCode(error: string): ErrorCode {
-  if (error === "User not authenticated") return ERROR_CODES.USER_NOT_AUTHENTICATED;
+  if (error === "User not authenticated")
+    return ERROR_CODES.USER_NOT_AUTHENTICATED;
   if (error === "Team not found") return ERROR_CODES.TEAM_NOT_FOUND;
   if (error === "Forbidden") return ERROR_CODES.FORBIDDEN;
-  if (error === "Insufficient permissions") return ERROR_CODES.INSUFFICIENT_PERMISSIONS;
+  if (error === "Insufficient permissions")
+    return ERROR_CODES.INSUFFICIENT_PERMISSIONS;
   return ERROR_CODES.INTERNAL_ERROR;
 }

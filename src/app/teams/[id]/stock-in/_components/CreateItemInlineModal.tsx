@@ -5,7 +5,10 @@ import { X, PackagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
 import type { ItemDto, TeamDto } from "@/lib/services/types";
-import { ItemForm, type ItemFormValues } from "../../items/_components/ItemForm";
+import {
+  ItemForm,
+  type ItemFormValues,
+} from "../../items/_components/ItemForm";
 import { useCreateItemForm } from "../../items/_hooks/useCreateItemForm";
 
 interface CreateItemInlineModalProps {
@@ -16,7 +19,10 @@ interface CreateItemInlineModalProps {
   onSuccess: (item: ItemDto) => Promise<void> | void;
 }
 
-type CreateItemInlineModalContentProps = Omit<CreateItemInlineModalProps, "isOpen">;
+type CreateItemInlineModalContentProps = Omit<
+  CreateItemInlineModalProps,
+  "isOpen"
+>;
 
 function CreateItemInlineModalContent({
   team,

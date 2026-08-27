@@ -487,6 +487,12 @@ export const en = {
     cameraError: "Could not access camera. Please check permissions.",
     imageError: "Could not read QR code from image. Please try another image.",
     sameLocationError: "Source and destination locations must be different",
+    currentlyAtLocation: "Currently at {location}",
+    itemNotAtSourceLocation:
+      "Cannot move {item} from {source} because it is currently at {actual}. Move it from {actual}, or return it to {source} first.",
+    itemNotAtSourceLocationUnknown:
+      "Cannot move {item} from {source} because it is not at that location.",
+    unknownLocation: "an unknown location",
     partialMoveError: "Some items could not be moved. Please try again.",
     partialTeamTransferError:
       "Some items could not be transferred between teams. Please try again.",
@@ -759,6 +765,12 @@ export const en = {
     priceLabel: "Price",
     typeLabel: "Type",
     brandLabel: "Brand",
+    maximumStockLabel: "Maximum quantity",
+    maximumStockHelp:
+      "Leave blank for no limit. Use 1 for a unique item.",
+    maximumStockPlaceholder: "No limit",
+    maximumStockInvalid:
+      "Maximum quantity must be a number zero or greater",
     customFieldsTitle: "Custom item fields",
     customFieldPlaceholder: "Enter value",
     generate: "Generate",
@@ -790,6 +802,9 @@ export const en = {
     tourPricingDesc: "Fill in cost and selling price to track margins and item value.",
     tourAttributesTitle: "Type and brand",
     tourAttributesDesc: "Use optional attributes to organize catalog filters and reports.",
+    tourMaximumStockTitle: "Maximum quantity",
+    tourMaximumStockDesc:
+      "Set how many units this item can hold. Leave blank for unlimited stock, or type 1 for a unique piece.",
     tourCustomFieldsTitle: "Custom fields",
     tourCustomFieldsDesc:
       "Fill team custom fields, such as meter readings, to keep item data complete.",

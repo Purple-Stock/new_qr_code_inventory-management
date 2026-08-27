@@ -16,6 +16,7 @@ export interface ItemFormValues {
   brand: string;
   photoData: string;
   customFields: Record<string, string>;
+  maximumStock: string;
 }
 
 export interface CustomFieldSchemaEntry {
@@ -53,7 +54,9 @@ export function ItemForm({
   onGenerateSKU,
   onGenerateBarcode,
 }: ItemFormProps) {
-  const activeCustomFieldSchema = customFieldSchema.filter((field) => field.active);
+  const activeCustomFieldSchema = customFieldSchema.filter(
+    (field) => field.active
+  );
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -72,7 +75,9 @@ export function ItemForm({
   return (
     <form onSubmit={onSubmit} className="space-y-8">
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">{t.itemForm.itemInformation}</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">
+          {t.itemForm.itemInformation}
+        </h2>
         <div className="space-y-6">
           <div className="space-y-2" data-tour="tour-new-item-name">
             <Label htmlFor="name" className="text-gray-900">
@@ -114,7 +119,10 @@ export function ItemForm({
               >
                 {t.itemForm.generate}
               </button>
-              <button type="button" className="p-2 text-gray-400 hover:text-gray-600">
+              <button
+                type="button"
+                className="p-2 text-gray-400 hover:text-gray-600"
+              >
                 <QrCode className="h-5 w-5" />
               </button>
             </div>
@@ -143,7 +151,10 @@ export function ItemForm({
               >
                 {t.itemForm.generate}
               </button>
-              <button type="button" className="p-2 text-gray-400 hover:text-gray-600">
+              <button
+                type="button"
+                className="p-2 text-gray-400 hover:text-gray-600"
+              >
                 <QrCode className="h-5 w-5" />
               </button>
             </div>
@@ -178,7 +189,10 @@ export function ItemForm({
             ) : null}
           </div>
 
-          <div className="grid grid-cols-2 gap-4" data-tour="tour-new-item-pricing">
+          <div
+            className="grid grid-cols-2 gap-4"
+            data-tour="tour-new-item-pricing"
+          >
             <div className="space-y-2">
               <Label htmlFor="cost" className="text-gray-900">
                 {t.itemForm.costLabel}
@@ -190,7 +204,9 @@ export function ItemForm({
                   type="text"
                   placeholder="0.00"
                   value={values.cost}
-                  onChange={(e) => onValueChange("cost", e.target.value.replace(/[^\d.]/g, ""))}
+                  onChange={(e) =>
+                    onValueChange("cost", e.target.value.replace(/[^\d.]/g, ""))
+                  }
                   className="w-full pl-10"
                 />
               </div>
@@ -206,7 +222,12 @@ export function ItemForm({
                   type="text"
                   placeholder="0.00"
                   value={values.price}
-                  onChange={(e) => onValueChange("price", e.target.value.replace(/[^\d.]/g, ""))}
+                  onChange={(e) =>
+                    onValueChange(
+                      "price",
+                      e.target.value.replace(/[^\d.]/g, "")
+                    )
+                  }
                   className="w-full pl-10"
                 />
               </div>
@@ -215,8 +236,13 @@ export function ItemForm({
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm p-6" data-tour="tour-new-item-attributes">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">{t.itemForm.itemAttributes}</h2>
+      <div
+        className="bg-white rounded-lg shadow-sm p-6"
+        data-tour="tour-new-item-attributes"
+      >
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">
+          {t.itemForm.itemAttributes}
+        </h2>
         <div className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="itemType" className="text-gray-900">
@@ -250,18 +276,44 @@ export function ItemForm({
               />
             </div>
           </div>
+          <div className="space-y-2" data-tour="tour-new-item-maximum-stock">
+            <Label htmlFor="maximumStock" className="text-gray-900">
+              {t.itemForm.maximumStockLabel}
+            </Label>
+            <Input
+              id="maximumStock"
+              type="number"
+              min="0"
+              step="1"
+              placeholder={t.itemForm.maximumStockPlaceholder}
+              value={values.maximumStock}
+              onChange={(event) =>
+                onValueChange("maximumStock", event.target.value)
+              }
+              className="w-full"
+            />
+            <p className="text-sm text-gray-500">
+              {t.itemForm.maximumStockHelp}
+            </p>
+          </div>
         </div>
       </div>
 
       {activeCustomFieldSchema.length > 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-6" data-tour="tour-new-item-custom-fields">
+        <div
+          className="bg-white rounded-lg shadow-sm p-6"
+          data-tour="tour-new-item-custom-fields"
+        >
           <h2 className="text-xl font-semibold text-gray-900 mb-6">
             {t.itemForm.customFieldsTitle}
           </h2>
           <div className="space-y-4">
             {activeCustomFieldSchema.map((field) => (
               <div key={field.key} className="space-y-2">
-                <Label htmlFor={`custom-field-${field.key}`} className="text-gray-900">
+                <Label
+                  htmlFor={`custom-field-${field.key}`}
+                  className="text-gray-900"
+                >
                   {field.label}
                 </Label>
                 <Input
@@ -269,7 +321,9 @@ export function ItemForm({
                   type="text"
                   placeholder={t.itemForm.customFieldPlaceholder}
                   value={values.customFields[field.key] ?? ""}
-                  onChange={(e) => onCustomFieldChange(field.key, e.target.value)}
+                  onChange={(e) =>
+                    onCustomFieldChange(field.key, e.target.value)
+                  }
                   className="w-full"
                 />
               </div>
@@ -278,7 +332,10 @@ export function ItemForm({
         </div>
       ) : null}
 
-      <div className="flex items-center gap-4 pt-4" data-tour="tour-new-item-submit">
+      <div
+        className="flex items-center gap-4 pt-4"
+        data-tour="tour-new-item-submit"
+      >
         <Button
           type="submit"
           disabled={isLoading}
@@ -289,8 +346,8 @@ export function ItemForm({
               ? t.itemForm.creating
               : t.itemForm.createAction
             : isLoading
-            ? t.itemForm.updating
-            : t.itemForm.updateAction}
+              ? t.itemForm.updating
+              : t.itemForm.updateAction}
         </Button>
         {cancelHref ? (
           <Link href={cancelHref}>

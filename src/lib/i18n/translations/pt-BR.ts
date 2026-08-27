@@ -487,6 +487,12 @@ export const ptBR = {
     cameraError: "Não foi possível acessar a câmera. Verifique as permissões.",
     imageError: "Não foi possível ler o QR code da imagem. Tente outra imagem.",
     sameLocationError: "As localizações de origem e destino devem ser diferentes",
+    currentlyAtLocation: "Está em {location}",
+    itemNotAtSourceLocation:
+      "Não é possível mover {item} de {source} porque o item está em {actual}. Mova a partir de {actual}, ou devolva para {source} primeiro.",
+    itemNotAtSourceLocationUnknown:
+      "Não é possível mover {item} de {source} porque o item não está nessa localização.",
+    unknownLocation: "uma localização desconhecida",
     partialMoveError: "Alguns itens não puderam ser movidos. Tente novamente.",
     partialTeamTransferError:
       "Alguns itens não puderam ser transferidos entre times. Tente novamente.",
@@ -759,6 +765,12 @@ export const ptBR = {
     priceLabel: "Preço",
     typeLabel: "Tipo",
     brandLabel: "Marca",
+    maximumStockLabel: "Quantidade máxima",
+    maximumStockHelp:
+      "Deixe em branco para sem limite. Use 1 para item único.",
+    maximumStockPlaceholder: "Sem limite",
+    maximumStockInvalid:
+      "A quantidade máxima deve ser um número igual ou maior que zero",
     customFieldsTitle: "Campos customizáveis",
     customFieldPlaceholder: "Digite o valor",
     generate: "Gerar",
@@ -790,6 +802,9 @@ export const ptBR = {
     tourPricingDesc: "Preencha custo e preço de venda para acompanhar margem e valor do item.",
     tourAttributesTitle: "Tipo e marca",
     tourAttributesDesc: "Use atributos opcionais para organizar filtros e relatórios do catálogo.",
+    tourMaximumStockTitle: "Quantidade máxima",
+    tourMaximumStockDesc:
+      "Defina quantas unidades este item pode ter. Deixe em branco para estoque ilimitado, ou use 1 para peça única.",
     tourCustomFieldsTitle: "Campos customizáveis",
     tourCustomFieldsDesc: "Preencha os campos customizados do time, como medidores do item.",
     tourSubmitTitle: "Criar item",

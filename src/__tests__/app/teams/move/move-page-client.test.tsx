@@ -52,8 +52,12 @@ vi.mock("@/components/ui/select", () => ({
       {children}
     </button>
   ),
-  SelectValue: ({ placeholder }: { placeholder: string }) => <span>{placeholder}</span>,
-  SelectContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  SelectValue: ({ placeholder }: { placeholder: string }) => (
+    <span>{placeholder}</span>
+  ),
+  SelectContent: ({ children }: { children: ReactNode }) => (
+    <div>{children}</div>
+  ),
   SelectItem: ({ children, value }: { children: ReactNode; value: string }) => (
     <button type="button" data-value={value}>
       {children}
@@ -100,7 +104,8 @@ vi.mock("@/lib/i18n", () => ({
         selectSourceLocationFirst: "Select source",
         selectLocationsFirst: "Select locations",
         selectDestinationTeamFirst: "Select destination team",
-        noActiveDestinationTeams: "No destination teams with active subscription available for transfer",
+        noActiveDestinationTeams:
+          "No destination teams with active subscription available for transfer",
         manageTeamsCta: "Activate team for transfer",
         syncBillingCta: "Sync subscription",
         syncBillingInProgress: "Syncing...",
@@ -113,8 +118,10 @@ vi.mock("@/lib/i18n", () => ({
         stockMovedSuccess: "Moved",
         stockTransferredTeamSuccess: "Transferred",
         reviewTransferImpact: "Review impact",
-        confirmTeamTransferLabel: "I confirm this transfer with the details above",
-        confirmTeamTransferRequired: "Confirm inter-team transfer before submitting",
+        confirmTeamTransferLabel:
+          "I confirm this transfer with the details above",
+        confirmTeamTransferRequired:
+          "Confirm inter-team transfer before submitting",
         transferSummaryToTeamPrefix: "to team",
         moveError: "Move error",
         teamTransferError: "Team transfer error",
@@ -125,6 +132,12 @@ vi.mock("@/lib/i18n", () => ({
         currentStockLabel: "Current",
         totalItemsToMove: "Total",
         sameLocationError: "Same location",
+        currentlyAtLocation: "Currently at {location}",
+        itemNotAtSourceLocation:
+          "Cannot move {item} from {source} because it is currently at {actual}. Move it from {actual}, or return it to {source} first.",
+        itemNotAtSourceLocationUnknown:
+          "Cannot move {item} from {source} because it is not at that location.",
+        unknownLocation: "an unknown location",
         tourTutorialTitle: "",
         tourTutorialDesc: "",
         tourLocationsTitle: "",
@@ -181,33 +194,60 @@ describe("MovePageClient", () => {
     render(
       <MovePageClient
         team={{ id: 1, name: "Direct" }}
-        locations={[{ id: 10, name: "A" }, { id: 11, name: "B" }]}
+        locations={[
+          { id: 10, name: "A" },
+          { id: 11, name: "B" },
+        ]}
         destinationTeams={[{ id: 2, name: "DPS" }]}
         items={[]}
       />
     );
 
-    expect(screen.getByRole("button", { name: "Between locations" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Between teams" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Between locations" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Between teams" })
+    ).toBeInTheDocument();
   });
 
   it("submits inter-team transfer payload from team tab", async () => {
-    mockedCreateMoveAction.mockResolvedValue({ success: true, transaction: { id: 99 } } as any);
+    mockedCreateMoveAction.mockResolvedValue({
+      success: true,
+      transaction: { id: 99 },
+    } as any);
 
     render(
       <MovePageClient
         team={{ id: 1, name: "Direct" }}
-        locations={[{ id: 10, name: "A" }, { id: 11, name: "B" }]}
+        locations={[
+          { id: 10, name: "A" },
+          { id: 11, name: "B" },
+        ]}
         destinationTeams={[{ id: 2, name: "DPS" }]}
-        items={[{ id: 100, name: "Printer", sku: "PR-1", barcode: "ABC", currentStock: 5, locationName: "A" }]}
+        items={[
+          {
+            id: 100,
+            name: "Printer",
+            sku: "PR-1",
+            barcode: "ABC",
+            currentStock: 5,
+            locationId: 10,
+            locationName: "A",
+          },
+        ]}
       />
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Between teams" }));
-    fireEvent.change(screen.getByPlaceholderText("Search"), { target: { value: "Printer" } });
+    fireEvent.change(screen.getByPlaceholderText("Search"), {
+      target: { value: "Printer" },
+    });
     fireEvent.click(screen.getByRole("button", { name: /Printer/ }));
 
-    fireEvent.click(screen.getByRole("button", { name: "Transfer Between Teams" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Transfer Between Teams" })
+    );
 
     await waitFor(() => {
       expect(mockedCreateMoveAction).toHaveBeenCalled();
@@ -234,9 +274,13 @@ describe("MovePageClient", () => {
     fireEvent.click(screen.getByRole("button", { name: "Between teams" }));
 
     expect(
-      screen.getByText("No destination teams with active subscription available for transfer")
+      screen.getByText(
+        "No destination teams with active subscription available for transfer"
+      )
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Sync subscription" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Sync subscription" })
+    ).toBeInTheDocument();
   });
 
   it("syncs billing status and refreshes page when destination teams are unavailable", async () => {
@@ -253,10 +297,13 @@ describe("MovePageClient", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sync subscription" }));
 
     await waitFor(() => {
-      expect(mockedFetchApiJsonResult).toHaveBeenCalledWith("/api/teams/1/billing/sync", {
-        method: "POST",
-        fallbackError: "Could not sync subscription status",
-      });
+      expect(mockedFetchApiJsonResult).toHaveBeenCalledWith(
+        "/api/teams/1/billing/sync",
+        {
+          method: "POST",
+          fallbackError: "Could not sync subscription status",
+        }
+      );
       expect(refreshSpy).toHaveBeenCalledTimes(1);
     });
   });
@@ -273,17 +320,34 @@ describe("MovePageClient", () => {
     render(
       <MovePageClient
         team={{ id: 1, name: "Direct" }}
-        locations={[{ id: 10, name: "A" }, { id: 11, name: "B" }]}
+        locations={[
+          { id: 10, name: "A" },
+          { id: 11, name: "B" },
+        ]}
         destinationTeams={[{ id: 2, name: "DPS" }]}
-        items={[{ id: 100, name: "Printer", sku: "PR-1", barcode: "ABC", currentStock: 5, locationName: "A" }]}
+        items={[
+          {
+            id: 100,
+            name: "Printer",
+            sku: "PR-1",
+            barcode: "ABC",
+            currentStock: 5,
+            locationId: 10,
+            locationName: "A",
+          },
+        ]}
       />
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Between teams" }));
-    fireEvent.change(screen.getByPlaceholderText("Search"), { target: { value: "Printer" } });
+    fireEvent.change(screen.getByPlaceholderText("Search"), {
+      target: { value: "Printer" },
+    });
     fireEvent.click(screen.getByRole("button", { name: /Printer/ }));
 
-    const submitButton = screen.getByRole("button", { name: "Transfer Between Teams" });
+    const submitButton = screen.getByRole("button", {
+      name: "Transfer Between Teams",
+    });
     fireEvent.click(submitButton);
     fireEvent.click(submitButton);
 
@@ -304,16 +368,33 @@ describe("MovePageClient", () => {
     render(
       <MovePageClient
         team={{ id: 1, name: "Direct" }}
-        locations={[{ id: 10, name: "A" }, { id: 11, name: "B" }]}
+        locations={[
+          { id: 10, name: "A" },
+          { id: 11, name: "B" },
+        ]}
         destinationTeams={[{ id: 2, name: "DPS" }]}
-        items={[{ id: 100, name: "Printer", sku: "PR-1", barcode: "ABC", currentStock: 5, locationName: "A" }]}
+        items={[
+          {
+            id: 100,
+            name: "Printer",
+            sku: "PR-1",
+            barcode: "ABC",
+            currentStock: 5,
+            locationId: 10,
+            locationName: "A",
+          },
+        ]}
       />
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Between teams" }));
-    fireEvent.change(screen.getByPlaceholderText("Search"), { target: { value: "Printer" } });
+    fireEvent.change(screen.getByPlaceholderText("Search"), {
+      target: { value: "Printer" },
+    });
     fireEvent.click(screen.getByRole("button", { name: /Printer/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Transfer Between Teams" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Transfer Between Teams" })
+    );
 
     await waitFor(() => {
       expect(toastSpy).toHaveBeenCalledWith(
@@ -334,19 +415,38 @@ describe("MovePageClient", () => {
     render(
       <MovePageClient
         team={{ id: 1, name: "Direct" }}
-        locations={[{ id: 10, name: "A" }, { id: 11, name: "B" }]}
+        locations={[
+          { id: 10, name: "A" },
+          { id: 11, name: "B" },
+        ]}
         destinationTeams={[{ id: 2, name: "DPS" }]}
-        items={[{ id: 100, name: "Printer", sku: "PR-1", barcode: "ABC", currentStock: 5, locationName: "A" }]}
+        items={[
+          {
+            id: 100,
+            name: "Printer",
+            sku: "PR-1",
+            barcode: "ABC",
+            currentStock: 5,
+            locationId: 10,
+            locationName: "A",
+          },
+        ]}
       />
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Between teams" }));
-    fireEvent.change(screen.getByPlaceholderText("Search"), { target: { value: "Printer" } });
+    fireEvent.change(screen.getByPlaceholderText("Search"), {
+      target: { value: "Printer" },
+    });
     fireEvent.click(screen.getByRole("button", { name: /Printer/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Transfer Between Teams" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Transfer Between Teams" })
+    );
 
     await waitFor(() => {
-      expect(mockedFetchApiResult).toHaveBeenCalledWith("/api/auth/logout", { method: "POST" });
+      expect(mockedFetchApiResult).toHaveBeenCalledWith("/api/auth/logout", {
+        method: "POST",
+      });
       expect(window.localStorage.getItem("userId")).toBeNull();
       expect(window.localStorage.getItem("userRole")).toBeNull();
       expect(pushSpy).toHaveBeenCalledWith("/");
@@ -354,25 +454,45 @@ describe("MovePageClient", () => {
   });
 
   it("submits decimal move quantities without truncating them", async () => {
-    mockedCreateMoveAction.mockResolvedValue({ success: true, transaction: { id: 99 } } as any);
+    mockedCreateMoveAction.mockResolvedValue({
+      success: true,
+      transaction: { id: 99 },
+    } as any);
 
     render(
       <MovePageClient
         team={{ id: 1, name: "Direct" }}
-        locations={[{ id: 10, name: "A" }, { id: 11, name: "B" }]}
+        locations={[
+          { id: 10, name: "A" },
+          { id: 11, name: "B" },
+        ]}
         destinationTeams={[{ id: 2, name: "DPS" }]}
-        items={[{ id: 100, name: "Printer", sku: "PR-1", barcode: "ABC", currentStock: 5, locationName: "A" }]}
+        items={[
+          {
+            id: 100,
+            name: "Printer",
+            sku: "PR-1",
+            barcode: "ABC",
+            currentStock: 5,
+            locationId: 10,
+            locationName: "A",
+          },
+        ]}
       />
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Between teams" }));
-    fireEvent.change(screen.getByPlaceholderText("Search"), { target: { value: "Printer" } });
+    fireEvent.change(screen.getByPlaceholderText("Search"), {
+      target: { value: "Printer" },
+    });
     fireEvent.click(screen.getByRole("button", { name: /Printer/ }));
     fireEvent.change(screen.getByRole("spinbutton"), {
       target: { value: "0.5" },
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Transfer Between Teams" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Transfer Between Teams" })
+    );
 
     await waitFor(() => {
       expect(mockedCreateMoveAction).toHaveBeenCalledWith(
@@ -386,7 +506,10 @@ describe("MovePageClient", () => {
   });
 
   it("restores an unsaved draft from localStorage and clears it after success", async () => {
-    mockedCreateMoveAction.mockResolvedValue({ success: true, transaction: { id: 99 } } as any);
+    mockedCreateMoveAction.mockResolvedValue({
+      success: true,
+      transaction: { id: 99 },
+    } as any);
 
     window.localStorage.setItem(
       "inventory-draft:move:1",
@@ -403,6 +526,7 @@ describe("MovePageClient", () => {
               sku: "PR-1",
               barcode: "ABC",
               currentStock: 5,
+              locationId: 10,
               locationName: "A",
             },
             quantity: 2,
@@ -415,7 +539,10 @@ describe("MovePageClient", () => {
     render(
       <MovePageClient
         team={{ id: 1, name: "Direct" }}
-        locations={[{ id: 10, name: "A" }, { id: 11, name: "B" }]}
+        locations={[
+          { id: 10, name: "A" },
+          { id: 11, name: "B" },
+        ]}
         destinationTeams={[{ id: 2, name: "DPS" }]}
         items={[
           {
@@ -424,6 +551,7 @@ describe("MovePageClient", () => {
             sku: "PR-1",
             barcode: "ABC",
             currentStock: 5,
+            locationId: 10,
             locationName: "A",
           },
         ]}
@@ -434,7 +562,9 @@ describe("MovePageClient", () => {
     expect(screen.getByDisplayValue("2")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Notes...")).toHaveValue("draft move");
 
-    fireEvent.click(screen.getByRole("button", { name: "Transfer Between Teams" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Transfer Between Teams" })
+    );
 
     await waitFor(() => {
       expect(mockedCreateMoveAction).toHaveBeenCalledWith(
@@ -453,7 +583,10 @@ describe("MovePageClient", () => {
   });
 
   it("validates restored move drafts against current stock instead of stale saved stock", async () => {
-    mockedCreateMoveAction.mockResolvedValue({ success: true, transaction: { id: 99 } } as any);
+    mockedCreateMoveAction.mockResolvedValue({
+      success: true,
+      transaction: { id: 99 },
+    } as any);
 
     window.localStorage.setItem(
       "inventory-draft:move:1",
@@ -470,6 +603,7 @@ describe("MovePageClient", () => {
               sku: "PR-1",
               barcode: "ABC",
               currentStock: 99,
+              locationId: 10,
               locationName: "A",
             },
             quantity: 15,
@@ -482,7 +616,10 @@ describe("MovePageClient", () => {
     render(
       <MovePageClient
         team={{ id: 1, name: "Direct" }}
-        locations={[{ id: 10, name: "A" }, { id: 11, name: "B" }]}
+        locations={[
+          { id: 10, name: "A" },
+          { id: 11, name: "B" },
+        ]}
         destinationTeams={[{ id: 2, name: "DPS" }]}
         items={[
           {
@@ -491,13 +628,16 @@ describe("MovePageClient", () => {
             sku: "PR-1",
             barcode: "ABC",
             currentStock: 10,
+            locationId: 10,
             locationName: "A",
           },
         ]}
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Transfer Between Teams" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Transfer Between Teams" })
+    );
 
     await waitFor(() => {
       expect(toastSpy).toHaveBeenCalledWith(
@@ -506,6 +646,44 @@ describe("MovePageClient", () => {
         })
       );
     });
+    expect(mockedCreateMoveAction).not.toHaveBeenCalled();
+  });
+
+  it("shows an item at another location as unavailable instead of moving it", () => {
+    render(
+      <MovePageClient
+        team={{ id: 1, name: "Audiovisual" }}
+        locations={[
+          { id: 98, name: "Graúna" },
+          { id: 100, name: "Ariel" },
+          { id: 101, name: "Júnior" },
+        ]}
+        destinationTeams={[]}
+        items={[
+          {
+            id: 157,
+            name: "SONY ZVE-10 B",
+            sku: "SONY-ZVE-10-B",
+            barcode: "6584599408468",
+            currentStock: 1,
+            locationId: 100,
+            locationName: "Ariel",
+          },
+        ]}
+      />
+    );
+
+    fireEvent.change(screen.getByPlaceholderText("Search"), {
+      target: { value: "SONY" },
+    });
+
+    expect(
+      screen.getByRole("button", { name: /SONY ZVE-10 B/ })
+    ).toBeDisabled();
+    expect(screen.getByText("Currently at Ariel")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Move Stock" }));
+
     expect(mockedCreateMoveAction).not.toHaveBeenCalled();
   });
 });

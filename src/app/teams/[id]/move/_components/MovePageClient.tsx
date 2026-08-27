@@ -31,7 +31,18 @@ import { TeamLayout } from "@/components/shared/TeamLayout";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import { createMoveAction } from "../_actions/createStockTransaction";
 import { parseDecimalInput } from "@/lib/utils/parse-decimal-input";
-import type { DestinationTeam, Item, Location, Team, SelectedItem } from "../_types";
+import {
+  formatItemNotAtSourceMessage,
+  interpolateTemplate,
+  itemIsAtSourceLocation,
+} from "../_utils/itemAtSourceLocation";
+import type {
+  DestinationTeam,
+  Item,
+  Location,
+  Team,
+  SelectedItem,
+} from "../_types";
 
 interface MovePageClientProps {
   items: Item[];
@@ -49,7 +60,6 @@ interface MoveDraft {
   notes: string;
 }
 
-
 export function MovePageClient({
   items,
   locations,
@@ -59,7 +69,8 @@ export function MovePageClient({
   const router = useRouter();
   const { t } = useTranslation();
   const { toast } = useToast();
-  const defaultSourceLocation = locations.length > 0 ? locations[0].id.toString() : "";
+  const defaultSourceLocation =
+    locations.length > 0 ? locations[0].id.toString() : "";
   const [activeTab, setActiveTab] = useState<"location" | "team">("location");
   const [sourceLocation, setSourceLocation] = useState<string>(
     defaultSourceLocation
@@ -76,7 +87,8 @@ export function MovePageClient({
   const [hasLoadedDraft, setHasLoadedDraft] = useState(false);
   const draftStorageKey = `inventory-draft:move:${team.id}`;
   const hasDestinationTeams = destinationTeams.length > 0;
-  const isTeamTransferUnavailable = activeTab === "team" && !hasDestinationTeams;
+  const isTeamTransferUnavailable =
+    activeTab === "team" && !hasDestinationTeams;
   const tourSteps: TourStep[] = [
     {
       target: "tour-move-tutorial",
@@ -115,6 +127,23 @@ export function MovePageClient({
     },
   ];
 
+  const sourceLocationId = sourceLocation ? parseInt(sourceLocation, 10) : null;
+  const sourceLocationName =
+    locations.find((location) => location.id.toString() === sourceLocation)
+      ?.name || t.move.unknownLocation;
+
+  const itemNotAtSourceMessage = (item: Item) => {
+    const actualName = item.locationName || t.move.unknownLocation;
+    const template = item.locationId
+      ? t.move.itemNotAtSourceLocation
+      : t.move.itemNotAtSourceLocationUnknown;
+    return formatItemNotAtSourceMessage(template, {
+      item: item.name || t.items.unnamedItem,
+      source: sourceLocationName,
+      actual: actualName,
+    });
+  };
+
   const normalizedSearch = itemSearch.trim().toLowerCase();
   const hasItemFilters = normalizedSearch.length > 0;
 
@@ -122,8 +151,8 @@ export function MovePageClient({
     if (!hasItemFilters) return false;
     return Boolean(
       item.name?.toLowerCase().includes(normalizedSearch) ||
-        item.sku?.toLowerCase().includes(normalizedSearch) ||
-        item.barcode?.toLowerCase().includes(normalizedSearch)
+      item.sku?.toLowerCase().includes(normalizedSearch) ||
+      item.barcode?.toLowerCase().includes(normalizedSearch)
     );
   });
 
@@ -138,25 +167,46 @@ export function MovePageClient({
         (location) => location.id.toString() === draft.destinationLocation
       );
       const hasValidDestinationTeam = destinationTeams.some(
-        (destinationTeam) => destinationTeam.id.toString() === draft.destinationTeamId
+        (destinationTeam) =>
+          destinationTeam.id.toString() === draft.destinationTeamId
       );
       const nextActiveTab =
-        draft.activeTab === "team" && hasValidDestinationTeam ? "team" : "location";
+        draft.activeTab === "team" && hasValidDestinationTeam
+          ? "team"
+          : "location";
 
       setActiveTab(nextActiveTab);
-      setSourceLocation(hasValidSourceLocation ? draft.sourceLocation : defaultSourceLocation);
+      const nextSourceLocation = hasValidSourceLocation
+        ? draft.sourceLocation
+        : defaultSourceLocation;
+      const nextSourceLocationId = nextSourceLocation
+        ? parseInt(nextSourceLocation, 10)
+        : null;
+      setSourceLocation(nextSourceLocation);
       setDestinationLocation(
         nextActiveTab === "location" && hasValidDestinationLocation
           ? draft.destinationLocation
           : ""
       );
-      setDestinationTeamId(nextActiveTab === "team" ? draft.destinationTeamId : "");
-      setSelectedItems(reconcileDraftItems(draft.selectedItems, items));
+      setDestinationTeamId(
+        nextActiveTab === "team" ? draft.destinationTeamId : ""
+      );
+      setSelectedItems(
+        reconcileDraftItems(draft.selectedItems, items).filter((selectedItem) =>
+          itemIsAtSourceLocation(selectedItem.item, nextSourceLocationId)
+        )
+      );
       setNotes(draft.notes || "");
     }
 
     setHasLoadedDraft(true);
-  }, [defaultSourceLocation, destinationTeams, draftStorageKey, items, locations]);
+  }, [
+    defaultSourceLocation,
+    destinationTeams,
+    draftStorageKey,
+    items,
+    locations,
+  ]);
 
   useEffect(() => {
     if (!hasLoadedDraft) {
@@ -194,7 +244,26 @@ export function MovePageClient({
     sourceLocation,
   ]);
 
+  const handleSourceLocationChange = (value: string) => {
+    const nextSourceLocationId = value ? parseInt(value, 10) : null;
+    setSourceLocation(value);
+    setSelectedItems((current) =>
+      current.filter((selectedItem) =>
+        itemIsAtSourceLocation(selectedItem.item, nextSourceLocationId)
+      )
+    );
+  };
+
   const handleAddItem = (item: Item) => {
+    if (!itemIsAtSourceLocation(item, sourceLocationId)) {
+      toast({
+        variant: "destructive",
+        title: t.common.error,
+        description: itemNotAtSourceMessage(item),
+      });
+      return;
+    }
+
     const exists = selectedItems.find((si) => si.item.id === item.id);
     if (exists) {
       setSelectedItems(
@@ -212,6 +281,15 @@ export function MovePageClient({
     const foundItem = items.find((item) => item.barcode === barcode);
 
     if (foundItem) {
+      if (!itemIsAtSourceLocation(foundItem, sourceLocationId)) {
+        toast({
+          variant: "destructive",
+          title: t.common.error,
+          description: itemNotAtSourceMessage(foundItem),
+        });
+        return;
+      }
+
       handleAddItem(foundItem);
       toast({
         variant: "success",
@@ -240,7 +318,9 @@ export function MovePageClient({
       return;
     }
     setSelectedItems(
-      selectedItems.map((si) => (si.item.id === itemId ? { ...si, quantity } : si))
+      selectedItems.map((si) =>
+        si.item.id === itemId ? { ...si, quantity } : si
+      )
     );
   };
 
@@ -252,7 +332,10 @@ export function MovePageClient({
   const totalQuantity = selectedItems.reduce((sum, si) => sum + si.quantity, 0);
   const selectedDestinationTeam =
     activeTab === "team"
-      ? destinationTeams.find((destinationTeam) => destinationTeam.id.toString() === destinationTeamId)
+      ? destinationTeams.find(
+          (destinationTeam) =>
+            destinationTeam.id.toString() === destinationTeamId
+        )
       : null;
 
   const handleSubmit = async () => {
@@ -306,7 +389,9 @@ export function MovePageClient({
       return;
     }
 
-    const invalidItem = selectedItems.find((si) => !si.quantity || si.quantity <= 0);
+    const invalidItem = selectedItems.find(
+      (si) => !si.quantity || si.quantity <= 0
+    );
     if (invalidItem) {
       toast({
         variant: "destructive",
@@ -330,9 +415,21 @@ export function MovePageClient({
       return;
     }
 
+    const notAtSource = selectedItems.find(
+      (si) => !itemIsAtSourceLocation(si.item, sourceLocationId)
+    );
+    if (notAtSource) {
+      toast({
+        variant: "destructive",
+        title: t.common.error,
+        description: itemNotAtSourceMessage(notAtSource.item),
+      });
+      return;
+    }
+
     const batchTransferGroupId =
       activeTab === "team"
-        ? (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`)
+        ? globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`
         : null;
 
     if (activeTab === "team") {
@@ -358,7 +455,9 @@ export function MovePageClient({
           createMoveAction(team.id, {
             itemId: si.item.id,
             quantity: si.quantity,
-            sourceLocationId: sourceLocation ? parseInt(sourceLocation, 10) : null,
+            sourceLocationId: sourceLocation
+              ? parseInt(sourceLocation, 10)
+              : null,
             destinationLocationId:
               activeTab === "location" && destinationLocation
                 ? parseInt(destinationLocation, 10)
@@ -391,7 +490,9 @@ export function MovePageClient({
           title: t.common.error,
           description:
             firstError.error ||
-            (activeTab === "team" ? t.move.partialTeamTransferError : t.move.partialMoveError),
+            (activeTab === "team"
+              ? t.move.partialTeamTransferError
+              : t.move.partialMoveError),
         });
         return;
       }
@@ -401,9 +502,7 @@ export function MovePageClient({
         title: t.common.success,
         description:
           activeTab === "team"
-            ? `${t.move.stockTransferredTeamSuccess} ${selectedItems.length} ${
-                t.move.items.toLowerCase()
-              } (${totalQuantity}) ${t.move.transferSummaryToTeamPrefix} ${
+            ? `${t.move.stockTransferredTeamSuccess} ${selectedItems.length} ${t.move.items.toLowerCase()} (${totalQuantity}) ${t.move.transferSummaryToTeamPrefix} ${
                 selectedDestinationTeam?.name || "-"
               }.`
             : t.move.stockMovedSuccess,
@@ -421,7 +520,8 @@ export function MovePageClient({
       toast({
         variant: "destructive",
         title: t.common.error,
-        description: activeTab === "team" ? t.move.teamTransferError : t.move.moveError,
+        description:
+          activeTab === "team" ? t.move.teamTransferError : t.move.moveError,
       });
     } finally {
       setIsSubmitting(false);
@@ -435,13 +535,13 @@ export function MovePageClient({
 
     setIsSyncingBilling(true);
     try {
-      const result = await fetchApiJsonResult<{ synced: boolean; subscriptionStatus: string | null }>(
-        `/api/teams/${team.id}/billing/sync`,
-        {
-          method: "POST",
-          fallbackError: t.move.syncBillingError,
-        }
-      );
+      const result = await fetchApiJsonResult<{
+        synced: boolean;
+        subscriptionStatus: string | null;
+      }>(`/api/teams/${team.id}/billing/sync`, {
+        method: "POST",
+        fallbackError: t.move.syncBillingError,
+      });
 
       if (!result.ok) {
         toast({
@@ -477,7 +577,9 @@ export function MovePageClient({
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-blue-600 mb-1 sm:mb-2">
             {t.move.title}
           </h1>
-          <p className="text-sm sm:text-base md:text-lg text-gray-600">{t.move.subtitle}</p>
+          <p className="text-sm sm:text-base md:text-lg text-gray-600">
+            {t.move.subtitle}
+          </p>
         </div>
         <Button
           variant="outline"
@@ -524,12 +626,21 @@ export function MovePageClient({
         </div>
       </div>
 
-      <div className="mb-4 sm:mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4" data-tour="tour-move-locations">
+      <div
+        className="mb-4 sm:mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4"
+        data-tour="tour-move-locations"
+      >
         <div>
-          <Label htmlFor="sourceLocation" className="text-sm font-semibold text-gray-700 mb-2 block">
+          <Label
+            htmlFor="sourceLocation"
+            className="text-sm font-semibold text-gray-700 mb-2 block"
+          >
             {t.move.sourceLocationRequired}
           </Label>
-          <Select value={sourceLocation} onValueChange={setSourceLocation}>
+          <Select
+            value={sourceLocation}
+            onValueChange={handleSourceLocationChange}
+          >
             <SelectTrigger
               id="sourceLocation"
               className="w-full h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
@@ -553,7 +664,10 @@ export function MovePageClient({
             >
               {t.move.destinationLocationRequired}
             </Label>
-            <Select value={destinationLocation} onValueChange={setDestinationLocation}>
+            <Select
+              value={destinationLocation}
+              onValueChange={setDestinationLocation}
+            >
               <SelectTrigger
                 id="destinationLocation"
                 className="w-full h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
@@ -577,7 +691,10 @@ export function MovePageClient({
             >
               {t.move.destinationTeamRequired}
             </Label>
-            <Select value={destinationTeamId} onValueChange={setDestinationTeamId}>
+            <Select
+              value={destinationTeamId}
+              onValueChange={setDestinationTeamId}
+            >
               <SelectTrigger
                 id="destinationTeam"
                 className="w-full h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
@@ -586,7 +703,10 @@ export function MovePageClient({
               </SelectTrigger>
               <SelectContent>
                 {destinationTeams.map((destinationTeam) => (
-                  <SelectItem key={destinationTeam.id} value={destinationTeam.id.toString()}>
+                  <SelectItem
+                    key={destinationTeam.id}
+                    value={destinationTeam.id.toString()}
+                  >
                     {destinationTeam.name}
                   </SelectItem>
                 ))}
@@ -594,7 +714,9 @@ export function MovePageClient({
             </Select>
             {!hasDestinationTeams && (
               <div className="mt-2 space-y-2">
-                <p className="text-sm text-amber-700">{t.move.noActiveDestinationTeams}</p>
+                <p className="text-sm text-amber-700">
+                  {t.move.noActiveDestinationTeams}
+                </p>
                 <Button
                   type="button"
                   variant="outline"
@@ -602,7 +724,9 @@ export function MovePageClient({
                   disabled={isSyncingBilling}
                   className="h-8 px-3 text-xs"
                 >
-                  {isSyncingBilling ? t.move.syncBillingInProgress : t.move.syncBillingCta}
+                  {isSyncingBilling
+                    ? t.move.syncBillingInProgress
+                    : t.move.syncBillingCta}
                 </Button>
                 <Link
                   href="/team_selection"
@@ -617,7 +741,10 @@ export function MovePageClient({
       </div>
 
       <div className="mb-4 sm:mb-6" data-tour="tour-move-items">
-        <Label htmlFor="items" className="text-sm font-semibold text-gray-700 mb-2 block">
+        <Label
+          htmlFor="items"
+          className="text-sm font-semibold text-gray-700 mb-2 block"
+        >
           {t.move.items}
         </Label>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -633,16 +760,42 @@ export function MovePageClient({
             />
             {hasItemFilters && filteredItems.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {filteredItems.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => handleAddItem(item)}
-                    className="w-full text-left px-4 py-3 hover:bg-purple-50 transition-colors border-b border-gray-100 last:border-b-0"
-                  >
-                    <div className="font-medium text-gray-900">{item.name || t.items.unnamedItem}</div>
-                    {item.sku && <div className="text-xs text-gray-500">SKU: {item.sku}</div>}
-                  </button>
-                ))}
+                {filteredItems.map((item) => {
+                  const atSource = itemIsAtSourceLocation(
+                    item,
+                    sourceLocationId
+                  );
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      disabled={!atSource}
+                      onClick={() => handleAddItem(item)}
+                      className={`w-full text-left px-4 py-3 transition-colors border-b border-gray-100 last:border-b-0 ${
+                        atSource
+                          ? "hover:bg-purple-50"
+                          : "bg-amber-50 text-gray-500 cursor-not-allowed"
+                      }`}
+                    >
+                      <div className="font-medium text-gray-900">
+                        {item.name || t.items.unnamedItem}
+                      </div>
+                      {item.sku && (
+                        <div className="text-xs text-gray-500">
+                          SKU: {item.sku}
+                        </div>
+                      )}
+                      {!atSource && (
+                        <div className="text-xs text-amber-800 mt-1">
+                          {interpolateTemplate(t.move.currentlyAtLocation, {
+                            location: item.locationName || t.move.unknownLocation,
+                          })}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -694,7 +847,10 @@ export function MovePageClient({
             <tbody className="bg-white divide-y divide-gray-100">
               {selectedItems.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
+                  <td
+                    colSpan={5}
+                    className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm"
+                  >
                     {t.move.noItemsSelected}
                   </td>
                 </tr>
@@ -702,7 +858,10 @@ export function MovePageClient({
                 selectedItems.map((selectedItem) => {
                   const maxStock = selectedItem.item.currentStock ?? 0;
                   return (
-                    <tr key={selectedItem.item.id} className="hover:bg-purple-50/50 transition-colors">
+                    <tr
+                      key={selectedItem.item.id}
+                      className="hover:bg-purple-50/50 transition-colors"
+                    >
                       <td className="px-4 sm:px-6 py-4 sm:py-5">
                         <div className="text-sm font-bold text-gray-900">
                           {selectedItem.item.name || t.items.unnamedItem}
@@ -718,7 +877,10 @@ export function MovePageClient({
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() =>
-                              handleQuantityChange(selectedItem.item.id, selectedItem.quantity - 1)
+                              handleQuantityChange(
+                                selectedItem.item.id,
+                                selectedItem.quantity - 1
+                              )
                             }
                             className="p-1.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all"
                             disabled={selectedItem.quantity <= 1}
@@ -741,7 +903,10 @@ export function MovePageClient({
                           />
                           <button
                             onClick={() =>
-                              handleQuantityChange(selectedItem.item.id, selectedItem.quantity + 1)
+                              handleQuantityChange(
+                                selectedItem.item.id,
+                                selectedItem.quantity + 1
+                              )
                             }
                             className="p-1.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all"
                             disabled={selectedItem.quantity >= maxStock}
@@ -768,7 +933,10 @@ export function MovePageClient({
       </div>
 
       <div className="mb-4 sm:mb-6" data-tour="tour-move-notes">
-        <Label htmlFor="notes" className="text-sm font-semibold text-gray-700 mb-2 block">
+        <Label
+          htmlFor="notes"
+          className="text-sm font-semibold text-gray-700 mb-2 block"
+        >
           {t.move.notes}
         </Label>
         <Textarea
@@ -780,7 +948,10 @@ export function MovePageClient({
         />
       </div>
 
-      <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6" data-tour="tour-move-submit">
+      <div
+        className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6"
+        data-tour="tour-move-submit"
+      >
         {activeTab === "team" && (
           <div className="mb-4 rounded-lg border border-violet-200 bg-violet-50 p-3 text-sm text-violet-900">
             <p className="font-semibold">{t.move.reviewTransferImpact}</p>
@@ -791,7 +962,8 @@ export function MovePageClient({
               <ul className="mt-2 list-disc pl-5 text-xs text-violet-800">
                 {selectedItems.map((selectedItem) => (
                   <li key={selectedItem.item.id}>
-                    {(selectedItem.item.name || t.items.unnamedItem) + `: ${selectedItem.quantity}`}
+                    {(selectedItem.item.name || t.items.unnamedItem) +
+                      `: ${selectedItem.quantity}`}
                   </li>
                 ))}
               </ul>
@@ -827,7 +999,11 @@ export function MovePageClient({
         onScan={handleBarcodeScan}
       />
 
-      <TutorialTour isOpen={isTutorialOpen} onClose={() => setIsTutorialOpen(false)} steps={tourSteps} />
+      <TutorialTour
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+        steps={tourSteps}
+      />
     </TeamLayout>
   );
 }
