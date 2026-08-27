@@ -8,6 +8,7 @@ import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import { useTranslation } from "@/lib/i18n";
 import { fetchApiJsonResult } from "@/lib/api-client";
 import { ItemForm, type ItemFormValues } from "../../../_components/ItemForm";
+import { buildItemWriteBody } from "../../../_lib/item-write-body";
 
 interface EditItemPageClientProps {
   teamId: number;
@@ -72,6 +73,11 @@ export default function EditItemPageClient({
       description: t.itemForm.tourAttributesDesc,
     },
     {
+      target: "tour-new-item-maximum-stock",
+      title: t.itemForm.tourMaximumStockTitle,
+      description: t.itemForm.tourMaximumStockDesc,
+    },
+    {
       target: "tour-new-item-custom-fields",
       title: t.itemForm.tourCustomFieldsTitle,
       description: t.itemForm.tourCustomFieldsDesc,
@@ -90,10 +96,6 @@ export default function EditItemPageClient({
 
   const updateField = (field: keyof ItemFormValues, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const updateUniqueEquipment = (uniqueEquipment: boolean) => {
-    setForm((prev) => ({ ...prev, uniqueEquipment }));
   };
 
   const updateCustomField = (fieldKey: string, value: string) => {
@@ -133,32 +135,20 @@ export default function EditItemPageClient({
       return;
     }
 
+    const payload = buildItemWriteBody(form);
+    if (!payload.ok) {
+      setError(t.itemForm.maximumStockInvalid);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const customFields = Object.fromEntries(
-        Object.entries(form.customFields)
-          .map(([key, value]) => [key, value.trim()])
-          .filter(([, value]) => value.length > 0)
-      );
-
       const result = await fetchApiJsonResult(
         `/api/teams/${teamId}/items/${itemId}`,
         {
           method: "PUT",
-          body: {
-            name: form.name.trim(),
-            sku: form.sku.trim() || null,
-            barcode: form.barcode.trim(),
-            cost: form.cost ? parseFloat(form.cost) : null,
-            price: form.price ? parseFloat(form.price) : null,
-            itemType: form.itemType.trim() || null,
-            brand: form.brand.trim() || null,
-            photoData: form.photoData || null,
-            maximumStock: form.uniqueEquipment ? 1 : null,
-            customFields:
-              Object.keys(customFields).length > 0 ? customFields : null,
-          },
+          body: payload.body,
           fallbackError: t.itemForm.unexpectedError,
         }
       );
@@ -199,7 +189,6 @@ export default function EditItemPageClient({
             mode="edit"
             onSubmit={handleSubmit}
             onValueChange={updateField}
-            onUniqueEquipmentChange={updateUniqueEquipment}
             onCustomFieldChange={updateCustomField}
             onGenerateSKU={generateSKU}
             onGenerateBarcode={generateBarcode}

@@ -765,9 +765,12 @@ export const ptBR = {
     priceLabel: "Preço",
     typeLabel: "Tipo",
     brandLabel: "Marca",
-    uniqueEquipmentLabel: "Equipamento único",
-    uniqueEquipmentHelp:
-      "Fixa a quantidade máxima em 1 para rastrear esta peça e evitar cadastro duplicado.",
+    maximumStockLabel: "Quantidade máxima",
+    maximumStockHelp:
+      "Deixe em branco para sem limite. Use 1 para item único.",
+    maximumStockPlaceholder: "Sem limite",
+    maximumStockInvalid:
+      "A quantidade máxima deve ser um número igual ou maior que zero",
     customFieldsTitle: "Campos customizáveis",
     customFieldPlaceholder: "Digite o valor",
     generate: "Gerar",
@@ -799,6 +802,9 @@ export const ptBR = {
     tourPricingDesc: "Preencha custo e preço de venda para acompanhar margem e valor do item.",
     tourAttributesTitle: "Tipo e marca",
     tourAttributesDesc: "Use atributos opcionais para organizar filtros e relatórios do catálogo.",
+    tourMaximumStockTitle: "Quantidade máxima",
+    tourMaximumStockDesc:
+      "Defina quantas unidades este item pode ter. Deixe em branco para estoque ilimitado, ou use 1 para peça única.",
     tourCustomFieldsTitle: "Campos customizáveis",
     tourCustomFieldsDesc: "Preencha os campos customizados do time, como medidores do item.",
     tourSubmitTitle: "Criar item",

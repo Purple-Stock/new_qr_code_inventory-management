@@ -24,4 +24,16 @@ describe("item stock conflict messages", () => {
       })
     ).toMatch(/maximum quantity of 1/);
   });
+
+  it("tells the operator how to recover when a numeric cap is exceeded", () => {
+    expect(
+      buildItemMaximumStockExceededMessage({
+        itemName: "XLR Cable",
+        maximumStock: 5,
+        currentStock: 5,
+      })
+    ).toBe(
+      "Cannot increase XLR Cable beyond the maximum quantity of 5 (current stock: 5). Reduce the stock or raise the maximum quantity on the item."
+    );
+  });
 });

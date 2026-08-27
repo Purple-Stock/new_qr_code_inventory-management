@@ -765,9 +765,12 @@ export const en = {
     priceLabel: "Price",
     typeLabel: "Type",
     brandLabel: "Brand",
-    uniqueEquipmentLabel: "Unique equipment",
-    uniqueEquipmentHelp:
-      "Caps quantity at 1 so this physical unit can be tracked without duplicate stock.",
+    maximumStockLabel: "Maximum quantity",
+    maximumStockHelp:
+      "Leave blank for no limit. Use 1 for a unique item.",
+    maximumStockPlaceholder: "No limit",
+    maximumStockInvalid:
+      "Maximum quantity must be a number zero or greater",
     customFieldsTitle: "Custom item fields",
     customFieldPlaceholder: "Enter value",
     generate: "Generate",
@@ -799,6 +802,9 @@ export const en = {
     tourPricingDesc: "Fill in cost and selling price to track margins and item value.",
     tourAttributesTitle: "Type and brand",
     tourAttributesDesc: "Use optional attributes to organize catalog filters and reports.",
+    tourMaximumStockTitle: "Maximum quantity",
+    tourMaximumStockDesc:
+      "Set how many units this item can hold. Leave blank for unlimited stock, or type 1 for a unique piece.",
     tourCustomFieldsTitle: "Custom fields",
     tourCustomFieldsDesc:
       "Fill team custom fields, such as meter readings, to keep item data complete.",

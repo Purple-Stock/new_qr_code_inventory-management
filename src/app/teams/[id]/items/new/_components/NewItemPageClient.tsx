@@ -33,7 +33,6 @@ export default function NewItemPageClient({
     error,
     isLoading,
     updateField,
-    updateUniqueEquipment,
     updateCustomField,
     generateSKU,
     generateBarcode,
@@ -84,6 +83,11 @@ export default function NewItemPageClient({
       description: t.itemForm.tourAttributesDesc,
     },
     {
+      target: "tour-new-item-maximum-stock",
+      title: t.itemForm.tourMaximumStockTitle,
+      description: t.itemForm.tourMaximumStockDesc,
+    },
+    {
       target: "tour-new-item-custom-fields",
       title: t.itemForm.tourCustomFieldsTitle,
       description: t.itemForm.tourCustomFieldsDesc,
@@ -121,7 +125,6 @@ export default function NewItemPageClient({
             mode="create"
             onSubmit={handleSubmit}
             onValueChange={updateField}
-            onUniqueEquipmentChange={updateUniqueEquipment}
             onCustomFieldChange={updateCustomField}
             onGenerateSKU={generateSKU}
             onGenerateBarcode={generateBarcode}
