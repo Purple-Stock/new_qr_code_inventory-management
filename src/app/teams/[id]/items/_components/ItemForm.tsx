@@ -16,7 +16,7 @@ export interface ItemFormValues {
   brand: string;
   photoData: string;
   customFields: Record<string, string>;
-  uniqueEquipment: boolean;
+  maximumStock: string;
 }
 
 export interface CustomFieldSchemaEntry {
@@ -35,7 +35,6 @@ interface ItemFormProps {
   mode: "create" | "edit";
   onSubmit: (e: React.FormEvent) => void;
   onValueChange: (field: keyof ItemFormValues, value: string) => void;
-  onUniqueEquipmentChange: (uniqueEquipment: boolean) => void;
   onCustomFieldChange: (fieldKey: string, value: string) => void;
   onGenerateSKU: () => void;
   onGenerateBarcode: () => void;
@@ -51,7 +50,6 @@ export function ItemForm({
   mode,
   onSubmit,
   onValueChange,
-  onUniqueEquipmentChange,
   onCustomFieldChange,
   onGenerateSKU,
   onGenerateBarcode,
@@ -278,26 +276,25 @@ export function ItemForm({
               />
             </div>
           </div>
-          <div className="space-y-2" data-tour="tour-new-item-unique">
-            <label htmlFor="uniqueEquipment" className="flex items-start gap-3">
-              <input
-                id="uniqueEquipment"
-                type="checkbox"
-                checked={values.uniqueEquipment}
-                onChange={(event) =>
-                  onUniqueEquipmentChange(event.target.checked)
-                }
-                className="mt-1 h-4 w-4 rounded border-gray-300 text-[#6B21A8] focus:ring-[#6B21A8]"
-              />
-              <span>
-                <span className="block text-gray-900 font-medium">
-                  {t.itemForm.uniqueEquipmentLabel}
-                </span>
-                <span className="block text-sm text-gray-500">
-                  {t.itemForm.uniqueEquipmentHelp}
-                </span>
-              </span>
-            </label>
+          <div className="space-y-2" data-tour="tour-new-item-maximum-stock">
+            <Label htmlFor="maximumStock" className="text-gray-900">
+              {t.itemForm.maximumStockLabel}
+            </Label>
+            <Input
+              id="maximumStock"
+              type="number"
+              min="0"
+              step="1"
+              placeholder={t.itemForm.maximumStockPlaceholder}
+              value={values.maximumStock}
+              onChange={(event) =>
+                onValueChange("maximumStock", event.target.value)
+              }
+              className="w-full"
+            />
+            <p className="text-sm text-gray-500">
+              {t.itemForm.maximumStockHelp}
+            </p>
           </div>
         </div>
       </div>

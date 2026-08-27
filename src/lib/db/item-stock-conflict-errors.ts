@@ -17,7 +17,7 @@ export function buildItemMaximumStockExceededMessage(params: {
   currentStock: number;
 }): string {
   const itemName = params.itemName?.trim() || "this item";
-  return `Cannot increase ${itemName} beyond the maximum quantity of ${params.maximumStock} (current stock: ${params.currentStock}).`;
+  return `Cannot increase ${itemName} beyond the maximum quantity of ${params.maximumStock} (current stock: ${params.currentStock}). Reduce the stock or raise the maximum quantity on the item.`;
 }
 
 export class ItemStockAtAnotherLocationError extends Error {

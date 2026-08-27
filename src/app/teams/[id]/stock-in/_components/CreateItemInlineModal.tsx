@@ -36,7 +36,6 @@ function CreateItemInlineModalContent({
     error,
     isLoading,
     updateField,
-    updateUniqueEquipment,
     updateCustomField,
     generateSKU,
     generateBarcode,
@@ -114,7 +113,6 @@ function CreateItemInlineModalContent({
             mode="create"
             onSubmit={handleSubmit}
             onValueChange={updateField}
-            onUniqueEquipmentChange={updateUniqueEquipment}
             onCustomFieldChange={updateCustomField}
             onGenerateSKU={generateSKU}
             onGenerateBarcode={generateBarcode}
