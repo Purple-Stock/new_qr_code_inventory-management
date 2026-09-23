@@ -1,0 +1,7 @@
+{
+  "runtime": "node",
+  "node_version": "22",
+  "memory_max_mb": 768,
+  "build_command": "npm run build",
+  "start_command": "npx next start --hostname 127.0.0.1 --port ${PORT}"
+}
