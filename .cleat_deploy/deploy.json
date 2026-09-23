@@ -2,6 +2,6 @@
   "runtime": "node",
   "node_version": "22",
   "memory_max_mb": 768,
-  "build_command": "npm run build",
+  "build_command": "if [ -f /etc/purple-stock-app-develop/env ]; then TMP_ENV=/tmp/purple_stock_app_dev_build_env; sudo cp /etc/purple-stock-app-develop/env \"$TMP_ENV\"; sudo chown \"$(id -u):$(id -g)\" \"$TMP_ENV\"; chmod 600 \"$TMP_ENV\"; set -a; . \"$TMP_ENV\"; set +a; rm -f \"$TMP_ENV\"; fi; if [ -n \"${DATABASE_URL:-}\" ]; then npm run build; else echo 'DATABASE_URL missing; skipping next build until env sync'; fi",
   "start_command": "npx next start --hostname 127.0.0.1 --port ${PORT}"
 }
