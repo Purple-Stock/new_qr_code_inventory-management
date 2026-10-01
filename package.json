@@ -46,7 +46,7 @@
     "html5-qrcode": "^2.3.8",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.563.0",
-    "next": "^16.2.6",
+    "next": "^16.3.8",
     "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
@@ -57,7 +57,7 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "@faker-js/faker": "^10.4.0",
+    "@faker-js/faker": "^10.6.0",
     "@playwright/test": "^1.60.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
@@ -65,7 +65,7 @@
     "@types/react": "^19.2.15",
     "@typescript-eslint/eslint-plugin": "^8.60.0",
     "@typescript-eslint/parser": "^8.60.0",
-    "@vitest/coverage-v8": "^4.1.7",
+    "@vitest/coverage-v8": "4.1.11",
     "autoprefixer": "^10.5.0",
     "dotenv-cli": "^11.0.0",
     "drizzle-kit": "^1.0.0-rc.2",
@@ -74,11 +74,19 @@
     "postcss": "^8.5.15",
     "tsx": "^4.22.4",
     "typescript": "5.9.3",
-    "vitest": "^4.1.7"
+    "vitest": "4.1.11"
   },
   "overrides": {
     "dompurify": "^3.4.5",
     "nanoid": "^3.3.18",
-    "postcss": "^8.5.15"
+    "postcss": "^8.5.15",
+    "brace-expansion": "5.0.12",
+    "browserslist": "4.29.3",
+    "baseline-browser-mapping": "2.11.27",
+    "undici": "7.30.0",
+    "fflate": "0.8.3",
+    "vitest": "4.1.11",
+    "@vitest/coverage-v8": "4.1.11",
+    "@vitest/mocker": "4.1.11"
   }
 }
