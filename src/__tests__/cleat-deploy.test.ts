@@ -56,6 +56,12 @@ describe("cleat build.sh", () => {
     expect(script).toMatch(/DATABASE_URL/);
   });
 
+  it("drops the reused release route cache before publishing", () => {
+    const script = readFileSync(join(root, ".cleat_deploy/build.sh"), "utf8");
+    expect(script).toMatch(/releases\/build\/\.next\/server\/route-cache/);
+    expect(script).toMatch(/rm -rf/);
+  });
+
   it("loads unquoted PHX_HOST with comma-separated hosts", () => {
     const dir = mkdtempSync(join(tmpdir(), "cleat-env-"));
     try {

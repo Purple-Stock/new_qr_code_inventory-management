@@ -723,6 +723,8 @@ export const fr = {
       companyNamePlaceholder: "Entrez le nom de votre entreprise",
       emailLabel: "E-mail",
       emailPlaceholder: "Entrez votre e-mail",
+      phoneLabel: "Téléphone",
+      phonePlaceholder: "Entrez votre numéro de téléphone",
       passwordLabel: "Mot de passe",
       passwordPlaceholder: "Entrez votre mot de passe",
       confirmPasswordLabel: "Confirmer le mot de passe",

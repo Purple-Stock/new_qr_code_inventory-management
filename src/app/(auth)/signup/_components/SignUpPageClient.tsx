@@ -24,6 +24,7 @@ export default function SignUpPage() {
   const { language, setLanguage, t } = useTranslation()
   const [companyName, setCompanyName] = useState("")
   const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -63,7 +64,7 @@ export default function SignUpPage() {
         "/api/auth/signup",
         {
           method: "POST",
-          body: { companyName, email, password },
+          body: { companyName, email, phone, password },
           fallbackError: t.auth.signup.unexpectedError,
         }
       )
@@ -223,6 +224,23 @@ export default function SignUpPage() {
                 placeholder={t.auth.signup.emailPlaceholder}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className="w-full h-11 border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+                required
+              />
+            </div>
+
+            {/* Phone Field */}
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-gray-700 font-semibold text-sm">
+                {t.auth.signup.phoneLabel}
+              </Label>
+              <Input
+                id="phone"
+                type="tel"
+                autoComplete="tel"
+                placeholder={t.auth.signup.phonePlaceholder}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 className="w-full h-11 border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
                 required
               />

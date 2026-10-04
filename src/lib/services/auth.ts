@@ -60,7 +60,7 @@ export async function signupUser(params: {
     return { ok: false, error: validationServiceError(parsed.error) };
   }
 
-  const { email: normalizedEmail, password, companyName } = parsed.data;
+  const { email: normalizedEmail, password, companyName, phone } = parsed.data;
 
   try {
     const existingUser = await findUserByEmail(normalizedEmail);
@@ -79,6 +79,7 @@ export async function signupUser(params: {
       email: normalizedEmail,
       password,
       companyName: companyName.trim(),
+      phone,
     });
 
     return {

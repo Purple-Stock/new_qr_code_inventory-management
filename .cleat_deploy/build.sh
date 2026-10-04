@@ -71,4 +71,22 @@ if [ "${CLEAT_BUILD_LOAD_ONLY:-}" = "1" ]; then
   exit 0
 fi
 
+# The release directory is reused across deploys: cleat publishes the new build
+# over the previous release and its wipe skips dot-directories, so Next 16's
+# runtime route cache (.next/server/route-cache) left there by an earlier deploy
+# survives the copy and keeps serving stale prerendered pages after the restart.
+# Drop it (plus any leftover build cache) so the server always serves the pages
+# built from this release.
+release_root=""
+if [ -n "${ENV_FILE:-}" ]; then
+  release_root="/opt/$(basename "$(dirname "$ENV_FILE")")"
+fi
+for release_dir in "$release_root" /opt/purple-stock-app /opt/purple-stock-app-develop; do
+  if [ -n "$release_dir" ] && [ -d "$release_dir/releases/build/.next" ]; then
+    sudo rm -rf \
+      "$release_dir/releases/build/.next/server/route-cache" \
+      "$release_dir/releases/build/.next/cache"
+  fi
+done
+
 npm run build
