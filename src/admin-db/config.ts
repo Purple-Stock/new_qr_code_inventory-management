@@ -11,9 +11,17 @@ export function getAdminDatabaseUrl(): string {
     return configured;
   }
 
+  const filePath = process.env.DATABASE_PATH?.trim();
+  if (filePath && filePath.length > 0) {
+    return filePath.startsWith("file:") || filePath === ":memory:"
+      ? filePath
+      : `file:${filePath}`;
+  }
+
   // Fall back to the main database URL so admin tables live alongside the
   // main schema when a dedicated admin DB is not explicitly configured.
-  const mainDbUrl = process.env.DATABASE_URL?.trim();
+  const mainDbUrl =
+    process.env.DATABASE_URL?.trim() || process.env.TURSO_DATABASE_URL?.trim();
   if (mainDbUrl && mainDbUrl.length > 0) {
     return mainDbUrl;
   }
