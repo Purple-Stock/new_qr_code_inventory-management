@@ -4,6 +4,31 @@ import { fileURLToPath } from "node:url";
 const SEVERITY_ORDER = ["info", "low", "moderate", "high", "critical"];
 const DEFAULT_AUDIT_LEVEL = "moderate";
 
+// Advisories that cannot be fixed yet (no patched release upstream). Entries are
+// matched by GHSA id, so a different fixable advisory in the same package still
+// fails the check. Remove an entry as soon as a patched version is available.
+const AUDIT_ALLOWLIST = [
+  {
+    ghsa: "GHSA-vfj7-8cjw-p6xm",
+    reason:
+      "braces <= 3.0.3 (CVE-2026-93687) has no patched release; reachable only through build-time tooling (tailwindcss -> chokidar/fast-glob/micromatch). Track micromatch/braces#70.",
+  },
+];
+
+function getAdvisoryGhsa(entry) {
+  if (typeof entry !== "object" || entry === null) {
+    return null;
+  }
+
+  if (typeof entry.ghsa === "string" && entry.ghsa.trim()) {
+    return entry.ghsa.trim().toUpperCase();
+  }
+
+  const url = typeof entry.url === "string" ? entry.url : "";
+  const match = url.match(/GHSA-[a-z0-9-]+/i);
+  return match ? match[0].toUpperCase() : null;
+}
+
 function resolveAuditLevel() {
   const configured = process.env.NPM_AUDIT_LEVEL?.trim().toLowerCase() ?? DEFAULT_AUDIT_LEVEL;
 
@@ -28,11 +53,63 @@ function severityMeetsThreshold(severity, threshold) {
   return severityIndex >= thresholdIndex;
 }
 
-export function collectBlockingVulnerabilities(auditReport, threshold) {
+export function collectBlockingVulnerabilities(
+  auditReport,
+  threshold,
+  allowlist = AUDIT_ALLOWLIST
+) {
+  const allowedAdvisories = new Set(
+    allowlist.map((entry) => entry.ghsa.toUpperCase())
+  );
   const vulnerabilities = auditReport.vulnerabilities ?? {};
+
+  // A package is cleared when it is below the threshold, directly allowlisted,
+  // or vulnerable only through other cleared packages (e.g. tailwindcss ->
+  // chokidar -> braces). Iterate until no more packages clear.
+  const cleared = new Set();
+  let changed = true;
+  while (changed) {
+    changed = false;
+
+    for (const [name, details] of Object.entries(vulnerabilities)) {
+      if (cleared.has(name)) {
+        continue;
+      }
+
+      const severity = details.severity ?? "info";
+      if (!severityMeetsThreshold(severity, threshold)) {
+        cleared.add(name);
+        changed = true;
+        continue;
+      }
+
+      const via = Array.isArray(details.via) ? details.via : [];
+      if (via.length === 0) {
+        continue;
+      }
+
+      const vulnerableOnlyThroughClearedPackages = via.every((entry) => {
+        if (typeof entry === "string") {
+          return cleared.has(entry);
+        }
+        const ghsa = getAdvisoryGhsa(entry);
+        return ghsa !== null && allowedAdvisories.has(ghsa);
+      });
+
+      if (vulnerableOnlyThroughClearedPackages) {
+        cleared.add(name);
+        changed = true;
+      }
+    }
+  }
+
   const blocking = [];
 
   for (const [name, details] of Object.entries(vulnerabilities)) {
+    if (cleared.has(name)) {
+      continue;
+    }
+
     const severity = details.severity ?? "info";
     if (!severityMeetsThreshold(severity, threshold)) {
       continue;
@@ -153,10 +230,37 @@ function printDeprecatedFailures(deprecatedPackages) {
   console.error("Replace deprecated packages or pin supported versions before continuing.");
 }
 
+function listSeenAllowlistEntries(auditReport, allowlist) {
+  const seen = new Set();
+
+  for (const details of Object.values(auditReport.vulnerabilities ?? {})) {
+    const via = Array.isArray(details.via) ? details.via : [];
+    for (const entry of via) {
+      const ghsa = getAdvisoryGhsa(entry);
+      if (ghsa) {
+        seen.add(ghsa);
+      }
+    }
+  }
+
+  return allowlist.filter((entry) => seen.has(entry.ghsa.toUpperCase()));
+}
+
 function main() {
   const auditLevel = resolveAuditLevel();
   const auditReport = runNpmAuditJson();
   const blockingVulnerabilities = collectBlockingVulnerabilities(auditReport, auditLevel);
+
+  const seenAllowlist = listSeenAllowlistEntries(auditReport, AUDIT_ALLOWLIST);
+  if (seenAllowlist.length > 0) {
+    console.log(
+      `Ignoring ${seenAllowlist.length} allowlisted advisory(ies) with no patched release:`
+    );
+    for (const entry of seenAllowlist) {
+      console.log(`- ${entry.ghsa}: ${entry.reason}`);
+    }
+    console.log("");
+  }
 
   const deprecatedTree = runNpmLsJson(shouldCheckTransitiveDeprecated() ? Infinity : 0);
   const deprecatedPackages = collectDeprecatedPackages(deprecatedTree);

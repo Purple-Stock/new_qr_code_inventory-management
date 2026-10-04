@@ -73,6 +73,7 @@ describe("auth service", () => {
       payload: {
         companyName: "Acme New",
         email: "new-owner@example.com",
+        phone: "(11) 98888-7777",
         password: "password123",
       },
     });
@@ -80,6 +81,7 @@ describe("auth service", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.user.email).toBe("new-owner@example.com");
+    expect(result.data.user.phone).toBe("(11) 98888-7777");
     expect(result.data.company.name).toBe("Acme New");
     expect("passwordHash" in result.data.user).toBe(false);
   });

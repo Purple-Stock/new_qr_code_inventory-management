@@ -33,6 +33,8 @@ vi.mock("@/lib/i18n", () => ({
           companyNamePlaceholder: "Empresa",
           emailLabel: "E-mail",
           emailPlaceholder: "email@empresa.com",
+          phoneLabel: "Telefone",
+          phonePlaceholder: "Telefone",
           passwordLabel: "Senha",
           passwordPlaceholder: "Senha",
           confirmPasswordLabel: "Confirmar senha",
@@ -83,6 +85,9 @@ describe("SignUpPage", () => {
     fireEvent.change(screen.getByLabelText("E-mail"), {
       target: { value: email },
     });
+    fireEvent.change(screen.getByLabelText("Telefone"), {
+      target: { value: "(11) 98888-7777" },
+    });
     fireEvent.change(screen.getByLabelText("Senha"), {
       target: { value: password },
     });
@@ -95,5 +100,15 @@ describe("SignUpPage", () => {
     await waitFor(() => {
       expect(screen.getByText("Já existe uma conta com este e-mail")).toBeInTheDocument();
     });
+
+    expect(mockedFetchApiJsonResult).toHaveBeenCalledWith(
+      "/api/auth/signup",
+      expect.objectContaining({
+        body: expect.objectContaining({
+          email,
+          phone: "(11) 98888-7777",
+        }),
+      })
+    );
   });
 });
