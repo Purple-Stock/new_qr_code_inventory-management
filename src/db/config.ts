@@ -6,7 +6,15 @@ const currentDir = path.dirname(currentFile);
 const defaultDatabasePath = path.resolve(currentDir, "../db.sqlite");
 
 export function getDatabaseUrl(): string {
-  const configured = process.env.DATABASE_URL?.trim();
+  const filePath = process.env.DATABASE_PATH?.trim();
+  if (filePath && filePath.length > 0) {
+    return filePath.startsWith("file:") || filePath === ":memory:"
+      ? filePath
+      : `file:${filePath}`;
+  }
+
+  const configured =
+    process.env.DATABASE_URL?.trim() || process.env.TURSO_DATABASE_URL?.trim();
   if (configured && configured.length > 0) {
     return configured;
   }
