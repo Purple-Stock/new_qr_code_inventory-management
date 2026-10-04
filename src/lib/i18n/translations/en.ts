@@ -723,6 +723,8 @@ export const en = {
       companyNamePlaceholder: "Enter your company name",
       emailLabel: "Email",
       emailPlaceholder: "Enter your email",
+      phoneLabel: "Phone",
+      phonePlaceholder: "Enter your phone number",
       passwordLabel: "Password",
       passwordPlaceholder: "Enter your password",
       confirmPasswordLabel: "Confirm Password",

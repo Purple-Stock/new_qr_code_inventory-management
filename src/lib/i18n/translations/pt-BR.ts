@@ -723,6 +723,8 @@ export const ptBR = {
       companyNamePlaceholder: "Digite o nome da sua empresa",
       emailLabel: "E-mail",
       emailPlaceholder: "Digite seu e-mail",
+      phoneLabel: "Telefone",
+      phonePlaceholder: "Digite seu telefone",
       passwordLabel: "Senha",
       passwordPlaceholder: "Digite sua senha",
       confirmPasswordLabel: "Confirmar senha",

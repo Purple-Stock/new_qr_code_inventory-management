@@ -27,6 +27,7 @@ describe("/api/auth/signup", () => {
         body: JSON.stringify({
           companyName: "Acme Inc",
           email: "test@example.com",
+          phone: "+55 (11) 98888-7777",
           password: "password123",
         }),
         headers: {
@@ -40,9 +41,31 @@ describe("/api/auth/signup", () => {
       expect(response.status).toBe(201);
       expect(data.message).toBe("User created successfully");
       expect(data.user).toHaveProperty("email", "test@example.com");
+      expect(data.user).toHaveProperty("phone", "+55 (11) 98888-7777");
       expect(data.user).not.toHaveProperty("passwordHash");
       expect(data.user).toHaveProperty("id");
       expect(data.company).toHaveProperty("name", "Acme Inc");
+    });
+
+    it("should return 400 if phone is invalid", async () => {
+      const request = new NextRequest("http://localhost:3000/api/auth/signup", {
+        method: "POST",
+        body: JSON.stringify({
+          companyName: "Acme Inc",
+          email: "test@example.com",
+          phone: "abc",
+          password: "password123",
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe("Invalid phone number");
     });
 
     it("should return 400 if company name is missing", async () => {

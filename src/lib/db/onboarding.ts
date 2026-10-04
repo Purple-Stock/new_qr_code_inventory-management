@@ -39,6 +39,7 @@ export async function onboardCompanyOwner(data: {
   email: string;
   password: string;
   companyName: string;
+  phone?: string | null;
 }) {
   const passwordHash = await hashPassword(data.password);
 
@@ -49,6 +50,7 @@ export async function onboardCompanyOwner(data: {
         email: data.email,
         passwordHash,
         role: "admin",
+        phone: data.phone ?? null,
       })
       .returning();
 

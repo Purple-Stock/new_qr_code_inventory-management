@@ -148,10 +148,34 @@ export function parseLoginPayload(body: unknown): ValidationResult<{
   };
 }
 
+function parseOptionalPhone(value: unknown): ValidationResult<string | null> {
+  if (value === undefined || value === null) {
+    return { ok: true, data: null };
+  }
+
+  if (typeof value !== "string") {
+    return { ok: false, error: "Phone must be a string" };
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return { ok: true, data: null };
+  }
+
+  const digits = trimmed.replace(/\D/g, "");
+  const hasValidChars = /^\+?[\d\s().-]+$/.test(trimmed);
+  if (!hasValidChars || digits.length < 8 || digits.length > 15) {
+    return { ok: false, error: "Invalid phone number" };
+  }
+
+  return { ok: true, data: trimmed };
+}
+
 export function parseSignupPayload(body: unknown): ValidationResult<{
   email: string;
   password: string;
   companyName: string;
+  phone: string | null;
 }> {
   if (!isRecord(body)) {
     return { ok: false, error: "Invalid request payload" };
@@ -163,12 +187,17 @@ export function parseSignupPayload(body: unknown): ValidationResult<{
     body.companyName,
     "Company name"
   );
+  const phoneParsed = parseOptionalPhone(body.phone);
 
   if (!emailParsed.ok || !passwordParsed.ok || !companyNameParsed.ok) {
     return {
       ok: false,
       error: "Email, password and company name are required",
     };
+  }
+
+  if (!phoneParsed.ok) {
+    return { ok: false, error: phoneParsed.error };
   }
 
   const normalizedEmail = normalizeEmail(emailParsed.data);
@@ -186,6 +215,7 @@ export function parseSignupPayload(body: unknown): ValidationResult<{
       email: normalizedEmail,
       password: passwordParsed.data,
       companyName: companyNameParsed.data,
+      phone: phoneParsed.data,
     },
   };
 }
