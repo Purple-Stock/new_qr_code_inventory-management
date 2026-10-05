@@ -69,9 +69,8 @@ function parseEnvValue(raw: string, key: string): string | null {
 
 function databaseKind(databaseUrl: string | null): "libsql" | "file" | "missing" {
   if (!databaseUrl) return "missing";
-  if (databaseUrl.startsWith("libsql://")) return "libsql";
-  if (databaseUrl.startsWith("file:")) return "file";
-  return "missing";
+  if (/^(libsql|https?|wss):\/\//i.test(databaseUrl)) return "missing";
+  return "file";
 }
 
 async function readDatabaseTargetFromEnvFile(fileName: string, fallbackUrl?: string) {
@@ -79,15 +78,18 @@ async function readDatabaseTargetFromEnvFile(fileName: string, fallbackUrl?: str
 
   try {
     const raw = await fs.readFile(fullPath, "utf8");
-    const databaseUrl = parseEnvValue(raw, "DATABASE_URL") ?? fallbackUrl ?? null;
-    const hasAuthToken = !!parseEnvValue(raw, "TURSO_AUTH_TOKEN");
+    const databaseUrl =
+      parseEnvValue(raw, "DATABASE_PATH") ??
+      parseEnvValue(raw, "DATABASE_URL") ??
+      fallbackUrl ??
+      null;
 
     return {
       fileName,
       exists: true,
       databaseUrl,
       databaseKind: databaseKind(databaseUrl),
-      hasAuthToken,
+      hasAuthToken: false,
     };
   } catch {
     return {

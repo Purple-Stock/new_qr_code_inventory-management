@@ -58,14 +58,14 @@ describe("admin-config service", () => {
       role: "admin",
     });
     isSuperAdminUserMock.mockResolvedValue(false);
-    getDatabaseUrlMock.mockReturnValue("libsql://active-db");
+    getDatabaseUrlMock.mockReturnValue("file:/opt/purple-stock-app/data/purple.db");
     readFileMock.mockImplementation(async (filePath: string) => {
       if (filePath.endsWith("/.env")) {
         return "DATABASE_URL=file:./src/db.sqlite\n";
       }
 
       if (filePath.endsWith("/.env.prod.local")) {
-        return "DATABASE_URL=libsql://prod-db\nTURSO_AUTH_TOKEN=token_123\n";
+        return "DATABASE_PATH=/opt/purple-stock-app/data/purple.db\n";
       }
 
       throw new Error(`Unexpected file read: ${filePath}`);
@@ -78,8 +78,8 @@ describe("admin-config service", () => {
 
     expect(result.data.runtime).toEqual({
       nodeEnv: "production",
-      activeDatabaseUrl: "libsql://active-db",
-      activeDatabaseKind: "libsql",
+      activeDatabaseUrl: "file:/opt/purple-stock-app/data/purple.db",
+      activeDatabaseKind: "file",
     });
     expect(result.data.modes.local).toEqual({
       fileName: ".env",
@@ -91,9 +91,9 @@ describe("admin-config service", () => {
     expect(result.data.modes.prod).toEqual({
       fileName: ".env.prod.local",
       exists: true,
-      databaseUrl: "libsql://prod-db",
-      databaseKind: "libsql",
-      hasAuthToken: true,
+      databaseUrl: "/opt/purple-stock-app/data/purple.db",
+      databaseKind: "file",
+      hasAuthToken: false,
     });
   });
 });
