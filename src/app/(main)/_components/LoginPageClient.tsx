@@ -43,7 +43,11 @@ export default function LoginPage() {
       )
 
       if (!result.ok) {
-        setError(t.auth.login.invalidCredentials)
+        setError(
+          result.error.status === 401
+            ? t.auth.login.invalidCredentials
+            : t.auth.login.unexpectedError
+        )
         setIsLoading(false)
         return
       }

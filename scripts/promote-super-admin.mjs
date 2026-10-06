@@ -29,15 +29,22 @@ function loadEnvFileIfProvided(envFile) {
   }
 }
 
-function getDatabaseConfig() {
-  const databaseUrl = process.env.DATABASE_URL?.trim() || "file:./src/db.sqlite";
-  const authToken = process.env.TURSO_AUTH_TOKEN?.trim();
-
-  if (databaseUrl.startsWith("libsql://") && !authToken) {
-    throw new Error("TURSO_AUTH_TOKEN is required for libsql:// DATABASE_URL");
+function toSqliteFileUrl(value) {
+  const trimmed = value.trim();
+  if (trimmed === ":memory:" || trimmed.startsWith("file:")) return trimmed;
+  if (/^(libsql|https?|wss):\/\//i.test(trimmed)) {
+    throw new Error("Remote database URL is not supported. Use DATABASE_PATH or a file: SQLite URL.");
   }
+  return `file:${trimmed}`;
+}
 
-  return { databaseUrl, authToken };
+function getDatabaseConfig() {
+  const raw =
+    process.env.DATABASE_PATH?.trim() ||
+    process.env.DATABASE_URL?.trim() ||
+    "file:./src/db.sqlite";
+
+  return { databaseUrl: toSqliteFileUrl(raw) };
 }
 
 async function main() {
@@ -50,8 +57,8 @@ async function main() {
 
   loadEnvFileIfProvided(envFile);
 
-  const { databaseUrl, authToken } = getDatabaseConfig();
-  const client = createClient({ url: databaseUrl, authToken });
+  const { databaseUrl } = getDatabaseConfig();
+  const client = createClient({ url: databaseUrl });
 
   try {
     const found = await client.execute({

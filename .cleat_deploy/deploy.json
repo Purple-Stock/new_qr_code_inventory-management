@@ -3,5 +3,5 @@
   "node_version": "22",
   "memory_max_mb": 768,
   "build_command": "bash .cleat_deploy/build.sh",
-  "start_command": "npx next start --hostname 127.0.0.1 --port ${PORT}"
+  "start_command": "bash .cleat_deploy/start.sh"
 }

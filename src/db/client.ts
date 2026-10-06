@@ -1,13 +1,10 @@
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./schema";
-import { getDatabaseAuthToken, getDatabaseUrl } from "./config";
-
-const databaseUrl = getDatabaseUrl();
+import { getDatabaseUrl } from "./config";
 
 const db = createClient({
-  url: databaseUrl,
-  authToken: getDatabaseAuthToken(databaseUrl),
+  url: getDatabaseUrl(),
 });
 
 // @ts-ignore - Drizzle types may have issues with schema parameter

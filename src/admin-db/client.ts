@@ -1,6 +1,6 @@
 import { createClient, type Client } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
-import { getAdminDatabaseAuthToken, getAdminDatabaseUrl } from "./config";
+import { getAdminDatabaseUrl } from "./config";
 import * as schema from "./schema";
 
 type AdminDb = ReturnType<typeof drizzle<typeof schema>>;
@@ -14,7 +14,6 @@ function getAdminClient(): Client {
     const url = getAdminDatabaseUrl();
     adminClient = createClient({
       url,
-      authToken: getAdminDatabaseAuthToken(url),
     });
   }
   return adminClient;

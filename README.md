@@ -9,7 +9,7 @@ Sistema multi-tenant de gestão de estoque com times, localizações, itens, mov
 - Next.js 16 (App Router)
 - React 18 + TypeScript
 - Tailwind CSS + shadcn/ui
-- SQLite/libSQL (`@libsql/client`, Turso em produção) + Drizzle ORM
+- SQLite local (`@libsql/client` + arquivo `.db`) + Drizzle ORM
 - Vitest para testes
 
 ## Arquitetura
@@ -71,8 +71,8 @@ src/
 
 ## Variáveis de ambiente
 
-- `DATABASE_URL`: URL libSQL (`libsql://...`) para Turso. Em local, use `file:./src/db.sqlite`.
-- `TURSO_AUTH_TOKEN` (obrigatório para Turso remoto): token do banco Turso.
+- `DATABASE_PATH`: caminho do arquivo SQLite em produção (ex.: `/opt/purple-stock-app/data/purple.db`).
+- `DATABASE_URL`: URL `file:` do SQLite local (ex.: `file:./src/db.sqlite`). URLs remotas (`libsql://`, `https://`) são rejeitadas.
 - `SESSION_SECRET` (obrigatório em produção): segredo para assinatura da sessão.
 - `STRIPE_SECRET_KEY` (obrigatório para billing): chave secreta da Stripe.
 - `STRIPE_PRICE_ID` (obrigatório para billing): `price_id` do plano mensal por time.
@@ -108,17 +108,16 @@ npm run dev:local-default
 npm run dev:local-prod
 ```
 
-O script `dev:local-prod` injeta as variaveis de `.env.prod.local` antes de iniciar o Next em `3101`, o que permite ao painel consultar o banco remoto configurado para prod sem trocar a instancia padrao de `3001`.
+O script `dev:local-prod` injeta as variaveis de `.env.prod.local` antes de iniciar o Next em `3101`, o que permite ao painel consultar um SQLite de prod-local sem trocar a instancia padrao de `3001`.
 
 Os scripts locais tambem separam o `distDir` do Next por porta (`.next-dev-3001` e `.next-dev-3101`). Isso evita o erro de lock quando duas instancias de `next dev` rodam ao mesmo tempo no mesmo workspace.
 
 Se preferir subir tudo junto a partir da raiz do workspace, use `./run-projects.sh`.
 
-Para Turso (remoto), configure:
+Em produção (Cleat), o app usa SQLite em disco:
 
 ```bash
-DATABASE_URL=libsql://<seu-db>-<org>.turso.io
-TURSO_AUTH_TOKEN=<seu_token_turso>
+DATABASE_PATH=/opt/purple-stock-app/data/purple.db
 ```
 
 ## Scripts
@@ -139,16 +138,15 @@ TURSO_AUTH_TOKEN=<seu_token_turso>
 - `npm run hooks:install`: ativa `.githooks/pre-commit` e `.githooks/pre-push`.
 - `npm run hooks:uninstall`: remove hook local.
 
-## Deploy no Amplify (Next SSR + Turso)
+## Deploy (Cleat + SQLite)
 
-Este repositório usa `amplify.yml` para gerar `.env.production` no build do Next.js.
+Produção: `app.purplestock.com.br` (slug `purple-stock-app`). Staging: `staging.purplestock.com.br`.
 
-### Variáveis obrigatórias no Amplify
+O boot do Cleat aplica migrações pendentes (`.cleat_deploy/start.sh` → `scripts/apply-sqlite-migrations.mjs`) antes do `next start`. Sem isso, um `SELECT` em coluna nova (ex.: `users.phone`) derruba login e signup.
 
-Configure em **Hosting > Environment variables** (obrigatórias para o build SSR):
+### Variáveis de banco
 
-- `DATABASE_URL`
-- `TURSO_AUTH_TOKEN`
+- `DATABASE_PATH` (produção) ou `DATABASE_URL=file:...`
 - `SESSION_SECRET`
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
@@ -156,22 +154,14 @@ Configure em **Hosting > Environment variables** (obrigatórias para o build SSR
 - `STRIPE_PRICE_ID`
 - `STRIPE_PUBLISHABLE_KEY`
 
-Observação: mesmo usando **Hosting > Secrets**, o build SSR do Next pode precisar das variáveis em `Environment variables` para coleta de page data.
-
-### Fluxo de deploy recomendado
-
-1. Atualizar variáveis no Amplify.
-2. Executar **Clear cache and redeploy**.
-3. Validar login (`/api/auth/login`) e signup (`/api/auth/signup`).
-
 ### Troubleshooting rápido
 
-- Erro `DATABASE_URL must be set in production`:
-  - `DATABASE_URL` não está chegando no build/runtime SSR.
-- Erro `TURSO_AUTH_TOKEN must be set...`:
-  - token ausente no ambiente de produção.
-- Erro `SERVER_ERROR: 401` na conexão Turso:
-  - token inválido/expirado; gere novo token e atualize o ambiente.
+- Erro `DATABASE_PATH or a file: DATABASE_URL must be set in production`:
+  - o processo subiu sem caminho de SQLite.
+- Erro `Remote database URL is not supported`:
+  - `DATABASE_URL` ainda aponta para libsql/HTTP remoto. Troque para arquivo local.
+- Login 500 `INTERNAL_ERROR`:
+  - migration não aplicada. Conferir `_migrations` e `PRAGMA table_info(users)`.
 
 ## Padrão de migrations (up/down)
 

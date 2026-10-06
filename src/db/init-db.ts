@@ -2,7 +2,7 @@ import { createClient } from "@libsql/client";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { getDatabaseAuthToken, getDatabaseUrl } from "./config";
+import { getDatabaseUrl } from "./config";
 
 const currentFile = fileURLToPath(import.meta.url);
 const currentDir = path.dirname(currentFile);
@@ -32,10 +32,8 @@ function toSqlStatements(sql: string): string[] {
 }
 
 function createDbClient() {
-  const databaseUrl = getDatabaseUrl();
   return createClient({
-    url: databaseUrl,
-    authToken: getDatabaseAuthToken(databaseUrl),
+    url: getDatabaseUrl(),
   });
 }
 
