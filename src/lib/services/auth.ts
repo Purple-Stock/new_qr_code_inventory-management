@@ -44,7 +44,8 @@ export async function loginUser(params: {
       ok: true,
       data: { user: toPublicUser(user) },
     };
-  } catch {
+  } catch (error) {
+    console.error("Login error:", error);
     return {
       ok: false,
       error: internalServiceError("An error occurred during login"),
@@ -89,7 +90,8 @@ export async function signupUser(params: {
         company,
       },
     };
-  } catch {
+  } catch (error) {
+    console.error("Signup error:", error);
     return {
       ok: false,
       error: internalServiceError("An error occurred during signup"),

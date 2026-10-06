@@ -87,7 +87,8 @@ npm run dev -- --port 3001
 
 - Schema: `src/db/schema.ts`
 - Migrations: `src/db/migrations/*.sql` + `npm run db:migrate`
-- Client init: `src/db/client.ts` (`ensureDatabase()`)
+- Client init: `src/db/client.ts`. Cleat boot runs `scripts/apply-sqlite-migrations.mjs` from `.cleat_deploy/start.sh` before `next start`.
+- Local SQLite only (`DATABASE_PATH` or `file:` `DATABASE_URL`). Remote libsql/Turso URLs are rejected.
 
 ## Env (billing)
 
