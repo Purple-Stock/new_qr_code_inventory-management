@@ -1,10 +1,18 @@
 import { parseMaximumStockInput } from "@/lib/item-maximum-stock";
+import { parseMinimumStockInput } from "@/lib/item-minimum-stock";
 import type { ItemFormValues } from "../_components/ItemForm";
 
+export type ItemWriteBodyError = "minimumStock" | "maximumStock";
+
 export function buildItemWriteBody(form: ItemFormValues) {
+  const minimumStock = parseMinimumStockInput(form.minimumStock);
+  if (!minimumStock.ok) {
+    return { ok: false as const, error: "minimumStock" as const };
+  }
+
   const maximumStock = parseMaximumStockInput(form.maximumStock);
   if (!maximumStock.ok) {
-    return { ok: false as const };
+    return { ok: false as const, error: "maximumStock" as const };
   }
 
   const customFields = Object.fromEntries(
@@ -24,6 +32,7 @@ export function buildItemWriteBody(form: ItemFormValues) {
       itemType: form.itemType.trim() || null,
       brand: form.brand.trim() || null,
       photoData: form.photoData || null,
+      minimumStock: minimumStock.value,
       maximumStock: maximumStock.value,
       customFields: Object.keys(customFields).length > 0 ? customFields : null,
     },

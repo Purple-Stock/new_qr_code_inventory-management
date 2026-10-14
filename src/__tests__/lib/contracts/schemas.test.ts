@@ -25,6 +25,36 @@ describe("contracts/schemas custom fields", () => {
     });
   });
 
+  it("parses a positive minimumStock", () => {
+    const parsed = parseItemPayload(
+      {
+        name: "Cabo HDMI",
+        barcode: "hdmi-min-2",
+        minimumStock: 2,
+      },
+      "create"
+    );
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.data.minimumStock).toBe(2);
+  });
+
+  it("rejects a negative minimumStock", () => {
+    const parsed = parseItemPayload(
+      {
+        name: "Cabo HDMI",
+        barcode: "hdmi-min-neg",
+        minimumStock: -1,
+      },
+      "create"
+    );
+
+    expect(parsed.ok).toBe(false);
+    if (parsed.ok) return;
+    expect(parsed.error).toMatch(/Minimum stock/i);
+  });
+
   it("parses unique equipment maximumStock", () => {
     const parsed = parseItemPayload(
       {

@@ -199,6 +199,7 @@ export async function updateItem(
     brand?: string | null;
     photoData?: string | null;
     locationId?: number | null;
+    minimumStock?: number;
     maximumStock?: number | null;
     customFields?: Record<string, string> | null;
   }
@@ -218,6 +219,9 @@ export async function updateItem(
       }),
       ...(data.locationId !== undefined && {
         locationId: data.locationId ?? null,
+      }),
+      ...(data.minimumStock !== undefined && {
+        minimumStock: data.minimumStock ?? 0,
       }),
       ...(data.maximumStock !== undefined && {
         maximumStock: data.maximumStock ?? null,

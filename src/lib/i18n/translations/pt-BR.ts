@@ -90,6 +90,7 @@ export const ptBR = {
     items: "itens",
     transactions: "transações",
     unnamedItem: "Item Sem Nome",
+    lowStockBadge: "Estoque baixo",
     itemDuplicated: "Item duplicado com sucesso",
     deleteConfirm: "Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.",
     itemDeleted: "Item excluído com sucesso",
@@ -767,6 +768,12 @@ export const ptBR = {
     priceLabel: "Preço",
     typeLabel: "Tipo",
     brandLabel: "Marca",
+    minimumStockLabel: "Quantidade mínima",
+    minimumStockHelp:
+      "Deixe em branco para não alertar. Use 1 ou 2 para receber e-mail quando o estoque estiver acabando.",
+    minimumStockPlaceholder: "Sem alerta",
+    minimumStockInvalid:
+      "A quantidade mínima deve ser um número igual ou maior que zero",
     maximumStockLabel: "Quantidade máxima",
     maximumStockHelp:
       "Deixe em branco para sem limite. Use 1 para item único.",
@@ -804,6 +811,9 @@ export const ptBR = {
     tourPricingDesc: "Preencha custo e preço de venda para acompanhar margem e valor do item.",
     tourAttributesTitle: "Tipo e marca",
     tourAttributesDesc: "Use atributos opcionais para organizar filtros e relatórios do catálogo.",
+    tourMinimumStockTitle: "Quantidade mínima",
+    tourMinimumStockDesc:
+      "Defina quando o time deve ser avisado por e-mail. Deixe em branco para não alertar, ou use 1 ou 2 para avisar quando restar pouco.",
     tourMaximumStockTitle: "Quantidade máxima",
     tourMaximumStockDesc:
       "Defina quantas unidades este item pode ter. Deixe em branco para estoque ilimitado, ou use 1 para peça única.",

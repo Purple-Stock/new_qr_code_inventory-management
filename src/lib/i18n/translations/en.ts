@@ -90,6 +90,7 @@ export const en = {
     items: "items",
     transactions: "transactions",
     unnamedItem: "Unnamed Item",
+    lowStockBadge: "Low stock",
     itemDuplicated: "Item duplicated successfully",
     deleteConfirm: "Are you sure you want to delete this item? This action cannot be undone.",
     itemDeleted: "Item deleted successfully",
@@ -767,6 +768,12 @@ export const en = {
     priceLabel: "Price",
     typeLabel: "Type",
     brandLabel: "Brand",
+    minimumStockLabel: "Minimum quantity",
+    minimumStockHelp:
+      "Leave blank to skip alerts. Use 1 or 2 to get an email when stock is almost gone.",
+    minimumStockPlaceholder: "No alert",
+    minimumStockInvalid:
+      "Minimum quantity must be a number zero or greater",
     maximumStockLabel: "Maximum quantity",
     maximumStockHelp:
       "Leave blank for no limit. Use 1 for a unique item.",
@@ -804,6 +811,9 @@ export const en = {
     tourPricingDesc: "Fill in cost and selling price to track margins and item value.",
     tourAttributesTitle: "Type and brand",
     tourAttributesDesc: "Use optional attributes to organize catalog filters and reports.",
+    tourMinimumStockTitle: "Minimum quantity",
+    tourMinimumStockDesc:
+      "Set when the team should get an email. Leave blank to skip alerts, or type 1 or 2 to warn when stock is almost gone.",
     tourMaximumStockTitle: "Maximum quantity",
     tourMaximumStockDesc:
       "Set how many units this item can hold. Leave blank for unlimited stock, or type 1 for a unique piece.",

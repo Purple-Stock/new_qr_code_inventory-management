@@ -50,6 +50,7 @@ const emptyValues: ItemFormValues = {
   brand: "",
   photoData: "",
   customFields: {},
+  minimumStock: "",
   maximumStock: "",
 };
 

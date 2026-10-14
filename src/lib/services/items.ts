@@ -828,6 +828,7 @@ export async function updateTeamItem(
       brand: payload.brand,
       photoData,
       locationId: payload.locationId,
+      minimumStock: payload.minimumStock,
       maximumStock: payload.maximumStock,
       customFields: payload.customFields,
     });
