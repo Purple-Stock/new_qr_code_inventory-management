@@ -1,20 +1,7 @@
 import { getTeamMembersWithUsers } from "@/lib/db/team-members";
+import { buildLowStockEmail } from "@/lib/email/low-stock-template";
 import { sendResendEmail } from "@/lib/email/resend";
 import { crossedMinimumStockThreshold } from "@/lib/item-minimum-stock";
-
-function escapeHtml(value: string): string {
-  return value
-    .split("&")
-    .join("&amp;")
-    .split("<")
-    .join("&lt;")
-    .split(">")
-    .join("&gt;")
-    .split('"')
-    .join("&quot;")
-    .split("'")
-    .join("&#39;");
-}
 
 function uniqueMemberEmails(
   members: Array<{ email: string | null | undefined }>
@@ -36,36 +23,6 @@ function uniqueMemberEmails(
   }
 
   return emails;
-}
-
-function buildLowStockCopy(params: {
-  itemName: string | null | undefined;
-  itemSku?: string | null;
-  nextStock: number;
-  minimumStock: number;
-}): { itemName: string; subject: string; html: string; text: string } {
-  const itemName = params.itemName?.trim() || "Item sem nome";
-  const skuSuffix = params.itemSku?.trim()
-    ? ` (SKU ${params.itemSku.trim()})`
-    : "";
-  const unitLabel = params.nextStock === 1 ? "unidade" : "unidades";
-  const text = [
-    `O item ${itemName}${skuSuffix} chegou a ${params.nextStock} ${unitLabel}.`,
-    `O estoque mínimo configurado é ${params.minimumStock}.`,
-    "Acesse o Purple Stock para repor o estoque.",
-  ].join("\n");
-  const html = [
-    `<p>O item <strong>${escapeHtml(itemName)}</strong>${escapeHtml(skuSuffix)} chegou a <strong>${params.nextStock}</strong> ${unitLabel}.</p>`,
-    `<p>O estoque mínimo configurado é <strong>${params.minimumStock}</strong>.</p>`,
-    "<p>Acesse o Purple Stock para repor o estoque.</p>",
-  ].join("");
-
-  return {
-    itemName,
-    subject: `Estoque baixo: ${itemName}`,
-    html,
-    text,
-  };
 }
 
 export async function notifyIfMinimumStockCrossed(params: {
@@ -92,11 +49,13 @@ export async function notifyIfMinimumStockCrossed(params: {
     return;
   }
 
-  const copy = buildLowStockCopy({
+  const copy = buildLowStockEmail({
     itemName: params.itemName,
     itemSku: params.itemSku,
     nextStock: params.nextStock,
     minimumStock: params.minimumStock ?? 0,
+    teamId: params.teamId,
+    appUrl: process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL,
   });
 
   try {
