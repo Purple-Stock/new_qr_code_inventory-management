@@ -18,7 +18,10 @@ describe("buildLowStockEmail", () => {
     expect(email.text).toContain("2");
     expect(email.html).toContain('role="presentation"');
     expect(email.html).toContain("Purple Stock");
-    expect(email.html).toContain("#5b3df5");
+    expect(email.html).toContain("#6B21A8");
+    expect(email.html).toContain("#7C3AED");
+    expect(email.html).toContain("#faf5ff");
+    expect(email.html).not.toContain("#5b3df5");
     expect(email.html).toContain("Cabo HDMI");
     expect(email.html).toContain("HDMI-1");
     expect(email.html).toContain("Repor estoque");
