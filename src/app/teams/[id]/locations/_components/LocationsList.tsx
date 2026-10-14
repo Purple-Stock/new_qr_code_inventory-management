@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Pencil, Trash2, Building2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { useToast } from "@/components/ui/use-toast-simple";
 import { deleteLocationAction } from "../_actions/deleteLocation";
 import type { Location } from "../_types";
@@ -16,17 +18,33 @@ interface LocationsListProps {
 export function LocationsList({ locations, teamId, t, onDelete }: LocationsListProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const [locationToDelete, setLocationToDelete] = useState<Location | null>(null);
+  const [isDeletingLocation, setIsDeletingLocation] = useState(false);
 
   const handleEdit = (id: number) => {
     router.push(`/teams/${teamId}/locations/${id}/edit`);
   };
 
-  const handleDelete = async (id: number, locationName: string) => {
-    if (!confirm(`${t.locations.deleteConfirmPrefix} "${locationName}"?`)) {
+  const closeDeleteModal = () => {
+    if (isDeletingLocation) {
       return;
     }
 
-    const result = await deleteLocationAction(teamId, id);
+    setLocationToDelete(null);
+  };
+
+  const handleDeleteClick = (location: Location) => {
+    setLocationToDelete(location);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!locationToDelete) {
+      return;
+    }
+
+    setIsDeletingLocation(true);
+
+    const result = await deleteLocationAction(teamId, locationToDelete.id);
 
     if (!result.success) {
       toast({
@@ -34,15 +52,18 @@ export function LocationsList({ locations, teamId, t, onDelete }: LocationsListP
         title: t.common.error,
         description: t.locations.deleteError,
       });
+      setIsDeletingLocation(false);
       return;
     }
 
     toast({
       variant: "success",
       title: t.locations.deletedTitle,
-      description: `${locationName} ${t.locations.deletedDescriptionSuffix}`,
+      description: `${locationToDelete.name} ${t.locations.deletedDescriptionSuffix}`,
     });
 
+    setIsDeletingLocation(false);
+    setLocationToDelete(null);
     onDelete();
   };
 
@@ -83,7 +104,7 @@ export function LocationsList({ locations, teamId, t, onDelete }: LocationsListP
                 <Pencil className="h-4 w-4" />
               </button>
               <button
-                onClick={() => handleDelete(location.id, location.name)}
+                onClick={() => handleDeleteClick(location)}
                 className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
                 aria-label="Delete location"
                 title="Delete location"
@@ -139,7 +160,7 @@ export function LocationsList({ locations, teamId, t, onDelete }: LocationsListP
                         <Pencil className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(location.id, location.name)}
+                        onClick={() => handleDeleteClick(location)}
                         className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                         aria-label="Delete location"
                         title="Delete location"
@@ -154,6 +175,19 @@ export function LocationsList({ locations, teamId, t, onDelete }: LocationsListP
           </table>
         </div>
       </div>
+
+      <DeleteConfirmModal
+        isOpen={locationToDelete !== null}
+        onClose={closeDeleteModal}
+        onConfirm={handleDeleteConfirm}
+        title={t.common.delete}
+        description={
+          locationToDelete
+            ? `${t.locations.deleteConfirmPrefix} "${locationToDelete.name}"?`
+            : undefined
+        }
+        isDeleting={isDeletingLocation}
+      />
     </>
   );
 }
