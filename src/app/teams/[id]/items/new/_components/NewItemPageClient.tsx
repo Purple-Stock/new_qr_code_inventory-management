@@ -83,6 +83,11 @@ export default function NewItemPageClient({
       description: t.itemForm.tourAttributesDesc,
     },
     {
+      target: "tour-new-item-minimum-stock",
+      title: t.itemForm.tourMinimumStockTitle,
+      description: t.itemForm.tourMinimumStockDesc,
+    },
+    {
       target: "tour-new-item-maximum-stock",
       title: t.itemForm.tourMaximumStockTitle,
       description: t.itemForm.tourMaximumStockDesc,

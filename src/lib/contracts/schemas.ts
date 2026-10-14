@@ -612,6 +612,9 @@ export function parseItemPayload(
     return { ok: false, error: "Minimum stock must be a valid number" };
   }
   if (body.minimumStock !== undefined) {
+    if (minimumStockParsed.data != null && minimumStockParsed.data < 0) {
+      return { ok: false, error: "Minimum stock must be zero or greater" };
+    }
     payload.minimumStock = minimumStockParsed.data ?? 0;
   }
 

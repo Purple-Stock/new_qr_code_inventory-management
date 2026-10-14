@@ -9,6 +9,7 @@ export type Item = Pick<
   | "barcode"
   | "itemType"
   | "currentStock"
+  | "minimumStock"
   | "price"
   | "locationName"
   | "customFields"

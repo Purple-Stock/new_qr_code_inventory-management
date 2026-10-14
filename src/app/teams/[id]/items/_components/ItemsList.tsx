@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/use-toast-simple";
 import { fetchApiJsonResult, fetchApiResult } from "@/lib/api-client";
 import { ERROR_CODES } from "@/lib/errors";
 import type { Item } from "../_types";
+import { ItemStockBadge } from "./ItemStockBadge";
 
 interface ItemsListProps {
   items: Item[];
@@ -229,17 +230,12 @@ export function ItemsList({ items, teamId, formatPrice, t, onItemDeleted, onItem
               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
                 {item.itemType || t.items.typeFallback}
               </span>
-              <span
-                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
-                  (item.currentStock || 0) === 0
-                    ? "bg-red-100 text-red-700"
-                    : (item.currentStock || 0) < 10
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "bg-green-100 text-green-700"
-                }`}
-              >
-                Stock: {item.currentStock ?? 0}
-              </span>
+              <ItemStockBadge
+                currentStock={item.currentStock}
+                minimumStock={item.minimumStock}
+                lowStockLabel={t.items.lowStockBadge}
+                className="px-2.5 py-1 text-xs"
+              />
               <span className="text-sm font-bold text-gray-900">
                 {formatPrice(item.price)}
               </span>
@@ -368,17 +364,12 @@ export function ItemsList({ items, teamId, formatPrice, t, onItemDeleted, onItem
                     </span>
                   </td>
                   <td className="px-6 py-5 whitespace-nowrap">
-                    <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${
-                        (item.currentStock || 0) === 0
-                          ? "bg-red-100 text-red-700"
-                          : (item.currentStock || 0) < 10
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-green-100 text-green-700"
-                      }`}
-                    >
-                      {item.currentStock ?? 0}
-                    </span>
+                    <ItemStockBadge
+                      currentStock={item.currentStock}
+                      minimumStock={item.minimumStock}
+                      lowStockLabel={t.items.lowStockBadge}
+                      className="px-3 py-1 text-sm"
+                    />
                   </td>
                   <td className="px-6 py-5 whitespace-nowrap">
                     <span className="text-sm font-bold text-gray-900">

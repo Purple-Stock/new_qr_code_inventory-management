@@ -90,6 +90,7 @@ export const fr = {
     items: "articles",
     transactions: "transactions",
     unnamedItem: "Article sans nom",
+    lowStockBadge: "Stock bas",
     itemDuplicated: "Article dupliqué avec succès",
     deleteConfirm: "Êtes-vous sûr de vouloir supprimer cet article ? Cette action ne peut pas être annulée.",
     itemDeleted: "Article supprimé avec succès",
@@ -767,6 +768,12 @@ export const fr = {
     priceLabel: "Prix",
     typeLabel: "Type",
     brandLabel: "Marque",
+    minimumStockLabel: "Quantité minimale",
+    minimumStockHelp:
+      "Laissez vide pour ne pas alerter. Utilisez 1 ou 2 pour recevoir un e-mail quand le stock est presque épuisé.",
+    minimumStockPlaceholder: "Aucune alerte",
+    minimumStockInvalid:
+      "La quantité minimale doit être un nombre supérieur ou égal à zéro",
     maximumStockLabel: "Quantité maximale",
     maximumStockHelp:
       "Laissez vide pour illimité. Utilisez 1 pour un article unique.",
@@ -804,6 +811,9 @@ export const fr = {
     tourPricingDesc: "Renseignez le coût et le prix de vente pour suivre la marge et la valeur de l'article.",
     tourAttributesTitle: "Type et marque",
     tourAttributesDesc: "Utilisez ces attributs optionnels pour organiser les filtres et rapports.",
+    tourMinimumStockTitle: "Quantité minimale",
+    tourMinimumStockDesc:
+      "Définissez quand l'équipe doit recevoir un e-mail. Laissez vide pour ne pas alerter, ou saisissez 1 ou 2 pour prévenir quand il reste peu.",
     tourMaximumStockTitle: "Quantité maximale",
     tourMaximumStockDesc:
       "Définissez combien d'unités cet article peut avoir. Laissez vide pour un stock illimité, ou saisissez 1 pour une pièce unique.",

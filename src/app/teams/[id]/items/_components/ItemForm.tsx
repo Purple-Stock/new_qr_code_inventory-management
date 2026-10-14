@@ -16,6 +16,7 @@ export interface ItemFormValues {
   brand: string;
   photoData: string;
   customFields: Record<string, string>;
+  minimumStock: string;
   maximumStock: string;
 }
 
@@ -275,6 +276,26 @@ export function ItemForm({
                 className="w-full pl-10"
               />
             </div>
+          </div>
+          <div className="space-y-2" data-tour="tour-new-item-minimum-stock">
+            <Label htmlFor="minimumStock" className="text-gray-900">
+              {t.itemForm.minimumStockLabel}
+            </Label>
+            <Input
+              id="minimumStock"
+              type="number"
+              min="0"
+              step="1"
+              placeholder={t.itemForm.minimumStockPlaceholder}
+              value={values.minimumStock}
+              onChange={(event) =>
+                onValueChange("minimumStock", event.target.value)
+              }
+              className="w-full"
+            />
+            <p className="text-sm text-gray-500">
+              {t.itemForm.minimumStockHelp}
+            </p>
           </div>
           <div className="space-y-2" data-tour="tour-new-item-maximum-stock">
             <Label htmlFor="maximumStock" className="text-gray-900">
