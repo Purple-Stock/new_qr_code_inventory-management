@@ -22,6 +22,7 @@ export function createEmptyItemFormValues(
     brand: "",
     photoData: "",
     customFields: {},
+    minimumStock: "",
     maximumStock: "",
   };
 
@@ -99,7 +100,11 @@ export function useCreateItemForm({
 
     const payload = buildItemWriteBody(form);
     if (!payload.ok) {
-      setError(t.itemForm.maximumStockInvalid);
+      setError(
+        payload.error === "minimumStock"
+          ? t.itemForm.minimumStockInvalid
+          : t.itemForm.maximumStockInvalid
+      );
       return;
     }
 

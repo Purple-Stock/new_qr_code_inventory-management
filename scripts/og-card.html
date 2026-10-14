@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700;800&family=Syne:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { width: 1200px; height: 630px; overflow: hidden; }
+      body {
+        --plum: #1a0826;
+        --violet: #7d3c98;
+        --lilac: #e4c7f5;
+        --mist: #f7f2fb;
+        --ink: #1c1224;
+        --mute: #6d5a7a;
+        font-family: Figtree, ui-sans-serif, system-ui, sans-serif;
+        color: white;
+        background: radial-gradient(1200px 640px at 18% 12%, #4a1d63 0%, var(--plum) 58%);
+      }
+      .hex {
+        position: absolute;
+        inset: 0;
+        opacity: 0.22;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='83' viewBox='0 0 72 83'%3E%3Cpath fill='none' stroke='%23e4c7f5' stroke-width='1.2' d='M36 1.5 L70 21 v41 L36 81.5 L2 62 V21 Z'/%3E%3C/svg%3E");
+        background-size: 72px 83px;
+      }
+      .qr-dust {
+        position: absolute;
+        right: -40px;
+        bottom: -50px;
+        width: 420px;
+        height: 420px;
+        opacity: 0.09;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Crect width='8' height='8' fill='white'/%3E%3Crect x='20' width='8' height='8' fill='white'/%3E%3Crect y='20' width='8' height='8' fill='white'/%3E%3Crect x='10' y='10' width='8' height='8' fill='white'/%3E%3C/svg%3E");
+        background-size: 28px 28px;
+        transform: rotate(12deg);
+      }
+      .frame {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: 0.92fr 1.08fr;
+        gap: 28px;
+        height: 100%;
+        padding: 56px 52px 52px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 36px;
+      }
+      .mark {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        background: var(--violet);
+        display: grid;
+        place-items: center;
+        box-shadow: 0 10px 24px rgba(125, 60, 152, 0.45);
+      }
+      .brand-name {
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        margin-left: 8px;
+        padding: 3px 9px 2px;
+        border: 1px solid rgba(228, 199, 245, 0.45);
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        color: var(--lilac);
+      }
+      h1 {
+        font-family: Syne, ui-sans-serif, sans-serif;
+        font-size: 54px;
+        font-weight: 800;
+        letter-spacing: -0.045em;
+        line-height: 0.98;
+        max-width: 420px;
+      }
+      .sub {
+        margin-top: 22px;
+        max-width: 460px;
+        font-size: 22px;
+        line-height: 1.35;
+        font-weight: 500;
+        color: #d8c2e8;
+      }
+      .url {
+        margin-top: 34px;
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        color: var(--lilac);
+      }
+      .window {
+        align-self: center;
+        background: var(--mist);
+        color: var(--ink);
+        border-radius: 22px;
+        overflow: hidden;
+        transform: rotate(-2deg) translate(12px, 10px) scale(0.94);
+        box-shadow:
+          0 0 0 1px rgba(228, 199, 245, 0.18),
+          0 28px 60px rgba(8, 2, 14, 0.45);
+      }
+      .chrome {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 18px;
+        background: white;
+        border-bottom: 1px solid #eadff3;
+      }
+      .chrome-brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        color: var(--violet);
+      }
+      .dot {
+        width: 22px;
+        height: 22px;
+        border-radius: 7px;
+        background: var(--violet);
+        display: grid;
+        place-items: center;
+      }
+      .lang {
+        font-size: 11px;
+        font-weight: 700;
+        color: white;
+        background: var(--violet);
+        border-radius: 999px;
+        padding: 4px 10px;
+      }
+      .body {
+        display: grid;
+        grid-template-columns: 132px 1fr;
+        min-height: 330px;
+      }
+      nav {
+        background: white;
+        border-right: 1px solid #eadff3;
+        padding: 14px 10px;
+        display: grid;
+        align-content: start;
+        gap: 6px;
+      }
+      .nav {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--mute);
+        padding: 8px 10px;
+        border-radius: 8px;
+      }
+      .nav.active {
+        background: var(--violet);
+        color: white;
+      }
+      main {
+        padding: 16px 16px 14px;
+      }
+      .kicker {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--mute);
+        letter-spacing: 0.04em;
+      }
+      .title {
+        font-size: 20px;
+        font-weight: 800;
+        margin: 2px 0 12px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 42px 1fr auto;
+        gap: 10px;
+        align-items: center;
+        background: white;
+        border: 1px solid #eadff3;
+        border-radius: 12px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+      }
+      .qr {
+        width: 36px;
+        height: 36px;
+      }
+      .item {
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.15;
+      }
+      .sku {
+        font-size: 11px;
+        color: var(--mute);
+        font-weight: 600;
+        margin-top: 2px;
+      }
+      .qty {
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--violet);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="hex"></div>
+    <div class="qr-dust"></div>
+    <div class="frame">
+      <section>
+        <div class="brand">
+          <div class="mark" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 32 32">
+              <g transform="translate(16,16) scale(0.12)">
+                <path fill="white" d="M0,-100 L86,-50 L86,50 L0,100 L-86,50 L-86,-50 Z" />
+                <path fill="#7D3C98" d="M30,-50 L-15,10 H15 L-10,55 L40,0 H15 Z" />
+              </g>
+            </svg>
+          </div>
+          <div class="brand-name">PURPLE STOCK <span class="badge">APP</span></div>
+        </div>
+        <h1>Seu inventário<br />simplificado</h1>
+        <p class="sub">Entrada, saída e transferência com QR Code.</p>
+        <p class="url">app.purplestock.com.br</p>
+      </section>
+      <aside class="window">
+        <div class="chrome">
+          <div class="chrome-brand">
+            <span class="dot" aria-hidden="true">
+              <svg width="12" height="12" viewBox="0 0 32 32">
+                <g transform="translate(16,16) scale(0.1)">
+                  <path fill="white" d="M0,-100 L86,-50 L86,50 L0,100 L-86,50 L-86,-50 Z" />
+                </g>
+              </svg>
+            </span>
+            PURPLE STOCK
+          </div>
+          <span class="lang">PT</span>
+        </div>
+        <div class="body">
+          <nav>
+            <div class="nav active">Lista de Itens</div>
+            <div class="nav">Localizações</div>
+            <div class="nav">Entrada</div>
+            <div class="nav">Saída</div>
+          </nav>
+          <main>
+            <p class="kicker">Time Galpão</p>
+            <p class="title">Itens</p>
+            <div class="row">
+              <svg class="qr" viewBox="0 0 21 21" aria-hidden="true">
+                <rect width="21" height="21" fill="white" />
+                <rect width="7" height="7" fill="#1c1224" />
+                <rect x="14" width="7" height="7" fill="#1c1224" />
+                <rect y="14" width="7" height="7" fill="#1c1224" />
+                <rect x="2" y="2" width="3" height="3" fill="white" />
+                <rect x="16" y="2" width="3" height="3" fill="white" />
+                <rect x="2" y="16" width="3" height="3" fill="white" />
+                <rect x="9" y="9" width="3" height="3" fill="#1c1224" />
+                <rect x="13" y="10" width="2" height="2" fill="#1c1224" />
+                <rect x="10" y="14" width="2" height="3" fill="#1c1224" />
+              </svg>
+              <div>
+                <p class="item">Tripé Manfrotto 190</p>
+                <p class="sku">GALPÃO A · TRP-190</p>
+              </div>
+              <span class="qty">12</span>
+            </div>
+            <div class="row">
+              <svg class="qr" viewBox="0 0 21 21" aria-hidden="true">
+                <rect width="21" height="21" fill="white" />
+                <rect width="7" height="7" fill="#1c1224" />
+                <rect x="14" width="7" height="7" fill="#1c1224" />
+                <rect y="14" width="7" height="7" fill="#1c1224" />
+                <rect x="2" y="2" width="3" height="3" fill="white" />
+                <rect x="16" y="2" width="3" height="3" fill="white" />
+                <rect x="2" y="16" width="3" height="3" fill="white" />
+                <rect x="9" y="8" width="2" height="5" fill="#1c1224" />
+                <rect x="14" y="12" width="4" height="2" fill="#1c1224" />
+              </svg>
+              <div>
+                <p class="item">Cabo HDMI 15m</p>
+                <p class="sku">SET 2 · HDMI-15</p>
+              </div>
+              <span class="qty">8</span>
+            </div>
+            <div class="row">
+              <svg class="qr" viewBox="0 0 21 21" aria-hidden="true">
+                <rect width="21" height="21" fill="white" />
+                <rect width="7" height="7" fill="#1c1224" />
+                <rect x="14" width="7" height="7" fill="#1c1224" />
+                <rect y="14" width="7" height="7" fill="#1c1224" />
+                <rect x="2" y="2" width="3" height="3" fill="white" />
+                <rect x="16" y="2" width="3" height="3" fill="white" />
+                <rect x="2" y="16" width="3" height="3" fill="white" />
+                <rect x="8" y="10" width="5" height="2" fill="#1c1224" />
+                <rect x="12" y="15" width="2" height="3" fill="#1c1224" />
+              </svg>
+              <div>
+                <p class="item">Mixer Behringer X32</p>
+                <p class="sku">RACK 1 · MIX-X32</p>
+              </div>
+              <span class="qty">3</span>
+            </div>
+          </main>
+        </div>
+      </aside>
+    </div>
+  </body>
+</html>

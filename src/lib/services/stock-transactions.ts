@@ -1,4 +1,6 @@
+import { getItemById } from "@/lib/db/items";
 import { createStockTransaction } from "@/lib/db/stock-transactions";
+import { notifyIfMinimumStockCrossed } from "@/lib/services/low-stock-alert";
 import { getTeamWithStats } from "@/lib/db/teams";
 import { ERROR_CODES } from "@/lib/errors";
 import { getErrorMessage } from "@/lib/error-utils";
@@ -104,6 +106,7 @@ export async function createTeamStockTransaction(params: {
       }
     }
 
+    const itemBefore = await getItemById(payload.itemId);
     const transaction = await createStockTransaction({
       itemId: payload.itemId,
       teamId: params.teamId,
@@ -121,6 +124,23 @@ export async function createTeamStockTransaction(params: {
       destinationTeamId: payload.destinationTeamId,
       transferGroupId: payload.transferGroupId,
     });
+
+    const itemAfter = await getItemById(payload.itemId);
+    if (itemBefore) {
+      await notifyIfMinimumStockCrossed({
+        teamId: params.teamId,
+        itemName: itemAfter?.name ?? itemBefore.name,
+        itemSku: itemAfter?.sku ?? itemBefore.sku,
+        previousStock: itemBefore.currentStock ?? 0,
+        nextStock: itemAfter?.currentStock ?? itemBefore.currentStock ?? 0,
+        minimumStock: itemAfter?.minimumStock ?? itemBefore.minimumStock,
+      }).catch((error) => {
+        console.error("Low-stock alert failed", {
+          teamId: params.teamId,
+          error,
+        });
+      });
+    }
 
     return {
       ok: true,

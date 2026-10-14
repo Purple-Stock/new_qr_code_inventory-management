@@ -97,6 +97,52 @@ describe("items service", () => {
     expect(result.data.item.name).toBe("New Name");
   });
 
+  it("persists minimumStock when updating an item", async () => {
+    const { drizzle } = getTestDb();
+    const [admin] = await drizzle
+      .insert(users)
+      .values({
+        email: "min-stock-update@example.com",
+        passwordHash: "hash",
+        role: "admin",
+      })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Min Stock Items", userId: admin.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: admin.id,
+      role: "admin",
+      status: "active",
+    });
+    const [item] = await drizzle
+      .insert(items)
+      .values({
+        name: "Cabo HDMI",
+        barcode: "min-stock-update",
+        teamId: team.id,
+        minimumStock: 0,
+      })
+      .returning();
+
+    const result = await updateTeamItem({
+      teamId: team.id,
+      itemId: item.id,
+      requestUserId: admin.id,
+      payload: {
+        name: "Cabo HDMI",
+        barcode: "min-stock-update",
+        minimumStock: 2,
+      },
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.item.minimumStock).toBe(2);
+  });
+
   it("rejects creating unique equipment above the maximum quantity", async () => {
     const { drizzle } = getTestDb();
     const [admin] = await drizzle

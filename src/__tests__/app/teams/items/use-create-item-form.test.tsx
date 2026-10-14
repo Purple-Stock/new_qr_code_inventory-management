@@ -16,6 +16,8 @@ vi.mock("@/lib/i18n", () => ({
         itemNameRequired: "Name required",
         barcodeRequired: "Barcode required",
         unexpectedError: "Unexpected error",
+        minimumStockInvalid:
+          "Minimum quantity must be a number zero or greater",
         maximumStockInvalid:
           "Maximum quantity must be a number zero or greater",
       },
@@ -46,6 +48,11 @@ function TestHarness() {
         aria-label="barcode"
         value={form.barcode}
         onChange={(e) => updateField("barcode", e.target.value)}
+      />
+      <input
+        aria-label="minimum quantity"
+        value={form.minimumStock}
+        onChange={(e) => updateField("minimumStock", e.target.value)}
       />
       <input
         aria-label="maximum quantity"
@@ -135,6 +142,61 @@ describe("useCreateItemForm", () => {
     expect(
       await screen.findByText(
         "Maximum quantity must be a number zero or greater"
+      )
+    ).toBeInTheDocument();
+    expect(mockedFetchApiJsonResult).not.toHaveBeenCalled();
+  });
+
+  it("submits the typed minimum quantity as the low-stock trigger", async () => {
+    mockedFetchApiJsonResult.mockResolvedValue({
+      ok: true,
+      data: { message: "ok", item: { id: 1 } },
+    } as never);
+
+    render(<TestHarness />);
+
+    fireEvent.change(screen.getByLabelText("name"), {
+      target: { value: "Cabo HDMI" },
+    });
+    fireEvent.change(screen.getByLabelText("barcode"), {
+      target: { value: "78912345678" },
+    });
+    fireEvent.change(screen.getByLabelText("minimum quantity"), {
+      target: { value: "2" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "submit" }));
+
+    await waitFor(() => {
+      expect(mockedFetchApiJsonResult).toHaveBeenCalled();
+    });
+
+    const [, options] = mockedFetchApiJsonResult.mock.calls[0] ?? [];
+    expect(options?.body).toEqual(
+      expect.objectContaining({
+        name: "Cabo HDMI",
+        barcode: "78912345678",
+        minimumStock: 2,
+      })
+    );
+  });
+
+  it("rejects a non-numeric minimum quantity before calling the API", async () => {
+    render(<TestHarness />);
+
+    fireEvent.change(screen.getByLabelText("name"), {
+      target: { value: "Cable" },
+    });
+    fireEvent.change(screen.getByLabelText("barcode"), {
+      target: { value: "78912345678" },
+    });
+    fireEvent.change(screen.getByLabelText("minimum quantity"), {
+      target: { value: "abc" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "submit" }));
+
+    expect(
+      await screen.findByText(
+        "Minimum quantity must be a number zero or greater"
       )
     ).toBeInTheDocument();
     expect(mockedFetchApiJsonResult).not.toHaveBeenCalled();
