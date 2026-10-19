@@ -322,6 +322,38 @@ export async function activateTeamManualBilling(
   return updatedTeam;
 }
 
+export async function countTeamsForCompany(companyId: number): Promise<number> {
+  const [row] = await sqlite
+    .select({ value: count() })
+    .from(teams)
+    .where(eq(teams.companyId, companyId));
+  return row?.value ?? 0;
+}
+
+/**
+ * First-team signup trial. Does not increment manualTrialGrantsCount so
+ * later admin grants still have their 3-slot budget.
+ */
+export async function startSignupManualTrial(
+  teamId: number,
+  manualTrialEndsAt: Date
+): Promise<Team> {
+  const [updatedTeam] = await sqlite
+    .update(teams)
+    .set({
+      manualTrialEndsAt,
+      updatedAt: new Date(),
+    })
+    .where(eq(teams.id, teamId))
+    .returning();
+
+  if (!updatedTeam) {
+    throw new Error("Team not found");
+  }
+
+  return updatedTeam;
+}
+
 export async function grantTeamManualTrial(
   teamId: number,
   data: {
