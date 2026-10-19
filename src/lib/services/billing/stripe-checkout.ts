@@ -15,13 +15,14 @@ import {
   getStripeClient,
   getStripePriceId,
   isStripeConfigured,
-  STRIPE_CHECKOUT_TRIAL_DAYS,
 } from "@/lib/stripe";
 
 /**
- * Hosted Checkout params for a team subscription with free trial + card on file.
- * WHY payment_method_collection always: trial total is R$0; without this Stripe may
- * skip collecting a card and first charge after trial fails.
+ * Hosted Checkout params for converting a team to a paid subscription.
+ * Trial already started at first-team signup (`manualTrialEndsAt`), so Checkout
+ * must not add `trial_period_days`.
+ * WHY payment_method_collection always: conversion can be R$0-adjacent in Stripe
+ * UI; without this Stripe may skip collecting a card.
  */
 export function buildTeamSubscriptionCheckoutSessionParams(params: {
   customerId: string;
@@ -45,7 +46,6 @@ export function buildTeamSubscriptionCheckoutSessionParams(params: {
       teamId: String(params.teamId),
     },
     subscription_data: {
-      trial_period_days: STRIPE_CHECKOUT_TRIAL_DAYS,
       metadata: {
         teamId: String(params.teamId),
       },

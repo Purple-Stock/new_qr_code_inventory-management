@@ -35,14 +35,14 @@ Dense rules for coding agents in `purple-stock/next-qr-code-invetory-management/
 | Provider sync | `src/lib/services/billing/stripe-subscription-sync.ts` |
 | Webhooks | `src/lib/services/billing/stripe-webhook.ts` |
 | Shared Stripe mapping helpers | `src/lib/services/billing/stripe-shared.ts` |
-| Env + trial constant | `src/lib/stripe.ts` (`STRIPE_CHECKOUT_TRIAL_DAYS`) |
+| Env + trial constant | `src/lib/stripe.ts` (`TEAM_SIGNUP_TRIAL_DAYS`) |
 | Access gate | `src/lib/services/subscription-access.ts` |
 
 Rules:
 
-- Checkout trial is **session-level** (`trial_period_days`), not a new Product/Price.
+- Signup trial is **first-team `manualTrialEndsAt`**, not Stripe `trial_period_days`.
 - Do not invent a second `STRIPE_PRICE_ID` for trial.
-- `payment_method_collection: "always"` is required so card is collected when amount is R$0.
+- Checkout conversion collects a card (`payment_method_collection: "always"`) and must not add another 7 Stripe days.
 - Amplify app env holds live Stripe keys; staging may share live keys — do not complete accidental live payments in tests.
 
 ## Auth / multi-tenant

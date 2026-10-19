@@ -55,6 +55,73 @@ describe("teams service", () => {
     expect(result.data.team.companyId).toBe(company.id);
   });
 
+  it("grants a 7-day no-card trial on the first team of a company", async () => {
+    const { drizzle } = getTestDb();
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "first-team-trial@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [company] = await drizzle
+      .insert(companies)
+      .values({ name: "Trial Co", slug: "trial-co" })
+      .returning();
+    await drizzle.insert(companyMembers).values({
+      companyId: company.id,
+      userId: user.id,
+      role: "owner",
+      status: "active",
+    });
+
+    const before = Date.now();
+    const result = await createTeamForUser({
+      requestUserId: user.id,
+      payload: { name: "First Team", notes: null },
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.team.manualTrialEndsAt).toBeTruthy();
+    const endsAt = new Date(result.data.team.manualTrialEndsAt as string).getTime();
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+    expect(endsAt).toBeGreaterThanOrEqual(before + sevenDays - 5_000);
+    expect(endsAt).toBeLessThanOrEqual(Date.now() + sevenDays + 5_000);
+
+    const [row] = await drizzle.select().from(teams).where(eq(teams.id, result.data.team.id));
+    expect(row.manualTrialGrantsCount).toBe(0);
+  });
+
+  it("does not grant another signup trial on the second team of the same company", async () => {
+    const { drizzle } = getTestDb();
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "second-team-trial@example.com", passwordHash: "hash", role: "admin" })
+      .returning();
+    const [company] = await drizzle
+      .insert(companies)
+      .values({ name: "Second Co", slug: "second-co" })
+      .returning();
+    await drizzle.insert(companyMembers).values({
+      companyId: company.id,
+      userId: user.id,
+      role: "owner",
+      status: "active",
+    });
+
+    const first = await createTeamForUser({
+      requestUserId: user.id,
+      payload: { name: "First Team", notes: null },
+    });
+    expect(first.ok).toBe(true);
+
+    const second = await createTeamForUser({
+      requestUserId: user.id,
+      payload: { name: "Second Team", notes: null },
+    });
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+    expect(second.data.team.manualTrialEndsAt).toBeNull();
+  });
+
   it("returns 401 when request user is missing", async () => {
     const result = await createTeamForUser({
       requestUserId: null,

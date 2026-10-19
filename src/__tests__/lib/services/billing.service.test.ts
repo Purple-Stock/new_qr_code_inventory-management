@@ -9,7 +9,6 @@ import {
   syncTeamStripeSubscriptionFromProvider,
 } from "@/lib/services/billing";
 import { ERROR_CODES } from "@/lib/errors";
-import { STRIPE_CHECKOUT_TRIAL_DAYS } from "@/lib/stripe";
 
 vi.mock("@/lib/permissions", () => ({
   authorizeTeamPermission: vi.fn(),
@@ -126,14 +125,13 @@ describe("billing service", () => {
         mode: "subscription",
         payment_method_collection: "always",
         subscription_data: expect.objectContaining({
-          trial_period_days: STRIPE_CHECKOUT_TRIAL_DAYS,
           metadata: { teamId: "10" },
         }),
       })
     );
   });
 
-  it("builds checkout params with trial and forced card collection", () => {
+  it("builds checkout params with card collection and no extra Stripe trial", () => {
     const params = buildTeamSubscriptionCheckoutSessionParams({
       customerId: "cus_abc",
       stripePriceId: "price_123",
@@ -143,7 +141,7 @@ describe("billing service", () => {
 
     expect(params.mode).toBe("subscription");
     expect(params.payment_method_collection).toBe("always");
-    expect(params.subscription_data?.trial_period_days).toBe(STRIPE_CHECKOUT_TRIAL_DAYS);
+    expect(params.subscription_data?.trial_period_days).toBeUndefined();
     expect(params.metadata).toEqual({ teamId: "42" });
     expect(params.line_items).toEqual([{ price: "price_123", quantity: 1 }]);
   });

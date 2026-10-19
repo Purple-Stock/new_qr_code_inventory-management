@@ -1,11 +1,14 @@
 import {
+  countTeamsForCompany,
   createTeam,
   deleteTeam,
   getTeamWithStats,
   getUserTeamsWithStats,
+  startSignupManualTrial,
   updateTeam,
   updateTeamAndCompanyLabelSettings,
 } from "@/lib/db/teams";
+import { TEAM_SIGNUP_TRIAL_DAYS } from "@/lib/stripe";
 import {
   ensureActiveCompanyForUser,
   getActiveCompanyIdForUser,
@@ -30,6 +33,17 @@ import {
   validationServiceError,
 } from "@/lib/services/errors";
 import { toTeamDto } from "@/lib/services/mappers";
+import type { Team } from "@/db/schema";
+
+const SIGNUP_TRIAL_MS = TEAM_SIGNUP_TRIAL_DAYS * 24 * 60 * 60 * 1000;
+
+async function maybeStartSignupTrial(team: Team, companyId: number): Promise<Team> {
+  const companyTeamCount = await countTeamsForCompany(companyId);
+  if (companyTeamCount !== 1) {
+    return team;
+  }
+  return startSignupManualTrial(team.id, new Date(Date.now() + SIGNUP_TRIAL_MS));
+}
 
 const BLOCKED_TEAM_DELETE_SUBSCRIPTION_STATUSES = new Set([
   "active",
@@ -106,7 +120,8 @@ export async function createTeamForUser(params: {
       userId: params.requestUserId,
       companyId,
     });
-    return { ok: true, data: { team: toTeamDto(team) } };
+    const createdTeam = await maybeStartSignupTrial(team, companyId);
+    return { ok: true, data: { team: toTeamDto(createdTeam) } };
   } catch (error: unknown) {
     if (isUniqueConstraintError(error)) {
       return {
