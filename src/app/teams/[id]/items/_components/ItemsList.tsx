@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/use-toast-simple";
 import { fetchApiJsonResult, fetchApiResult } from "@/lib/api-client";
 import { ERROR_CODES } from "@/lib/errors";
 import type { Item } from "../_types";
+import { ItemListPhoto } from "./ItemListPhoto";
 import { ItemStockBadge } from "./ItemStockBadge";
 
 interface ItemsListProps {
@@ -201,6 +202,13 @@ export function ItemsList({ items, teamId, formatPrice, t, onItemDeleted, onItem
           <div key={item.id} className="bg-white rounded-xl shadow-md border border-gray-100 p-4">
             <div className="flex items-start gap-3 mb-3">
               <div className="flex-shrink-0">
+                <ItemListPhoto
+                  name={item.name || t.items.unnamedItem}
+                  photoData={item.photoData}
+                  noPhotoLabel={t.items.noPhoto}
+                />
+              </div>
+              <div className="flex-shrink-0">
                 <QRCodeDisplay
                   value={item.barcode || ""}
                   size={56}
@@ -297,6 +305,9 @@ export function ItemsList({ items, teamId, formatPrice, t, onItemDeleted, onItem
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  {t.items.photo}
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                   {t.items.qrCode}
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
@@ -322,6 +333,13 @@ export function ItemsList({ items, teamId, formatPrice, t, onItemDeleted, onItem
             <tbody className="bg-white divide-y divide-gray-100">
               {items.map((item) => (
                 <tr key={item.id} className="hover:bg-purple-50/50 transition-colors">
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <ItemListPhoto
+                      name={item.name || t.items.unnamedItem}
+                      photoData={item.photoData}
+                      noPhotoLabel={t.items.noPhoto}
+                    />
+                  </td>
                   <td className="px-6 py-5 whitespace-nowrap">
                     <QRCodeDisplay
                       value={item.barcode || ""}

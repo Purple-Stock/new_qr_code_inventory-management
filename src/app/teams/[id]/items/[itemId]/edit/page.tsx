@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { formatMaximumStockInput } from "@/lib/item-maximum-stock";
 import { formatMinimumStockInput } from "@/lib/item-minimum-stock";
+import { requirePageUserId } from "@/lib/page-session";
 import { getTeamItemEditData } from "@/lib/services/team-dashboard";
 import EditItemPageClient from "./_components/EditItemPageClient";
 
@@ -17,9 +18,11 @@ export default async function EditItemPage({ params }: PageProps) {
     notFound();
   }
 
+  const requestUserId = await requirePageUserId();
   const { team, item, subscriptionRequired } = await getTeamItemEditData(
     teamId,
-    itemId
+    itemId,
+    { requestUserId }
   );
 
   if (subscriptionRequired) {

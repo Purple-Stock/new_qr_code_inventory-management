@@ -1,9 +1,8 @@
 import { TransactionsPageClient } from "./_components/TransactionsPageClient";
 import { notFound, redirect } from "next/navigation";
-import { cookies } from "next/headers";
+import { requirePageUserId } from "@/lib/page-session";
 import { getTeamTransactionsData } from "@/lib/services/team-dashboard";
 import { paginateTransactions } from "./_utils/pagination";
-import { getUserIdFromSessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -23,11 +22,7 @@ export default async function TransactionsPage({ params, searchParams }: PagePro
     notFound();
   }
 
-  const requestUserId = getUserIdFromSessionToken(
-    (await cookies()).get(SESSION_COOKIE_NAME)?.value
-  );
-
-  // Fetch data on the server
+  const requestUserId = await requirePageUserId();
   const { team, transactions, subscriptionRequired, canDeleteTransactions } =
     await getTeamTransactionsData(teamId, resolvedSearchParams.search, requestUserId);
 
