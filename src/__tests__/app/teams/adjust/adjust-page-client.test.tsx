@@ -64,6 +64,12 @@ vi.mock("@/lib/i18n", () => ({
         error: "Error",
         success: "Success",
         loading: "Loading",
+        page: "Página",
+        of: "de",
+        next: "Próximo",
+        back: "Voltar",
+        sortAscending: "crescente",
+        sortDescending: "decrescente",
       },
       items: {
         sku: "SKU",
@@ -297,5 +303,49 @@ describe("AdjustPageClient", () => {
 
     expect(screen.queryByText("Ghost item")).not.toBeInTheDocument();
     expect(screen.getByPlaceholderText("Notes...")).toHaveValue("draft adjust");
+  });
+
+  it("sorts selected items before paginating", () => {
+    const names = [
+      "Lima",
+      "Alpha",
+      "Kilo",
+      "Bravo",
+      "Juliet",
+      "Charlie",
+      "India",
+      "Delta",
+      "Hotel",
+      "Echo",
+      "Golf",
+      "Foxtrot",
+    ];
+    const catalog = names.map((name, index) => ({
+      id: index + 1,
+      name,
+      sku: `S-${index + 1}`,
+      barcode: `${index + 1}`,
+      currentStock: 4,
+      locationName: "CÂMARA FRIA",
+    }));
+    window.localStorage.setItem(
+      "inventory-draft:adjust:29",
+      JSON.stringify({
+        selectedLocation: "10",
+        selectedItems: catalog.map((item) => ({ item, newStock: 4 })),
+        notes: "",
+      })
+    );
+
+    render(
+      <AdjustPageClient team={baseTeam} locations={baseLocations as any} items={catalog as any} />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "ITEM crescente" }));
+
+    expect(screen.getByText("Alpha")).toBeInTheDocument();
+    expect(screen.getByText("Juliet")).toBeInTheDocument();
+    expect(screen.queryByText("Kilo")).not.toBeInTheDocument();
+    expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
   });
 });

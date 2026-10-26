@@ -63,6 +63,12 @@ vi.mock("@/lib/i18n", () => ({
       common: {
         tutorial: "Tutorial",
         loading: "Loading",
+        page: "Página",
+        of: "de",
+        next: "Próximo",
+        back: "Voltar",
+        sortAscending: "crescente",
+        sortDescending: "decrescente",
       },
       labels: {
         title: "Labels",
@@ -336,5 +342,80 @@ describe("LabelsPageClient", () => {
           "1 item(s) were printed with the barcode number only because the value is not a valid EAN-13.",
       })
     );
+  });
+
+  it("sorts the full filtered list before paginating", () => {
+    const names = [
+      "Lima",
+      "Alpha",
+      "Kilo",
+      "Bravo",
+      "Juliet",
+      "Charlie",
+      "India",
+      "Delta",
+      "Hotel",
+      "Echo",
+      "Golf",
+      "Foxtrot",
+    ];
+    render(
+      <LabelsPageClient
+        initialTeam={team as any}
+        initialItems={names.map((name, index) => ({
+          id: index + 1,
+          name,
+          sku: `S-${index + 1}`,
+          barcode: `${index + 1}`,
+          currentStock: 1,
+          price: 1,
+          locationName: "Main",
+          customFields: null,
+        })) as any}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Item crescente" }));
+
+    expect(screen.getByText("Alpha")).toBeInTheDocument();
+    expect(screen.getByText("Juliet")).toBeInTheDocument();
+    expect(screen.queryByText("Kilo")).not.toBeInTheDocument();
+    expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
+  });
+
+  it("select-all still applies to the full filtered set on a paginated table", () => {
+    const names = [
+      "Lima",
+      "Alpha",
+      "Kilo",
+      "Bravo",
+      "Juliet",
+      "Charlie",
+      "India",
+      "Delta",
+      "Hotel",
+      "Echo",
+      "Golf",
+      "Foxtrot",
+    ];
+    render(
+      <LabelsPageClient
+        initialTeam={team as any}
+        initialItems={names.map((name, index) => ({
+          id: index + 1,
+          name,
+          sku: `S-${index + 1}`,
+          barcode: `${index + 1}`,
+          currentStock: 1,
+          price: 1,
+          locationName: "Main",
+          customFields: null,
+        })) as any}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Select all" }));
+
+    expect(screen.getByText("12 selected item(s)")).toBeInTheDocument();
   });
 });

@@ -10,13 +10,19 @@ import { useToast } from "@/components/ui/use-toast-simple";
 import { fetchApiJsonResult, fetchApiResult } from "@/lib/api-client";
 import { ERROR_CODES } from "@/lib/errors";
 import type { Item } from "../_types";
+import type { ItemSortKey, SortDirection } from "../_utils/sortItems";
+import { ItemListPhoto } from "./ItemListPhoto";
 import { ItemStockBadge } from "./ItemStockBadge";
+import { ItemsSortHeader } from "./ItemsSortHeader";
 
 interface ItemsListProps {
   items: Item[];
   teamId: string;
   formatPrice: (price: number | null) => string;
   t: any;
+  sortKey?: ItemSortKey | null;
+  sortDirection?: SortDirection;
+  onSort?: (key: ItemSortKey) => void;
   onItemDeleted?: (itemId: number) => void;
   onItemDuplicated?: (item: Item) => void;
 }
@@ -31,7 +37,17 @@ function generateBarcode(): string {
   return Math.floor(1000000000000 + Math.random() * 9000000000000).toString();
 }
 
-export function ItemsList({ items, teamId, formatPrice, t, onItemDeleted, onItemDuplicated }: ItemsListProps) {
+export function ItemsList({
+  items,
+  teamId,
+  formatPrice,
+  t,
+  sortKey,
+  sortDirection,
+  onSort,
+  onItemDeleted,
+  onItemDuplicated,
+}: ItemsListProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [copyingId, setCopyingId] = useState<number | null>(null);
@@ -201,6 +217,13 @@ export function ItemsList({ items, teamId, formatPrice, t, onItemDeleted, onItem
           <div key={item.id} className="bg-white rounded-xl shadow-md border border-gray-100 p-4">
             <div className="flex items-start gap-3 mb-3">
               <div className="flex-shrink-0">
+                <ItemListPhoto
+                  name={item.name || t.items.unnamedItem}
+                  photoData={item.photoData}
+                  noPhotoLabel={t.items.noPhoto}
+                />
+              </div>
+              <div className="flex-shrink-0">
                 <QRCodeDisplay
                   value={item.barcode || ""}
                   size={56}
@@ -297,23 +320,31 @@ export function ItemsList({ items, teamId, formatPrice, t, onItemDeleted, onItem
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  {t.items.photo}
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                   {t.items.qrCode}
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  {t.items.item}
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  {t.items.sku}
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  {t.items.type}
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  {t.items.stock}
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  {t.items.price}
-                </th>
+                {(
+                  [
+                    [t.items.item, "name"],
+                    [t.items.sku, "sku"],
+                    [t.items.type, "itemType"],
+                    [t.items.stock, "currentStock"],
+                    [t.items.price, "price"],
+                  ] as const
+                ).map(([label, column]) => (
+                  <ItemsSortHeader
+                    key={column}
+                    label={label}
+                    column={column}
+                    sortKey={sortKey}
+                    sortDirection={sortDirection}
+                    sortAscendingLabel={t.items.sortAscending}
+                    sortDescendingLabel={t.items.sortDescending}
+                    onSort={onSort}
+                  />
+                ))}
                 <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
                   {t.common.actions}
                 </th>
@@ -322,6 +353,13 @@ export function ItemsList({ items, teamId, formatPrice, t, onItemDeleted, onItem
             <tbody className="bg-white divide-y divide-gray-100">
               {items.map((item) => (
                 <tr key={item.id} className="hover:bg-purple-50/50 transition-colors">
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <ItemListPhoto
+                      name={item.name || t.items.unnamedItem}
+                      photoData={item.photoData}
+                      noPhotoLabel={t.items.noPhoto}
+                    />
+                  </td>
                   <td className="px-6 py-5 whitespace-nowrap">
                     <QRCodeDisplay
                       value={item.barcode || ""}

@@ -5,17 +5,32 @@ import { Pencil, Trash2, Building2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { useToast } from "@/components/ui/use-toast-simple";
+import { SortableHeader } from "@/components/shared/SortableHeader";
+import type { SortDirection } from "@/lib/list-table";
 import { deleteLocationAction } from "../_actions/deleteLocation";
 import type { Location } from "../_types";
+
+type LocationSortKey = "name" | "description";
 
 interface LocationsListProps {
   locations: Location[];
   teamId: number;
   t: any;
+  sortKey?: LocationSortKey | null;
+  sortDirection?: SortDirection;
+  onSort?: (key: LocationSortKey) => void;
   onDelete: () => void;
 }
 
-export function LocationsList({ locations, teamId, t, onDelete }: LocationsListProps) {
+export function LocationsList({
+  locations,
+  teamId,
+  t,
+  sortKey,
+  sortDirection,
+  onSort,
+  onDelete,
+}: LocationsListProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [locationToDelete, setLocationToDelete] = useState<Location | null>(null);
@@ -122,12 +137,24 @@ export function LocationsList({ locations, teamId, t, onDelete }: LocationsListP
           <table className="w-full">
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  {t.locations.name}
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  {t.locations.description}
-                </th>
+                <SortableHeader
+                  label={t.locations.name}
+                  column="name"
+                  sortKey={sortKey}
+                  sortDirection={sortDirection}
+                  sortAscendingLabel={t.common.sortAscending}
+                  sortDescendingLabel={t.common.sortDescending}
+                  onSort={onSort}
+                />
+                <SortableHeader
+                  label={t.locations.description}
+                  column="description"
+                  sortKey={sortKey}
+                  sortDirection={sortDirection}
+                  sortAscendingLabel={t.common.sortAscending}
+                  sortDescendingLabel={t.common.sortDescending}
+                  onSort={onSort}
+                />
                 <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
                   {t.common.actions}
                 </th>

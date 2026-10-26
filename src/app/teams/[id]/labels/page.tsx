@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { requirePageUserId } from "@/lib/page-session";
 import { getTeamLabelsData } from "@/lib/services/team-dashboard";
 import LabelsPageClient from "./_components/LabelsPageClient";
 
@@ -14,7 +15,11 @@ export default async function LabelsPage({ params }: PageProps) {
     notFound();
   }
 
-  const { team, items, subscriptionRequired } = await getTeamLabelsData(teamId);
+  const requestUserId = await requirePageUserId();
+  const { team, items, subscriptionRequired } = await getTeamLabelsData(
+    teamId,
+    { requestUserId }
+  );
   if (subscriptionRequired) {
     redirect(`/teams/${teamId}/settings?billing=required`);
   }

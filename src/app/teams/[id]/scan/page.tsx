@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { requirePageUserId } from "@/lib/page-session";
 import { getTeamBasicData, getTeamItemsData } from "@/lib/services/team-dashboard";
 import { ScanPageClient } from "./_components/ScanPageClient";
 
@@ -17,7 +18,10 @@ export default async function ScanPage({ params }: PageProps) {
     notFound();
   }
 
-  const { team, subscriptionRequired } = await getTeamBasicData(teamId);
+  const requestUserId = await requirePageUserId();
+  const { team, subscriptionRequired } = await getTeamBasicData(teamId, {
+    requestUserId,
+  });
   if (subscriptionRequired) {
     redirect(`/teams/${teamId}/settings?billing=required`);
   }
@@ -39,7 +43,7 @@ export default async function ScanPage({ params }: PageProps) {
   }> = [];
 
   if (!preferServerLookup) {
-    const { items } = await getTeamItemsData(teamId);
+    const { items } = await getTeamItemsData(teamId, { requestUserId });
     lookupItems = items.map((item) => ({
       id: item.id,
       name: item.name,

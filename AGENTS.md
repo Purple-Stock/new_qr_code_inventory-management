@@ -50,6 +50,7 @@ Rules:
 - Session user: `getUserIdFromRequest` (`src/lib/permissions.ts`).
 - Team access: `authorizeTeamAccess` / `authorizeTeamPermission`.
 - Never return another team's data without active membership.
+- HTML `/teams/*` and `/team_selection` require a valid `ps_session` (middleware HMAC on the Edge + `requirePageUserId` in RSC). Dashboard loaders fail closed without `requestUserId` and active membership.
 
 ## Feature flow
 
@@ -74,6 +75,8 @@ Local app:
 npm run dev -- --port 3001
 # or: npm run dev:local-default
 ```
+
+Local `next dev` uses Turbopack. `next dev --webpack` on this Next 16 tree never hydrates the App Router, so the item photo file input and submit stay inert HTML. Keep `next build --webpack` for production.
 
 ## Tests
 

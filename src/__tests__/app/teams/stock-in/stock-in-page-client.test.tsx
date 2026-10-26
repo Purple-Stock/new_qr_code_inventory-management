@@ -113,6 +113,12 @@ vi.mock("@/lib/i18n", () => ({
         error: "Error",
         success: "Success",
         loading: "Loading",
+        page: "Página",
+        of: "de",
+        next: "Próximo",
+        back: "Voltar",
+        sortAscending: "crescente",
+        sortDescending: "decrescente",
       },
       items: {
         sku: "SKU",
@@ -455,5 +461,53 @@ describe("StockInPageClient", () => {
 
     expect(screen.queryByText("Ghost printer")).not.toBeInTheDocument();
     expect(screen.getByPlaceholderText("Notes...")).toHaveValue("draft note");
+  });
+
+  it("sorts selected items before paginating", () => {
+    const names = [
+      "Lima",
+      "Alpha",
+      "Kilo",
+      "Bravo",
+      "Juliet",
+      "Charlie",
+      "India",
+      "Delta",
+      "Hotel",
+      "Echo",
+      "Golf",
+      "Foxtrot",
+    ];
+    const catalog = names.map((name, index) => ({
+      id: index + 1,
+      name,
+      sku: `S-${index + 1}`,
+      barcode: `${index + 1}`,
+      currentStock: 5,
+      locationName: "Main",
+    }));
+    window.localStorage.setItem(
+      "inventory-draft:stock-in:1",
+      JSON.stringify({
+        selectedLocation: "10",
+        selectedItems: catalog.map((item) => ({ item, quantity: 1 })),
+        notes: "",
+      })
+    );
+
+    render(
+      <StockInPageClient
+        team={baseTeam}
+        locations={[{ id: 10, name: "Main" }]}
+        items={catalog}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "ITEM crescente" }));
+
+    expect(screen.getByText("Alpha")).toBeInTheDocument();
+    expect(screen.getByText("Juliet")).toBeInTheDocument();
+    expect(screen.queryByText("Kilo")).not.toBeInTheDocument();
+    expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
   });
 });

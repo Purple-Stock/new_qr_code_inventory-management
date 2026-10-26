@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { requirePageUserId } from "@/lib/page-session";
 import { getTeamStockByLocationData } from "@/lib/services/team-dashboard";
 import StockByLocationPageClient from "./_components/StockByLocationPageClient";
 
@@ -14,7 +15,9 @@ export default async function StockByLocationPage({ params }: PageProps) {
     notFound();
   }
 
-  const { team, locations, items, subscriptionRequired } = await getTeamStockByLocationData(teamId);
+  const requestUserId = await requirePageUserId();
+  const { team, locations, items, subscriptionRequired } =
+    await getTeamStockByLocationData(teamId, { requestUserId });
   if (subscriptionRequired) {
     redirect(`/teams/${teamId}/settings?billing=required`);
   }

@@ -1,5 +1,6 @@
 import { LocationsPageClient } from "./_components/LocationsPageClient";
 import { notFound, redirect } from "next/navigation";
+import { requirePageUserId } from "@/lib/page-session";
 import { getTeamLocationsData } from "@/lib/services/team-dashboard";
 
 interface PageProps {
@@ -15,7 +16,11 @@ export default async function LocationsPage({ params }: PageProps) {
   }
 
   // Fetch data on the server
-  const { team, locations, subscriptionRequired } = await getTeamLocationsData(teamId);
+  const requestUserId = await requirePageUserId();
+  const { team, locations, subscriptionRequired } = await getTeamLocationsData(
+    teamId,
+    { requestUserId }
+  );
 
   if (subscriptionRequired) {
     redirect(`/teams/${teamId}/settings?billing=required`);

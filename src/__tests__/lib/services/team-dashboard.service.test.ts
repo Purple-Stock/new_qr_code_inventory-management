@@ -1,6 +1,7 @@
 import { vi } from "vitest";
 import {
   getItemDetailsData,
+  getTeamItemEditData,
   getTeamLocationsData,
   getTeamReportsData,
   getTeamStockOperationData,
@@ -10,7 +11,7 @@ import { getTeamWithStats } from "@/lib/db/teams";
 import { getTeamItems, getItemByIdWithLocation } from "@/lib/db/items";
 import { getLocationById, getTeamLocations } from "@/lib/db/locations";
 import { getTeamReportStats } from "@/lib/db/reports";
-import { getCompanyTeams } from "@/lib/db/team-members";
+import { getActiveTeamMemberRole, getCompanyTeams } from "@/lib/db/team-members";
 import {
   getItemStockTransactionsWithDetails,
   getTeamStockTransactionsWithDetails,
@@ -32,6 +33,7 @@ vi.mock("@/lib/db/reports", () => ({
 }));
 vi.mock("@/lib/db/team-members", () => ({
   getCompanyTeams: vi.fn(),
+  getActiveTeamMemberRole: vi.fn(),
 }));
 vi.mock("@/lib/db/stock-transactions", () => ({
   getItemStockTransactionsWithDetails: vi.fn(),
@@ -47,6 +49,9 @@ const mockGetLocationById = getLocationById as vi.MockedFunction<typeof getLocat
 const mockGetTeamLocations = getTeamLocations as vi.MockedFunction<typeof getTeamLocations>;
 const mockGetTeamReportStats = getTeamReportStats as vi.MockedFunction<typeof getTeamReportStats>;
 const mockGetCompanyTeams = getCompanyTeams as vi.MockedFunction<typeof getCompanyTeams>;
+const mockGetActiveTeamMemberRole = getActiveTeamMemberRole as vi.MockedFunction<
+  typeof getActiveTeamMemberRole
+>;
 const mockGetItemTransactions =
   getItemStockTransactionsWithDetails as vi.MockedFunction<
     typeof getItemStockTransactionsWithDetails
@@ -77,6 +82,32 @@ describe("team-dashboard service", () => {
       updatedAt: new Date("2026-01-01T00:00:00.000Z"),
     } as never);
     mockGetCompanyTeams.mockResolvedValue([]);
+    mockGetActiveTeamMemberRole.mockResolvedValue("admin");
+  });
+
+  it("does not return item edit data without a session user", async () => {
+    mockGetItemByIdWithLocation.mockResolvedValue({
+      id: 10,
+      teamId: 1,
+      name: "Secret camera",
+      barcode: "999",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as never);
+
+    const result = await getTeamItemEditData(1, 10);
+
+    expect(result.team).toBeNull();
+    expect(result.item).toBeNull();
+    expect(mockGetItemByIdWithLocation).not.toHaveBeenCalled();
+  });
+
+  it("does not fetch report stats without a session user", async () => {
+    const result = await getTeamReportsData(1);
+
+    expect(result.team).toBeNull();
+    expect(result.stats.recentTransactions).toEqual([]);
+    expect(mockGetTeamReportStats).not.toHaveBeenCalled();
   });
 
   it("returns team report data with dto mapping", async () => {
@@ -94,7 +125,9 @@ describe("team-dashboard service", () => {
       transactionsByDate: [],
     });
 
-    const result = await getTeamReportsData(1);
+    const result = await getTeamReportsData(1, undefined, undefined, {
+      requestUserId: 7,
+    });
 
     expect(result.team?.id).toBe(1);
     expect(result.stats.totalItems).toBe(0);
@@ -109,7 +142,7 @@ describe("team-dashboard service", () => {
     } as never);
     mockGetItemTransactions.mockResolvedValue([]);
 
-    const result = await getItemDetailsData(1, 10);
+    const result = await getItemDetailsData(1, 10, { requestUserId: 7 });
 
     expect(result.item).toBeNull();
     expect(result.transactions).toEqual([]);
@@ -136,7 +169,7 @@ describe("team-dashboard service", () => {
       },
     ]);
 
-    const result = await getTeamTransactionsData(1);
+    const result = await getTeamTransactionsData(1, undefined, 7);
     expect(result.team?.id).toBe(1);
     expect(result.transactions[0].createdAt).toBe("2026-01-01T00:00:00.000Z");
   });
@@ -155,7 +188,7 @@ describe("team-dashboard service", () => {
     mockGetTeamItems.mockResolvedValue([]);
     mockGetLocationById.mockResolvedValue(null);
 
-    const result = await getTeamLocationsData(1);
+    const result = await getTeamLocationsData(1, { requestUserId: 7 });
     expect(result.locations).toHaveLength(1);
     expect(result.locations[0].name).toBe("Main");
   });
@@ -195,7 +228,9 @@ describe("team-dashboard service", () => {
       transactionsByDate: [],
     });
 
-    const result = await getTeamReportsData(1);
+    const result = await getTeamReportsData(1, undefined, undefined, {
+      requestUserId: 7,
+    });
 
     expect(result.subscriptionRequired).toBe(false);
     expect(result.team?.id).toBe(1);
@@ -236,7 +271,7 @@ describe("team-dashboard service", () => {
       },
     ] as never);
 
-    const result = await getTeamStockOperationData(1);
+    const result = await getTeamStockOperationData(1, { requestUserId: 7 });
 
     expect(result.destinationTeams).toEqual([{ id: 3, name: "Trial Team" }]);
   });

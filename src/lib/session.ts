@@ -1,25 +1,17 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import type { NextRequest, NextResponse } from "next/server";
+import {
+  getSessionSecret,
+  SESSION_COOKIE_NAME,
+  SESSION_MAX_AGE_SECONDS,
+} from "@/lib/session-secret";
 
-export const SESSION_COOKIE_NAME = "ps_session";
-const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
+export { SESSION_COOKIE_NAME };
 
 type SessionPayload = {
   userId: number;
   exp: number;
 };
-
-function getSessionSecret(): string {
-  if (process.env.SESSION_SECRET) {
-    return process.env.SESSION_SECRET;
-  }
-
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("SESSION_SECRET must be set in production");
-  }
-
-  return "dev-only-session-secret-change-me";
-}
 
 function sign(value: string): string {
   return createHmac("sha256", getSessionSecret()).update(value).digest("base64url");

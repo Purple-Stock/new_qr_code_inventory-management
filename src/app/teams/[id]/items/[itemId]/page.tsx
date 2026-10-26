@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { requirePageUserId } from "@/lib/page-session";
 import { getItemDetailsData } from "@/lib/services/team-dashboard";
 import ItemDetailPageClient from "./_components/ItemDetailPageClient";
 
@@ -17,7 +18,12 @@ export default async function ItemDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const { team, item, transactions, subscriptionRequired } = await getItemDetailsData(teamId, itemId);
+  const requestUserId = await requirePageUserId();
+  const { team, item, transactions, subscriptionRequired } = await getItemDetailsData(
+    teamId,
+    itemId,
+    { requestUserId }
+  );
   if (subscriptionRequired) {
     redirect(`/teams/${teamId}/settings?billing=required`);
   }
