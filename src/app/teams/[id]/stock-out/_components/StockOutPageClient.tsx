@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Info, ScanLine, Plus, Minus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,10 @@ import {
 } from "@/lib/local-storage";
 import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import { TeamLayout } from "@/components/shared/TeamLayout";
+import { SortableHeader } from "@/components/shared/SortableHeader";
+import { TablePager } from "@/components/shared/TablePager";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
+import { useSortedPage } from "@/hooks/useSortedPage";
 import { createStockOutAction } from "../_actions/createStockTransaction";
 import { parseDecimalInput } from "@/lib/utils/parse-decimal-input";
 import type { Item, Location, Team, SelectedItem } from "../_types";
@@ -169,6 +172,16 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
   };
 
   const totalItems = selectedItems.reduce((sum, si) => sum + si.quantity, 0);
+  const cartGetters = useMemo(
+    () => ({
+      name: (selected: SelectedItem) => selected.item.name,
+      stock: (selected: SelectedItem) => selected.item.currentStock,
+      sku: (selected: SelectedItem) => selected.item.sku,
+      quantity: (selected: SelectedItem) => selected.quantity,
+    }),
+    []
+  );
+  const { sort, onSort, setPage, paginated } = useSortedPage(selectedItems, cartGetters);
 
   const handleSubmit = async () => {
     if (!selectedLocation) {
@@ -378,18 +391,46 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
           <table className="w-full">
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
               <tr>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  {t.stockOut.item}
-                </th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden sm:table-cell">
-                  {t.stockOut.currentStock}
-                </th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden md:table-cell">
-                  {t.items.sku}
-                </th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  {t.stockOut.quantityToRemove}
-                </th>
+                <SortableHeader
+                  label={t.stockOut.item}
+                  column="name"
+                  sortKey={sort?.key}
+                  sortDirection={sort?.direction}
+                  sortAscendingLabel={t.common.sortAscending}
+                  sortDescendingLabel={t.common.sortDescending}
+                  onSort={onSort}
+                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"
+                />
+                <SortableHeader
+                  label={t.stockOut.currentStock}
+                  column="stock"
+                  sortKey={sort?.key}
+                  sortDirection={sort?.direction}
+                  sortAscendingLabel={t.common.sortAscending}
+                  sortDescendingLabel={t.common.sortDescending}
+                  onSort={onSort}
+                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden sm:table-cell"
+                />
+                <SortableHeader
+                  label={t.items.sku}
+                  column="sku"
+                  sortKey={sort?.key}
+                  sortDirection={sort?.direction}
+                  sortAscendingLabel={t.common.sortAscending}
+                  sortDescendingLabel={t.common.sortDescending}
+                  onSort={onSort}
+                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden md:table-cell"
+                />
+                <SortableHeader
+                  label={t.stockOut.quantityToRemove}
+                  column="quantity"
+                  sortKey={sort?.key}
+                  sortDirection={sort?.direction}
+                  sortAscendingLabel={t.common.sortAscending}
+                  sortDescendingLabel={t.common.sortDescending}
+                  onSort={onSort}
+                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"
+                />
                 <th className="px-4 sm:px-6 py-3 sm:py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
                   {t.common.actions}
                 </th>
@@ -403,7 +444,7 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
                   </td>
                 </tr>
               ) : (
-                selectedItems.map((selectedItem) => {
+                paginated.items.map((selectedItem) => {
                   const maxStock = selectedItem.item.currentStock ?? 0;
                   return (
                     <tr key={selectedItem.item.id} className="hover:bg-purple-50/50 transition-colors">
@@ -479,6 +520,17 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
               )}
             </tbody>
           </table>
+        </div>
+        <div className="px-4 sm:px-6 pb-4">
+          <TablePager
+            currentPage={paginated.currentPage}
+            totalPages={paginated.totalPages}
+            onPageChange={setPage}
+            backLabel={t.common.back}
+            nextLabel={t.common.next}
+            pageLabel={t.common.page}
+            ofLabel={t.common.of}
+          />
         </div>
       </div>
 

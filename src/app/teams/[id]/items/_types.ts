@@ -13,6 +13,7 @@ export type Item = Pick<
   | "price"
   | "locationName"
   | "customFields"
+  | "photoData"
 >;
 
 export type Team = Pick<

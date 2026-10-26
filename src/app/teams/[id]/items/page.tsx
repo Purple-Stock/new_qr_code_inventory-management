@@ -1,5 +1,6 @@
 import { ItemsPageClient } from "./_components/ItemsPageClient";
 import { notFound, redirect } from "next/navigation";
+import { requirePageUserId } from "@/lib/page-session";
 import { getTeamItemsData } from "@/lib/services/team-dashboard";
 
 export const dynamic = "force-dynamic";
@@ -16,8 +17,10 @@ export default async function ItemsPage({ params }: PageProps) {
     notFound();
   }
 
-  // Fetch data on the server
-  const { team, items, subscriptionRequired } = await getTeamItemsData(teamId);
+  const requestUserId = await requirePageUserId();
+  const { team, items, subscriptionRequired } = await getTeamItemsData(teamId, {
+    requestUserId,
+  });
 
   if (subscriptionRequired) {
     redirect(`/teams/${teamId}/settings?billing=required`);

@@ -48,6 +48,8 @@ const translations = {
     noDescription: "Sem descrição",
     delete: "Excluir",
     cancel: "Cancelar",
+    sortAscending: "crescente",
+    sortDescending: "decrescente",
   },
   locations: {
     name: "NOME",

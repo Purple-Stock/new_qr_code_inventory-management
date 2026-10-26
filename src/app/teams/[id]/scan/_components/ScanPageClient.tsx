@@ -1,15 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Info, ScanLine, Search, X, CheckCircle2, AlertCircle, Layers3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast-simple";
 import { useTranslation } from "@/lib/i18n";
 import { TeamLayout } from "@/components/shared/TeamLayout";
+import { SortableHeader } from "@/components/shared/SortableHeader";
+import { TablePager } from "@/components/shared/TablePager";
 import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import { fetchApiResult } from "@/lib/api-client";
+import { useSortedPage } from "@/hooks/useSortedPage";
 import type { TeamDto } from "@/lib/services/types";
+
+const SCAN_HEADER_CLASS = "px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700";
 
 type LookupItem = {
   id: number;
@@ -53,6 +58,20 @@ export function ScanPageClient({
       .filter((field) => field.active)
       .map((field) => [field.key, field.label])
   );
+  const scanGetters = useMemo(
+    () => ({
+      name: (item: LookupItem) => item.name,
+      sku: (item: LookupItem) => item.sku,
+      stock: (item: LookupItem) => item.currentStock,
+      locationName: (item: LookupItem) => item.locationName,
+    }),
+    []
+  );
+  const { sort, onSort, setPage, paginated } = useSortedPage(multipleResults, scanGetters);
+
+  useEffect(() => {
+    setPage(1);
+  }, [multipleResults, setPage]);
 
   const idsKey = (items: LookupItem[]) =>
     items
@@ -316,38 +335,85 @@ export function ScanPageClient({
             {lastCode ? t.scan.noMultipleResults : t.scan.resultsEmptyHint}
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead>
-                <tr className="text-left text-gray-600">
-                  <th className="px-3 py-2 font-semibold">{t.items.item}</th>
-                  <th className="px-3 py-2 font-semibold">{t.items.sku}</th>
-                  <th className="px-3 py-2 font-semibold">{t.items.stock}</th>
-                  <th className="px-3 py-2 font-semibold">{t.locations.title}</th>
-                  <th className="px-3 py-2 font-semibold">{t.common.actions}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {multipleResults.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 text-gray-900">{item.name || t.items.unnamedItem}</td>
-                    <td className="px-3 py-2 text-gray-700">{item.sku || "-"}</td>
-                    <td className="px-3 py-2 text-gray-700">{item.currentStock ?? 0}</td>
-                    <td className="px-3 py-2 text-gray-700">{item.locationName || t.reports.noLocation}</td>
-                    <td className="px-3 py-2">
-                      <Button
-                        variant="outline"
-                        className="border-gray-300"
-                        onClick={() => setSummaryItem(item)}
-                      >
-                        {t.scan.openSummary}
-                      </Button>
-                    </td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead>
+                  <tr className="text-left text-gray-600">
+                    <SortableHeader
+                      label={t.items.item}
+                      column="name"
+                      sortKey={sort?.key}
+                      sortDirection={sort?.direction}
+                      sortAscendingLabel={t.common.sortAscending}
+                      sortDescendingLabel={t.common.sortDescending}
+                      onSort={onSort}
+                      className={SCAN_HEADER_CLASS}
+                    />
+                    <SortableHeader
+                      label={t.items.sku}
+                      column="sku"
+                      sortKey={sort?.key}
+                      sortDirection={sort?.direction}
+                      sortAscendingLabel={t.common.sortAscending}
+                      sortDescendingLabel={t.common.sortDescending}
+                      onSort={onSort}
+                      className={SCAN_HEADER_CLASS}
+                    />
+                    <SortableHeader
+                      label={t.items.stock}
+                      column="stock"
+                      sortKey={sort?.key}
+                      sortDirection={sort?.direction}
+                      sortAscendingLabel={t.common.sortAscending}
+                      sortDescendingLabel={t.common.sortDescending}
+                      onSort={onSort}
+                      className={SCAN_HEADER_CLASS}
+                    />
+                    <SortableHeader
+                      label={t.locations.title}
+                      column="locationName"
+                      sortKey={sort?.key}
+                      sortDirection={sort?.direction}
+                      sortAscendingLabel={t.common.sortAscending}
+                      sortDescendingLabel={t.common.sortDescending}
+                      onSort={onSort}
+                      className={SCAN_HEADER_CLASS}
+                    />
+                    <th className={SCAN_HEADER_CLASS}>{t.common.actions}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {paginated.items.map((item) => (
+                    <tr key={item.id} className="hover:bg-gray-50">
+                      <td className="px-3 py-2 text-gray-900">{item.name || t.items.unnamedItem}</td>
+                      <td className="px-3 py-2 text-gray-700">{item.sku || "-"}</td>
+                      <td className="px-3 py-2 text-gray-700">{item.currentStock ?? 0}</td>
+                      <td className="px-3 py-2 text-gray-700">{item.locationName || t.reports.noLocation}</td>
+                      <td className="px-3 py-2">
+                        <Button
+                          variant="outline"
+                          className="border-gray-300"
+                          onClick={() => setSummaryItem(item)}
+                        >
+                          {t.scan.openSummary}
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <TablePager
+              currentPage={paginated.currentPage}
+              totalPages={paginated.totalPages}
+              onPageChange={setPage}
+              backLabel={t.common.back}
+              nextLabel={t.common.next}
+              pageLabel={t.common.page}
+              ofLabel={t.common.of}
+            />
+          </>
         )}
       </div>
 

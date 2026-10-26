@@ -17,6 +17,8 @@ vi.mock("@/lib/i18n", () => ({
         cancel: "Cancelar",
         loading: "Carregando",
         cannotBeUndone: "Essa ação não pode ser desfeita.",
+        sortAscending: "crescente",
+        sortDescending: "decrescente",
       },
       teamSelection: {
         deleteConfirm: "Tem certeza que deseja excluir?",

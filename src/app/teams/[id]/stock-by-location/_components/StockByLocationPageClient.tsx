@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Info, MapPin, Package, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/lib/i18n";
 import { TeamLayout } from "@/components/shared/TeamLayout";
+import { SortableHeader } from "@/components/shared/SortableHeader";
+import { TablePager } from "@/components/shared/TablePager";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
+import { useSortedPage } from "@/hooks/useSortedPage";
 
 interface Item {
   id: number;
@@ -40,6 +43,119 @@ interface StockByLocationPageClientProps {
   initialTeam: Team;
   initialLocations: Location[];
   initialItems: Item[];
+}
+
+const LOCATION_ITEM_HEADER_CLASS =
+  "px-4 sm:px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider";
+
+function LocationItemsTable({
+  items,
+  t,
+  formatPrice,
+}: {
+  items: Item[];
+  t: ReturnType<typeof useTranslation>["t"];
+  formatPrice: (price: number | null) => string;
+}) {
+  const getters = useMemo(
+    () => ({
+      name: (item: Item) => item.name,
+      sku: (item: Item) => item.sku,
+      stock: (item: Item) => item.currentStock,
+      price: (item: Item) => item.price,
+    }),
+    []
+  );
+  const { sort, onSort, setPage, paginated } = useSortedPage(items, getters);
+
+  return (
+    <>
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <SortableHeader
+                label={t.stockByLocation.item}
+                column="name"
+                sortKey={sort?.key}
+                sortDirection={sort?.direction}
+                sortAscendingLabel={t.common.sortAscending}
+                sortDescendingLabel={t.common.sortDescending}
+                onSort={onSort}
+                className={LOCATION_ITEM_HEADER_CLASS}
+              />
+              <SortableHeader
+                label={t.stockByLocation.sku}
+                column="sku"
+                sortKey={sort?.key}
+                sortDirection={sort?.direction}
+                sortAscendingLabel={t.common.sortAscending}
+                sortDescendingLabel={t.common.sortDescending}
+                onSort={onSort}
+                className={`${LOCATION_ITEM_HEADER_CLASS} hidden sm:table-cell`}
+              />
+              <SortableHeader
+                label={t.stockByLocation.stock}
+                column="stock"
+                sortKey={sort?.key}
+                sortDirection={sort?.direction}
+                sortAscendingLabel={t.common.sortAscending}
+                sortDescendingLabel={t.common.sortDescending}
+                onSort={onSort}
+                className={LOCATION_ITEM_HEADER_CLASS}
+              />
+              <SortableHeader
+                label={t.stockByLocation.price}
+                column="price"
+                sortKey={sort?.key}
+                sortDirection={sort?.direction}
+                sortAscendingLabel={t.common.sortAscending}
+                sortDescendingLabel={t.common.sortDescending}
+                onSort={onSort}
+                className={`${LOCATION_ITEM_HEADER_CLASS} hidden md:table-cell`}
+              />
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-100">
+            {paginated.items.map((item) => (
+              <tr key={item.id} className="hover:bg-purple-50/50 transition-colors">
+                <td className="px-4 sm:px-6 py-4">
+                  <div className="text-sm font-medium text-gray-900">
+                    {item.name || t.items.unnamedItem}
+                  </div>
+                  <div className="text-xs text-gray-500 sm:hidden mt-1">
+                    {item.sku && `SKU: ${item.sku}`}
+                  </div>
+                </td>
+                <td className="px-4 sm:px-6 py-4 text-sm text-gray-600 hidden sm:table-cell">
+                  {item.sku || "-"}
+                </td>
+                <td className="px-4 sm:px-6 py-4">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
+                    {item.currentStock || 0}
+                  </span>
+                </td>
+                <td className="px-4 sm:px-6 py-4 text-sm text-gray-600 hidden md:table-cell">
+                  {formatPrice(item.price)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="px-4 sm:px-6 pb-4">
+        <TablePager
+          currentPage={paginated.currentPage}
+          totalPages={paginated.totalPages}
+          onPageChange={setPage}
+          backLabel={t.common.back}
+          nextLabel={t.common.next}
+          pageLabel={t.common.page}
+          ofLabel={t.common.of}
+        />
+      </div>
+    </>
+  );
 }
 
 export default function StockByLocationPageClient({
@@ -212,51 +328,11 @@ export default function StockByLocationPageClient({
                   {t.stockByLocation.noItems}
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                          {t.stockByLocation.item}
-                        </th>
-                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden sm:table-cell">
-                          {t.stockByLocation.sku}
-                        </th>
-                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                          {t.stockByLocation.stock}
-                        </th>
-                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden md:table-cell">
-                          {t.stockByLocation.price}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-100">
-                      {locationStock.items.map((item) => (
-                        <tr key={item.id} className="hover:bg-purple-50/50 transition-colors">
-                          <td className="px-4 sm:px-6 py-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {item.name || t.items.unnamedItem}
-                            </div>
-                            <div className="text-xs text-gray-500 sm:hidden mt-1">
-                              {item.sku && `SKU: ${item.sku}`}
-                            </div>
-                          </td>
-                          <td className="px-4 sm:px-6 py-4 text-sm text-gray-600 hidden sm:table-cell">
-                            {item.sku || "-"}
-                          </td>
-                          <td className="px-4 sm:px-6 py-4">
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
-                              {item.currentStock || 0}
-                            </span>
-                          </td>
-                          <td className="px-4 sm:px-6 py-4 text-sm text-gray-600 hidden md:table-cell">
-                            {formatPrice(item.price)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <LocationItemsTable
+                  items={locationStock.items}
+                  t={t}
+                  formatPrice={formatPrice}
+                />
               )}
             </div>
           ))}

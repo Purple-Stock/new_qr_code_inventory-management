@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Info, Plus, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
 import Link from "next/link";
 import { TeamLayout } from "@/components/shared/TeamLayout";
+import { TablePager } from "@/components/shared/TablePager";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
+import { useSortedPage } from "@/hooks/useSortedPage";
 import { LocationsList } from "./LocationsList";
 import { LocationsSearch } from "./LocationsSearch";
 import type { Location, Team } from "../_types";
@@ -22,6 +24,14 @@ export function LocationsPageClient({ locations, team }: LocationsPageClientProp
   const { t } = useTranslation();
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [filteredLocations, setFilteredLocations] = useState<Location[]>(locations);
+  const locationGetters = useMemo(
+    () => ({
+      name: (location: Location) => location.name,
+      description: (location: Location) => location.description,
+    }),
+    []
+  );
+  const { sort, onSort, setPage, paginated } = useSortedPage(filteredLocations, locationGetters);
   const teamId = team.id.toString();
   const tourSteps: TourStep[] = [
     { target: "tour-locations-tutorial", title: t.locations.tourTutorialTitle, description: t.locations.tourTutorialDesc },
@@ -69,7 +79,10 @@ export function LocationsPageClient({ locations, team }: LocationsPageClientProp
       <div className="mb-4 sm:mb-6" data-tour="tour-locations-search">
         <LocationsSearch
           locations={locations}
-          onFilteredLocationsChange={setFilteredLocations}
+          onFilteredLocationsChange={(nextLocations) => {
+            setFilteredLocations(nextLocations);
+            setPage(1);
+          }}
           placeholder={t.locations.searchPlaceholder}
         />
       </div>
@@ -96,13 +109,27 @@ export function LocationsPageClient({ locations, team }: LocationsPageClientProp
       ) : (
         <div data-tour="tour-locations-list">
           <LocationsList
-            locations={filteredLocations}
+            locations={paginated.items}
             teamId={team.id}
             t={t}
+            sortKey={sort?.key}
+            sortDirection={sort?.direction}
+            onSort={onSort}
             onDelete={handleRefresh}
           />
         </div>
       )}
+      {filteredLocations.length > 0 ? (
+        <TablePager
+          currentPage={paginated.currentPage}
+          totalPages={paginated.totalPages}
+          onPageChange={setPage}
+          backLabel={t.common.back}
+          nextLabel={t.common.next}
+          pageLabel={t.common.page}
+          ofLabel={t.common.of}
+        />
+      ) : null}
       <TutorialTour
         isOpen={isTutorialOpen}
         onClose={() => setIsTutorialOpen(false)}

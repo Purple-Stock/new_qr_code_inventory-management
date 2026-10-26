@@ -1,5 +1,6 @@
 import { MovePageClient } from "./_components/MovePageClient";
 import { notFound, redirect } from "next/navigation";
+import { requirePageUserId } from "@/lib/page-session";
 import { getTeamStockOperationData } from "@/lib/services/team-dashboard";
 
 interface PageProps {
@@ -14,9 +15,9 @@ export default async function MovePage({ params }: PageProps) {
     notFound();
   }
 
-  // Fetch data on the server
+  const requestUserId = await requirePageUserId();
   const { team, locations, items, destinationTeams, subscriptionRequired } =
-    await getTeamStockOperationData(teamId);
+    await getTeamStockOperationData(teamId, { requestUserId });
 
   if (subscriptionRequired) {
     redirect(`/teams/${teamId}/settings?billing=required`);

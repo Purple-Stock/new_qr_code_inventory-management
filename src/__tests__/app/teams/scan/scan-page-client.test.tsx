@@ -32,6 +32,12 @@ vi.mock("@/lib/i18n", () => ({
         error: "Error",
         actions: "Actions",
         close: "Close",
+        page: "Página",
+        of: "de",
+        next: "Próximo",
+        back: "Voltar",
+        sortAscending: "crescente",
+        sortDescending: "decrescente",
       },
       scan: {
         title: "Scan",
@@ -184,5 +190,52 @@ describe("ScanPageClient", () => {
     expect(toastSpy).toHaveBeenCalledWith(
       expect.objectContaining({ description: "Request failed" })
     );
+  });
+
+  it("sorts multiple lookup results before paginating", async () => {
+    const names = [
+      "Lima",
+      "Alpha",
+      "Kilo",
+      "Bravo",
+      "Juliet",
+      "Charlie",
+      "India",
+      "Delta",
+      "Hotel",
+      "Echo",
+      "Golf",
+      "Foxtrot",
+    ];
+    mockedFetchApiResult.mockResolvedValueOnce({
+      ok: true,
+      data: {
+        items: names.map((name, index) => ({
+          id: index + 1,
+          name,
+          sku: `S-${index + 1}`,
+          barcode: "ABC",
+          currentStock: 1,
+          locationName: "Main",
+          photoData: null,
+          customFields: null,
+        })),
+      },
+    } as any);
+
+    render(<ScanPageClient team={baseTeam} initialItems={[]} preferServerLookup={true} />);
+
+    fireEvent.change(screen.getByPlaceholderText("Enter code"), {
+      target: { value: "ABC" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Lookup" }));
+
+    expect(await screen.findByRole("button", { name: "Item crescente" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Item crescente" }));
+
+    expect(screen.getByText("Alpha")).toBeInTheDocument();
+    expect(screen.getByText("Juliet")).toBeInTheDocument();
+    expect(screen.queryByText("Kilo")).not.toBeInTheDocument();
+    expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
   });
 });

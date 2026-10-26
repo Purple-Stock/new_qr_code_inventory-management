@@ -18,7 +18,10 @@ import { useToast } from "@/components/ui/use-toast-simple";
 import { useTranslation } from "@/lib/i18n";
 import { QRCodeDisplay } from "@/components/QRCodeDisplay";
 import { TeamLayout } from "@/components/shared/TeamLayout";
+import { SortableHeader } from "@/components/shared/SortableHeader";
+import { TablePager } from "@/components/shared/TablePager";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
+import { useSortedPage } from "@/hooks/useSortedPage";
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
 
@@ -145,6 +148,21 @@ export default function LabelsPageClient({
       item.barcode?.toLowerCase().includes(query)
     );
   });
+  const labelGetters = useMemo(
+    () => ({
+      name: (item: Item) => item.name,
+      sku: (item: Item) => item.sku,
+      barcode: (item: Item) => item.barcode,
+      location: (item: Item) => item.locationName,
+      stock: (item: Item) => item.currentStock,
+    }),
+    []
+  );
+  const { sort, onSort, setPage, paginated } = useSortedPage(filteredItems, labelGetters);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, setPage]);
 
   const toggleItemSelection = (itemId: number) => {
     const newSelected = new Set(selectedItems);
@@ -1157,21 +1175,56 @@ export default function LabelsPageClient({
                         className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
                       />
                     </th>
-                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      {t.labels.item}
-                    </th>
-                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden sm:table-cell">
-                      {t.labels.sku}
-                    </th>
-                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden md:table-cell">
-                      {t.labels.barcode}
-                    </th>
-                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden lg:table-cell">
-                      {t.labels.location}
-                    </th>
-                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden md:table-cell">
-                      {t.labels.stock}
-                    </th>
+                    <SortableHeader
+                      label={t.labels.item}
+                      column="name"
+                      sortKey={sort?.key}
+                      sortDirection={sort?.direction}
+                      sortAscendingLabel={t.common.sortAscending}
+                      sortDescendingLabel={t.common.sortDescending}
+                      onSort={onSort}
+                      className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"
+                    />
+                    <SortableHeader
+                      label={t.labels.sku}
+                      column="sku"
+                      sortKey={sort?.key}
+                      sortDirection={sort?.direction}
+                      sortAscendingLabel={t.common.sortAscending}
+                      sortDescendingLabel={t.common.sortDescending}
+                      onSort={onSort}
+                      className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden sm:table-cell"
+                    />
+                    <SortableHeader
+                      label={t.labels.barcode}
+                      column="barcode"
+                      sortKey={sort?.key}
+                      sortDirection={sort?.direction}
+                      sortAscendingLabel={t.common.sortAscending}
+                      sortDescendingLabel={t.common.sortDescending}
+                      onSort={onSort}
+                      className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden md:table-cell"
+                    />
+                    <SortableHeader
+                      label={t.labels.location}
+                      column="location"
+                      sortKey={sort?.key}
+                      sortDirection={sort?.direction}
+                      sortAscendingLabel={t.common.sortAscending}
+                      sortDescendingLabel={t.common.sortDescending}
+                      onSort={onSort}
+                      className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden lg:table-cell"
+                    />
+                    <SortableHeader
+                      label={t.labels.stock}
+                      column="stock"
+                      sortKey={sort?.key}
+                      sortDirection={sort?.direction}
+                      sortAscendingLabel={t.common.sortAscending}
+                      sortDescendingLabel={t.common.sortDescending}
+                      onSort={onSort}
+                      className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden md:table-cell"
+                    />
                     <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                       {t.labels.quantityPerItem}
                     </th>
@@ -1191,7 +1244,7 @@ export default function LabelsPageClient({
                       </td>
                     </tr>
                   ) : (
-                    filteredItems.map((item) => (
+                    paginated.items.map((item) => (
                       <tr
                         key={item.id}
                         className={`hover:bg-purple-50/50 transition-colors cursor-pointer ${
@@ -1265,6 +1318,15 @@ export default function LabelsPageClient({
               </table>
             </div>
           </div>
+          <TablePager
+            currentPage={paginated.currentPage}
+            totalPages={paginated.totalPages}
+            onPageChange={setPage}
+            backLabel={t.common.back}
+            nextLabel={t.common.next}
+            pageLabel={t.common.page}
+            ofLabel={t.common.of}
+          />
 
           {/* Summary */}
           {selectedItems.size > 0 && (
