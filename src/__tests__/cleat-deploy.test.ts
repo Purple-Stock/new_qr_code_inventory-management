@@ -56,6 +56,14 @@ describe("cleat build.sh", () => {
     expect(script).toMatch(/DATABASE_URL/);
   });
 
+  it("compiles Next against a local sqlite after env load", () => {
+    const script = readFileSync(join(root, ".cleat_deploy/build.sh"), "utf8");
+    const loadOnlyIndex = script.indexOf("CLEAT_BUILD_LOAD_ONLY");
+    const compileOverrideIndex = script.lastIndexOf(".cleat-build.sqlite");
+    expect(loadOnlyIndex).toBeGreaterThan(0);
+    expect(compileOverrideIndex).toBeGreaterThan(loadOnlyIndex);
+  });
+
   it("drops the reused release route cache before publishing", () => {
     const script = readFileSync(join(root, ".cleat_deploy/build.sh"), "utf8");
     expect(script).toMatch(/releases\/build\/\.next\/server\/route-cache/);

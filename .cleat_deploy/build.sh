@@ -71,6 +71,12 @@ if [ "${CLEAT_BUILD_LOAD_ONLY:-}" = "1" ]; then
   exit 0
 fi
 
+# Live DATABASE_PATH is often unreadable in the remote build jail (SQLITE 14).
+# next build collect-page-data imports the app sqlite client; compile against a
+# local file. start.sh reloads the real env at runtime.
+export DATABASE_PATH="${PWD}/.cleat-build.sqlite"
+export DATABASE_URL="file:${DATABASE_PATH}"
+
 # The release directory is reused across deploys: cleat publishes the new build
 # over the previous release and its wipe skips dot-directories, so Next 16's
 # runtime route cache (.next/server/route-cache) left there by an earlier deploy
