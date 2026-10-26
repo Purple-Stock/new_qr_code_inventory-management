@@ -19,6 +19,7 @@ import { ItemsSearch } from "./ItemsSearch";
 import { ItemsCsvImportPanel } from "./ItemsCsvImportPanel";
 import { formatPrice } from "../_utils/formatPrice";
 import { downloadCsv, itemsToCsv } from "../_utils/exportItemsCsv";
+import { paginateItems } from "../_utils/pagination";
 import type { Item, Team } from "../_types";
 
 interface ItemsPageClientProps {
@@ -31,7 +32,9 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
   const { language, t } = useTranslation();
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [filteredItems, setFilteredItems] = useState<Item[]>(items);
+  const [currentPage, setCurrentPage] = useState(1);
   const teamId = team.id.toString();
+  const paginated = paginateItems(filteredItems, String(currentPage));
 
   const handleExportCsv = () => {
     if (filteredItems.length === 0) {
@@ -66,7 +69,13 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
 
   useEffect(() => {
     setFilteredItems(items);
+    setCurrentPage(1);
   }, [items]);
+
+  const handleFilteredItemsChange = (nextItems: Item[]) => {
+    setFilteredItems(nextItems);
+    setCurrentPage(1);
+  };
 
   const handleItemDeleted = (itemId: number) => {
     setFilteredItems((prev) => prev.filter((item) => item.id !== itemId));
@@ -87,7 +96,7 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
         <div data-tour="tour-search" className="w-full">
           <ItemsSearch
             items={items}
-            onFilteredItemsChange={setFilteredItems}
+            onFilteredItemsChange={handleFilteredItemsChange}
             placeholder={t.items.searchPlaceholder}
           />
         </div>
@@ -187,13 +196,36 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
       ) : (
         <div data-tour="tour-list">
           <ItemsList
-            items={filteredItems}
+            items={paginated.items}
             teamId={teamId}
             formatPrice={(p) => formatPrice(p, language)}
             t={t}
             onItemDeleted={handleItemDeleted}
             onItemDuplicated={handleItemDuplicated}
           />
+        </div>
+      )}
+      {filteredItems.length > 0 && paginated.totalPages > 1 && (
+        <div className="mt-4 sm:mt-6 flex items-center justify-between gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage(paginated.currentPage - 1)}
+            disabled={paginated.currentPage <= 1}
+            className="text-xs sm:text-sm"
+          >
+            {t.common.back}
+          </Button>
+          <p className="text-xs sm:text-sm text-gray-600">
+            {`${t.items.page} ${paginated.currentPage} ${t.items.of} ${paginated.totalPages}`}
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage(paginated.currentPage + 1)}
+            disabled={paginated.currentPage >= paginated.totalPages}
+            className="text-xs sm:text-sm"
+          >
+            {t.items.next}
+          </Button>
         </div>
       )}
 

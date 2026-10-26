@@ -122,6 +122,9 @@ export const ptBR = {
     failedToDuplicateItem: "Falha ao duplicar item",
     failedToDeleteItem: "Falha ao excluir item",
     unnamedItemCopy: "Item sem nome (cópia)",
+    page: "Página",
+    of: "de",
+    next: "Próximo",
   },
   locations: {
     title: "Localizações",

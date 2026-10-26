@@ -122,6 +122,9 @@ export const fr = {
     failedToDuplicateItem: "Échec de la duplication de l'article",
     failedToDeleteItem: "Échec de la suppression de l'article",
     unnamedItemCopy: "Article sans nom (copie)",
+    page: "Page",
+    of: "sur",
+    next: "Suivant",
   },
   locations: {
     title: "Emplacements",

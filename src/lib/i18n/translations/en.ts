@@ -122,6 +122,9 @@ export const en = {
     failedToDuplicateItem: "Failed to duplicate item",
     failedToDeleteItem: "Failed to delete item",
     unnamedItemCopy: "Unnamed Item (copy)",
+    page: "Page",
+    of: "of",
+    next: "Next",
   },
   locations: {
     title: "Locations",
