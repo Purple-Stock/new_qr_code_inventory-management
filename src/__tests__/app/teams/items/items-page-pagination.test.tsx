@@ -134,6 +134,13 @@ const buildItems = (count: number) =>
   );
 
 describe("ItemsPageClient pagination", () => {
+  it("does not render the unused all-categories filter", () => {
+    render(<ItemsPageClient items={buildItems(8)} team={makeTeam()} />);
+
+    expect(screen.queryByText("Todas as Categorias")).not.toBeInTheDocument();
+    expect(screen.queryByText("Categorias")).not.toBeInTheDocument();
+  });
+
   it("shows 10 items on the first page and the pager", () => {
     render(<ItemsPageClient items={buildItems(25)} team={makeTeam()} />);
 

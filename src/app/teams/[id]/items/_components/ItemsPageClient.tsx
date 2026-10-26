@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  ChevronDown,
   Download,
   Info,
   Package,
@@ -14,12 +13,19 @@ import { useTranslation } from "@/lib/i18n";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import { useToast } from "@/components/ui/use-toast-simple";
 import { TeamLayout } from "@/components/shared/TeamLayout";
+import { TablePager } from "@/components/shared/TablePager";
 import { ItemsList } from "./ItemsList";
 import { ItemsSearch } from "./ItemsSearch";
 import { ItemsCsvImportPanel } from "./ItemsCsvImportPanel";
 import { formatPrice } from "../_utils/formatPrice";
 import { downloadCsv, itemsToCsv } from "../_utils/exportItemsCsv";
 import { paginateItems } from "../_utils/pagination";
+import {
+  nextItemsSort,
+  sortItems,
+  type ItemSortKey,
+  type ItemsSortState,
+} from "../_utils/sortItems";
 import type { Item, Team } from "../_types";
 
 interface ItemsPageClientProps {
@@ -33,16 +39,18 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [filteredItems, setFilteredItems] = useState<Item[]>(items);
   const [currentPage, setCurrentPage] = useState(1);
+  const [sort, setSort] = useState<ItemsSortState>(null);
   const teamId = team.id.toString();
-  const paginated = paginateItems(filteredItems, String(currentPage));
+  const sortedItems = sortItems(filteredItems, sort);
+  const paginated = paginateItems(sortedItems, String(currentPage));
 
   const handleExportCsv = () => {
-    if (filteredItems.length === 0) {
+    if (sortedItems.length === 0) {
       toast({ variant: "destructive", title: t.items.exportNoItems, description: "" });
       return;
     }
 
-    const csv = itemsToCsv(filteredItems, {
+    const csv = itemsToCsv(sortedItems, {
       name: t.common.name,
       sku: t.items.sku,
       barcode: t.items.csvHeaderBarcode,
@@ -60,7 +68,6 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
   const tourSteps: TourStep[] = [
     { target: "tour-search", title: t.items.tourSearchTitle, description: t.items.tourSearchDesc },
     { target: "tour-tutorial", title: t.items.tourTutorialTitle, description: t.items.tourTutorialDesc },
-    { target: "tour-categories", title: t.items.tourCategoriesTitle, description: t.items.tourCategoriesDesc },
     { target: "tour-export", title: t.items.tourExportTitle, description: t.items.tourExportDesc },
     { target: "tour-add-item", title: t.items.tourAddItemTitle, description: t.items.tourAddItemDesc },
     { target: "tour-sidebar", title: t.items.tourSidebarTitle, description: t.items.tourSidebarDesc },
@@ -74,6 +81,11 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
 
   const handleFilteredItemsChange = (nextItems: Item[]) => {
     setFilteredItems(nextItems);
+    setCurrentPage(1);
+  };
+
+  const handleSort = (key: ItemSortKey) => {
+    setSort((current) => nextItemsSort(current, key));
     setCurrentPage(1);
   };
 
@@ -102,15 +114,6 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <Button
-              variant="outline"
-              data-tour="tour-categories"
-              className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm flex-1 sm:flex-initial touch-manipulation min-h-[40px] sm:min-h-0"
-            >
-              <span className="hidden sm:inline">{t.items.allCategories}</span>
-              <span className="sm:hidden">{t.items.categories}</span>
-              <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
-            </Button>
             <Button
               type="button"
               onClick={handleExportCsv}
@@ -200,34 +203,25 @@ export function ItemsPageClient({ items, team }: ItemsPageClientProps) {
             teamId={teamId}
             formatPrice={(p) => formatPrice(p, language)}
             t={t}
+            sortKey={sort?.key}
+            sortDirection={sort?.direction}
+            onSort={handleSort}
             onItemDeleted={handleItemDeleted}
             onItemDuplicated={handleItemDuplicated}
           />
         </div>
       )}
-      {filteredItems.length > 0 && paginated.totalPages > 1 && (
-        <div className="mt-4 sm:mt-6 flex items-center justify-between gap-3">
-          <Button
-            variant="outline"
-            onClick={() => setCurrentPage(paginated.currentPage - 1)}
-            disabled={paginated.currentPage <= 1}
-            className="text-xs sm:text-sm"
-          >
-            {t.common.back}
-          </Button>
-          <p className="text-xs sm:text-sm text-gray-600">
-            {`${t.items.page} ${paginated.currentPage} ${t.items.of} ${paginated.totalPages}`}
-          </p>
-          <Button
-            variant="outline"
-            onClick={() => setCurrentPage(paginated.currentPage + 1)}
-            disabled={paginated.currentPage >= paginated.totalPages}
-            className="text-xs sm:text-sm"
-          >
-            {t.items.next}
-          </Button>
-        </div>
-      )}
+      {filteredItems.length > 0 ? (
+        <TablePager
+          currentPage={paginated.currentPage}
+          totalPages={paginated.totalPages}
+          onPageChange={setCurrentPage}
+          backLabel={t.common.back}
+          nextLabel={t.items.next}
+          pageLabel={t.items.page}
+          ofLabel={t.items.of}
+        />
+      ) : null}
 
       <TutorialTour
         isOpen={isTutorialOpen}

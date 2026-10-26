@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Info, Download, Plus } from "lucide-react";
+import { Info, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
 import Link from "next/link";
 import { Label } from "@/components/ui/label";
 import { TeamLayout } from "@/components/shared/TeamLayout";
+import { TablePager } from "@/components/shared/TablePager";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
+import { useSortedPage } from "@/hooks/useSortedPage";
+import { formatLocation } from "../_utils/getTransactionType";
 import { TransactionsList } from "./TransactionsList";
 import { TransactionsSearch } from "./TransactionsSearch";
 import type { CounterpartyTeamOption, TransactionWithDetails, Team } from "../_types";
@@ -20,8 +23,6 @@ interface TransactionsPageClientProps {
   initialCounterpartyTeamId?: string;
   initialInterTeamOnly?: boolean;
   counterpartyTeamOptions: CounterpartyTeamOption[];
-  currentPage: number;
-  totalPages: number;
   canDeleteTransactions: boolean;
 }
 
@@ -32,12 +33,23 @@ export function TransactionsPageClient({
   initialCounterpartyTeamId = "",
   initialInterTeamOnly = false,
   counterpartyTeamOptions,
-  currentPage,
-  totalPages,
   canDeleteTransactions,
 }: TransactionsPageClientProps) {
   const router = useRouter();
   const { t } = useTranslation();
+  const transactionGetters = useMemo(
+    () => ({
+      date: (transaction: TransactionWithDetails) => transaction.createdAt,
+      type: (transaction: TransactionWithDetails) => transaction.transactionType,
+      item: (transaction: TransactionWithDetails) => transaction.item?.name,
+      quantity: (transaction: TransactionWithDetails) => transaction.quantity,
+      location: (transaction: TransactionWithDetails) => formatLocation(transaction, t),
+      notes: (transaction: TransactionWithDetails) => transaction.notes,
+      user: (transaction: TransactionWithDetails) => transaction.user?.email,
+    }),
+    [t]
+  );
+  const { sort, onSort, setPage, paginated } = useSortedPage(transactions, transactionGetters);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [counterpartyTeamId, setCounterpartyTeamId] = useState(initialCounterpartyTeamId);
@@ -92,20 +104,9 @@ export function TransactionsPageClient({
     return () => clearTimeout(timeoutId);
   }, [searchQuery, counterpartyTeamId, interTeamOnly, router, teamId]);
 
-  const handlePageChange = (page: number) => {
-    const params = new URLSearchParams();
-    if (searchQuery) {
-      params.set("search", searchQuery);
-    }
-    if (counterpartyTeamId) {
-      params.set("counterpartyTeamId", counterpartyTeamId);
-    }
-    if (interTeamOnly) {
-      params.set("interTeamOnly", "1");
-    }
-    params.set("page", page.toString());
-    router.push(`/teams/${teamId}/transactions?${params.toString()}`);
-  };
+  useEffect(() => {
+    setPage(1);
+  }, [transactions, setPage]);
 
   return (
     <TeamLayout team={team} activeMenuItem="transactions">
@@ -176,8 +177,11 @@ export function TransactionsPageClient({
       {/* Transactions List */}
       <div data-tour="tour-transactions-list">
         <TransactionsList
-          transactions={transactions}
+          transactions={paginated.items}
           teamId={team.id}
+          sortKey={sort?.key}
+          sortDirection={sort?.direction}
+          onSort={onSort}
           onDelete={handleRefresh}
           canDeleteTransactions={canDeleteTransactions}
           onSearchByTransferGroup={(transferGroupId) => {
@@ -185,29 +189,15 @@ export function TransactionsPageClient({
           }}
         />
       </div>
-      {totalPages > 1 && (
-        <div className="mt-4 sm:mt-6 flex items-center justify-between gap-3">
-          <Button
-            variant="outline"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage <= 1}
-            className="text-xs sm:text-sm"
-          >
-            {t.common.back}
-          </Button>
-          <p className="text-xs sm:text-sm text-gray-600">
-            {`${t.transactions.page} ${currentPage} ${t.transactions.of} ${totalPages}`}
-          </p>
-          <Button
-            variant="outline"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage >= totalPages}
-            className="text-xs sm:text-sm"
-          >
-            {t.transactions.next}
-          </Button>
-        </div>
-      )}
+      <TablePager
+        currentPage={paginated.currentPage}
+        totalPages={paginated.totalPages}
+        onPageChange={setPage}
+        backLabel={t.common.back}
+        nextLabel={t.common.next}
+        pageLabel={t.common.page}
+        ofLabel={t.common.of}
+      />
       <TutorialTour
         isOpen={isTutorialOpen}
         onClose={() => setIsTutorialOpen(false)}

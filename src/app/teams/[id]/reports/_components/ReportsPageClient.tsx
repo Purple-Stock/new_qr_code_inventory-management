@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   TrendingUp,
   Package,
@@ -16,8 +16,14 @@ import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/lib/i18n";
 import { fetchApiResult } from "@/lib/api-client";
 import { TeamLayout } from "@/components/shared/TeamLayout";
+import { SortableHeader } from "@/components/shared/SortableHeader";
+import { TablePager } from "@/components/shared/TablePager";
 import { TutorialTour, type TourStep } from "@/components/TutorialTour";
+import { useSortedPage } from "@/hooks/useSortedPage";
 import type { ReportStats, Team } from "../_types";
+
+const REPORT_HEADER_CLASS =
+  "px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700";
 
 interface ReportsPageClientProps {
   teamId: number;
@@ -37,6 +43,37 @@ export default function ReportsPageClient({
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const recentGetters = useMemo(
+    () => ({
+      date: (transaction: ReportStats["recentTransactions"][number]) => transaction.createdAt,
+      type: (transaction: ReportStats["recentTransactions"][number]) => transaction.transactionType,
+      item: (transaction: ReportStats["recentTransactions"][number]) => transaction.itemName,
+      quantity: (transaction: ReportStats["recentTransactions"][number]) => transaction.quantity,
+    }),
+    []
+  );
+  const topItemGetters = useMemo(
+    () => ({
+      name: (item: ReportStats["topItemsByValue"][number]) => item.name,
+      sku: (item: ReportStats["topItemsByValue"][number]) => item.sku,
+      currentStock: (item: ReportStats["topItemsByValue"][number]) => item.currentStock,
+      price: (item: ReportStats["topItemsByValue"][number]) => item.price,
+      value: (item: ReportStats["topItemsByValue"][number]) => item.totalValue,
+    }),
+    []
+  );
+  const locationGetters = useMemo(
+    () => ({
+      location: (row: ReportStats["stockByLocation"][number]) => row.locationName,
+      itemCount: (row: ReportStats["stockByLocation"][number]) => row.itemCount,
+      totalStock: (row: ReportStats["stockByLocation"][number]) => row.totalStock,
+      totalValue: (row: ReportStats["stockByLocation"][number]) => row.totalValue,
+    }),
+    []
+  );
+  const recentTable = useSortedPage(stats.recentTransactions, recentGetters);
+  const topItemsTable = useSortedPage(stats.topItemsByValue, topItemGetters);
+  const locationTable = useSortedPage(stats.stockByLocation, locationGetters);
   const tourSteps: TourStep[] = [
     { target: "tour-reports-tutorial", title: t.common.tutorial, description: t.reports.subtitle },
     { target: "tour-reports-date-filter", title: t.reports.dateRange, description: t.reports.applyFilter },
@@ -318,50 +355,89 @@ export default function ReportsPageClient({
                   {t.reports.recentTransactions}
                 </h2>
                 {stats.recentTransactions.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
-                            {t.reports.date}
-                          </th>
-                          <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
-                            {t.reports.type}
-                          </th>
-                          <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
-                            {t.reports.item}
-                          </th>
-                          <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
-                            {t.reports.quantity}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {stats.recentTransactions.map((transaction) => (
-                          <tr key={transaction.id} className="hover:bg-gray-50">
-                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
-                              {formatDateTime(transaction.createdAt)}
-                            </td>
-                            <td className="px-3 sm:px-4 py-2 sm:py-3">
-                              <span
-                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getTransactionTypeColor(
-                                  transaction.transactionType
-                                )}`}
-                              >
-                                {getTransactionTypeLabel(transaction.transactionType)}
-                              </span>
-                            </td>
-                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
-                              {transaction.itemName || "-"}
-                            </td>
-                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
-                              {transaction.quantity.toFixed(1)}
-                            </td>
+                  <>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <SortableHeader
+                              label={t.reports.date}
+                              column="date"
+                              sortKey={recentTable.sort?.key}
+                              sortDirection={recentTable.sort?.direction}
+                              sortAscendingLabel={t.common.sortAscending}
+                              sortDescendingLabel={t.common.sortDescending}
+                              onSort={recentTable.onSort}
+                              className={REPORT_HEADER_CLASS}
+                            />
+                            <SortableHeader
+                              label={t.reports.type}
+                              column="type"
+                              sortKey={recentTable.sort?.key}
+                              sortDirection={recentTable.sort?.direction}
+                              sortAscendingLabel={t.common.sortAscending}
+                              sortDescendingLabel={t.common.sortDescending}
+                              onSort={recentTable.onSort}
+                              className={REPORT_HEADER_CLASS}
+                            />
+                            <SortableHeader
+                              label={t.reports.item}
+                              column="item"
+                              sortKey={recentTable.sort?.key}
+                              sortDirection={recentTable.sort?.direction}
+                              sortAscendingLabel={t.common.sortAscending}
+                              sortDescendingLabel={t.common.sortDescending}
+                              onSort={recentTable.onSort}
+                              className={REPORT_HEADER_CLASS}
+                            />
+                            <SortableHeader
+                              label={t.reports.quantity}
+                              column="quantity"
+                              sortKey={recentTable.sort?.key}
+                              sortDirection={recentTable.sort?.direction}
+                              sortAscendingLabel={t.common.sortAscending}
+                              sortDescendingLabel={t.common.sortDescending}
+                              onSort={recentTable.onSort}
+                              className={REPORT_HEADER_CLASS}
+                            />
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {recentTable.paginated.items.map((transaction) => (
+                            <tr key={transaction.id} className="hover:bg-gray-50">
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                                {formatDateTime(transaction.createdAt)}
+                              </td>
+                              <td className="px-3 sm:px-4 py-2 sm:py-3">
+                                <span
+                                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getTransactionTypeColor(
+                                    transaction.transactionType
+                                  )}`}
+                                >
+                                  {getTransactionTypeLabel(transaction.transactionType)}
+                                </span>
+                              </td>
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                                {transaction.itemName || "-"}
+                              </td>
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                                {transaction.quantity.toFixed(1)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <TablePager
+                      currentPage={recentTable.paginated.currentPage}
+                      totalPages={recentTable.paginated.totalPages}
+                      onPageChange={recentTable.setPage}
+                      backLabel={t.common.back}
+                      nextLabel={t.common.next}
+                      pageLabel={t.common.page}
+                      ofLabel={t.common.of}
+                    />
+                  </>
                 ) : (
                   <p className="text-gray-500 text-center py-8">{t.reports.noData}</p>
                 )}
@@ -373,50 +449,96 @@ export default function ReportsPageClient({
                   {t.reports.topItemsByValue}
                 </h2>
                 {stats.topItemsByValue.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
-                            {t.reports.item}
-                          </th>
-                          <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
-                            {t.reports.sku}
-                          </th>
-                          <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
-                            {t.reports.currentStock}
-                          </th>
-                          <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
-                            {t.reports.price}
-                          </th>
-                          <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
-                            {t.reports.value}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {stats.topItemsByValue.map((item) => (
-                          <tr key={item.id} className="hover:bg-gray-50">
-                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
-                              {item.name || "-"}
-                            </td>
-                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-600">
-                              {item.sku || "-"}
-                            </td>
-                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
-                              {item.currentStock?.toFixed(1) || "0"}
-                            </td>
-                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
-                              {item.price ? formatPrice(item.price) : "-"}
-                            </td>
-                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-gray-900">
-                              {formatPrice(item.totalValue)}
-                            </td>
+                  <>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <SortableHeader
+                              label={t.reports.item}
+                              column="name"
+                              sortKey={topItemsTable.sort?.key}
+                              sortDirection={topItemsTable.sort?.direction}
+                              sortAscendingLabel={t.common.sortAscending}
+                              sortDescendingLabel={t.common.sortDescending}
+                              onSort={topItemsTable.onSort}
+                              className={REPORT_HEADER_CLASS}
+                            />
+                            <SortableHeader
+                              label={t.reports.sku}
+                              column="sku"
+                              sortKey={topItemsTable.sort?.key}
+                              sortDirection={topItemsTable.sort?.direction}
+                              sortAscendingLabel={t.common.sortAscending}
+                              sortDescendingLabel={t.common.sortDescending}
+                              onSort={topItemsTable.onSort}
+                              className={REPORT_HEADER_CLASS}
+                            />
+                            <SortableHeader
+                              label={t.reports.currentStock}
+                              column="currentStock"
+                              sortKey={topItemsTable.sort?.key}
+                              sortDirection={topItemsTable.sort?.direction}
+                              sortAscendingLabel={t.common.sortAscending}
+                              sortDescendingLabel={t.common.sortDescending}
+                              onSort={topItemsTable.onSort}
+                              className={REPORT_HEADER_CLASS}
+                            />
+                            <SortableHeader
+                              label={t.reports.price}
+                              column="price"
+                              sortKey={topItemsTable.sort?.key}
+                              sortDirection={topItemsTable.sort?.direction}
+                              sortAscendingLabel={t.common.sortAscending}
+                              sortDescendingLabel={t.common.sortDescending}
+                              onSort={topItemsTable.onSort}
+                              className={REPORT_HEADER_CLASS}
+                            />
+                            <SortableHeader
+                              label={t.reports.value}
+                              column="value"
+                              sortKey={topItemsTable.sort?.key}
+                              sortDirection={topItemsTable.sort?.direction}
+                              sortAscendingLabel={t.common.sortAscending}
+                              sortDescendingLabel={t.common.sortDescending}
+                              onSort={topItemsTable.onSort}
+                              className={REPORT_HEADER_CLASS}
+                            />
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {topItemsTable.paginated.items.map((item) => (
+                            <tr key={item.id} className="hover:bg-gray-50">
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                                {item.name || "-"}
+                              </td>
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-600">
+                                {item.sku || "-"}
+                              </td>
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                                {item.currentStock?.toFixed(1) || "0"}
+                              </td>
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                                {item.price ? formatPrice(item.price) : "-"}
+                              </td>
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-gray-900">
+                                {formatPrice(item.totalValue)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <TablePager
+                      currentPage={topItemsTable.paginated.currentPage}
+                      totalPages={topItemsTable.paginated.totalPages}
+                      onPageChange={topItemsTable.setPage}
+                      backLabel={t.common.back}
+                      nextLabel={t.common.next}
+                      pageLabel={t.common.page}
+                      ofLabel={t.common.of}
+                    />
+                  </>
                 ) : (
                   <p className="text-gray-500 text-center py-8">{t.reports.noData}</p>
                 )}
@@ -428,44 +550,83 @@ export default function ReportsPageClient({
                   {t.reports.stockByLocation}
                 </h2>
                 {stats.stockByLocation.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
-                            {t.reports.location}
-                          </th>
-                          <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
-                            {t.reports.itemCount}
-                          </th>
-                          <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
-                            {t.reports.totalStock}
-                          </th>
-                          <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">
-                            {t.reports.totalValue}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {stats.stockByLocation.map((location, index) => (
-                          <tr key={index} className="hover:bg-gray-50">
-                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
-                              {location.locationName || t.reports.noLocation}
-                            </td>
-                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
-                              {location.itemCount}
-                            </td>
-                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
-                              {location.totalStock.toFixed(1)}
-                            </td>
-                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-gray-900">
-                              {formatPrice(location.totalValue)}
-                            </td>
+                  <>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <SortableHeader
+                              label={t.reports.location}
+                              column="location"
+                              sortKey={locationTable.sort?.key}
+                              sortDirection={locationTable.sort?.direction}
+                              sortAscendingLabel={t.common.sortAscending}
+                              sortDescendingLabel={t.common.sortDescending}
+                              onSort={locationTable.onSort}
+                              className={REPORT_HEADER_CLASS}
+                            />
+                            <SortableHeader
+                              label={t.reports.itemCount}
+                              column="itemCount"
+                              sortKey={locationTable.sort?.key}
+                              sortDirection={locationTable.sort?.direction}
+                              sortAscendingLabel={t.common.sortAscending}
+                              sortDescendingLabel={t.common.sortDescending}
+                              onSort={locationTable.onSort}
+                              className={REPORT_HEADER_CLASS}
+                            />
+                            <SortableHeader
+                              label={t.reports.totalStock}
+                              column="totalStock"
+                              sortKey={locationTable.sort?.key}
+                              sortDirection={locationTable.sort?.direction}
+                              sortAscendingLabel={t.common.sortAscending}
+                              sortDescendingLabel={t.common.sortDescending}
+                              onSort={locationTable.onSort}
+                              className={REPORT_HEADER_CLASS}
+                            />
+                            <SortableHeader
+                              label={t.reports.totalValue}
+                              column="totalValue"
+                              sortKey={locationTable.sort?.key}
+                              sortDirection={locationTable.sort?.direction}
+                              sortAscendingLabel={t.common.sortAscending}
+                              sortDescendingLabel={t.common.sortDescending}
+                              onSort={locationTable.onSort}
+                              className={REPORT_HEADER_CLASS}
+                            />
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {locationTable.paginated.items.map((location, index) => (
+                            <tr key={location.locationId ?? index} className="hover:bg-gray-50">
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                                {location.locationName || t.reports.noLocation}
+                              </td>
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                                {location.itemCount}
+                              </td>
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                                {location.totalStock.toFixed(1)}
+                              </td>
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-gray-900">
+                                {formatPrice(location.totalValue)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <TablePager
+                      currentPage={locationTable.paginated.currentPage}
+                      totalPages={locationTable.paginated.totalPages}
+                      onPageChange={locationTable.setPage}
+                      backLabel={t.common.back}
+                      nextLabel={t.common.next}
+                      pageLabel={t.common.page}
+                      ofLabel={t.common.of}
+                    />
+                  </>
                 ) : (
                   <p className="text-gray-500 text-center py-8">{t.reports.noData}</p>
                 )}

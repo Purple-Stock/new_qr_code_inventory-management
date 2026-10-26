@@ -75,6 +75,12 @@ vi.mock("@/lib/i18n", () => ({
         error: "Error",
         success: "Success",
         loading: "Loading",
+        page: "Página",
+        of: "de",
+        next: "Próximo",
+        back: "Voltar",
+        sortAscending: "crescente",
+        sortDescending: "decrescente",
       },
       items: {
         sku: "SKU",
@@ -685,5 +691,61 @@ describe("MovePageClient", () => {
     fireEvent.click(screen.getByRole("button", { name: "Move Stock" }));
 
     expect(mockedCreateMoveAction).not.toHaveBeenCalled();
+  });
+
+  it("sorts selected items before paginating", () => {
+    const names = [
+      "Lima",
+      "Alpha",
+      "Kilo",
+      "Bravo",
+      "Juliet",
+      "Charlie",
+      "India",
+      "Delta",
+      "Hotel",
+      "Echo",
+      "Golf",
+      "Foxtrot",
+    ];
+    const catalog = names.map((name, index) => ({
+      id: index + 1,
+      name,
+      sku: `S-${index + 1}`,
+      barcode: `${index + 1}`,
+      currentStock: 5,
+      locationId: 10,
+      locationName: "A",
+    }));
+    window.localStorage.setItem(
+      "inventory-draft:move:1",
+      JSON.stringify({
+        activeTab: "location",
+        sourceLocation: "10",
+        destinationLocation: "11",
+        destinationTeamId: "",
+        selectedItems: catalog.map((item) => ({ item, quantity: 1 })),
+        notes: "",
+      })
+    );
+
+    render(
+      <MovePageClient
+        team={{ id: 1, name: "Direct" }}
+        locations={[
+          { id: 10, name: "A" },
+          { id: 11, name: "B" },
+        ]}
+        destinationTeams={[]}
+        items={catalog as any}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "ITEM crescente" }));
+
+    expect(screen.getByText("Alpha")).toBeInTheDocument();
+    expect(screen.getByText("Juliet")).toBeInTheDocument();
+    expect(screen.queryByText("Kilo")).not.toBeInTheDocument();
+    expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
   });
 });

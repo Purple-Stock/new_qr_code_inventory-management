@@ -3,16 +3,26 @@
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
+import { SortableHeader } from "@/components/shared/SortableHeader";
 import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/ui/use-toast-simple";
+import type { SortDirection } from "@/lib/list-table";
 import { deleteTransactionAction } from "../_actions/deleteTransaction";
 import { getTransactionTypeLabel, getTransactionTypeColor, formatQuantity, formatLocation } from "../_utils/getTransactionType";
 import { formatDate } from "../_utils/formatDate";
 import type { TransactionWithDetails } from "../_types";
 
+type TransactionSortKey = "date" | "type" | "item" | "quantity" | "location" | "notes" | "user";
+
+const TRANSACTION_HEADER_CLASS =
+  "px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700";
+
 interface TransactionsListProps {
   transactions: TransactionWithDetails[];
   teamId: number;
+  sortKey?: TransactionSortKey | null;
+  sortDirection?: SortDirection;
+  onSort?: (key: TransactionSortKey) => void;
   onDelete: () => void;
   canDeleteTransactions: boolean;
   onSearchByTransferGroup?: (transferGroupId: string) => void;
@@ -21,6 +31,9 @@ interface TransactionsListProps {
 export function TransactionsList({
   transactions,
   teamId,
+  sortKey,
+  sortDirection,
+  onSort,
   onDelete,
   canDeleteTransactions,
   onSearchByTransferGroup,
@@ -89,30 +102,76 @@ export function TransactionsList({
         <table className="w-full">
           <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
             <tr>
-              <th className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700">
-                {t.transactions.date}
-              </th>
-              <th className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700">
-                {t.transactions.type}
-              </th>
-              <th className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700">
-                {t.transactions.item}
-              </th>
-              <th className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700">
-                {t.transactions.quantity}
-              </th>
-              <th className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 hidden sm:table-cell">
-                {t.transactions.location}
-              </th>
-              <th
-                suppressHydrationWarning
-                className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700"
-              >
-                {t.transactions.notes || "Notas"}
-              </th>
-              <th className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 hidden lg:table-cell">
-                {t.transactions.user}
-              </th>
+              <SortableHeader
+                label={t.transactions.date}
+                column="date"
+                sortKey={sortKey}
+                sortDirection={sortDirection}
+                sortAscendingLabel={t.common.sortAscending}
+                sortDescendingLabel={t.common.sortDescending}
+                onSort={onSort}
+                className={TRANSACTION_HEADER_CLASS}
+              />
+              <SortableHeader
+                label={t.transactions.type}
+                column="type"
+                sortKey={sortKey}
+                sortDirection={sortDirection}
+                sortAscendingLabel={t.common.sortAscending}
+                sortDescendingLabel={t.common.sortDescending}
+                onSort={onSort}
+                className={TRANSACTION_HEADER_CLASS}
+              />
+              <SortableHeader
+                label={t.transactions.item}
+                column="item"
+                sortKey={sortKey}
+                sortDirection={sortDirection}
+                sortAscendingLabel={t.common.sortAscending}
+                sortDescendingLabel={t.common.sortDescending}
+                onSort={onSort}
+                className={TRANSACTION_HEADER_CLASS}
+              />
+              <SortableHeader
+                label={t.transactions.quantity}
+                column="quantity"
+                sortKey={sortKey}
+                sortDirection={sortDirection}
+                sortAscendingLabel={t.common.sortAscending}
+                sortDescendingLabel={t.common.sortDescending}
+                onSort={onSort}
+                className={TRANSACTION_HEADER_CLASS}
+              />
+              <SortableHeader
+                label={t.transactions.location}
+                column="location"
+                sortKey={sortKey}
+                sortDirection={sortDirection}
+                sortAscendingLabel={t.common.sortAscending}
+                sortDescendingLabel={t.common.sortDescending}
+                onSort={onSort}
+                className={`${TRANSACTION_HEADER_CLASS} hidden sm:table-cell`}
+              />
+              <SortableHeader
+                label={t.transactions.notes || "Notas"}
+                column="notes"
+                sortKey={sortKey}
+                sortDirection={sortDirection}
+                sortAscendingLabel={t.common.sortAscending}
+                sortDescendingLabel={t.common.sortDescending}
+                onSort={onSort}
+                className={TRANSACTION_HEADER_CLASS}
+              />
+              <SortableHeader
+                label={t.transactions.user}
+                column="user"
+                sortKey={sortKey}
+                sortDirection={sortDirection}
+                sortAscendingLabel={t.common.sortAscending}
+                sortDescendingLabel={t.common.sortDescending}
+                onSort={onSort}
+                className={`${TRANSACTION_HEADER_CLASS} hidden lg:table-cell`}
+              />
               <th className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-right text-xs font-semibold text-gray-700">
                 {t.transactions.actions}
               </th>

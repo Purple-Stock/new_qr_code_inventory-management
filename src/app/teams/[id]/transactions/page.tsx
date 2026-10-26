@@ -2,7 +2,6 @@ import { TransactionsPageClient } from "./_components/TransactionsPageClient";
 import { notFound, redirect } from "next/navigation";
 import { requirePageUserId } from "@/lib/page-session";
 import { getTeamTransactionsData } from "@/lib/services/team-dashboard";
-import { paginateTransactions } from "./_utils/pagination";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -70,11 +69,9 @@ export default async function TransactionsPage({ params, searchParams }: PagePro
     ).values()
   );
 
-  const paginated = paginateTransactions(filteredTransactions, resolvedSearchParams.page);
-
   return (
     <TransactionsPageClient
-      transactions={paginated.items}
+      transactions={filteredTransactions}
       team={team}
       initialSearchQuery={resolvedSearchParams.search || ""}
       initialCounterpartyTeamId={
@@ -84,8 +81,6 @@ export default async function TransactionsPage({ params, searchParams }: PagePro
       }
       initialInterTeamOnly={interTeamOnly}
       counterpartyTeamOptions={counterpartyTeamOptions}
-      currentPage={paginated.currentPage}
-      totalPages={paginated.totalPages}
       canDeleteTransactions={canDeleteTransactions}
     />
   );
