@@ -76,7 +76,7 @@ npm run dev -- --port 3001
 # or: npm run dev:local-default
 ```
 
-Local `next dev` uses Turbopack. `next dev --webpack` on this Next 16.3.8 tree never hydrates the App Router, so the item photo file input and submit stay inert HTML. Keep `next build --webpack` for production.
+Local `next dev` uses Turbopack. `next dev --webpack` on this Next 16 tree never hydrates the App Router, so the item photo file input and submit stay inert HTML. Keep `next build --webpack` for production.
 
 ## Tests
 
