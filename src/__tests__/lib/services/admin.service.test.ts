@@ -36,6 +36,15 @@ vi.mock("@/lib/email/resend", () => ({
   sendResendEmail: (...args: unknown[]) => sendResendEmailMock(...args),
 }));
 
+const { notifyNewUserRegisteredMock } = vi.hoisted(() => ({
+  notifyNewUserRegisteredMock: vi.fn(),
+}));
+
+vi.mock("@/lib/services/new-user-alert", () => ({
+  notifyNewUserRegistered: (...args: unknown[]) =>
+    notifyNewUserRegisteredMock(...args),
+}));
+
 const insertAdminEmailCampaignLogMock = vi.fn();
 const markAdminTeamEmailSentMock = vi.fn();
 const upsertAdminTeamNoteMock = vi.fn();
@@ -73,6 +82,8 @@ import {
 
 describe("admin service", () => {
   beforeEach(() => {
+    notifyNewUserRegisteredMock.mockReset();
+    notifyNewUserRegisteredMock.mockResolvedValue(undefined);
     sendResendEmailMock.mockReset();
     insertAdminEmailCampaignLogMock.mockReset();
     markAdminTeamEmailSentMock.mockReset();
@@ -253,6 +264,7 @@ describe("admin service", () => {
       expect(result.data.team.notes).toBe("Initial onboarding note");
       expect(result.data.team.ownerEmail).toBe("owner@example.com");
       expect(result.data.team.companyName).toBe("Purple Holding");
+      expect(notifyNewUserRegisteredMock).not.toHaveBeenCalled();
     });
 
     it("creates an unknown user, creates their team, and returns a temporary password", async () => {
@@ -280,6 +292,10 @@ describe("admin service", () => {
       expect(result.data.user.temporaryPassword).toMatch(/^[A-Za-z0-9_-]{16,}$/);
       expect(result.data.team.name).toBe("New Customer Team");
       expect(result.data.team.ownerEmail).toBe("new-owner@example.com");
+      expect(notifyNewUserRegisteredMock).toHaveBeenCalledWith({
+        email: "new-owner@example.com",
+        source: "super_admin",
+      });
 
       const rows = await drizzle
         .select()
@@ -603,6 +619,11 @@ describe("admin service", () => {
         .innerJoin(companies, eq(companyMembers.companyId, companies.id))
         .where(eq(companyMembers.userId, created[0]!.id));
       expect(membership?.companyName).toBe("Acme Operacoes");
+      expect(notifyNewUserRegisteredMock).toHaveBeenCalledWith({
+        email: "new-user@example.com",
+        companyName: "Acme Operacoes",
+        source: "super_admin",
+      });
     });
 
     it("requires company name", async () => {

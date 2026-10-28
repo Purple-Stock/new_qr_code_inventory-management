@@ -1,18 +1,30 @@
 import { vi } from "vitest";
 import { getTestDb, cleanupTestDb, clearTestDb } from "../../helpers/test-db";
-import { loginUser, signupUser } from "@/lib/services/auth";
 import { ERROR_CODES } from "@/lib/errors";
 import { users } from "@/db/schema";
 import { createUser } from "@/lib/db/users";
 
 const { drizzle } = getTestDb();
 
+const { notifyNewUserRegisteredMock } = vi.hoisted(() => ({
+  notifyNewUserRegisteredMock: vi.fn(),
+}));
+
+vi.mock("@/lib/services/new-user-alert", () => ({
+  notifyNewUserRegistered: (...args: unknown[]) =>
+    notifyNewUserRegisteredMock(...args),
+}));
+
 vi.doMock("@/db/client", () => ({
   sqlite: drizzle,
 }));
 
+import { loginUser, signupUser } from "@/lib/services/auth";
+
 describe("auth service", () => {
   beforeEach(async () => {
+    notifyNewUserRegisteredMock.mockReset();
+    notifyNewUserRegisteredMock.mockResolvedValue(undefined);
     await clearTestDb();
   });
 
@@ -66,6 +78,7 @@ describe("auth service", () => {
     if (result.ok) return;
     expect(result.error.status).toBe(409);
     expect(result.error.errorCode).toBe(ERROR_CODES.EMAIL_ALREADY_IN_USE);
+    expect(notifyNewUserRegisteredMock).not.toHaveBeenCalled();
   });
 
   it("creates user and company on signup", async () => {
@@ -84,5 +97,11 @@ describe("auth service", () => {
     expect(result.data.user.phone).toBe("(11) 98888-7777");
     expect(result.data.company.name).toBe("Acme New");
     expect("passwordHash" in result.data.user).toBe(false);
+    expect(notifyNewUserRegisteredMock).toHaveBeenCalledWith({
+      email: "new-owner@example.com",
+      phone: "(11) 98888-7777",
+      companyName: "Acme New",
+      source: "signup",
+    });
   });
 });
