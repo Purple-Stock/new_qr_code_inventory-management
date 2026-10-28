@@ -32,6 +32,7 @@ import {
 import { isSuperAdminUser } from "@/lib/db/super-admin";
 import { ERROR_CODES } from "@/lib/errors";
 import { sendResendEmail } from "@/lib/email/resend";
+import { notifyNewUserRegistered } from "@/lib/services/new-user-alert";
 import { isValidEmail, normalizeEmail } from "@/lib/validation";
 import {
   conflictValidationServiceError,
@@ -610,6 +611,12 @@ export async function createUserAsSuperAdmin(params: {
       companyName: parsed.data.companyName,
     });
 
+    await notifyNewUserRegistered({
+      email: createdUser.email,
+      companyName: company.name,
+      source: "super_admin",
+    });
+
     console.info("[AUDIT] super_admin_create_user", {
       requestUserId: params.requestUserId,
       userId: createdUser.id,
@@ -842,6 +849,10 @@ export async function createTeamForUserAsSuperAdmin(params: {
         created: true,
         temporaryPassword,
       };
+      await notifyNewUserRegistered({
+        email: targetUser.email,
+        source: "super_admin",
+      });
     }
 
     let companyId = await getActiveCompanyIdForUser(targetUser.id);

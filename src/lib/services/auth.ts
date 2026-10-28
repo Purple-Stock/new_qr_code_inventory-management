@@ -9,6 +9,7 @@ import {
   validationServiceError,
 } from "@/lib/services/errors";
 import { ERROR_CODES } from "@/lib/errors";
+import { notifyNewUserRegistered } from "@/lib/services/new-user-alert";
 
 type PublicUser = Omit<User, "passwordHash">;
 
@@ -81,6 +82,13 @@ export async function signupUser(params: {
       password,
       companyName: companyName.trim(),
       phone,
+    });
+
+    await notifyNewUserRegistered({
+      email: user.email,
+      phone: user.phone,
+      companyName: company.name,
+      source: "signup",
     });
 
     return {

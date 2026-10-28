@@ -98,6 +98,8 @@ Local `next dev` uses Turbopack. `next dev --webpack` on this Next 16 tree never
 - `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`
 - `APP_URL` / `NEXT_PUBLIC_APP_URL` for Checkout/Portal return URLs
 - `SESSION_SECRET` required in production
+- `RESEND_API_KEY` + `RESEND_FROM_EMAIL` for admin campaigns, low-stock alerts, and new-user signup alerts
+- `NEW_USER_NOTIFY_EMAIL` optional; defaults to `matheus.puppe@gmail.com`
 
 ## Do not
 

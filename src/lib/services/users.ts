@@ -40,6 +40,7 @@ import {
   toCompanyTeamDto,
   toManagedUserDto,
 } from "@/lib/services/mappers";
+import { notifyNewUserRegistered } from "@/lib/services/new-user-alert";
 
 export async function getTeamUsersForManagement(params: {
   teamId: number;
@@ -188,6 +189,10 @@ export async function createOrAttachTeamMember(params: {
           role: "viewer",
         });
         userId = createdUser.id;
+        await notifyNewUserRegistered({
+          email: createdUser.email,
+          source: "team_member",
+        });
       }
     }
 
