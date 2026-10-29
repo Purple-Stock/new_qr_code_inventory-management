@@ -6,13 +6,21 @@ import { createUser } from "@/lib/db/users";
 
 const { drizzle } = getTestDb();
 
-const { notifyNewUserRegisteredMock } = vi.hoisted(() => ({
-  notifyNewUserRegisteredMock: vi.fn(),
-}));
+const { notifyNewUserRegisteredMock, sendSignupWelcomeEmailMock } = vi.hoisted(
+  () => ({
+    notifyNewUserRegisteredMock: vi.fn(),
+    sendSignupWelcomeEmailMock: vi.fn(),
+  })
+);
 
 vi.mock("@/lib/services/new-user-alert", () => ({
   notifyNewUserRegistered: (...args: unknown[]) =>
     notifyNewUserRegisteredMock(...args),
+}));
+
+vi.mock("@/lib/services/welcome-email", () => ({
+  sendSignupWelcomeEmail: (...args: unknown[]) =>
+    sendSignupWelcomeEmailMock(...args),
 }));
 
 vi.doMock("@/db/client", () => ({
@@ -25,6 +33,8 @@ describe("auth service", () => {
   beforeEach(async () => {
     notifyNewUserRegisteredMock.mockReset();
     notifyNewUserRegisteredMock.mockResolvedValue(undefined);
+    sendSignupWelcomeEmailMock.mockReset();
+    sendSignupWelcomeEmailMock.mockResolvedValue(undefined);
     await clearTestDb();
   });
 
@@ -79,6 +89,7 @@ describe("auth service", () => {
     expect(result.error.status).toBe(409);
     expect(result.error.errorCode).toBe(ERROR_CODES.EMAIL_ALREADY_IN_USE);
     expect(notifyNewUserRegisteredMock).not.toHaveBeenCalled();
+    expect(sendSignupWelcomeEmailMock).not.toHaveBeenCalled();
   });
 
   it("creates user and company on signup", async () => {
@@ -102,6 +113,10 @@ describe("auth service", () => {
       phone: "(11) 98888-7777",
       companyName: "Acme New",
       source: "signup",
+    });
+    expect(sendSignupWelcomeEmailMock).toHaveBeenCalledWith({
+      email: "new-owner@example.com",
+      companyName: "Acme New",
     });
   });
 });

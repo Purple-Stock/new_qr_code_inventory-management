@@ -1,5 +1,4 @@
 import { vi } from "vitest";
-import { POST } from "@/app/api/auth/signup/route";
 import { NextRequest } from "next/server";
 import { getTestDb, cleanupTestDb, clearTestDb } from "../../helpers/test-db";
 import { users, companies, companyMembers } from "@/db/schema";
@@ -7,12 +6,35 @@ import { eq } from "drizzle-orm";
 
 const { drizzle } = getTestDb();
 
+const { notifyNewUserRegisteredMock, sendSignupWelcomeEmailMock } = vi.hoisted(
+  () => ({
+    notifyNewUserRegisteredMock: vi.fn(),
+    sendSignupWelcomeEmailMock: vi.fn(),
+  })
+);
+
+vi.mock("@/lib/services/new-user-alert", () => ({
+  notifyNewUserRegistered: (...args: unknown[]) =>
+    notifyNewUserRegisteredMock(...args),
+}));
+
+vi.mock("@/lib/services/welcome-email", () => ({
+  sendSignupWelcomeEmail: (...args: unknown[]) =>
+    sendSignupWelcomeEmailMock(...args),
+}));
+
 vi.doMock("@/db/client", () => ({
   sqlite: drizzle,
 }));
 
+import { POST } from "@/app/api/auth/signup/route";
+
 describe("/api/auth/signup", () => {
   beforeEach(async () => {
+    notifyNewUserRegisteredMock.mockReset();
+    notifyNewUserRegisteredMock.mockResolvedValue(undefined);
+    sendSignupWelcomeEmailMock.mockReset();
+    sendSignupWelcomeEmailMock.mockResolvedValue(undefined);
     await clearTestDb();
   });
 
@@ -45,6 +67,10 @@ describe("/api/auth/signup", () => {
       expect(data.user).not.toHaveProperty("passwordHash");
       expect(data.user).toHaveProperty("id");
       expect(data.company).toHaveProperty("name", "Acme Inc");
+      expect(sendSignupWelcomeEmailMock).toHaveBeenCalledWith({
+        email: "test@example.com",
+        companyName: "Acme Inc",
+      });
     });
 
     it("should return 400 if phone is invalid", async () => {
@@ -170,6 +196,7 @@ describe("/api/auth/signup", () => {
 
       expect(response.status).toBe(409);
       expect(data.error).toBe("User with this email already exists");
+      expect(sendSignupWelcomeEmailMock).not.toHaveBeenCalled();
     });
 
     it("should hash the password before storing", async () => {
