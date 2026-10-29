@@ -31,6 +31,7 @@ export const ERROR_CODES = {
   EMAIL_PROVIDER_ERROR: "EMAIL_PROVIDER_ERROR",
   LABEL_LOGO_NOT_FOUND: "LABEL_LOGO_NOT_FOUND",
   LABEL_LOGO_FETCH_FAILED: "LABEL_LOGO_FETCH_FAILED",
+  STORAGE_OBJECT_NOT_FOUND: "STORAGE_OBJECT_NOT_FOUND",
   INTERNAL_ERROR: "INTERNAL_ERROR",
 } as const;
 
@@ -69,6 +70,7 @@ const ERROR_MESSAGES: Record<ErrorCode, string> = {
   EMAIL_PROVIDER_ERROR: "Email provider error",
   LABEL_LOGO_NOT_FOUND: "Label logo not found",
   LABEL_LOGO_FETCH_FAILED: "Failed to fetch label logo",
+  STORAGE_OBJECT_NOT_FOUND: "Storage object not found",
   INTERNAL_ERROR: "An internal error occurred",
 };
 

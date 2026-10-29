@@ -1,9 +1,32 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { faker } from "@faker-js/faker";
+import { ERROR_CODES } from "@/lib/errors";
 import {
   buildItemImageS3Key,
   buildTeamLabelLogoS3Key,
+  getStoredObject,
+  isTrustedTeamLabelLogoUrl,
+  parseStorageObjectKey,
   uploadItemImageToS3,
 } from "@/lib/services/item-images";
+
+const sendStoredObject = vi.fn();
+
+vi.mock("@aws-sdk/client-s3", () => ({
+  S3Client: class {
+    send(command: unknown) {
+      return sendStoredObject(command);
+    }
+  },
+  PutObjectCommand: class {
+    constructor(public input: unknown) {}
+  },
+  GetObjectCommand: class {
+    constructor(public input: unknown) {}
+  },
+}));
+
+faker.seed(20261029);
 
 describe("item-images service", () => {
   it("builds S3 key with default folders", () => {
@@ -230,6 +253,157 @@ describe("item-images service", () => {
       process.env.AWS_REGION = backup.AWS_REGION;
       process.env.AWS_ACCESS_KEY_ID = backup.AWS_ACCESS_KEY_ID;
       process.env.AWS_SECRET_ACCESS_KEY = backup.AWS_SECRET_ACCESS_KEY;
+    }
+  });
+
+  describe("parseStorageObjectKey", () => {
+    it("accepts dated item image keys for prod and staging", () => {
+      const teamId = faker.number.int({ min: 1, max: 999 });
+      const fileName = `${Date.now()}-${faker.string.alphanumeric(12)}.jpg`;
+      const prodKey = `purplestock/prod/teams/${teamId}/item-images/2026/10/29/${fileName}`;
+      const stagingKey = `purplestock/staging/teams/0/item-images/2026/02/22/${fileName}`;
+
+      expect(parseStorageObjectKey(prodKey.split("/"))).toBe(prodKey);
+      expect(parseStorageObjectKey(stagingKey.split("/"))).toBe(stagingKey);
+    });
+
+    it("accepts probe files sitting directly under item-images", () => {
+      const key = "purplestock/prod/teams/1/item-images/probe-1771790305.txt";
+      expect(parseStorageObjectKey(key.split("/"))).toBe(key);
+    });
+
+    it("accepts team label logo keys", () => {
+      const key =
+        "purplestock/prod/teams/70/team-label-logos/2026/03/17/1773776154420-d8a55bb9.jpg";
+      expect(parseStorageObjectKey(key.split("/"))).toBe(key);
+    });
+
+    it("rejects path traversal and foreign prefixes", () => {
+      expect(parseStorageObjectKey(["purplestock", "prod", "teams", "1", "item-images", "..", "secret.jpg"])).toBeNull();
+      expect(parseStorageObjectKey(["cardapio", "probe.txt"])).toBeNull();
+      expect(parseStorageObjectKey(["purplestock", "prod", "teams", "1", "item-images"])).toBeNull();
+      expect(parseStorageObjectKey([])).toBeNull();
+    });
+  });
+
+  describe("getStoredObject", () => {
+    const envBackup = {
+      S3_BUCKET: process.env.S3_BUCKET,
+      AWS_REGION: process.env.AWS_REGION,
+      S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID,
+      S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY,
+      S3_ENDPOINT: process.env.S3_ENDPOINT,
+      S3_FORCE_PATH_STYLE: process.env.S3_FORCE_PATH_STYLE,
+    };
+
+    beforeEach(() => {
+      sendStoredObject.mockReset();
+      process.env.S3_BUCKET = "purplestock-prod-phoenix";
+      process.env.AWS_REGION = "us-east-005";
+      process.env.S3_ACCESS_KEY_ID = "key";
+      process.env.S3_SECRET_ACCESS_KEY = "secret";
+      process.env.S3_ENDPOINT = "https://s3.us-east-005.backblazeb2.com";
+      process.env.S3_FORCE_PATH_STYLE = "true";
+    });
+
+    afterEach(() => {
+      process.env.S3_BUCKET = envBackup.S3_BUCKET;
+      process.env.AWS_REGION = envBackup.AWS_REGION;
+      process.env.S3_ACCESS_KEY_ID = envBackup.S3_ACCESS_KEY_ID;
+      process.env.S3_SECRET_ACCESS_KEY = envBackup.S3_SECRET_ACCESS_KEY;
+      process.env.S3_ENDPOINT = envBackup.S3_ENDPOINT;
+      process.env.S3_FORCE_PATH_STYLE = envBackup.S3_FORCE_PATH_STYLE;
+    });
+
+    it("returns validation error for an unsafe key", async () => {
+      const result = await getStoredObject({
+        keySegments: ["purplestock", "prod", "teams", "1", "item-images", "..", "secret.jpg"],
+      });
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.status).toBe(400);
+      expect(result.error.errorCode).toBe(ERROR_CODES.VALIDATION_ERROR);
+      expect(sendStoredObject).not.toHaveBeenCalled();
+    });
+
+    it("returns not found when the object is missing", async () => {
+      sendStoredObject.mockRejectedValueOnce(
+        Object.assign(new Error("The specified key does not exist."), {
+          name: "NoSuchKey",
+          $metadata: { httpStatusCode: 404 },
+        })
+      );
+
+      const key = "purplestock/prod/teams/1/item-images/2026/10/29/missing.jpg";
+      const result = await getStoredObject({ keySegments: key.split("/") });
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.status).toBe(404);
+      expect(result.error.errorCode).toBe(ERROR_CODES.STORAGE_OBJECT_NOT_FOUND);
+    });
+
+    it("returns object bytes and content type", async () => {
+      const body = Uint8Array.from([0xff, 0xd8, 0xff]);
+      sendStoredObject.mockResolvedValueOnce({
+        ContentType: "image/jpeg",
+        Body: {
+          transformToByteArray: async () => body,
+        },
+      });
+
+      const key = "purplestock/prod/teams/95/item-images/2026/10/29/photo.jpg";
+      const result = await getStoredObject({ keySegments: key.split("/") });
+
+      expect(result).toEqual({
+        ok: true,
+        data: {
+          body,
+          contentType: "image/jpeg",
+        },
+      });
+    });
+
+    it("does not treat /api/storage as an S3 bucket name", async () => {
+      const publicBaseBackup = process.env.S3_PUBLIC_BASE_URL;
+      delete process.env.S3_BUCKET;
+      process.env.S3_PUBLIC_BASE_URL = "https://app.purplestock.com.br/api/storage";
+
+      try {
+        const result = await getStoredObject({
+          keySegments: "purplestock/prod/teams/1/item-images/2026/10/29/photo.jpg".split("/"),
+        });
+
+        expect(result.ok).toBe(false);
+        if (result.ok) return;
+        expect(result.error.error).toBe("Object storage is not configured");
+        expect(sendStoredObject).not.toHaveBeenCalled();
+      } finally {
+        process.env.S3_PUBLIC_BASE_URL = publicBaseBackup;
+      }
+    });
+  });
+
+  it("trusts team logo URLs served from the app storage proxy", () => {
+    const backup = process.env.S3_PUBLIC_BASE_URL;
+    process.env.S3_PUBLIC_BASE_URL = "https://app.purplestock.com.br/api/storage";
+
+    try {
+      expect(
+        isTrustedTeamLabelLogoUrl(
+          "https://app.purplestock.com.br/api/storage/purplestock/prod/teams/1/team-label-logos/logo.jpg",
+          "app.purplestock.com.br"
+        )
+      ).toBe(true);
+      expect(
+        isTrustedTeamLabelLogoUrl(
+          "https://evil.example/purplestock/prod/teams/1/team-label-logos/logo.jpg",
+          "app.purplestock.com.br"
+        )
+      ).toBe(false);
+    } finally {
+      process.env.S3_PUBLIC_BASE_URL = backup;
     }
   });
 
