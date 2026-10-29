@@ -10,6 +10,7 @@ import {
 } from "@/lib/services/errors";
 import { ERROR_CODES } from "@/lib/errors";
 import { notifyNewUserRegistered } from "@/lib/services/new-user-alert";
+import { sendSignupWelcomeEmail } from "@/lib/services/welcome-email";
 
 type PublicUser = Omit<User, "passwordHash">;
 
@@ -89,6 +90,10 @@ export async function signupUser(params: {
       phone: user.phone,
       companyName: company.name,
       source: "signup",
+    });
+    await sendSignupWelcomeEmail({
+      email: user.email,
+      companyName: company.name,
     });
 
     return {

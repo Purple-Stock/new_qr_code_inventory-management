@@ -78,8 +78,8 @@ src/
 - `STRIPE_PRICE_ID` (obrigatório para billing): `price_id` do plano mensal por time.
 - `STRIPE_WEBHOOK_SECRET` (obrigatório para webhook): segredo do endpoint de webhook.
 - `APP_URL` ou `NEXT_PUBLIC_APP_URL` (recomendado): URL base usada em retornos do Checkout/Portal.
-- `RESEND_API_KEY` (obrigatório para campanha por email no admin e alerta de novo cadastro): chave da API da Resend.
-- `RESEND_FROM_EMAIL` (obrigatório para campanha por email no admin e alerta de novo cadastro): remetente validado na Resend, por exemplo `Purple Stock <contato@seudominio.com>`.
+- `RESEND_API_KEY` (obrigatório para campanha por email no admin, alerta de novo cadastro e e-mail de boas-vindas): chave da API da Resend.
+- `RESEND_FROM_EMAIL` (obrigatório para campanha por email no admin, alerta de novo cadastro e e-mail de boas-vindas): remetente validado na Resend, por exemplo `Purple Stock <contato@seudominio.com>`.
 - `NEW_USER_NOTIFY_EMAIL` (opcional): destinatário do alerta de novo usuário. Padrão `matheus.puppe@gmail.com`.
 
 ## Setup local
