@@ -7,6 +7,16 @@ export function successResponse<T>(payload: T, status = 200) {
   return NextResponse.json(payload, { status });
 }
 
+export function binaryResponse(body: Uint8Array, contentType: string) {
+  return new NextResponse(Buffer.from(body), {
+    status: 200,
+    headers: {
+      "Content-Type": contentType,
+      "Cache-Control": "public, max-age=31536000, immutable",
+    },
+  });
+}
+
 export function serviceErrorResponse(error: ServiceError) {
   return NextResponse.json(errorPayload(error.errorCode, error.error), {
     status: error.status,

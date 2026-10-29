@@ -1,4 +1,11 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { ERROR_CODES } from "@/lib/errors";
+import {
+  internalServiceError,
+  notFoundServiceError,
+  validationServiceError,
+} from "@/lib/services/errors";
+import type { ServiceResult } from "@/lib/services/types";
 
 const ALLOWED_MIME_TYPES = [
   "image/jpeg",
@@ -290,9 +297,13 @@ function deriveBucketFromPublicBaseUrl(runtimeHost?: string | null): string | un
       return hostMatch[1];
     }
 
-    const firstPathSegment = url.pathname.split("/").filter(Boolean)[0];
-    if (firstPathSegment) {
-      return firstPathSegment;
+    const pathSegments = url.pathname.split("/").filter(Boolean);
+    if (pathSegments[0] === "api" && pathSegments[1] === "storage") {
+      return undefined;
+    }
+
+    if (pathSegments[0]) {
+      return pathSegments[0];
     }
   } catch {
     return undefined;
@@ -352,6 +363,112 @@ export function buildItemImageS3Key(params: {
     day,
     `${timestamp}-${randomToken}.${extension}`,
   ].join("/");
+}
+
+const STORAGE_OBJECT_FOLDERS = new Set(["item-images", "team-label-logos"]);
+const STORAGE_OBJECT_SEGMENT = /^[A-Za-z0-9._-]+$/;
+
+export function parseStorageObjectKey(segments: string[]): string | null {
+  if (!Array.isArray(segments) || segments.length < 6) {
+    return null;
+  }
+
+  if (segments.some((segment) => !segment || segment === "." || segment === "..")) {
+    return null;
+  }
+
+  if (segments[0] !== "purplestock") {
+    return null;
+  }
+
+  if (segments[1] !== "prod" && segments[1] !== "staging") {
+    return null;
+  }
+
+  if (segments[2] !== "teams" || !/^\d+$/.test(segments[3])) {
+    return null;
+  }
+
+  if (!STORAGE_OBJECT_FOLDERS.has(segments[4])) {
+    return null;
+  }
+
+  if (segments.slice(5).some((segment) => !STORAGE_OBJECT_SEGMENT.test(segment))) {
+    return null;
+  }
+
+  return segments.join("/");
+}
+
+function createObjectStoreClient(runtimeHost?: string | null): S3Client {
+  const region = resolveAwsRegion();
+  const endpoint =
+    process.env.S3_ENDPOINT?.trim() || process.env.AWS_S3_ENDPOINT?.trim() || undefined;
+  const forcePathStyle =
+    (process.env.S3_FORCE_PATH_STYLE || process.env.AWS_S3_FORCE_PATH_STYLE) === "true";
+
+  return new S3Client({
+    region,
+    endpoint,
+    forcePathStyle,
+    ...(resolveS3Credentials(runtimeHost)
+      ? { credentials: resolveS3Credentials(runtimeHost) }
+      : {}),
+  });
+}
+
+function isMissingObjectError(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const named = error as { name?: string; $metadata?: { httpStatusCode?: number } };
+  return named.name === "NoSuchKey" || named.$metadata?.httpStatusCode === 404;
+}
+
+export async function getStoredObject(params: {
+  keySegments: string[];
+  runtimeHost?: string | null;
+}): Promise<ServiceResult<{ body: Uint8Array; contentType: string }>> {
+  const key = parseStorageObjectKey(params.keySegments);
+  if (!key) {
+    return { ok: false, error: validationServiceError("Invalid storage object key") };
+  }
+
+  const bucket = resolveBucketName(params.runtimeHost);
+  if (!bucket) {
+    return { ok: false, error: internalServiceError("Object storage is not configured") };
+  }
+
+  try {
+    const response = await createObjectStoreClient(params.runtimeHost).send(
+      new GetObjectCommand({
+        Bucket: bucket,
+        Key: key,
+      })
+    );
+
+    if (!response.Body || typeof response.Body.transformToByteArray !== "function") {
+      return { ok: false, error: internalServiceError("Object storage returned an empty body") };
+    }
+
+    return {
+      ok: true,
+      data: {
+        body: await response.Body.transformToByteArray(),
+        contentType: response.ContentType?.trim() || "application/octet-stream",
+      },
+    };
+  } catch (error) {
+    if (isMissingObjectError(error)) {
+      return {
+        ok: false,
+        error: notFoundServiceError(ERROR_CODES.STORAGE_OBJECT_NOT_FOUND, "Storage object not found"),
+      };
+    }
+
+    return { ok: false, error: internalServiceError("Failed to read storage object") };
+  }
 }
 
 export function buildTeamLabelLogoS3Key(params: {
@@ -426,8 +543,6 @@ async function uploadTeamImageToS3(params: {
   const region = resolveAwsRegion();
   const endpoint =
     process.env.S3_ENDPOINT?.trim() || process.env.AWS_S3_ENDPOINT?.trim() || undefined;
-  const forcePathStyle =
-    (process.env.S3_FORCE_PATH_STYLE || process.env.AWS_S3_FORCE_PATH_STYLE) === "true";
 
   let processedBytes = bytes;
   if (originalSize > 1024 * 1024) {
@@ -440,14 +555,7 @@ async function uploadTeamImageToS3(params: {
     runtimeHost: params.runtimeHost,
   });
 
-  const s3 = new S3Client({
-    region,
-    endpoint,
-    forcePathStyle,
-    ...(resolveS3Credentials(params.runtimeHost)
-      ? { credentials: resolveS3Credentials(params.runtimeHost) }
-      : {}),
-  });
+  const s3 = createObjectStoreClient(params.runtimeHost);
 
   let lastError: Error | null = null;
   for (let attempt = 1; attempt <= UPLOAD_MAX_RETRIES; attempt++) {
