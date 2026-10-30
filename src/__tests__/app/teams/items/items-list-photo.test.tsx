@@ -66,6 +66,7 @@ function makeItem(overrides: Partial<Item> = {}): Item {
     currentStock: 4,
     minimumStock: null,
     price: 10,
+    locationId: 1,
     locationName: "Gaveta",
     customFields: null,
     photoData: null,

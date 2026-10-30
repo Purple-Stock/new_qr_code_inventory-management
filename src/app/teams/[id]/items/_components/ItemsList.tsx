@@ -11,6 +11,7 @@ import { fetchApiJsonResult, fetchApiResult } from "@/lib/api-client";
 import { ERROR_CODES } from "@/lib/errors";
 import type { Item } from "../_types";
 import type { ItemSortKey, SortDirection } from "../_utils/sortItems";
+import { itemLocationRowKey } from "@/lib/stock-by-location-ledger";
 import { ItemListPhoto } from "./ItemListPhoto";
 import { ItemStockBadge } from "./ItemStockBadge";
 import { ItemsSortHeader } from "./ItemsSortHeader";
@@ -30,7 +31,6 @@ interface ItemsListProps {
 interface ItemDetails extends Item {
   cost?: number | null;
   brand?: string | null;
-  locationId?: number | null;
 }
 
 function generateBarcode(): string {
@@ -214,7 +214,11 @@ export function ItemsList({
       {/* Mobile Card View */}
       <div className="lg:hidden space-y-3">
         {items.map((item) => (
-          <div key={item.id} className="bg-white rounded-xl shadow-md border border-gray-100 p-4">
+          <div
+            key={itemLocationRowKey(item)}
+            data-testid={`item-row-${item.locationId ?? "none"}-${item.id}`}
+            className="bg-white rounded-xl shadow-md border border-gray-100 p-4"
+          >
             <div className="flex items-start gap-3 mb-3">
               <div className="flex-shrink-0">
                 <ItemListPhoto
@@ -352,7 +356,11 @@ export function ItemsList({
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {items.map((item) => (
-                <tr key={item.id} className="hover:bg-purple-50/50 transition-colors">
+                <tr
+                  key={itemLocationRowKey(item)}
+                  data-testid={`item-row-${item.locationId ?? "none"}-${item.id}`}
+                  className="hover:bg-purple-50/50 transition-colors"
+                >
                   <td className="px-6 py-5 whitespace-nowrap">
                     <ItemListPhoto
                       name={item.name || t.items.unnamedItem}

@@ -12,6 +12,7 @@ import { TablePager } from "@/components/shared/TablePager";
 import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import { fetchApiResult } from "@/lib/api-client";
 import { useSortedPage } from "@/hooks/useSortedPage";
+import { itemLocationRowKey } from "@/lib/stock-by-location-ledger";
 import type { TeamDto } from "@/lib/services/types";
 
 const SCAN_HEADER_CLASS = "px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700";
@@ -22,6 +23,7 @@ type LookupItem = {
   sku: string | null;
   barcode: string | null;
   currentStock: number | null;
+  locationId?: number | null;
   locationName: string | null;
   photoData: string | null;
   customFields: Record<string, string> | null;
@@ -75,8 +77,8 @@ export function ScanPageClient({
 
   const idsKey = (items: LookupItem[]) =>
     items
-      .map((item) => item.id)
-      .sort((a, b) => a - b)
+      .map((item) => itemLocationRowKey(item))
+      .sort()
       .join(",");
 
   const applyLookupResult = (
@@ -385,7 +387,7 @@ export function ScanPageClient({
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {paginated.items.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
+                    <tr key={itemLocationRowKey(item)} className="hover:bg-gray-50">
                       <td className="px-3 py-2 text-gray-900">{item.name || t.items.unnamedItem}</td>
                       <td className="px-3 py-2 text-gray-700">{item.sku || "-"}</td>
                       <td className="px-3 py-2 text-gray-700">{item.currentStock ?? 0}</td>

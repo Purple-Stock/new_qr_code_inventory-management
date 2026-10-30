@@ -38,6 +38,7 @@ import {
   initialLocationSelectValue,
   locationsForStockSelect,
 } from "@/lib/initial-location-select";
+import { itemLocationRowKey } from "@/lib/stock-by-location-ledger";
 import {
   formatItemNotAtSourceMessage,
   interpolateTemplate,
@@ -288,7 +289,13 @@ export function MovePageClient({
   };
 
   const handleBarcodeScan = async (barcode: string) => {
-    const foundItem = items.find((item) => item.barcode === barcode);
+    const foundAtSource = items.find(
+      (item) =>
+        item.barcode === barcode &&
+        itemIsAtSourceLocation(item, sourceLocationId)
+    );
+    const foundItem =
+      foundAtSource ?? items.find((item) => item.barcode === barcode);
 
     if (foundItem) {
       if (!itemIsAtSourceLocation(foundItem, sourceLocationId)) {
@@ -789,7 +796,7 @@ export function MovePageClient({
 
                   return (
                     <button
-                      key={item.id}
+                      key={itemLocationRowKey(item)}
                       type="button"
                       disabled={!atSource}
                       onClick={() => handleAddItem(item)}
@@ -908,7 +915,7 @@ export function MovePageClient({
                   const maxStock = selectedItem.item.currentStock ?? 0;
                   return (
                     <tr
-                      key={selectedItem.item.id}
+                      key={itemLocationRowKey(selectedItem.item)}
                       className="hover:bg-purple-50/50 transition-colors"
                     >
                       <td className="px-4 sm:px-6 py-4 sm:py-5">
@@ -1021,7 +1028,7 @@ export function MovePageClient({
             {selectedItems.length > 0 && (
               <ul className="mt-2 list-disc pl-5 text-xs text-violet-800">
                 {selectedItems.map((selectedItem) => (
-                  <li key={selectedItem.item.id}>
+                  <li key={itemLocationRowKey(selectedItem.item)}>
                     {(selectedItem.item.name || t.items.unnamedItem) +
                       `: ${selectedItem.quantity}`}
                   </li>
