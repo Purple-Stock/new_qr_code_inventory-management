@@ -118,7 +118,10 @@ function LocationItemsTable({
           </thead>
           <tbody className="bg-white divide-y divide-gray-100">
             {paginated.items.map((item) => (
-              <tr key={item.id} className="hover:bg-purple-50/50 transition-colors">
+              <tr
+                key={`${item.locationId ?? "none"}-${item.id}`}
+                className="hover:bg-purple-50/50 transition-colors"
+              >
                 <td className="px-4 sm:px-6 py-4">
                   <div className="text-sm font-medium text-gray-900">
                     {item.name || t.items.unnamedItem}

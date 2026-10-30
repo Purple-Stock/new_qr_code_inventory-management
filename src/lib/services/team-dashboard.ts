@@ -6,8 +6,13 @@ import { getActiveTeamMemberRole, getCompanyTeams } from "@/lib/db/team-members"
 import { getTeamReportStats } from "@/lib/db/reports";
 import {
   getItemStockTransactionsWithDetails,
+  getTeamStockTransactions,
   getTeamStockTransactionsWithDetails,
 } from "@/lib/db/stock-transactions";
+import {
+  itemsWithLocationBalancesFromLedger,
+  reportStockByLocationFromLedger,
+} from "@/lib/stock-by-location-ledger";
 import {
   toItemDto,
   toLocationDto,
@@ -83,10 +88,22 @@ export async function getTeamReportsData(
     };
   }
 
-  const stats = await getTeamReportStats(teamId, startDate, endDate);
+  const [stats, locations, items, transactions] = await Promise.all([
+    getTeamReportStats(teamId, startDate, endDate),
+    getTeamLocations(teamId),
+    getTeamItems(teamId),
+    getTeamStockTransactions(teamId),
+  ]);
   return {
     team: toTeamDto(access.team),
-    stats: toReportStatsDto(stats),
+    stats: toReportStatsDto({
+      ...stats,
+      stockByLocation: reportStockByLocationFromLedger(
+        items.map((item) => toItemDto(item)),
+        transactions,
+        locations.map(toLocationDto)
+      ),
+    }),
     subscriptionRequired: false,
   };
 }
@@ -106,15 +123,22 @@ export async function getTeamStockByLocationData(
     };
   }
 
-  const [locations, items] = await Promise.all([
+  const [locations, items, transactions] = await Promise.all([
     getTeamLocations(teamId),
     getTeamItems(teamId),
+    getTeamStockTransactions(teamId),
   ]);
+  const locationDtos = locations.map(toLocationDto);
+  const itemDtos = itemsWithLocationBalancesFromLedger(
+    items.map((item) => toItemDto(item)),
+    transactions,
+    locationDtos
+  );
 
   return {
     team: toTeamDto(access.team),
-    locations: locations.map(toLocationDto),
-    items: items.map((item) => toItemDto(item)),
+    locations: locationDtos,
+    items: itemDtos,
     subscriptionRequired: false,
   };
 }

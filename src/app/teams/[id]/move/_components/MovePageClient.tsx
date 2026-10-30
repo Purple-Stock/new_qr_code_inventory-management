@@ -35,6 +35,10 @@ import { useSortedPage } from "@/hooks/useSortedPage";
 import { createMoveAction } from "../_actions/createStockTransaction";
 import { parseDecimalInput } from "@/lib/utils/parse-decimal-input";
 import {
+  initialLocationSelectValue,
+  locationsForStockSelect,
+} from "@/lib/initial-location-select";
+import {
   formatItemNotAtSourceMessage,
   interpolateTemplate,
   itemIsAtSourceLocation,
@@ -72,8 +76,11 @@ export function MovePageClient({
   const router = useRouter();
   const { t } = useTranslation();
   const { toast } = useToast();
-  const defaultSourceLocation =
-    locations.length > 0 ? locations[0].id.toString() : "";
+  const selectableLocations = useMemo(
+    () => locationsForStockSelect(locations),
+    [locations]
+  );
+  const defaultSourceLocation = initialLocationSelectValue(selectableLocations);
   const [activeTab, setActiveTab] = useState<"location" | "team">("location");
   const [sourceLocation, setSourceLocation] = useState<string>(
     defaultSourceLocation
@@ -132,7 +139,7 @@ export function MovePageClient({
 
   const sourceLocationId = sourceLocation ? parseInt(sourceLocation, 10) : null;
   const sourceLocationName =
-    locations.find((location) => location.id.toString() === sourceLocation)
+    selectableLocations.find((location) => location.id.toString() === sourceLocation)
       ?.name || t.move.unknownLocation;
 
   const itemNotAtSourceMessage = (item: Item) => {
@@ -163,10 +170,10 @@ export function MovePageClient({
     const draft = readLocalStorageJson<MoveDraft>(draftStorageKey);
 
     if (draft) {
-      const hasValidSourceLocation = locations.some(
+      const hasValidSourceLocation = selectableLocations.some(
         (location) => location.id.toString() === draft.sourceLocation
       );
-      const hasValidDestinationLocation = locations.some(
+      const hasValidDestinationLocation = selectableLocations.some(
         (location) => location.id.toString() === draft.destinationLocation
       );
       const hasValidDestinationTeam = destinationTeams.some(
@@ -208,7 +215,7 @@ export function MovePageClient({
     destinationTeams,
     draftStorageKey,
     items,
-    locations,
+    selectableLocations,
   ]);
 
   useEffect(() => {
@@ -523,6 +530,7 @@ export function MovePageClient({
 
       removeLocalStorageEntry(draftStorageKey);
       setActiveTab("location");
+      setSourceLocation(defaultSourceLocation);
       setDestinationLocation("");
       setDestinationTeamId("");
       setSelectedItems([]);
@@ -651,7 +659,7 @@ export function MovePageClient({
             {t.move.sourceLocationRequired}
           </Label>
           <Select
-            value={sourceLocation}
+            value={sourceLocation || undefined}
             onValueChange={handleSourceLocationChange}
           >
             <SelectTrigger
@@ -661,7 +669,7 @@ export function MovePageClient({
               <SelectValue placeholder={t.move.defaultLocation} />
             </SelectTrigger>
             <SelectContent>
-              {locations.map((location) => (
+              {selectableLocations.map((location) => (
                 <SelectItem key={location.id} value={location.id.toString()}>
                   {location.name}
                 </SelectItem>
@@ -678,7 +686,7 @@ export function MovePageClient({
               {t.move.destinationLocationRequired}
             </Label>
             <Select
-              value={destinationLocation}
+              value={destinationLocation || undefined}
               onValueChange={setDestinationLocation}
             >
               <SelectTrigger
@@ -688,7 +696,7 @@ export function MovePageClient({
                 <SelectValue placeholder={t.move.defaultLocation} />
               </SelectTrigger>
               <SelectContent>
-                {locations.map((location) => (
+                {selectableLocations.map((location) => (
                   <SelectItem key={location.id} value={location.id.toString()}>
                     {location.name}
                   </SelectItem>

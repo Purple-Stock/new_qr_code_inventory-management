@@ -98,4 +98,42 @@ describe("StockByLocationPageClient sort", () => {
     expect(screen.queryByText("Kilo")).not.toBeInTheDocument();
     expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
   });
+
+  it("renders the same SKU once per location that still has a ledger balance", () => {
+    render(
+      <StockByLocationPageClient
+        initialTeam={{ id: 1, name: "Galpão" }}
+        initialLocations={[
+          { id: 1, name: "Local 1" },
+          { id: 3, name: "Local2" },
+        ]}
+        initialItems={[
+          {
+            id: 1,
+            name: "Cadeira Azul",
+            sku: "CADEIRA-AZUL",
+            barcode: "5817915565817",
+            currentStock: 12,
+            price: null,
+            locationId: 1,
+            locationName: "Local 1",
+          },
+          {
+            id: 1,
+            name: "Cadeira Azul",
+            sku: "CADEIRA-AZUL",
+            barcode: "5817915565817",
+            currentStock: 8,
+            price: null,
+            locationId: 3,
+            locationName: "Local2",
+          },
+        ]}
+      />
+    );
+
+    expect(screen.getAllByText("Cadeira Azul")).toHaveLength(2);
+    expect(screen.getByText("12.0")).toBeInTheDocument();
+    expect(screen.getByText("8.0")).toBeInTheDocument();
+  });
 });
