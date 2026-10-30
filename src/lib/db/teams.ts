@@ -2,6 +2,7 @@ import { sqlite } from "@/db/client";
 import {
   teams,
   items,
+  itemStocks,
   stockTransactions,
   locations,
   teamMembers,
@@ -393,6 +394,14 @@ export async function deleteTeam(teamId: number): Promise<boolean> {
   return sqlite.transaction(async (tx) => {
     await tx.delete(stockTransactions).where(eq(stockTransactions.teamId, teamId));
     await tx.delete(webhooks).where(eq(webhooks.teamId, teamId));
+    const teamItemRows = await tx
+      .select({ id: items.id })
+      .from(items)
+      .where(eq(items.teamId, teamId));
+    const teamItemIds = teamItemRows.map((row) => row.id);
+    if (teamItemIds.length > 0) {
+      await tx.delete(itemStocks).where(inArray(itemStocks.itemId, teamItemIds));
+    }
     await tx.delete(items).where(eq(items.teamId, teamId));
     await tx.delete(locations).where(eq(locations.teamId, teamId));
     await tx.delete(teamMembers).where(eq(teamMembers.teamId, teamId));

@@ -1,17 +1,19 @@
 import { randomUUID } from "crypto";
 import { sqlite } from "@/db/client";
 import { stockTransactions, items, users, locations, teams } from "@/db/schema";
-import { eq, desc, and, inArray, asc } from "drizzle-orm";
+import { eq, desc, and, inArray } from "drizzle-orm";
 import { hasAffectedRows } from "./mutation-result";
 import { ItemNotAtSourceLocationError } from "./item-not-at-source-location-error";
+import { ItemMaximumStockExceededError } from "./item-stock-conflict-errors";
 import {
-  itemLedgerQuantityAt,
-  locationIdAfterPartialMove,
-} from "@/lib/stock-by-location-ledger";
-import {
-  ItemMaximumStockExceededError,
-  ItemStockAtAnotherLocationError,
-} from "./item-stock-conflict-errors";
+  addItemStockDelta,
+  itemStockQuantityAt,
+  listItemStocks,
+  materializeItemStocksIfEmpty,
+  rebuildItemStocksFromLedger,
+  setItemStockAtLocation,
+  syncItemCatalogFromStocks,
+} from "./item-stocks";
 import type {
   StockTransaction,
   StockTransactionType,
@@ -41,26 +43,14 @@ async function getLocationNameById(
   return location?.name ?? null;
 }
 
-async function ledgerQuantityAtSource(
+async function actualStockLocationName(
   tx: TransactionExecutor,
-  item: {
-    id: number;
-    name: string | null;
-    sku: string | null;
-    barcode: string | null;
-    price: number | null;
-    currentStock: number | null;
-    initialQuantity: number | null;
-    locationId: number | null;
-  },
-  sourceLocationId: number | null
-): Promise<number> {
-  const itemTransactions = await tx
-    .select()
-    .from(stockTransactions)
-    .where(eq(stockTransactions.itemId, item.id));
-
-  return itemLedgerQuantityAt(item, itemTransactions, sourceLocationId);
+  itemId: number,
+  fallbackLocationId: number | null
+): Promise<string | null> {
+  const rows = await listItemStocks(tx, itemId);
+  const held = rows.find((row) => (row.quantity || 0) > 0);
+  return getLocationNameById(tx, held?.locationId ?? fallbackLocationId);
 }
 
 async function assertItemIsAtSourceLocation(
@@ -68,17 +58,12 @@ async function assertItemIsAtSourceLocation(
   item: {
     id: number;
     name: string | null;
-    sku: string | null;
-    barcode: string | null;
-    price: number | null;
-    currentStock: number | null;
-    initialQuantity: number | null;
     locationId: number | null;
   },
   sourceLocationId: number | null,
   quantity: number
 ): Promise<number> {
-  const atSource = await ledgerQuantityAtSource(tx, item, sourceLocationId);
+  const atSource = await itemStockQuantityAt(tx, item.id, sourceLocationId);
   if (atSource >= quantity) {
     return atSource;
   }
@@ -89,43 +74,12 @@ async function assertItemIsAtSourceLocation(
 
   const [claimedSourceName, actualLocationName] = await Promise.all([
     getLocationNameById(tx, sourceLocationId),
-    getLocationNameById(tx, item.locationId),
+    actualStockLocationName(tx, item.id, item.locationId),
   ]);
 
   throw new ItemNotAtSourceLocationError({
     itemName: item.name,
     claimedSourceName,
-    actualLocationName,
-  });
-}
-
-async function assertStockInDoesNotTeleport(
-  tx: TransactionExecutor,
-  item: {
-    name: string | null;
-    locationId: number | null;
-    currentStock: number | null;
-  },
-  destinationLocationId: number | null
-): Promise<void> {
-  const currentStock = item.currentStock || 0;
-  if (
-    currentStock <= 0 ||
-    destinationLocationId == null ||
-    item.locationId == null ||
-    item.locationId === destinationLocationId
-  ) {
-    return;
-  }
-
-  const [claimedDestinationName, actualLocationName] = await Promise.all([
-    getLocationNameById(tx, destinationLocationId),
-    getLocationNameById(tx, item.locationId),
-  ]);
-
-  throw new ItemStockAtAnotherLocationError({
-    itemName: item.name,
-    claimedDestinationName,
     actualLocationName,
   });
 }
@@ -147,58 +101,6 @@ function assertMaximumStockNotExceeded(
     maximumStock: item.maximumStock,
     currentStock: item.currentStock || 0,
   });
-}
-
-function applyTransactionToStock(
-  stock: number,
-  transaction: Pick<StockTransaction, "transactionType" | "quantity">
-) {
-  switch (transaction.transactionType) {
-    case "stock_in":
-      return stock + transaction.quantity;
-    case "stock_out":
-      return stock - transaction.quantity;
-    case "adjust":
-    case "count":
-      return transaction.quantity;
-    case "move":
-    default:
-      return stock;
-  }
-}
-
-async function recalculateItemCurrentStock(
-  tx: TransactionExecutor,
-  itemId: number
-) {
-  const [item] = await tx
-    .select()
-    .from(items)
-    .where(eq(items.id, itemId))
-    .limit(1);
-
-  if (!item) {
-    return;
-  }
-
-  const itemTransactions = await tx
-    .select()
-    .from(stockTransactions)
-    .where(eq(stockTransactions.itemId, itemId))
-    .orderBy(asc(stockTransactions.createdAt), asc(stockTransactions.id));
-
-  const recalculatedStock = itemTransactions.reduce(
-    (stock, transaction) => applyTransactionToStock(stock, transaction),
-    item.initialQuantity || 0
-  );
-
-  await tx
-    .update(items)
-    .set({
-      currentStock: Math.max(0, recalculatedStock),
-      updatedAt: new Date(),
-    })
-    .where(eq(items.id, itemId));
 }
 
 /**
@@ -248,48 +150,59 @@ export async function createStockTransaction(data: {
       throw new Error("Item not found for team");
     }
 
-    let newStock = item.currentStock || 0;
-    let newLocationId = item.locationId;
+    await materializeItemStocksIfEmpty(tx, item);
+
+    const sourceLocationId =
+      data.sourceLocationId ??
+      (data.transactionType === "stock_out"
+        ? data.destinationLocationId ?? item.locationId
+        : data.sourceLocationId ?? null);
+    const destinationLocationId =
+      data.destinationLocationId ?? item.locationId;
 
     if (data.transactionType === "stock_in") {
-      await assertStockInDoesNotTeleport(
-        tx,
-        item,
-        data.destinationLocationId ?? null
-      );
-      newStock += data.quantity;
-      if (data.destinationLocationId) {
-        newLocationId = data.destinationLocationId;
-      }
+      await addItemStockDelta(tx, item.id, destinationLocationId, data.quantity);
     } else if (data.transactionType === "stock_out") {
-      if (newStock < data.quantity) {
-        throw new Error("Insufficient stock for stock out");
-      }
-      newStock -= data.quantity;
-    } else if (data.transactionType === "adjust") {
-      await assertStockInDoesNotTeleport(
+      await assertItemIsAtSourceLocation(
         tx,
         item,
-        data.destinationLocationId ?? null
+        sourceLocationId,
+        data.quantity
       );
-      newStock = data.quantity;
-      if (data.destinationLocationId) {
-        newLocationId = data.destinationLocationId;
-      }
+      await addItemStockDelta(tx, item.id, sourceLocationId, -data.quantity);
+    } else if (
+      data.transactionType === "adjust" ||
+      data.transactionType === "count"
+    ) {
+      await setItemStockAtLocation(
+        tx,
+        item.id,
+        destinationLocationId,
+        data.quantity
+      );
     } else if (data.transactionType === "move") {
-      const atSource = await assertItemIsAtSourceLocation(
+      await assertItemIsAtSourceLocation(
         tx,
         item,
         data.sourceLocationId ?? null,
         data.quantity
       );
-      newLocationId = locationIdAfterPartialMove({
-        remainingAtSource: atSource - data.quantity,
-        destinationLocationId: data.destinationLocationId ?? null,
-        currentLocationId: item.locationId,
-      });
+      await addItemStockDelta(
+        tx,
+        item.id,
+        data.sourceLocationId ?? null,
+        -data.quantity
+      );
+      await addItemStockDelta(
+        tx,
+        item.id,
+        data.destinationLocationId ?? null,
+        data.quantity
+      );
     }
 
+    const bins = await listItemStocks(tx, item.id);
+    const newStock = bins.reduce((total, row) => total + (row.quantity || 0), 0);
     assertMaximumStockNotExceeded(item, newStock);
 
     const [transaction] = await tx
@@ -311,14 +224,7 @@ export async function createStockTransaction(data: {
       })
       .returning();
 
-    await tx
-      .update(items)
-      .set({
-        currentStock: Math.max(0, newStock),
-        locationId: newLocationId,
-        updatedAt: new Date(),
-      })
-      .where(eq(items.id, data.itemId));
+    await syncItemCatalogFromStocks(tx, data.itemId);
 
     return transaction;
   });
@@ -375,17 +281,13 @@ async function createInterTeamTransferTransaction(data: {
       throw new Error("Item not found for team");
     }
 
+    await materializeItemStocksIfEmpty(tx, sourceItem);
     await assertItemIsAtSourceLocation(
       tx,
       sourceItem,
-      data.sourceLocationId,
+      data.sourceLocationId ?? sourceItem.locationId,
       data.quantity
     );
-
-    const sourceCurrentStock = sourceItem.currentStock || 0;
-    if (sourceCurrentStock < data.quantity) {
-      throw new Error("Insufficient stock for stock out");
-    }
 
     const [destinationLocationByDefaultName] = await tx
       .select()
@@ -452,6 +354,26 @@ async function createInterTeamTransferTransaction(data: {
 
     const transferGroupId = data.transferGroupId || randomUUID();
 
+    await addItemStockDelta(
+      tx,
+      sourceItem.id,
+      data.sourceLocationId ?? sourceItem.locationId,
+      -data.quantity
+    );
+    await materializeItemStocksIfEmpty(tx, destinationItem);
+    await addItemStockDelta(
+      tx,
+      destinationItem.id,
+      destinationLocation.id,
+      data.quantity
+    );
+    const destinationBins = await listItemStocks(tx, destinationItem.id);
+    const destinationNewStock = destinationBins.reduce(
+      (total, row) => total + (row.quantity || 0),
+      0
+    );
+    assertMaximumStockNotExceeded(destinationItem, destinationNewStock);
+
     const [sourceTransaction] = await tx
       .insert(stockTransactions)
       .values({
@@ -499,26 +421,8 @@ async function createInterTeamTransferTransaction(data: {
       .set({ linkedTransactionId: sourceTransaction.id, updatedAt: new Date() })
       .where(eq(stockTransactions.id, destinationTransaction.id));
 
-    await tx
-      .update(items)
-      .set({
-        currentStock: Math.max(0, sourceCurrentStock - data.quantity),
-        updatedAt: new Date(),
-      })
-      .where(eq(items.id, sourceItem.id));
-
-    const destinationNewStock =
-      (destinationItem.currentStock || 0) + data.quantity;
-    assertMaximumStockNotExceeded(destinationItem, destinationNewStock);
-
-    await tx
-      .update(items)
-      .set({
-        currentStock: destinationNewStock,
-        locationId: destinationLocation.id,
-        updatedAt: new Date(),
-      })
-      .where(eq(items.id, destinationItem.id));
+    await syncItemCatalogFromStocks(tx, sourceItem.id);
+    await syncItemCatalogFromStocks(tx, destinationItem.id);
 
     const [updatedSourceTransaction] = await tx
       .select()
@@ -906,7 +810,7 @@ export async function deleteStockTransaction(
     }
 
     for (const itemId of [...new Set(affectedItemIds)]) {
-      await recalculateItemCurrentStock(tx, itemId);
+      await rebuildItemStocksFromLedger(tx, itemId);
     }
 
     return true;

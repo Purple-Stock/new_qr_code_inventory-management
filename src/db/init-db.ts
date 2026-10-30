@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { getDatabaseUrl } from "./config";
+import { backfillItemStocksUsingClient } from "../../scripts/item-stocks-backfill-core.mjs";
 
 const currentFile = fileURLToPath(import.meta.url);
 const currentDir = path.dirname(currentFile);
@@ -101,6 +102,13 @@ export async function ensureDatabase(): Promise<void> {
     console.log("Database initialized successfully.");
   } else if (migrationFiles.length > 0) {
     console.log("Database is up to date.");
+  }
+
+  const backfillClient = createDbClient();
+  try {
+    await backfillItemStocksUsingClient(backfillClient);
+  } finally {
+    backfillClient.close();
   }
 }
 

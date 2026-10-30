@@ -54,6 +54,7 @@ export async function clearTestDb() {
       { sql: "DELETE FROM webhooks" },
       { sql: "DELETE FROM api_keys" },
       { sql: "DELETE FROM stock_transactions" },
+      { sql: "DELETE FROM item_stocks" },
       { sql: "DELETE FROM items" },
       { sql: "DELETE FROM locations" },
       { sql: "DELETE FROM team_members" },

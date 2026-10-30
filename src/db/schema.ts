@@ -262,6 +262,35 @@ export const items = sqliteTable(
   })
 );
 
+// Per-bin quantity. items.currentStock / locationId stay as a cached SUM / tag.
+export const itemStocks = sqliteTable(
+  "item_stocks",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    itemId: integer("item_id")
+      .notNull()
+      .references(() => items.id),
+    locationId: integer("location_id")
+      .notNull()
+      .references(() => locations.id),
+    quantity: real("quantity").notNull().default(0.0),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => ({
+    itemLocationIdx: uniqueIndex(
+      "index_item_stocks_on_item_id_and_location_id"
+    ).on(table.itemId, table.locationId),
+    locationIdIdx: index("index_item_stocks_on_location_id").on(
+      table.locationId
+    ),
+  })
+);
+
 // Stock Transaction Type enum (as text in SQLite)
 export type StockTransactionType =
   "stock_in" | "stock_out" | "adjust" | "move" | "count";
@@ -444,6 +473,9 @@ export type NewLocation = typeof locations.$inferInsert;
 export type Item = typeof items.$inferSelect;
 export type NewItem = typeof items.$inferInsert;
 
+export type ItemStock = typeof itemStocks.$inferSelect;
+export type NewItemStock = typeof itemStocks.$inferInsert;
+
 export type StockTransaction = typeof stockTransactions.$inferSelect;
 export type NewStockTransaction = typeof stockTransactions.$inferInsert;
 
@@ -542,6 +574,18 @@ export const itemsRelations = relations(items, ({ one, many }) => ({
     references: [locations.id],
   }),
   stockTransactions: many(stockTransactions),
+  itemStocks: many(itemStocks),
+}));
+
+export const itemStocksRelations = relations(itemStocks, ({ one }) => ({
+  item: one(items, {
+    fields: [itemStocks.itemId],
+    references: [items.id],
+  }),
+  location: one(locations, {
+    fields: [itemStocks.locationId],
+    references: [locations.id],
+  }),
 }));
 
 export const stockTransactionsRelations = relations(

@@ -282,7 +282,7 @@ describe("createStockTransaction atomicity", () => {
     expect(freshCamera.currentStock).toBe(1);
   });
 
-  it("does not teleport existing units when stocking in at another location", async () => {
+  it("adds stock_in at a second location without moving the first bin", async () => {
     const { drizzle } = getTestDb();
 
     const [user] = await drizzle
@@ -319,16 +319,14 @@ describe("createStockTransaction atomicity", () => {
       })
       .returning();
 
-    await expect(
-      createStockTransaction({
-        itemId: cable.id,
-        teamId: team.id,
-        transactionType: "stock_in",
-        quantity: 3,
-        userId: user.id,
-        destinationLocationId: locationA.id,
-      })
-    ).rejects.toThrow(/currently at B/i);
+    await createStockTransaction({
+      itemId: cable.id,
+      teamId: team.id,
+      transactionType: "stock_in",
+      quantity: 3,
+      userId: user.id,
+      destinationLocationId: locationA.id,
+    });
 
     const [freshCable] = await drizzle
       .select()
@@ -340,9 +338,8 @@ describe("createStockTransaction atomicity", () => {
       .from(stockTransactions)
       .where(eq(stockTransactions.itemId, cable.id));
 
-    expect(freshCable.currentStock).toBe(7);
-    expect(freshCable.locationId).toBe(locationB.id);
-    expect(rows).toHaveLength(0);
+    expect(freshCable.currentStock).toBe(10);
+    expect(rows).toHaveLength(1);
   });
 
   it("rejects stocking in above the item maximum quantity", async () => {
