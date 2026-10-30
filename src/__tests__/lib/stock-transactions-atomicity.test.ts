@@ -399,4 +399,143 @@ describe("createStockTransaction atomicity", () => {
     expect(freshCamera.currentStock).toBe(1);
     expect(freshCamera.locationId).toBe(grauna.id);
   });
+
+  it("does not teleport remaining units on a partial move", async () => {
+    const { drizzle } = getTestDb();
+
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "partial-move@example.com", passwordHash: "hash" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Galpão", userId: user.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+    const [local1] = await drizzle
+      .insert(locations)
+      .values({ name: "Local 1", description: null, teamId: team.id })
+      .returning();
+    const [local2] = await drizzle
+      .insert(locations)
+      .values({ name: "Local2", description: null, teamId: team.id })
+      .returning();
+    const [chair] = await drizzle
+      .insert(items)
+      .values({
+        name: "Cadeira Azul",
+        sku: "CADEIRA-AZUL",
+        barcode: "partial-move-chair",
+        teamId: team.id,
+        locationId: local1.id,
+        initialQuantity: 20,
+        currentStock: 20,
+      })
+      .returning();
+
+    await createStockTransaction({
+      itemId: chair.id,
+      teamId: team.id,
+      transactionType: "move",
+      quantity: 8,
+      userId: user.id,
+      sourceLocationId: local1.id,
+      destinationLocationId: local2.id,
+      destinationKind: "location",
+    });
+
+    const [freshChair] = await drizzle
+      .select()
+      .from(items)
+      .where(eq(items.id, chair.id))
+      .limit(1);
+
+    expect(freshChair.currentStock).toBe(20);
+    expect(freshChair.locationId).toBe(local1.id);
+  });
+
+  it("moves leftover units from the book after a previous teleport", async () => {
+    const { drizzle } = getTestDb();
+
+    const [user] = await drizzle
+      .insert(users)
+      .values({ email: "teleported-book@example.com", passwordHash: "hash" })
+      .returning();
+    const [team] = await drizzle
+      .insert(teams)
+      .values({ name: "Galpão", userId: user.id, companyId: null })
+      .returning();
+    await drizzle.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    });
+    const [local1] = await drizzle
+      .insert(locations)
+      .values({ name: "Local 1", description: null, teamId: team.id })
+      .returning();
+    const [local2] = await drizzle
+      .insert(locations)
+      .values({ name: "Local2", description: null, teamId: team.id })
+      .returning();
+    const [chair] = await drizzle
+      .insert(items)
+      .values({
+        name: "Cadeira Azul",
+        sku: "CADEIRA-AZUL",
+        barcode: "teleported-chair",
+        teamId: team.id,
+        locationId: local2.id,
+        initialQuantity: 0,
+        currentStock: 20,
+      })
+      .returning();
+
+    await drizzle.insert(stockTransactions).values([
+      {
+        itemId: chair.id,
+        teamId: team.id,
+        transactionType: "stock_in",
+        quantity: 20,
+        userId: user.id,
+        destinationLocationId: local1.id,
+      },
+      {
+        itemId: chair.id,
+        teamId: team.id,
+        transactionType: "move",
+        quantity: 8,
+        userId: user.id,
+        sourceLocationId: local1.id,
+        destinationLocationId: local2.id,
+      },
+    ]);
+
+    const transaction = await createStockTransaction({
+      itemId: chair.id,
+      teamId: team.id,
+      transactionType: "move",
+      quantity: 5,
+      userId: user.id,
+      sourceLocationId: local1.id,
+      destinationLocationId: local2.id,
+      destinationKind: "location",
+    });
+
+    const [freshChair] = await drizzle
+      .select()
+      .from(items)
+      .where(eq(items.id, chair.id))
+      .limit(1);
+
+    expect(transaction.quantity).toBe(5);
+    expect(freshChair.currentStock).toBe(20);
+    expect(freshChair.locationId).toBe(local2.id);
+  });
 });

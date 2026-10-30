@@ -94,6 +94,32 @@ function applyLedgerTransaction(
   );
 }
 
+export function itemLedgerQuantityAt(
+  item: LocationBalanceItem,
+  transactions: LocationBalanceTransaction[],
+  locationId: LocationKey
+): number {
+  return replayItemBalances(item, transactions).get(locationId) || 0;
+}
+
+export function locationIdAfterPartialMove(params: {
+  remainingAtSource: number;
+  destinationLocationId: number | null;
+  currentLocationId: number | null;
+}): number | null {
+  if (params.remainingAtSource > 0) {
+    return params.currentLocationId;
+  }
+  return params.destinationLocationId ?? params.currentLocationId;
+}
+
+export function itemLocationRowKey(item: {
+  id: number;
+  locationId?: number | null;
+}): string {
+  return `${item.locationId ?? "none"}-${item.id}`;
+}
+
 function replayItemBalances(
   item: LocationBalanceItem,
   transactions: LocationBalanceTransaction[]

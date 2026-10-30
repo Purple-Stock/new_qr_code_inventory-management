@@ -2,6 +2,7 @@ import { vi } from "vitest";
 import {
   getItemDetailsData,
   getTeamItemEditData,
+  getTeamItemsData,
   getTeamLocationsData,
   getTeamReportsData,
   getTeamStockByLocationData,
@@ -349,6 +350,146 @@ describe("team-dashboard service", () => {
       ])
     );
     expect(result.items).toHaveLength(2);
+  });
+
+  it("splits the items list from the transaction book", async () => {
+    mockGetTeamLocations.mockResolvedValue([
+      {
+        id: 1,
+        name: "Local 1",
+        description: null,
+        teamId: 1,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+      {
+        id: 3,
+        name: "Local2",
+        description: null,
+        teamId: 1,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+    ] as never);
+    mockGetTeamItems.mockResolvedValue([
+      {
+        id: 1,
+        name: "Cadeira Azul",
+        sku: "CADEIRA-AZUL",
+        barcode: "5817915565817",
+        currentStock: 20,
+        initialQuantity: 0,
+        locationId: 3,
+        locationName: "Local2",
+        teamId: 1,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+    ] as never);
+    mockGetTeamStockTransactions.mockResolvedValue([
+      {
+        id: 1,
+        itemId: 1,
+        transactionType: "stock_in",
+        quantity: 20,
+        sourceLocationId: null,
+        destinationLocationId: 1,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+      {
+        id: 2,
+        itemId: 1,
+        transactionType: "move",
+        quantity: 8,
+        sourceLocationId: 1,
+        destinationLocationId: 3,
+        createdAt: new Date("2026-01-02T00:00:00.000Z"),
+      },
+    ] as never);
+
+    const result = await getTeamItemsData(1, { requestUserId: 7 });
+
+    expect(result.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 1,
+          locationId: 1,
+          locationName: "Local 1",
+          currentStock: 12,
+        }),
+        expect.objectContaining({
+          id: 1,
+          locationId: 3,
+          locationName: "Local2",
+          currentStock: 8,
+        }),
+      ])
+    );
+    expect(result.items).toHaveLength(2);
+  });
+
+  it("splits stock-operation items from the transaction book", async () => {
+    mockGetTeamLocations.mockResolvedValue([
+      {
+        id: 1,
+        name: "Local 1",
+        description: null,
+        teamId: 1,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+      {
+        id: 3,
+        name: "Local2",
+        description: null,
+        teamId: 1,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+    ] as never);
+    mockGetTeamItems.mockResolvedValue([
+      {
+        id: 1,
+        name: "Cadeira Azul",
+        sku: "CADEIRA-AZUL",
+        currentStock: 20,
+        initialQuantity: 0,
+        locationId: 3,
+        locationName: "Local2",
+        teamId: 1,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+    ] as never);
+    mockGetTeamStockTransactions.mockResolvedValue([
+      {
+        id: 1,
+        itemId: 1,
+        transactionType: "stock_in",
+        quantity: 20,
+        sourceLocationId: null,
+        destinationLocationId: 1,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+      {
+        id: 2,
+        itemId: 1,
+        transactionType: "move",
+        quantity: 8,
+        sourceLocationId: 1,
+        destinationLocationId: 3,
+        createdAt: new Date("2026-01-02T00:00:00.000Z"),
+      },
+    ] as never);
+
+    const result = await getTeamStockOperationData(1, { requestUserId: 7 });
+
+    expect(result.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 1, locationId: 1, currentStock: 12 }),
+        expect.objectContaining({ id: 1, locationId: 3, currentStock: 8 }),
+      ])
+    );
   });
 
   it("rebuilds report stockByLocation from the transaction book", async () => {

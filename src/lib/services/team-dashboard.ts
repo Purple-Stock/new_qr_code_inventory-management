@@ -73,6 +73,23 @@ async function authorizeDashboardTeam(
   return { ok: true, team, teamRole };
 }
 
+async function teamItemsFromLedger(teamId: number) {
+  const [locations, items, transactions] = await Promise.all([
+    getTeamLocations(teamId),
+    getTeamItems(teamId),
+    getTeamStockTransactions(teamId),
+  ]);
+  const locationDtos = locations.map(toLocationDto);
+  return {
+    locations: locationDtos,
+    items: itemsWithLocationBalancesFromLedger(
+      items.map((item) => toItemDto(item)),
+      transactions,
+      locationDtos
+    ),
+  };
+}
+
 export async function getTeamReportsData(
   teamId: number,
   startDate?: Date,
@@ -123,17 +140,8 @@ export async function getTeamStockByLocationData(
     };
   }
 
-  const [locations, items, transactions] = await Promise.all([
-    getTeamLocations(teamId),
-    getTeamItems(teamId),
-    getTeamStockTransactions(teamId),
-  ]);
-  const locationDtos = locations.map(toLocationDto);
-  const itemDtos = itemsWithLocationBalancesFromLedger(
-    items.map((item) => toItemDto(item)),
-    transactions,
-    locationDtos
-  );
+  const { locations: locationDtos, items: itemDtos } =
+    await teamItemsFromLedger(teamId);
 
   return {
     team: toTeamDto(access.team),
@@ -214,10 +222,10 @@ export async function getTeamItemsData(
     };
   }
 
-  const items = await getTeamItems(teamId);
+  const { items } = await teamItemsFromLedger(teamId);
   return {
     team: toTeamDto(access.team),
-    items: items.map((item) => toItemDto(item)),
+    items,
     subscriptionRequired: false,
   };
 }
@@ -291,10 +299,7 @@ export async function getTeamStockOperationData(
     };
   }
 
-  const [locations, items] = await Promise.all([
-    getTeamLocations(teamId),
-    getTeamItems(teamId),
-  ]);
+  const { locations, items } = await teamItemsFromLedger(teamId);
 
   const destinationTeams = access.team.companyId
     ? (await getCompanyTeams(access.team.companyId)).filter(
@@ -305,8 +310,8 @@ export async function getTeamStockOperationData(
 
   return {
     team: toTeamDto(access.team),
-    locations: locations.map(toLocationDto),
-    items: items.map((item) => toItemDto(item)),
+    locations,
+    items,
     destinationTeams: destinationTeams.map((destinationTeam) => ({
       id: destinationTeam.id,
       name: destinationTeam.name,
