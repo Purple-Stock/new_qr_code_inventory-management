@@ -246,6 +246,8 @@ export const en = {
     cameraError: "Could not access camera. Please check permissions.",
     imageError: "Could not read QR code from image. Please try another image.",
     partialAddError: "Some items could not be added. Please try again.",
+    itemStockAtAnotherLocation:
+      "Stock cannot be added here because this item is already at another location. Add it at the current location, or move it first.",
     addError: "An error occurred while adding stock",
     tourTutorialTitle: "Stock In tutorial",
     tourTutorialDesc: "Follow these steps to register incoming inventory correctly.",
@@ -422,6 +424,8 @@ export const en = {
     cameraError: "Could not access camera. Please check permissions.",
     imageError: "Could not read QR code from image. Please try another image.",
     partialAdjustError: "Some items could not be adjusted. Please try again.",
+    itemStockAtAnotherLocation:
+      "Stock cannot be adjusted here because this item is already at another location. Adjust it at the current location, or move it first.",
     adjustError: "An error occurred while adjusting stock",
     tourTutorialTitle: "Adjust Stock tutorial",
     tourTutorialDesc: "Set the exact final quantity for selected items.",
@@ -761,6 +765,7 @@ export const en = {
     createTitle: "Create a New Team",
     createSubtitle:
       "Create a new team to organize your inventory and manage your items.",
+    teamName: "Team Name",
     teamNameRequired: "Team name is required",
     teamNamePlaceholder: "Enter team name",
     createSuccess: "Team created successfully! Redirecting...",
@@ -846,6 +851,8 @@ export const en = {
   locationForm: {
     loadingTeam: "Loading team...",
     loadingLocation: "Loading location...",
+    nameLabel: "Name",
+    descriptionLabel: "Description",
     nameRequired: "Location name is required",
     namePlaceholder: "Enter location name",
     descriptionPlaceholder: "Enter location description (optional)",

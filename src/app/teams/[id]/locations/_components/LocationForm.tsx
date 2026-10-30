@@ -34,7 +34,7 @@ export function LocationForm({
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="space-y-2 mb-6" data-tour="tour-location-name">
           <Label htmlFor="name" className="text-gray-900">
-            Name <span className="text-red-500">*</span>
+            {t.locationForm.nameLabel} <span className="text-red-500">*</span>
           </Label>
           <div className="relative">
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -53,7 +53,7 @@ export function LocationForm({
 
         <div className="space-y-2" data-tour="tour-location-description">
           <Label htmlFor="description" className="text-gray-900">
-            Description
+            {t.locationForm.descriptionLabel}
           </Label>
           <div className="relative">
             <FileText className="absolute left-3 top-3 h-5 w-5 text-gray-400" />

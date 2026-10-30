@@ -177,7 +177,7 @@ export async function getTeamReportStats(
   itemsWithLocations.forEach((row) => {
     const locationId = row.locationId;
     const current = stockByLocationMap.get(locationId) || {
-      locationName: row.locationName || "No Location",
+      locationName: row.locationName || null,
       itemCount: 0,
       totalStock: 0,
       totalValue: 0,

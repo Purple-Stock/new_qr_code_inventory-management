@@ -131,7 +131,7 @@ export default function NewTeamPage() {
             {/* Team Name Field */}
             <div className="space-y-2">
               <Label htmlFor="name" className="text-gray-900">
-                Team Name <span className="text-red-500">*</span>
+                {t.team.teamName} <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="name"

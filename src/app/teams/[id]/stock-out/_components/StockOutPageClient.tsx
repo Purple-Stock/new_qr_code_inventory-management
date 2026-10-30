@@ -32,6 +32,10 @@ import { TutorialTour, type TourStep } from "@/components/TutorialTour";
 import { useSortedPage } from "@/hooks/useSortedPage";
 import { createStockOutAction } from "../_actions/createStockTransaction";
 import { parseDecimalInput } from "@/lib/utils/parse-decimal-input";
+import {
+  initialLocationSelectValue,
+  locationsForStockSelect,
+} from "@/lib/initial-location-select";
 import type { Item, Location, Team, SelectedItem } from "../_types";
 
 interface StockOutPageClientProps {
@@ -51,7 +55,11 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
   const router = useRouter();
   const { t } = useTranslation();
   const { toast } = useToast();
-  const defaultLocation = locations.length > 0 ? locations[0].id.toString() : "";
+  const selectableLocations = useMemo(
+    () => locationsForStockSelect(locations),
+    [locations]
+  );
+  const defaultLocation = initialLocationSelectValue(selectableLocations);
   const [selectedLocation, setSelectedLocation] = useState<string>(
     defaultLocation
   );
@@ -89,7 +97,7 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
     const draft = readLocalStorageJson<StockOutDraft>(draftStorageKey);
 
     if (draft) {
-      const hasValidLocation = locations.some(
+      const hasValidLocation = selectableLocations.some(
         (location) => location.id.toString() === draft.selectedLocation
       );
       setSelectedLocation(hasValidLocation ? draft.selectedLocation : defaultLocation);
@@ -98,7 +106,7 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
     }
 
     setHasLoadedDraft(true);
-  }, [defaultLocation, draftStorageKey, items, locations]);
+  }, [defaultLocation, draftStorageKey, items, selectableLocations]);
 
   useEffect(() => {
     if (!hasLoadedDraft) {
@@ -310,7 +318,7 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
         <Label htmlFor="location" className="text-sm font-semibold text-gray-700 mb-2 block">
           {t.stockOut.locationRequired}
         </Label>
-        <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+        <Select value={selectedLocation || undefined} onValueChange={setSelectedLocation}>
           <SelectTrigger
             id="location"
             className="w-full h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
@@ -318,7 +326,7 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
             <SelectValue placeholder={t.stockOut.defaultLocation} />
           </SelectTrigger>
           <SelectContent>
-            {locations.map((location) => (
+            {selectableLocations.map((location) => (
               <SelectItem key={location.id} value={location.id.toString()}>
                 {location.name}
               </SelectItem>
