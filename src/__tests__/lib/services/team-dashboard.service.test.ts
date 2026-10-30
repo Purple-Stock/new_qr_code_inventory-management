@@ -4,6 +4,7 @@ import {
   getTeamItemEditData,
   getTeamLocationsData,
   getTeamReportsData,
+  getTeamStockByLocationData,
   getTeamStockOperationData,
   getTeamTransactionsData,
 } from "@/lib/services/team-dashboard";
@@ -14,6 +15,7 @@ import { getTeamReportStats } from "@/lib/db/reports";
 import { getActiveTeamMemberRole, getCompanyTeams } from "@/lib/db/team-members";
 import {
   getItemStockTransactionsWithDetails,
+  getTeamStockTransactions,
   getTeamStockTransactionsWithDetails,
 } from "@/lib/db/stock-transactions";
 
@@ -37,6 +39,7 @@ vi.mock("@/lib/db/team-members", () => ({
 }));
 vi.mock("@/lib/db/stock-transactions", () => ({
   getItemStockTransactionsWithDetails: vi.fn(),
+  getTeamStockTransactions: vi.fn(),
   getTeamStockTransactionsWithDetails: vi.fn(),
 }));
 
@@ -60,6 +63,9 @@ const mockGetTeamTransactions =
   getTeamStockTransactionsWithDetails as vi.MockedFunction<
     typeof getTeamStockTransactionsWithDetails
   >;
+const mockGetTeamStockTransactions = getTeamStockTransactions as vi.MockedFunction<
+  typeof getTeamStockTransactions
+>;
 
 describe("team-dashboard service", () => {
   beforeEach(() => {
@@ -83,6 +89,9 @@ describe("team-dashboard service", () => {
     } as never);
     mockGetCompanyTeams.mockResolvedValue([]);
     mockGetActiveTeamMemberRole.mockResolvedValue("admin");
+    mockGetTeamLocations.mockResolvedValue([]);
+    mockGetTeamItems.mockResolvedValue([]);
+    mockGetTeamStockTransactions.mockResolvedValue([]);
   });
 
   it("does not return item edit data without a session user", async () => {
@@ -274,5 +283,170 @@ describe("team-dashboard service", () => {
     const result = await getTeamStockOperationData(1, { requestUserId: 7 });
 
     expect(result.destinationTeams).toEqual([{ id: 3, name: "Trial Team" }]);
+  });
+
+  it("splits stock-by-location rows from the transaction book", async () => {
+    mockGetTeamLocations.mockResolvedValue([
+      {
+        id: 1,
+        name: "Local 1",
+        description: null,
+        teamId: 1,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+      {
+        id: 3,
+        name: "Local2",
+        description: null,
+        teamId: 1,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+    ] as never);
+    mockGetTeamItems.mockResolvedValue([
+      {
+        id: 1,
+        name: "Cadeira Azul",
+        sku: "CADEIRA-AZUL",
+        barcode: "5817915565817",
+        currentStock: 20,
+        initialQuantity: 0,
+        locationId: 3,
+        locationName: "Local2",
+        teamId: 1,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+    ] as never);
+    mockGetTeamStockTransactions.mockResolvedValue([
+      {
+        id: 1,
+        itemId: 1,
+        transactionType: "stock_in",
+        quantity: 20,
+        sourceLocationId: null,
+        destinationLocationId: 1,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+      {
+        id: 2,
+        itemId: 1,
+        transactionType: "move",
+        quantity: 8,
+        sourceLocationId: 1,
+        destinationLocationId: 3,
+        createdAt: new Date("2026-01-02T00:00:00.000Z"),
+      },
+    ] as never);
+
+    const result = await getTeamStockByLocationData(1, { requestUserId: 7 });
+
+    expect(result.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 1, locationId: 1, currentStock: 12 }),
+        expect.objectContaining({ id: 1, locationId: 3, currentStock: 8 }),
+      ])
+    );
+    expect(result.items).toHaveLength(2);
+  });
+
+  it("rebuilds report stockByLocation from the transaction book", async () => {
+    mockGetTeamReportStats.mockResolvedValue({
+      totalItems: 1,
+      totalLocations: 2,
+      totalTransactions: 2,
+      totalStockValue: 0,
+      lowStockItems: 0,
+      outOfStockItems: 0,
+      transactionsByType: { stock_in: 1, stock_out: 0, adjust: 0, move: 1 },
+      recentTransactions: [],
+      topItemsByValue: [],
+      stockByLocation: [
+        {
+          locationId: 3,
+          locationName: "Local2",
+          itemCount: 1,
+          totalStock: 20,
+          totalValue: 0,
+        },
+      ],
+      transactionsByDate: [],
+    });
+    mockGetTeamLocations.mockResolvedValue([
+      {
+        id: 1,
+        name: "Local 1",
+        description: null,
+        teamId: 1,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+      {
+        id: 3,
+        name: "Local2",
+        description: null,
+        teamId: 1,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+    ] as never);
+    mockGetTeamItems.mockResolvedValue([
+      {
+        id: 1,
+        name: "Cadeira Azul",
+        sku: "CADEIRA-AZUL",
+        barcode: "5817915565817",
+        currentStock: 20,
+        initialQuantity: 0,
+        price: 0,
+        locationId: 3,
+        locationName: "Local2",
+        teamId: 1,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+    ] as never);
+    mockGetTeamStockTransactions.mockResolvedValue([
+      {
+        id: 1,
+        itemId: 1,
+        transactionType: "stock_in",
+        quantity: 20,
+        sourceLocationId: null,
+        destinationLocationId: 1,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+      {
+        id: 2,
+        itemId: 1,
+        transactionType: "move",
+        quantity: 8,
+        sourceLocationId: 1,
+        destinationLocationId: 3,
+        createdAt: new Date("2026-01-02T00:00:00.000Z"),
+      },
+    ] as never);
+
+    const result = await getTeamReportsData(1, undefined, undefined, {
+      requestUserId: 7,
+    });
+
+    expect(result.stats.stockByLocation).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          locationId: 1,
+          locationName: "Local 1",
+          itemCount: 1,
+          totalStock: 12,
+        }),
+        expect.objectContaining({
+          locationId: 3,
+          locationName: "Local2",
+          itemCount: 1,
+          totalStock: 8,
+        }),
+      ])
+    );
   });
 });

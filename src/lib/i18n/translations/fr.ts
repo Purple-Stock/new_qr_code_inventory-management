@@ -246,6 +246,8 @@ export const fr = {
     cameraError: "Impossible d'accéder à la caméra. Veuillez vérifier les permissions.",
     imageError: "Impossible de lire le QR code de l'image. Veuillez essayer une autre image.",
     partialAddError: "Certains articles n'ont pas pu être ajoutés. Veuillez réessayer.",
+    itemStockAtAnotherLocation:
+      "Impossible d'ajouter du stock ici : les unités sont déjà dans un autre emplacement. Ajoutez-les à l'emplacement actuel, ou déplacez-les d'abord.",
     addError: "Une erreur s'est produite lors de l'ajout du stock",
     tourTutorialTitle: "Tutoriel d'entrée de stock",
     tourTutorialDesc: "Suivez ce flux pour enregistrer correctement les entrées de stock.",
@@ -422,6 +424,8 @@ export const fr = {
     cameraError: "Impossible d'accéder à la caméra. Veuillez vérifier les permissions.",
     imageError: "Impossible de lire le QR code de l'image. Veuillez essayer une autre image.",
     partialAdjustError: "Certains articles n'ont pas pu être ajustés. Veuillez réessayer.",
+    itemStockAtAnotherLocation:
+      "Impossible d'ajuster ici : les unités sont déjà dans un autre emplacement. Ajustez-les à l'emplacement actuel, ou déplacez-les d'abord.",
     adjustError: "Une erreur s'est produite lors de l'ajustement du stock",
     tourTutorialTitle: "Tutoriel d'ajustement",
     tourTutorialDesc: "Définissez la quantité finale exacte pour les articles sélectionnés.",
@@ -761,6 +765,7 @@ export const fr = {
     createTitle: "Créer une Nouvelle Équipe",
     createSubtitle:
       "Créez une nouvelle équipe pour organiser votre inventaire et gérer vos articles.",
+    teamName: "Nom de l'équipe",
     teamNameRequired: "Le nom de l'équipe est requis",
     teamNamePlaceholder: "Entrez le nom de l'équipe",
     createSuccess: "Équipe créée avec succès ! Redirection...",
@@ -846,6 +851,8 @@ export const fr = {
   locationForm: {
     loadingTeam: "Chargement de l'équipe...",
     loadingLocation: "Chargement de l'emplacement...",
+    nameLabel: "Nom",
+    descriptionLabel: "Description",
     nameRequired: "Le nom de l'emplacement est requis",
     namePlaceholder: "Entrez le nom de l'emplacement",
     descriptionPlaceholder: "Entrez la description de l'emplacement (optionnel)",

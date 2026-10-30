@@ -94,6 +94,8 @@ vi.mock("@/lib/i18n", () => ({
         selectLocationFirst: "Select location first",
         quantityRequired: "Quantity required",
         partialAdjustError: "Some items could not be adjusted. Try again.",
+        itemStockAtAnotherLocation:
+          "Não dá para ajustar neste local: o estoque desse item está em outro. Ajuste no local atual ou mova primeiro.",
         adjustError: "Adjust error",
         stockAdjustedSuccess: "Adjusted",
         itemFound: "Item found",

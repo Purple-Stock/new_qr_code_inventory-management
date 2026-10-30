@@ -33,6 +33,11 @@ import { useSortedPage } from "@/hooks/useSortedPage";
 import type { ItemDto } from "@/lib/services/types";
 import { createStockInAction } from "../_actions/createStockTransaction";
 import { CreateItemInlineModal } from "./CreateItemInlineModal";
+import {
+  initialLocationSelectValue,
+  locationsForStockSelect,
+} from "@/lib/initial-location-select";
+import { stockTransactionErrorDescription } from "@/lib/stock-transaction-error-copy";
 import type { Item, Location, Team, SelectedItem } from "../_types";
 
 interface StockInPageClientProps {
@@ -67,7 +72,11 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
   const router = useRouter();
   const { t } = useTranslation();
   const { toast } = useToast();
-  const defaultLocation = locations.length > 0 ? locations[0].id.toString() : "";
+  const selectableLocations = useMemo(
+    () => locationsForStockSelect(locations),
+    [locations]
+  );
+  const defaultLocation = initialLocationSelectValue(selectableLocations);
   const [selectedLocation, setSelectedLocation] = useState<string>(
     defaultLocation
   );
@@ -104,7 +113,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
     const draft = readLocalStorageJson<StockInDraft>(draftStorageKey);
 
     if (draft) {
-      const hasValidLocation = locations.some(
+      const hasValidLocation = selectableLocations.some(
         (location) => location.id.toString() === draft.selectedLocation
       );
       setSelectedLocation(hasValidLocation ? draft.selectedLocation : defaultLocation);
@@ -113,7 +122,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
     }
 
     setHasLoadedDraft(true);
-  }, [defaultLocation, draftStorageKey, items, locations]);
+  }, [defaultLocation, draftStorageKey, items, selectableLocations]);
 
   useEffect(() => {
     if (!hasLoadedDraft) {
@@ -293,7 +302,12 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
         toast({
           variant: "destructive",
           title: t.common.error,
-          description: firstError.error || t.stockIn.partialAddError,
+          description: stockTransactionErrorDescription({
+            errorCode: firstError.errorCode,
+            error: firstError.error,
+            fallback: t.stockIn.partialAddError,
+            itemStockAtAnotherLocation: t.stockIn.itemStockAtAnotherLocation,
+          }),
         });
         return;
       }
@@ -345,7 +359,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
         <Label htmlFor="location" className="text-sm font-semibold text-gray-700 mb-2 block">
           {t.stockIn.locationRequired}
         </Label>
-        <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+        <Select value={selectedLocation || undefined} onValueChange={setSelectedLocation}>
           <SelectTrigger
             id="location"
             className="w-full h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
@@ -353,7 +367,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
             <SelectValue placeholder={t.stockIn.defaultLocation} />
           </SelectTrigger>
           <SelectContent>
-            {locations.map((location) => (
+            {selectableLocations.map((location) => (
               <SelectItem key={location.id} value={location.id.toString()}>
                 {location.name}
               </SelectItem>

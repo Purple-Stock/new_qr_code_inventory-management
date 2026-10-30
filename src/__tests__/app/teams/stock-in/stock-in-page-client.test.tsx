@@ -144,6 +144,8 @@ vi.mock("@/lib/i18n", () => ({
         selectLocationFirst: "Select location first",
         quantityRequired: "Quantity required",
         partialAddError: "Some items could not be added. Try again.",
+        itemStockAtAnotherLocation:
+          "Não dá para dar entrada neste local: o estoque desse item está em outro. Dê entrada no local atual ou mova primeiro.",
         addError: "Add error",
         stockAddedSuccess: "Added",
         itemFound: "Item found",
@@ -286,6 +288,43 @@ describe("StockInPageClient", () => {
 
     expect(screen.getByText("Modal name: -")).toBeInTheDocument();
     expect(screen.getByText("Modal barcode: 78912345678")).toBeInTheDocument();
+  });
+
+  it("toasts the Portuguese teleport copy instead of the English API message", async () => {
+    mockedCreateStockInAction.mockResolvedValue({
+      success: false,
+      errorCode: ERROR_CODES.ITEM_STOCK_AT_ANOTHER_LOCATION,
+      error:
+        "Cannot add stock of Cadeira Azul at Default Location because the units are currently at E01-M01-N01-C01. Add stock at E01-M01-N01-C01, or move them from E01-M01-N01-C01 first.",
+    } as any);
+
+    render(
+      <StockInPageClient
+        team={baseTeam}
+        locations={[{ id: 10, name: "Main" }]}
+        items={[{ id: 1, name: "Printer", sku: "PR-1", barcode: "12345678", currentStock: 5, locationName: "Main" }]}
+      />
+    );
+
+    fireEvent.change(screen.getByPlaceholderText("Search item"), {
+      target: { value: "Printer" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Printer/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Add stock" }));
+
+    await waitFor(() => {
+      expect(toastSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description:
+            "Não dá para dar entrada neste local: o estoque desse item está em outro. Dê entrada no local atual ou mova primeiro.",
+        })
+      );
+    });
+    expect(toastSpy).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        description: expect.stringMatching(/Cannot add stock/),
+      })
+    );
   });
 
   it("shows the specific backend error instead of the generic partial error", async () => {

@@ -217,6 +217,26 @@ describe("MovePageClient", () => {
     ).toBeInTheDocument();
   });
 
+  it("hides leftover Default Location from source and destination lists", () => {
+    render(
+      <MovePageClient
+        team={{ id: 94, name: "Almoxarifado" }}
+        locations={[
+          { id: 133, name: "Default Location" },
+          { id: 135, name: "E01-M01-N01-C01" },
+          { id: 136, name: "E01-M01-N01-C02" },
+        ]}
+        destinationTeams={[]}
+        items={[]}
+      />
+    );
+
+    expect(screen.queryByText("Default Location")).not.toBeInTheDocument();
+    expect(
+      screen.getAllByRole("button", { name: "E01-M01-N01-C01" }).length
+    ).toBeGreaterThan(0);
+  });
+
   it("submits inter-team transfer payload from team tab", async () => {
     mockedCreateMoveAction.mockResolvedValue({
       success: true,
@@ -226,10 +246,7 @@ describe("MovePageClient", () => {
     render(
       <MovePageClient
         team={{ id: 1, name: "Direct" }}
-        locations={[
-          { id: 10, name: "A" },
-          { id: 11, name: "B" },
-        ]}
+        locations={[{ id: 10, name: "A" }]}
         destinationTeams={[{ id: 2, name: "DPS" }]}
         items={[
           {
@@ -326,10 +343,7 @@ describe("MovePageClient", () => {
     render(
       <MovePageClient
         team={{ id: 1, name: "Direct" }}
-        locations={[
-          { id: 10, name: "A" },
-          { id: 11, name: "B" },
-        ]}
+        locations={[{ id: 10, name: "A" }]}
         destinationTeams={[{ id: 2, name: "DPS" }]}
         items={[
           {
@@ -374,10 +388,7 @@ describe("MovePageClient", () => {
     render(
       <MovePageClient
         team={{ id: 1, name: "Direct" }}
-        locations={[
-          { id: 10, name: "A" },
-          { id: 11, name: "B" },
-        ]}
+        locations={[{ id: 10, name: "A" }]}
         destinationTeams={[{ id: 2, name: "DPS" }]}
         items={[
           {
@@ -421,10 +432,7 @@ describe("MovePageClient", () => {
     render(
       <MovePageClient
         team={{ id: 1, name: "Direct" }}
-        locations={[
-          { id: 10, name: "A" },
-          { id: 11, name: "B" },
-        ]}
+        locations={[{ id: 10, name: "A" }]}
         destinationTeams={[{ id: 2, name: "DPS" }]}
         items={[
           {
@@ -468,10 +476,7 @@ describe("MovePageClient", () => {
     render(
       <MovePageClient
         team={{ id: 1, name: "Direct" }}
-        locations={[
-          { id: 10, name: "A" },
-          { id: 11, name: "B" },
-        ]}
+        locations={[{ id: 10, name: "A" }]}
         destinationTeams={[{ id: 2, name: "DPS" }]}
         items={[
           {
@@ -659,11 +664,7 @@ describe("MovePageClient", () => {
     render(
       <MovePageClient
         team={{ id: 1, name: "Audiovisual" }}
-        locations={[
-          { id: 98, name: "Graúna" },
-          { id: 100, name: "Ariel" },
-          { id: 101, name: "Júnior" },
-        ]}
+        locations={[{ id: 98, name: "Graúna" }]}
         destinationTeams={[]}
         items={[
           {

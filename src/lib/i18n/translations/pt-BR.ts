@@ -246,6 +246,8 @@ export const ptBR = {
     cameraError: "Não foi possível acessar a câmera. Verifique as permissões.",
     imageError: "Não foi possível ler o QR code da imagem. Tente outra imagem.",
     partialAddError: "Alguns itens não puderam ser adicionados. Tente novamente.",
+    itemStockAtAnotherLocation:
+      "Não dá para dar entrada neste local: o estoque desse item está em outro. Dê entrada no local atual ou mova primeiro.",
     addError: "Ocorreu um erro ao adicionar estoque",
     tourTutorialTitle: "Tutorial de entrada",
     tourTutorialDesc: "Siga este fluxo para registrar entradas de estoque corretamente.",
@@ -422,6 +424,8 @@ export const ptBR = {
     cameraError: "Não foi possível acessar a câmera. Verifique as permissões.",
     imageError: "Não foi possível ler o QR code da imagem. Tente outra imagem.",
     partialAdjustError: "Alguns itens não puderam ser ajustados. Tente novamente.",
+    itemStockAtAnotherLocation:
+      "Não dá para ajustar neste local: o estoque desse item está em outro. Ajuste no local atual ou mova primeiro.",
     adjustError: "Ocorreu um erro ao ajustar estoque",
     tourTutorialTitle: "Tutorial de ajuste",
     tourTutorialDesc: "Defina a quantidade final exata para os itens selecionados.",
@@ -761,6 +765,7 @@ export const ptBR = {
     createTitle: "Criar um Novo Time",
     createSubtitle:
       "Crie um novo time para organizar seu inventário e gerenciar seus itens.",
+    teamName: "Nome do Time",
     teamNameRequired: "O nome do time é obrigatório",
     teamNamePlaceholder: "Digite o nome do time",
     createSuccess: "Time criado com sucesso! Redirecionando...",
@@ -845,6 +850,8 @@ export const ptBR = {
   locationForm: {
     loadingTeam: "Carregando time...",
     loadingLocation: "Carregando localização...",
+    nameLabel: "Nome",
+    descriptionLabel: "Descrição",
     nameRequired: "O nome da localização é obrigatório",
     namePlaceholder: "Digite o nome da localização",
     descriptionPlaceholder: "Digite a descrição da localização (opcional)",
