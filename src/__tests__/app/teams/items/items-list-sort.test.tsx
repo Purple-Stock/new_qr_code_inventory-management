@@ -68,6 +68,7 @@ function makeItem(overrides: Partial<Item> = {}): Item {
     currentStock: 4,
     minimumStock: null,
     price: 10,
+    locationId: 1,
     locationName: "Gaveta",
     customFields: null,
     photoData: null,
@@ -111,6 +112,35 @@ describe("ItemsList sort headers", () => {
     fireEvent.click(screen.getByRole("button", { name: "SKU crescente" }));
 
     expect(onSort).toHaveBeenCalledWith("sku");
+  });
+
+  it("renders one row per location when the same SKU is split", () => {
+    render(
+      <ItemsList
+        items={[
+          makeItem({
+            id: 1,
+            locationId: 1,
+            locationName: "Local 1",
+            currentStock: 12,
+          }),
+          makeItem({
+            id: 1,
+            locationId: 3,
+            locationName: "Local2",
+            currentStock: 8,
+          }),
+        ]}
+        teamId="1"
+        formatPrice={() => "R$ 0"}
+        t={t}
+      />
+    );
+
+    expect(screen.getAllByTestId("item-row-1-1").length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId("item-row-3-1").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Local 1").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Local2").length).toBeGreaterThan(0);
   });
 
   it("marks the active column with aria-sort", () => {

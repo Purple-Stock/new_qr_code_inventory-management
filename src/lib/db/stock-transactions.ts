@@ -5,6 +5,10 @@ import { eq, desc, and, inArray, asc } from "drizzle-orm";
 import { hasAffectedRows } from "./mutation-result";
 import { ItemNotAtSourceLocationError } from "./item-not-at-source-location-error";
 import {
+  itemLedgerQuantityAt,
+  locationIdAfterPartialMove,
+} from "@/lib/stock-by-location-ledger";
+import {
   ItemMaximumStockExceededError,
   ItemStockAtAnotherLocationError,
 } from "./item-stock-conflict-errors";
@@ -37,13 +41,50 @@ async function getLocationNameById(
   return location?.name ?? null;
 }
 
+async function ledgerQuantityAtSource(
+  tx: TransactionExecutor,
+  item: {
+    id: number;
+    name: string | null;
+    sku: string | null;
+    barcode: string | null;
+    price: number | null;
+    currentStock: number | null;
+    initialQuantity: number | null;
+    locationId: number | null;
+  },
+  sourceLocationId: number | null
+): Promise<number> {
+  const itemTransactions = await tx
+    .select()
+    .from(stockTransactions)
+    .where(eq(stockTransactions.itemId, item.id));
+
+  return itemLedgerQuantityAt(item, itemTransactions, sourceLocationId);
+}
+
 async function assertItemIsAtSourceLocation(
   tx: TransactionExecutor,
-  item: { name: string | null; locationId: number | null },
-  sourceLocationId: number | null
-): Promise<void> {
-  if (sourceLocationId != null && item.locationId === sourceLocationId) {
-    return;
+  item: {
+    id: number;
+    name: string | null;
+    sku: string | null;
+    barcode: string | null;
+    price: number | null;
+    currentStock: number | null;
+    initialQuantity: number | null;
+    locationId: number | null;
+  },
+  sourceLocationId: number | null,
+  quantity: number
+): Promise<number> {
+  const atSource = await ledgerQuantityAtSource(tx, item, sourceLocationId);
+  if (atSource >= quantity) {
+    return atSource;
+  }
+
+  if (atSource > 0) {
+    throw new Error("Insufficient stock for stock out");
   }
 
   const [claimedSourceName, actualLocationName] = await Promise.all([
@@ -236,14 +277,17 @@ export async function createStockTransaction(data: {
         newLocationId = data.destinationLocationId;
       }
     } else if (data.transactionType === "move") {
-      await assertItemIsAtSourceLocation(
+      const atSource = await assertItemIsAtSourceLocation(
         tx,
         item,
-        data.sourceLocationId ?? null
+        data.sourceLocationId ?? null,
+        data.quantity
       );
-      if (data.destinationLocationId) {
-        newLocationId = data.destinationLocationId;
-      }
+      newLocationId = locationIdAfterPartialMove({
+        remainingAtSource: atSource - data.quantity,
+        destinationLocationId: data.destinationLocationId ?? null,
+        currentLocationId: item.locationId,
+      });
     }
 
     assertMaximumStockNotExceeded(item, newStock);
@@ -331,7 +375,12 @@ async function createInterTeamTransferTransaction(data: {
       throw new Error("Item not found for team");
     }
 
-    await assertItemIsAtSourceLocation(tx, sourceItem, data.sourceLocationId);
+    await assertItemIsAtSourceLocation(
+      tx,
+      sourceItem,
+      data.sourceLocationId,
+      data.quantity
+    );
 
     const sourceCurrentStock = sourceItem.currentStock || 0;
     if (sourceCurrentStock < data.quantity) {

@@ -37,6 +37,7 @@ export default async function ScanPage({ params }: PageProps) {
     sku: string | null;
     barcode: string | null;
     currentStock: number | null;
+    locationId: number | null;
     locationName: string | null;
     photoData: string | null;
     customFields: Record<string, string> | null;
@@ -50,6 +51,7 @@ export default async function ScanPage({ params }: PageProps) {
       sku: item.sku,
       barcode: item.barcode,
       currentStock: item.currentStock,
+      locationId: item.locationId ?? null,
       locationName: item.locationName ?? null,
       photoData: item.photoData ?? null,
       customFields: item.customFields ?? null,

@@ -38,6 +38,7 @@ import {
   locationsForStockSelect,
 } from "@/lib/initial-location-select";
 import { stockTransactionErrorDescription } from "@/lib/stock-transaction-error-copy";
+import { itemLocationRowKey } from "@/lib/stock-by-location-ledger";
 import type { Item, Location, Team, SelectedItem } from "../_types";
 
 interface StockInPageClientProps {
@@ -57,6 +58,7 @@ function normalizeItemForStockIn(item: ItemDto): Item {
     sku: item.sku,
     barcode: item.barcode,
     currentStock: item.currentStock,
+    locationId: item.locationId,
     locationName: item.locationName,
   };
 }
@@ -398,7 +400,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                 {filteredItems.map((item) => (
                   <button
-                    key={item.id}
+                    key={itemLocationRowKey(item)}
                     onClick={() => handleAddItem(item)}
                     className="w-full text-left px-4 py-3 hover:bg-purple-50 transition-colors border-b border-gray-100 last:border-b-0"
                   >
@@ -406,6 +408,9 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
                       {item.name || t.items.unnamedItem}
                     </div>
                     {item.sku ? <div className="text-xs text-gray-500">SKU: {item.sku}</div> : null}
+                    {item.locationName ? (
+                      <div className="text-xs text-gray-500">{item.locationName}</div>
+                    ) : null}
                     {item.currentStock !== null ? (
                       <div className="text-xs text-gray-500">
                         {t.stockIn.currentStockLabel}: {item.currentStock}
@@ -519,7 +524,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
                 </tr>
               ) : (
                 paginated.items.map((selectedItem) => (
-                  <tr key={selectedItem.item.id} className="hover:bg-purple-50/50 transition-colors">
+                  <tr key={itemLocationRowKey(selectedItem.item)} className="hover:bg-purple-50/50 transition-colors">
                     <td className="px-4 sm:px-6 py-4 sm:py-5">
                       <div>
                         <div className="text-sm font-bold text-gray-900">

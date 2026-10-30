@@ -11,6 +11,7 @@ export type Item = Pick<
   | "currentStock"
   | "minimumStock"
   | "price"
+  | "locationId"
   | "locationName"
   | "customFields"
   | "photoData"
