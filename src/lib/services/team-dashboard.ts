@@ -6,13 +6,14 @@ import { getActiveTeamMemberRole, getCompanyTeams } from "@/lib/db/team-members"
 import { getTeamReportStats } from "@/lib/db/reports";
 import {
   getItemStockTransactionsWithDetails,
-  getTeamStockTransactions,
   getTeamStockTransactionsWithDetails,
 } from "@/lib/db/stock-transactions";
+import { getItemStocksForTeam } from "@/lib/db/item-stocks";
 import {
-  itemsWithLocationBalancesFromLedger,
-  reportStockByLocationFromLedger,
-} from "@/lib/stock-by-location-ledger";
+  itemsWithLocationBalancesFromStocks,
+  reportStockByLocationFromStocks,
+  uniqueCatalogItems,
+} from "@/lib/item-stocks-display";
 import {
   toItemDto,
   toLocationDto,
@@ -40,6 +41,7 @@ const EMPTY_REPORT_STATS: ReportStatsDto = {
 interface TeamDashboardOptions {
   allowInactiveSubscription?: boolean;
   requestUserId?: number | null;
+  splitItemsByLocation?: boolean;
 }
 
 type TeamWithStats = NonNullable<Awaited<ReturnType<typeof getTeamWithStats>>>;
@@ -73,18 +75,18 @@ async function authorizeDashboardTeam(
   return { ok: true, team, teamRole };
 }
 
-async function teamItemsFromLedger(teamId: number) {
-  const [locations, items, transactions] = await Promise.all([
+async function teamItemsFromStocks(teamId: number) {
+  const [locations, items, stocks] = await Promise.all([
     getTeamLocations(teamId),
     getTeamItems(teamId),
-    getTeamStockTransactions(teamId),
+    getItemStocksForTeam(teamId),
   ]);
   const locationDtos = locations.map(toLocationDto);
   return {
     locations: locationDtos,
-    items: itemsWithLocationBalancesFromLedger(
+    items: itemsWithLocationBalancesFromStocks(
       items.map((item) => toItemDto(item)),
-      transactions,
+      stocks,
       locationDtos
     ),
   };
@@ -105,19 +107,19 @@ export async function getTeamReportsData(
     };
   }
 
-  const [stats, locations, items, transactions] = await Promise.all([
+  const [stats, locations, items, stocks] = await Promise.all([
     getTeamReportStats(teamId, startDate, endDate),
     getTeamLocations(teamId),
     getTeamItems(teamId),
-    getTeamStockTransactions(teamId),
+    getItemStocksForTeam(teamId),
   ]);
   return {
     team: toTeamDto(access.team),
     stats: toReportStatsDto({
       ...stats,
-      stockByLocation: reportStockByLocationFromLedger(
+      stockByLocation: reportStockByLocationFromStocks(
         items.map((item) => toItemDto(item)),
-        transactions,
+        stocks,
         locations.map(toLocationDto)
       ),
     }),
@@ -141,7 +143,7 @@ export async function getTeamStockByLocationData(
   }
 
   const { locations: locationDtos, items: itemDtos } =
-    await teamItemsFromLedger(teamId);
+    await teamItemsFromStocks(teamId);
 
   return {
     team: toTeamDto(access.team),
@@ -222,7 +224,7 @@ export async function getTeamItemsData(
     };
   }
 
-  const { items } = await teamItemsFromLedger(teamId);
+  const { items } = await teamItemsFromStocks(teamId);
   return {
     team: toTeamDto(access.team),
     items,
@@ -299,7 +301,10 @@ export async function getTeamStockOperationData(
     };
   }
 
-  const { locations, items } = await teamItemsFromLedger(teamId);
+  const { locations, items: binItems } = await teamItemsFromStocks(teamId);
+  const items = options.splitItemsByLocation
+    ? binItems
+    : uniqueCatalogItems(binItems);
 
   const destinationTeams = access.team.companyId
     ? (await getCompanyTeams(access.team.companyId)).filter(

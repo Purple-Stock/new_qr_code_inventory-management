@@ -50,4 +50,31 @@ describe("ensureDatabase", () => {
       client.close();
     }
   });
+
+  it("applies item_stocks without dropping items location and stock columns", async () => {
+    const databasePath = join(dir, "item-stocks.db");
+    process.env.DATABASE_PATH = databasePath;
+
+    await ensureDatabase();
+
+    const client = createClient({ url: `file:${databasePath}` });
+    try {
+      const tables = await client.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='item_stocks'"
+      );
+      expect(tables.rows).toHaveLength(1);
+
+      const applied = await client.execute(
+        "SELECT filename FROM _migrations WHERE filename = '012_add_item_stocks.sql'"
+      );
+      expect(applied.rows).toHaveLength(1);
+
+      const columns = await client.execute("PRAGMA table_info(items)");
+      const names = columns.rows.map((row) => String(row.name));
+      expect(names).toContain("current_stock");
+      expect(names).toContain("location_id");
+    } finally {
+      client.close();
+    }
+  });
 });

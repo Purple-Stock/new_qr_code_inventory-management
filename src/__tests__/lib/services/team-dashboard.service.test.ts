@@ -16,9 +16,9 @@ import { getTeamReportStats } from "@/lib/db/reports";
 import { getActiveTeamMemberRole, getCompanyTeams } from "@/lib/db/team-members";
 import {
   getItemStockTransactionsWithDetails,
-  getTeamStockTransactions,
   getTeamStockTransactionsWithDetails,
 } from "@/lib/db/stock-transactions";
+import { getItemStocksForTeam } from "@/lib/db/item-stocks";
 
 vi.mock("@/lib/db/teams", () => ({
   getTeamWithStats: vi.fn(),
@@ -40,8 +40,10 @@ vi.mock("@/lib/db/team-members", () => ({
 }));
 vi.mock("@/lib/db/stock-transactions", () => ({
   getItemStockTransactionsWithDetails: vi.fn(),
-  getTeamStockTransactions: vi.fn(),
   getTeamStockTransactionsWithDetails: vi.fn(),
+}));
+vi.mock("@/lib/db/item-stocks", () => ({
+  getItemStocksForTeam: vi.fn(),
 }));
 
 const mockGetTeamWithStats = getTeamWithStats as vi.MockedFunction<typeof getTeamWithStats>;
@@ -64,8 +66,8 @@ const mockGetTeamTransactions =
   getTeamStockTransactionsWithDetails as vi.MockedFunction<
     typeof getTeamStockTransactionsWithDetails
   >;
-const mockGetTeamStockTransactions = getTeamStockTransactions as vi.MockedFunction<
-  typeof getTeamStockTransactions
+const mockGetItemStocksForTeam = getItemStocksForTeam as vi.MockedFunction<
+  typeof getItemStocksForTeam
 >;
 
 describe("team-dashboard service", () => {
@@ -92,7 +94,7 @@ describe("team-dashboard service", () => {
     mockGetActiveTeamMemberRole.mockResolvedValue("admin");
     mockGetTeamLocations.mockResolvedValue([]);
     mockGetTeamItems.mockResolvedValue([]);
-    mockGetTeamStockTransactions.mockResolvedValue([]);
+    mockGetItemStocksForTeam.mockResolvedValue([]);
   });
 
   it("does not return item edit data without a session user", async () => {
@@ -286,7 +288,7 @@ describe("team-dashboard service", () => {
     expect(result.destinationTeams).toEqual([{ id: 3, name: "Trial Team" }]);
   });
 
-  it("splits stock-by-location rows from the transaction book", async () => {
+  it("splits stock-by-location rows from item_stocks", async () => {
     mockGetTeamLocations.mockResolvedValue([
       {
         id: 1,
@@ -320,26 +322,10 @@ describe("team-dashboard service", () => {
         updatedAt: new Date("2026-01-01T00:00:00.000Z"),
       },
     ] as never);
-    mockGetTeamStockTransactions.mockResolvedValue([
-      {
-        id: 1,
-        itemId: 1,
-        transactionType: "stock_in",
-        quantity: 20,
-        sourceLocationId: null,
-        destinationLocationId: 1,
-        createdAt: new Date("2026-01-01T00:00:00.000Z"),
-      },
-      {
-        id: 2,
-        itemId: 1,
-        transactionType: "move",
-        quantity: 8,
-        sourceLocationId: 1,
-        destinationLocationId: 3,
-        createdAt: new Date("2026-01-02T00:00:00.000Z"),
-      },
-    ] as never);
+    mockGetItemStocksForTeam.mockResolvedValue([
+      { itemId: 1, locationId: 1, quantity: 12 },
+      { itemId: 1, locationId: 3, quantity: 8 },
+    ]);
 
     const result = await getTeamStockByLocationData(1, { requestUserId: 7 });
 
@@ -352,7 +338,7 @@ describe("team-dashboard service", () => {
     expect(result.items).toHaveLength(2);
   });
 
-  it("splits the items list from the transaction book", async () => {
+  it("splits the items list from item_stocks", async () => {
     mockGetTeamLocations.mockResolvedValue([
       {
         id: 1,
@@ -386,26 +372,10 @@ describe("team-dashboard service", () => {
         updatedAt: new Date("2026-01-01T00:00:00.000Z"),
       },
     ] as never);
-    mockGetTeamStockTransactions.mockResolvedValue([
-      {
-        id: 1,
-        itemId: 1,
-        transactionType: "stock_in",
-        quantity: 20,
-        sourceLocationId: null,
-        destinationLocationId: 1,
-        createdAt: new Date("2026-01-01T00:00:00.000Z"),
-      },
-      {
-        id: 2,
-        itemId: 1,
-        transactionType: "move",
-        quantity: 8,
-        sourceLocationId: 1,
-        destinationLocationId: 3,
-        createdAt: new Date("2026-01-02T00:00:00.000Z"),
-      },
-    ] as never);
+    mockGetItemStocksForTeam.mockResolvedValue([
+      { itemId: 1, locationId: 1, quantity: 12 },
+      { itemId: 1, locationId: 3, quantity: 8 },
+    ]);
 
     const result = await getTeamItemsData(1, { requestUserId: 7 });
 
@@ -428,7 +398,7 @@ describe("team-dashboard service", () => {
     expect(result.items).toHaveLength(2);
   });
 
-  it("splits stock-operation items from the transaction book", async () => {
+  it("shows one catalog SKU with summed stock on stock operations", async () => {
     mockGetTeamLocations.mockResolvedValue([
       {
         id: 1,
@@ -461,28 +431,61 @@ describe("team-dashboard service", () => {
         updatedAt: new Date("2026-01-01T00:00:00.000Z"),
       },
     ] as never);
-    mockGetTeamStockTransactions.mockResolvedValue([
-      {
-        id: 1,
-        itemId: 1,
-        transactionType: "stock_in",
-        quantity: 20,
-        sourceLocationId: null,
-        destinationLocationId: 1,
-        createdAt: new Date("2026-01-01T00:00:00.000Z"),
-      },
-      {
-        id: 2,
-        itemId: 1,
-        transactionType: "move",
-        quantity: 8,
-        sourceLocationId: 1,
-        destinationLocationId: 3,
-        createdAt: new Date("2026-01-02T00:00:00.000Z"),
-      },
-    ] as never);
+    mockGetItemStocksForTeam.mockResolvedValue([
+      { itemId: 1, locationId: 1, quantity: 12 },
+      { itemId: 1, locationId: 3, quantity: 8 },
+    ]);
 
     const result = await getTeamStockOperationData(1, { requestUserId: 7 });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toEqual(
+      expect.objectContaining({ id: 1, currentStock: 20 })
+    );
+  });
+
+  it("splits stock-operation items when MOVE asks for bins", async () => {
+    mockGetTeamLocations.mockResolvedValue([
+      {
+        id: 1,
+        name: "Local 1",
+        description: null,
+        teamId: 1,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+      {
+        id: 3,
+        name: "Local2",
+        description: null,
+        teamId: 1,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+    ] as never);
+    mockGetTeamItems.mockResolvedValue([
+      {
+        id: 1,
+        name: "Cadeira Azul",
+        sku: "CADEIRA-AZUL",
+        currentStock: 20,
+        initialQuantity: 0,
+        locationId: 3,
+        locationName: "Local2",
+        teamId: 1,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+    ] as never);
+    mockGetItemStocksForTeam.mockResolvedValue([
+      { itemId: 1, locationId: 1, quantity: 12 },
+      { itemId: 1, locationId: 3, quantity: 8 },
+    ]);
+
+    const result = await getTeamStockOperationData(1, {
+      requestUserId: 7,
+      splitItemsByLocation: true,
+    });
 
     expect(result.items).toEqual(
       expect.arrayContaining([
@@ -492,7 +495,7 @@ describe("team-dashboard service", () => {
     );
   });
 
-  it("rebuilds report stockByLocation from the transaction book", async () => {
+  it("rebuilds report stockByLocation from item_stocks", async () => {
     mockGetTeamReportStats.mockResolvedValue({
       totalItems: 1,
       totalLocations: 2,
@@ -548,26 +551,10 @@ describe("team-dashboard service", () => {
         updatedAt: new Date("2026-01-01T00:00:00.000Z"),
       },
     ] as never);
-    mockGetTeamStockTransactions.mockResolvedValue([
-      {
-        id: 1,
-        itemId: 1,
-        transactionType: "stock_in",
-        quantity: 20,
-        sourceLocationId: null,
-        destinationLocationId: 1,
-        createdAt: new Date("2026-01-01T00:00:00.000Z"),
-      },
-      {
-        id: 2,
-        itemId: 1,
-        transactionType: "move",
-        quantity: 8,
-        sourceLocationId: 1,
-        destinationLocationId: 3,
-        createdAt: new Date("2026-01-02T00:00:00.000Z"),
-      },
-    ] as never);
+    mockGetItemStocksForTeam.mockResolvedValue([
+      { itemId: 1, locationId: 1, quantity: 12 },
+      { itemId: 1, locationId: 3, quantity: 8 },
+    ]);
 
     const result = await getTeamReportsData(1, undefined, undefined, {
       requestUserId: 7,

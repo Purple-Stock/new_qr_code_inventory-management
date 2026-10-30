@@ -2,6 +2,7 @@ import { sqlite } from "@/db/client";
 import { items, locations, stockTransactions } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import type { Item } from "@/db/schema";
+import { insertOpeningItemStock } from "./item-stocks";
 
 /**
  * Get all items for a team
@@ -102,28 +103,30 @@ export async function createItem(data: {
   maximumStock?: number | null;
   customFields?: Record<string, string> | null;
 }): Promise<Item> {
-  const [item] = await sqlite
-    .insert(items)
-    .values({
-      name: data.name,
-      sku: data.sku || null,
-      barcode: data.barcode,
-      cost: data.cost || null,
-      price: data.price || null,
-      itemType: data.itemType || null,
-      brand: data.brand || null,
-      photoData: data.photoData || null,
-      teamId: data.teamId,
-      locationId: data.locationId || null,
-      initialQuantity: data.initialQuantity || 0,
-      currentStock: data.currentStock ?? data.initialQuantity ?? 0,
-      minimumStock: data.minimumStock || 0,
-      maximumStock: data.maximumStock ?? null,
-      customFields: data.customFields ?? null,
-    })
-    .returning();
-
-  return item;
+  return sqlite.transaction(async (tx) => {
+    const [item] = await tx
+      .insert(items)
+      .values({
+        name: data.name,
+        sku: data.sku || null,
+        barcode: data.barcode,
+        cost: data.cost || null,
+        price: data.price || null,
+        itemType: data.itemType || null,
+        brand: data.brand || null,
+        photoData: data.photoData || null,
+        teamId: data.teamId,
+        locationId: data.locationId || null,
+        initialQuantity: data.initialQuantity || 0,
+        currentStock: data.currentStock ?? data.initialQuantity ?? 0,
+        minimumStock: data.minimumStock || 0,
+        maximumStock: data.maximumStock ?? null,
+        customFields: data.customFields ?? null,
+      })
+      .returning();
+    await insertOpeningItemStock(tx, item);
+    return item;
+  });
 }
 
 /**
@@ -176,6 +179,7 @@ export async function createItemsBulk(
           customFields: entry.customFields ?? null,
         })
         .returning();
+      await insertOpeningItemStock(tx, item);
 
       createdItems.push(item);
     }

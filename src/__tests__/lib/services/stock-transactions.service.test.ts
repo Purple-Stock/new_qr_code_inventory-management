@@ -965,7 +965,7 @@ describe("stock-transactions service", () => {
     expect(freshCamera.locationId).toBe(ariel.id);
   });
 
-  it("returns 409 when stocking in at a location that does not hold the item", async () => {
+  it("allows stocking in at a second location and sums catalog stock", async () => {
     const { drizzle } = getTestDb();
     const [user] = await drizzle
       .insert(users)
@@ -1016,22 +1016,13 @@ describe("stock-transactions service", () => {
       },
     });
 
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.error.status).toBe(409);
-    expect(result.error.errorCode).toBe(
-      ERROR_CODES.ITEM_STOCK_AT_ANOTHER_LOCATION
-    );
-    expect(result.error.error).toMatch(/XLR Cable/);
-    expect(result.error.error).toMatch(/B/);
-
+    expect(result.ok).toBe(true);
     const [freshCable] = await drizzle
       .select()
       .from(items)
       .where(eq(items.id, cable.id))
       .limit(1);
-    expect(freshCable.currentStock).toBe(7);
-    expect(freshCable.locationId).toBe(locationB.id);
+    expect(freshCable.currentStock).toBe(10);
   });
 
   it("returns 409 when stocking in would exceed the item maximum quantity", async () => {
