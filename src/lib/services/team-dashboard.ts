@@ -90,6 +90,17 @@ async function teamItemsFromLedger(teamId: number) {
   };
 }
 
+async function catalogItemsForStockOperations(teamId: number) {
+  const [locations, items] = await Promise.all([
+    getTeamLocations(teamId),
+    getTeamItems(teamId),
+  ]);
+  return {
+    locations: locations.map(toLocationDto),
+    items: items.map((item) => toItemDto(item)),
+  };
+}
+
 export async function getTeamReportsData(
   teamId: number,
   startDate?: Date,
@@ -286,7 +297,7 @@ export async function getTeamTransactionsData(
 
 export async function getTeamStockOperationData(
   teamId: number,
-  options: TeamDashboardOptions = {}
+  options: TeamDashboardOptions & { splitItemsByLedger?: boolean } = {}
 ) {
   const access = await authorizeDashboardTeam(teamId, options);
   if (!access.ok) {
@@ -299,7 +310,9 @@ export async function getTeamStockOperationData(
     };
   }
 
-  const { locations, items } = await teamItemsFromLedger(teamId);
+  const { locations, items } = options.splitItemsByLedger
+    ? await teamItemsFromLedger(teamId)
+    : await catalogItemsForStockOperations(teamId);
 
   const destinationTeams = access.team.companyId
     ? (await getCompanyTeams(access.team.companyId)).filter(

@@ -120,6 +120,17 @@ export function itemLocationRowKey(item: {
   return `${item.locationId ?? "none"}-${item.id}`;
 }
 
+export function uniqueCatalogItems<T extends { id: number }>(items: T[]): T[] {
+  const seen = new Set<number>();
+  return items.filter((item) => {
+    if (seen.has(item.id)) {
+      return false;
+    }
+    seen.add(item.id);
+    return true;
+  });
+}
+
 function replayItemBalances(
   item: LocationBalanceItem,
   transactions: LocationBalanceTransaction[]

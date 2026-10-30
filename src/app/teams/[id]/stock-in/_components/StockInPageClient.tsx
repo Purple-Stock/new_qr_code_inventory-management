@@ -38,7 +38,10 @@ import {
   locationsForStockSelect,
 } from "@/lib/initial-location-select";
 import { stockTransactionErrorDescription } from "@/lib/stock-transaction-error-copy";
-import { itemLocationRowKey } from "@/lib/stock-by-location-ledger";
+import {
+  itemLocationRowKey,
+  uniqueCatalogItems,
+} from "@/lib/stock-by-location-ledger";
 import type { Item, Location, Team, SelectedItem } from "../_types";
 
 interface StockInPageClientProps {
@@ -82,7 +85,9 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
   const [selectedLocation, setSelectedLocation] = useState<string>(
     defaultLocation
   );
-  const [availableItems, setAvailableItems] = useState<Item[]>(items);
+  const [availableItems, setAvailableItems] = useState<Item[]>(
+    uniqueCatalogItems(items)
+  );
   const [itemSearch, setItemSearch] = useState("");
   const [itemSearchSource, setItemSearchSource] = useState<"search" | "barcode">("search");
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
@@ -108,7 +113,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
   ];
 
   useEffect(() => {
-    setAvailableItems(items);
+    setAvailableItems(uniqueCatalogItems(items));
   }, [items]);
 
   useEffect(() => {
@@ -119,7 +124,9 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
         (location) => location.id.toString() === draft.selectedLocation
       );
       setSelectedLocation(hasValidLocation ? draft.selectedLocation : defaultLocation);
-      setSelectedItems(reconcileDraftItems(draft.selectedItems, items));
+      setSelectedItems(
+        reconcileDraftItems(draft.selectedItems, uniqueCatalogItems(items))
+      );
       setNotes(draft.notes || "");
     }
 

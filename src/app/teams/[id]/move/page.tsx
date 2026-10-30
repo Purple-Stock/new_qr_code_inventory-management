@@ -17,7 +17,10 @@ export default async function MovePage({ params }: PageProps) {
 
   const requestUserId = await requirePageUserId();
   const { team, locations, items, destinationTeams, subscriptionRequired } =
-    await getTeamStockOperationData(teamId, { requestUserId });
+    await getTeamStockOperationData(teamId, {
+      requestUserId,
+      splitItemsByLedger: true,
+    });
 
   if (subscriptionRequired) {
     redirect(`/teams/${teamId}/settings?billing=required`);

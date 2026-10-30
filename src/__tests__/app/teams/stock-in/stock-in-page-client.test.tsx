@@ -227,6 +227,44 @@ describe("StockInPageClient", () => {
     mockedFetchApiResult.mockResolvedValue({ ok: true } as any);
   });
 
+  it("lists a split SKU once in the search picker", () => {
+    render(
+      <StockInPageClient
+        team={baseTeam}
+        locations={[
+          { id: 1, name: "Local 1" },
+          { id: 3, name: "Local2" },
+        ]}
+        items={[
+          {
+            id: 1,
+            name: "Cadeira Azul",
+            sku: "CADEIRA-AZUL",
+            barcode: "5817915565817",
+            currentStock: 12,
+            locationId: 1,
+            locationName: "Local 1",
+          },
+          {
+            id: 1,
+            name: "Cadeira Azul",
+            sku: "CADEIRA-AZUL",
+            barcode: "5817915565817",
+            currentStock: 8,
+            locationId: 3,
+            locationName: "Local2",
+          },
+        ]}
+      />
+    );
+
+    fireEvent.change(screen.getByPlaceholderText("Search item"), {
+      target: { value: "c" },
+    });
+
+    expect(screen.getAllByText("Cadeira Azul")).toHaveLength(1);
+  });
+
   it("shows create-item CTA when search has no results", () => {
     render(
       <StockInPageClient

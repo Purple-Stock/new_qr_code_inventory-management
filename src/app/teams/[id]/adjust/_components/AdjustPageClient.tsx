@@ -37,7 +37,10 @@ import {
   locationsForStockSelect,
 } from "@/lib/initial-location-select";
 import { stockTransactionErrorDescription } from "@/lib/stock-transaction-error-copy";
-import { itemLocationRowKey } from "@/lib/stock-by-location-ledger";
+import {
+  itemLocationRowKey,
+  uniqueCatalogItems,
+} from "@/lib/stock-by-location-ledger";
 import type { Item, Location, Team } from "../_types";
 
 interface SelectedItem {
@@ -62,6 +65,7 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
   const router = useRouter();
   const { t } = useTranslation();
   const { toast } = useToast();
+  const catalogItems = useMemo(() => uniqueCatalogItems(items), [items]);
   const selectableLocations = useMemo(
     () => locationsForStockSelect(locations),
     [locations]
@@ -91,7 +95,7 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
   const normalizedSearch = itemSearch.trim().toLowerCase();
   const hasItemFilters = normalizedSearch.length > 0;
 
-  const filteredItems = items.filter((item) => {
+  const filteredItems = catalogItems.filter((item) => {
     if (!hasItemFilters) return false;
     return Boolean(
       item.name?.toLowerCase().includes(normalizedSearch) ||
@@ -108,12 +112,12 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
         (location) => location.id.toString() === draft.selectedLocation
       );
       setSelectedLocation(hasValidLocation ? draft.selectedLocation : defaultLocation);
-      setSelectedItems(reconcileDraftItems(draft.selectedItems, items));
+      setSelectedItems(reconcileDraftItems(draft.selectedItems, catalogItems));
       setNotes(draft.notes || "");
     }
 
     setHasLoadedDraft(true);
-  }, [defaultLocation, draftStorageKey, items, selectableLocations]);
+  }, [catalogItems, defaultLocation, draftStorageKey, selectableLocations]);
 
   useEffect(() => {
     if (!hasLoadedDraft) {
@@ -144,7 +148,7 @@ export function AdjustPageClient({ items, locations, team }: AdjustPageClientPro
   };
 
   const handleBarcodeScan = async (barcode: string) => {
-    const foundItem = items.find((item) => item.barcode === barcode);
+    const foundItem = catalogItems.find((item) => item.barcode === barcode);
 
     if (foundItem) {
       handleAddItem(foundItem);
