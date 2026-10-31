@@ -116,9 +116,14 @@ export async function createTeamStockTransaction(params: {
       userId: auth.user.id,
       sourceLocationId:
         payload.sourceLocationId ??
-        (payload.transactionType === "move" ? null : null),
+        (payload.transactionType === "stock_out"
+          ? payload.locationId ?? null
+          : null),
       destinationLocationId:
-        payload.destinationLocationId ?? payload.locationId ?? null,
+        payload.destinationLocationId ??
+        (payload.transactionType === "stock_out"
+          ? null
+          : payload.locationId ?? null),
       destinationKind: payload.destinationKind,
       destinationLabel: payload.destinationLabel,
       destinationTeamId: payload.destinationTeamId,

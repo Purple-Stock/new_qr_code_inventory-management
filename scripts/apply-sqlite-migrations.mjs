@@ -2,6 +2,7 @@ import { createClient } from "@libsql/client";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { backfillItemStocksUsingClient } from "./item-stocks-backfill-core.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const migrationsDir = path.join(root, "src/db/migrations");
@@ -105,6 +106,13 @@ export async function applySqliteMigrations() {
     console.log("Database initialized successfully.");
   } else {
     console.log("Database is up to date.");
+  }
+
+  const backfillClient = createClient({ url });
+  try {
+    await backfillItemStocksUsingClient(backfillClient);
+  } finally {
+    backfillClient.close();
   }
 }
 
