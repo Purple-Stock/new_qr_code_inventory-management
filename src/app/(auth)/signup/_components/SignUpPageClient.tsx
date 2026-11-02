@@ -6,22 +6,17 @@ import { AlertTriangle, CheckCircle2, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 import { useTranslation } from "@/lib/i18n"
 import { fetchApiJsonResult } from "@/lib/api-client"
 import { ERROR_CODES } from "@/lib/errors"
+import { BrandMark } from "@/components/brand/BrandMark"
+import { LanguageSwitch } from "@/components/brand/LanguageSwitch"
 
 export default function SignUpPage() {
   const router = useRouter()
-  const { language, setLanguage, t } = useTranslation()
+  const { t } = useTranslation()
   const [companyName, setCompanyName] = useState("")
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
@@ -89,98 +84,29 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 flex items-center justify-center p-4 relative">
-      {/* Language Selector - Fixed top right */}
-      <div className="absolute top-6 right-6 flex items-center gap-2 z-10">
-        <Label htmlFor="language" className="text-sm text-gray-600 font-medium">
-          {t.auth.language}:
-        </Label>
-        <Select value={language} onValueChange={setLanguage}>
-          <SelectTrigger id="language" className="w-[140px] bg-white border-gray-200">
-            <SelectValue>
-              {language === "en" && (
-                <div className="flex items-center gap-2">
-                  <span>🇺🇸</span>
-                  <span>{t.auth.languageEnglish}</span>
-                </div>
-              )}
-              {language === "fr" && (
-                <div className="flex items-center gap-2">
-                  <span>🇫🇷</span>
-                  <span>{t.auth.languageFrench}</span>
-                </div>
-              )}
-              {language === "pt-BR" && (
-                <div className="flex items-center gap-2">
-                  <span>🇧🇷</span>
-                  <span>{t.auth.languagePortuguese}</span>
-                </div>
-              )}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="en">
-              <div className="flex items-center gap-2">
-                <span>🇺🇸</span>
-                <span>{t.auth.languageEnglish}</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="fr">
-              <div className="flex items-center gap-2">
-                <span>🇫🇷</span>
-                <span>{t.auth.languageFrench}</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="pt-BR">
-              <div className="flex items-center gap-2">
-                <span>🇧🇷</span>
-                <span>{t.auth.languagePortuguese}</span>
-              </div>
-            </SelectItem>
-          </SelectContent>
-        </Select>
+    <div className="relative flex min-h-screen items-center justify-center bg-canvas p-4 text-ink">
+      <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+        <LanguageSwitch />
       </div>
 
-      {/* Main Content Card */}
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-2xl p-10 border border-gray-100">
-          {/* Logo and Branding */}
-          <div className="text-center mb-10">
-            <div className="inline-flex flex-col items-center">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#6B21A8] to-[#7C3AED] rounded-2xl mb-4 shadow-lg">
-                <svg
-                  className="w-10 h-10 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-              </div>
-              <h1 className="text-3xl font-bold text-[#6B21A8] uppercase tracking-tight mb-2">
-                PURPLE STOCK
-              </h1>
-              <p className="text-sm text-gray-500 font-medium">
-                {t.auth.appTagline}
-              </p>
-            </div>
+        <div className="rounded-xl border border-hairline bg-white p-8 shadow-rest sm:p-10">
+          <div className="mb-8 flex flex-col items-center text-center">
+            <BrandMark size={40} className="mb-4 text-brand" />
+            <h1 className="text-[28px] font-medium leading-[1.15] text-ink">Purple Stock</h1>
+            <p className="mt-1 text-sm text-ink-2">{t.auth.appTagline}</p>
           </div>
 
           {/* Instructions */}
-          <p className="text-gray-600 text-base mb-6 text-center font-medium">
+          <p className="mb-6 text-sm text-ink-2">
             {t.auth.signup.instructions}
           </p>
 
           {/* Error Message */}
           {error && (
-            <Alert variant="destructive" className="mb-6 border-l-4 border-l-red-500 bg-red-50 rounded-lg">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
-              <AlertDescription className="text-red-700 text-sm font-medium">
+            <Alert variant="destructive" className="mb-6 rounded-lg border-hairline bg-red-50">
+              <AlertTriangle className="h-4 w-4 text-negative" />
+              <AlertDescription className="text-sm text-negative">
                 {error}
               </AlertDescription>
             </Alert>
@@ -188,9 +114,9 @@ export default function SignUpPage() {
 
           {/* Success Message */}
           {success && (
-            <Alert className="mb-6 border-l-4 border-l-green-500 bg-green-50 rounded-lg">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
-              <AlertDescription className="text-green-700 text-sm font-medium">
+            <Alert className="mb-6 rounded-lg border-hairline bg-green-50">
+              <CheckCircle2 className="h-4 w-4 text-positive" />
+              <AlertDescription className="text-sm text-positive">
                 {success}
               </AlertDescription>
             </Alert>
@@ -199,7 +125,7 @@ export default function SignUpPage() {
           {/* Sign Up Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="companyName" className="text-gray-700 font-semibold text-sm">
+              <Label htmlFor="companyName" className="text-sm font-medium text-ink">
                 {t.auth.signup.companyNameLabel}
               </Label>
               <Input
@@ -208,14 +134,14 @@ export default function SignUpPage() {
                 placeholder={t.auth.signup.companyNamePlaceholder}
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
-                className="w-full h-11 border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+                className="h-11"
                 required
               />
             </div>
 
             {/* Email Field */}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-700 font-semibold text-sm">
+              <Label htmlFor="email" className="text-sm font-medium text-ink">
                 {t.auth.signup.emailLabel}
               </Label>
               <Input
@@ -224,14 +150,14 @@ export default function SignUpPage() {
                 placeholder={t.auth.signup.emailPlaceholder}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-11 border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+                className="h-11"
                 required
               />
             </div>
 
             {/* Phone Field */}
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-gray-700 font-semibold text-sm">
+              <Label htmlFor="phone" className="text-sm font-medium text-ink">
                 {t.auth.signup.phoneLabel}
               </Label>
               <Input
@@ -241,13 +167,13 @@ export default function SignUpPage() {
                 placeholder={t.auth.signup.phonePlaceholder}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full h-11 border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+                className="h-11"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-700 font-semibold text-sm">
+              <Label htmlFor="password" className="text-sm font-medium text-ink">
                 {t.auth.signup.passwordLabel}
               </Label>
               <div className="relative">
@@ -257,14 +183,14 @@ export default function SignUpPage() {
                   placeholder={t.auth.signup.passwordPlaceholder}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-11 pr-10 border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+                  className="h-11 pr-10"
                   required
                   minLength={6}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink"
                   aria-label={showPassword ? t.auth.signup.hidePassword : t.auth.signup.showPassword}
                 >
                   {showPassword ? (
@@ -274,12 +200,12 @@ export default function SignUpPage() {
                   )}
                 </button>
               </div>
-              <p className="text-xs text-gray-500">{t.auth.signup.passwordMinHint}</p>
+              <p className="text-xs text-ink-3">{t.auth.signup.passwordMinHint}</p>
             </div>
 
             {/* Confirm Password Field */}
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-gray-700 font-semibold text-sm">
+              <Label htmlFor="confirmPassword" className="text-sm font-medium text-ink">
                 {t.auth.signup.confirmPasswordLabel}
               </Label>
               <div className="relative">
@@ -289,14 +215,14 @@ export default function SignUpPage() {
                   placeholder={t.auth.signup.confirmPasswordPlaceholder}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full h-11 pr-10 border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+                  className="h-11 pr-10"
                   required
                   minLength={6}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink"
                   aria-label={showConfirmPassword ? t.auth.signup.hidePassword : t.auth.signup.showPassword}
                 >
                   {showConfirmPassword ? (
@@ -312,18 +238,18 @@ export default function SignUpPage() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white font-semibold py-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+              className="mt-2 h-11 w-full"
             >
               {isLoading ? t.auth.signup.creatingAccount : t.auth.signup.signUp}
             </Button>
           </form>
 
           {/* Sign In Link */}
-          <div className="mt-8 text-center">
-            <span className="text-gray-600 text-sm">{t.auth.signup.alreadyHaveAccount} </span>
+          <div className="mt-6 text-center text-sm text-ink-2">
+            <span>{t.auth.signup.alreadyHaveAccount} </span>
             <Link
               href="/"
-              className="text-[#6B21A8] hover:text-[#7C3AED] font-semibold text-sm transition-colors"
+              className="font-medium text-brand hover:text-brand-hover"
             >
               {t.auth.signup.signInLink}
             </Link>

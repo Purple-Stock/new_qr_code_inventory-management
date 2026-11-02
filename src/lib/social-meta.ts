@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const APP_OG_TITLE = "Purple Stock — App";
 export const APP_OG_DESCRIPTION =
-  "Seu inventário simplificado. Entrada, saída e transferência com QR Code.";
+  "Estoque com QR no galpão. Entrada, saída e saldo por local.";
 export const APP_OG_IMAGE_PATH = "/og-image.png";
 export const APP_OG_IMAGE_WIDTH = 1200;
 export const APP_OG_IMAGE_HEIGHT = 630;

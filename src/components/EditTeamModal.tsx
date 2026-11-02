@@ -109,17 +109,17 @@ export function EditTeamModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-float w-full max-w-lg max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] px-4 sm:px-6 py-4 flex items-center justify-between rounded-t-xl sm:rounded-t-2xl">
-          <h2 className="text-lg sm:text-xl font-bold text-white">
+        <div className="flex items-center justify-between border-b border-hairline bg-white px-4 py-4 sm:px-6">
+          <h2 className="text-lg sm:text-xl font-medium text-ink">
             {t.common.edit} {t.common.selectTeam}
           </h2>
           <Button
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="text-white hover:bg-white/20 h-8 w-8 p-0"
+            className="text-ink-3 hover:bg-raised h-8 w-8 p-0"
             disabled={isSaving}
           >
             <X className="h-4 w-4" />
@@ -130,7 +130,7 @@ export function EditTeamModal({
         <form onSubmit={handleSubmit}>
           <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
             <div>
-              <Label htmlFor="team-name" className="text-sm font-semibold text-gray-700 mb-2 block">
+              <Label htmlFor="team-name" className="text-sm font-medium text-ink-2 mb-2 block">
                 {t.settings.teamName} *
               </Label>
               <Input
@@ -146,7 +146,7 @@ export function EditTeamModal({
             </div>
 
             <div>
-              <Label htmlFor="team-notes" className="text-sm font-semibold text-gray-700 mb-2 block">
+              <Label htmlFor="team-notes" className="text-sm font-medium text-ink-2 mb-2 block">
                 {t.settings.notes}
               </Label>
               <Textarea
@@ -162,20 +162,20 @@ export function EditTeamModal({
           </div>
 
           {/* Footer */}
-          <div className="px-4 sm:px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+          <div className="px-4 sm:px-6 py-4 border-t border-hairline flex justify-end gap-3">
             <Button
               type="button"
               variant="ghost"
               onClick={onClose}
               disabled={isSaving}
-              className="text-gray-700 hover:bg-gray-100"
+              className="text-ink-2 hover:bg-raised"
             >
               {t.common.cancel}
             </Button>
             <Button
               type="submit"
               disabled={isSaving}
-              className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white"
+
             >
               {isSaving ? (
                 <>

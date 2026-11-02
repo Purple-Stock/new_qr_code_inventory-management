@@ -341,16 +341,16 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
     <TeamLayout team={team} activeMenuItem="stock-in">
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
         <div className="flex-1">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-600 mb-1 sm:mb-2">
+          <h1 className="text-[28px] font-medium leading-[1.15] text-ink mb-1 sm:mb-2">
             {t.stockIn.title}
           </h1>
-          <p className="text-sm sm:text-base md:text-lg text-gray-600">{t.stockIn.subtitle}</p>
+          <p className="text-sm sm:text-base md:text-lg text-ink-2">{t.stockIn.subtitle}</p>
         </div>
         <Button
           variant="outline"
           onClick={() => setIsTutorialOpen(true)}
           data-tour="tour-stock-in-tutorial"
-          className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
+          className="border-hairline text-ink-2 hover:bg-raised h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
         >
           <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
           {t.common.tutorial}
@@ -358,13 +358,13 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
       </div>
 
       <div className="mb-4 sm:mb-6" data-tour="tour-stock-in-location">
-        <Label htmlFor="location" className="text-sm font-semibold text-gray-700 mb-2 block">
+        <Label htmlFor="location" className="text-sm font-medium text-ink-2 mb-2 block">
           {t.stockIn.locationRequired}
         </Label>
         <Select value={selectedLocation || undefined} onValueChange={setSelectedLocation}>
           <SelectTrigger
             id="location"
-            className="w-full h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+            className="w-full h-11 text-base border-hairline focus:border-brand focus:ring-brand"
           >
             <SelectValue placeholder={t.stockIn.defaultLocation} />
           </SelectTrigger>
@@ -379,12 +379,12 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
       </div>
 
       <div className="mb-4 sm:mb-6" data-tour="tour-stock-in-items">
-        <Label htmlFor="items" className="text-sm font-semibold text-gray-700 mb-2 block">
+        <Label htmlFor="items" className="text-sm font-medium text-ink-2 mb-2 block">
           {t.stockIn.items}
         </Label>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-ink-3" />
             <Input
               id="items"
               type="text"
@@ -394,25 +394,25 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
                 setItemSearchSource("search");
                 setItemSearch(e.target.value);
               }}
-              className="pl-9 sm:pl-10 h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+              className="pl-9 sm:pl-10 h-11 text-base border-hairline focus:border-brand focus:ring-brand"
             />
             {hasItemFilters && filteredItems.length > 0 ? (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+              <div className="absolute z-10 w-full mt-1 bg-white border border-hairline rounded-lg shadow-rest max-h-60 overflow-y-auto">
                 {filteredItems.map((item) => (
                   <button
                     key={itemLocationRowKey(item)}
                     onClick={() => handleAddItem(item)}
-                    className="w-full text-left px-4 py-3 hover:bg-purple-50 transition-colors border-b border-gray-100 last:border-b-0"
+                    className="w-full text-left px-4 py-3 hover:bg-raised transition-colors border-b border-hairline last:border-b-0"
                   >
-                    <div className="font-medium text-gray-900">
+                    <div className="font-medium text-ink">
                       {item.name || t.items.unnamedItem}
                     </div>
-                    {item.sku ? <div className="text-xs text-gray-500">SKU: {item.sku}</div> : null}
+                    {item.sku ? <div className="text-xs text-ink-3">SKU: {item.sku}</div> : null}
                     {item.locationName ? (
-                      <div className="text-xs text-gray-500">{item.locationName}</div>
+                      <div className="text-xs text-ink-3">{item.locationName}</div>
                     ) : null}
                     {item.currentStock !== null ? (
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-ink-3">
                         {t.stockIn.currentStockLabel}: {item.currentStock}
                       </div>
                     ) : null}
@@ -428,14 +428,14 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
               setItemSearch("");
               setItemSearchSource("search");
             }}
-            className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 text-xs sm:text-sm touch-manipulation min-h-[44px] sm:min-h-0"
+            className="border-hairline text-ink-2 hover:bg-raised h-11 text-xs sm:text-sm touch-manipulation min-h-[44px] sm:min-h-0"
           >
             {t.common.clearFilter}
           </Button>
           <Button
             variant="outline"
             onClick={() => setIsScannerOpen(true)}
-            className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 text-xs sm:text-sm touch-manipulation min-h-[44px] sm:min-h-0"
+            className="border-hairline text-ink-2 hover:bg-raised h-11 text-xs sm:text-sm touch-manipulation min-h-[44px] sm:min-h-0"
           >
             <ScanLine className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">{t.stockIn.scanBarcode}</span>
@@ -444,19 +444,19 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
         </div>
 
         {showCreateItemState ? (
-          <div className="mt-3 rounded-xl border border-dashed border-purple-200 bg-purple-50/60 px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="mt-3 rounded-xl border border-dashed border-hairline bg-raised px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-gray-900">
+              <p className="text-sm font-medium text-ink">
                 {t.stockIn.noSearchResultsCreate}
               </p>
-              <p className="text-xs sm:text-sm text-gray-600">
+              <p className="text-xs sm:text-sm text-ink-2">
                 {t.stockIn.noSearchResultsCreateHint}
               </p>
             </div>
             <Button
               type="button"
               onClick={() => openCreateItemModal(itemSearch, itemSearchSource)}
-              className="bg-[#6B21A8] hover:bg-[#6B21A8]/90 text-white w-full sm:w-auto"
+              className="w-full sm:w-auto"
             >
               <PackagePlus className="h-4 w-4 mr-2" />
               {t.stockIn.createItemCta}
@@ -465,10 +465,10 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
         ) : null}
       </div>
 
-      <div className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden" data-tour="tour-stock-in-table">
+      <div className="mb-4 sm:mb-6 rounded-xl border border-hairline bg-white shadow-rest overflow-hidden" data-tour="tour-stock-in-table">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+            <thead className="border-b border-hairline bg-raised">
               <tr>
                 <SortableHeader
                   label={t.stockIn.item}
@@ -478,7 +478,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
                   sortAscendingLabel={t.common.sortAscending}
                   sortDescendingLabel={t.common.sortDescending}
                   onSort={onSort}
-                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"
+                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-ink-3"
                 />
                 <SortableHeader
                   label={t.stockIn.currentStock}
@@ -488,7 +488,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
                   sortAscendingLabel={t.common.sortAscending}
                   sortDescendingLabel={t.common.sortDescending}
                   onSort={onSort}
-                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden sm:table-cell"
+                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-ink-3 hidden sm:table-cell"
                 />
                 <SortableHeader
                   label={t.items.sku}
@@ -498,7 +498,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
                   sortAscendingLabel={t.common.sortAscending}
                   sortDescendingLabel={t.common.sortDescending}
                   onSort={onSort}
-                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden md:table-cell"
+                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-ink-3 hidden md:table-cell"
                 />
                 <SortableHeader
                   label={t.stockIn.quantityToAdd}
@@ -508,9 +508,9 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
                   sortAscendingLabel={t.common.sortAscending}
                   sortDescendingLabel={t.common.sortDescending}
                   onSort={onSort}
-                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"
+                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-ink-3"
                 />
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-right text-xs font-medium text-ink-3">
                   {t.common.actions}
                 </th>
               </tr>
@@ -518,33 +518,33 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
             <tbody className="bg-white divide-y divide-gray-100">
               {selectedItems.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
+                  <td colSpan={5} className="px-4 sm:px-6 py-8 text-center text-ink-3 text-sm">
                     {t.stockIn.noItemsSelected}
                   </td>
                 </tr>
               ) : (
                 paginated.items.map((selectedItem) => (
-                  <tr key={itemLocationRowKey(selectedItem.item)} className="hover:bg-purple-50/50 transition-colors">
+                  <tr key={itemLocationRowKey(selectedItem.item)} className="hover:bg-raised transition-colors">
                     <td className="px-4 sm:px-6 py-4 sm:py-5">
                       <div>
-                        <div className="text-sm font-bold text-gray-900">
+                        <div className="text-sm font-medium text-ink">
                           {selectedItem.item.name || t.items.unnamedItem}
                         </div>
-                        <div className="text-xs text-gray-500 sm:hidden mt-1">
+                        <div className="text-xs text-ink-3 sm:hidden mt-1">
                           {t.stockIn.currentStockLabel}: {selectedItem.item.currentStock ?? 0}
                         </div>
-                        <div className="text-xs text-gray-500 sm:hidden mt-1">
+                        <div className="text-xs text-ink-3 sm:hidden mt-1">
                           {t.items.sku}: {selectedItem.item.sku || "-"}
                         </div>
                       </div>
                     </td>
                     <td className="px-4 sm:px-6 py-4 sm:py-5 hidden sm:table-cell">
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-sm font-medium text-ink">
                         {selectedItem.item.currentStock ?? 0}
                       </span>
                     </td>
                     <td className="px-4 sm:px-6 py-4 sm:py-5 hidden md:table-cell">
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-sm font-medium text-ink">
                         {selectedItem.item.sku || "-"}
                       </span>
                     </td>
@@ -554,7 +554,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
                           onClick={() =>
                             handleQuantityChange(selectedItem.item.id, selectedItem.quantity - 1)
                           }
-                          className="p-1.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-1.5 text-ink-3 hover:text-brand hover:bg-raised rounded-lg transition-colors duration-150 ease-craft touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
                           disabled={selectedItem.quantity <= 1}
                         >
                           <Minus className="h-4 w-4" />
@@ -569,13 +569,13 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
                               parseInt(e.target.value, 10) || 0
                             )
                           }
-                          className="w-20 sm:w-24 h-9 sm:h-10 text-center text-sm font-semibold border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+                          className="w-20 sm:w-24 h-9 sm:h-10 text-center text-sm font-semibold border-hairline focus:border-brand focus:ring-brand"
                         />
                         <button
                           onClick={() =>
                             handleQuantityChange(selectedItem.item.id, selectedItem.quantity + 1)
                           }
-                          className="p-1.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-1.5 text-ink-3 hover:text-brand hover:bg-raised rounded-lg transition-colors duration-150 ease-craft touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
                         >
                           <Plus className="h-4 w-4" />
                         </button>
@@ -584,7 +584,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
                     <td className="px-4 sm:px-6 py-4 sm:py-5 text-right">
                       <button
                         onClick={() => handleRemoveItem(selectedItem.item.id)}
-                        className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
+                        className="p-2 text-ink-3 hover:text-negative hover:bg-raised rounded-lg transition-colors duration-150 ease-craft touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
                         aria-label="Remove item"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -610,7 +610,7 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
       </div>
 
       <div className="mb-4 sm:mb-6" data-tour="tour-stock-in-notes">
-        <Label htmlFor="notes" className="text-sm font-semibold text-gray-700 mb-2 block">
+        <Label htmlFor="notes" className="text-sm font-medium text-ink-2 mb-2 block">
           {t.stockIn.notes}
         </Label>
         <Textarea
@@ -618,19 +618,19 @@ export function StockInPageClient({ items, locations, team }: StockInPageClientP
           placeholder={t.stockIn.notesPlaceholder}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="min-h-[100px] text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8] resize-y"
+          className="min-h-[100px] text-base border-hairline focus:border-brand focus:ring-brand resize-y"
           rows={4}
         />
       </div>
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-gray-200" data-tour="tour-stock-in-submit">
-        <div className="text-sm sm:text-base font-semibold text-gray-700">
-          {t.stockIn.totalItemsToAdd}: <span className="text-[#6B21A8]">{totalItems}</span>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-hairline" data-tour="tour-stock-in-submit">
+        <div className="text-sm sm:text-base font-medium text-ink-2">
+          {t.stockIn.totalItemsToAdd}: <span className="text-brand">{totalItems}</span>
         </div>
         <Button
           onClick={handleSubmit}
           disabled={isSubmitting || selectedItems.length === 0 || !selectedLocation}
-          className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all w-full sm:w-auto touch-manipulation min-h-[48px] sm:min-h-0 px-6 sm:px-8"
+          className="w-full sm:w-auto touch-manipulation min-h-[48px] sm:min-h-0 px-6 sm:px-8"
         >
           {isSubmitting ? t.common.loading : t.stockIn.addStock}
         </Button>

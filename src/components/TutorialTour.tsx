@@ -126,7 +126,7 @@ export function TutorialTour({
       {/* Overlay with spotlight hole + purple ring */}
       {rect && (
         <div
-          className="absolute rounded-xl border-2 border-[#6B21A8] bg-transparent"
+          className="absolute rounded-xl border-2 border-brand bg-transparent"
           style={{
             left: Math.max(0, rect.left - PADDING),
             top: Math.max(0, rect.top - PADDING),
@@ -150,25 +150,25 @@ export function TutorialTour({
           className="absolute left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-[101] px-4"
           style={{ top: tooltipTop }}
         >
-          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] px-4 py-3 flex items-center justify-between">
-              <span className="text-white text-sm font-medium">
+          <div className="bg-white rounded-xl shadow-float border border-hairline overflow-hidden">
+            <div className="flex items-center justify-between border-b border-hairline bg-white px-4 py-3">
+              <span className="text-sm font-medium text-ink">
                 {t.tutorial?.step ?? "Step"} {step + 1} {t.tutorial?.of ?? "of"} {steps.length}
               </span>
               <button
                 type="button"
                 onClick={onClose}
-                className="p-1.5 text-white/80 hover:text-white hover:bg-white/20 rounded-lg transition-colors"
+                className="p-1.5 text-ink-3 hover:bg-raised hover:text-ink rounded-lg transition-colors"
                 aria-label={t.common.close}
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
             <div className="p-4">
-              <h3 className="text-base font-semibold text-gray-900 mb-1">
+              <h3 className="text-base font-medium text-ink mb-1">
                 {current.title}
               </h3>
-              <p className="text-sm text-gray-600 leading-relaxed">
+              <p className="text-sm text-ink-2 leading-relaxed">
                 {current.description}
               </p>
             </div>
@@ -179,7 +179,7 @@ export function TutorialTour({
                 size="sm"
                 onClick={handlePrev}
                 disabled={isFirst}
-                className="text-gray-700 disabled:opacity-40"
+                className="text-ink-2 disabled:opacity-40"
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
                 {t.tutorial?.prev ?? "Previous"}
@@ -188,7 +188,7 @@ export function TutorialTour({
                 type="button"
                 size="sm"
                 onClick={handleNext}
-                className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#5B1A98] hover:to-[#6D28D9] text-white"
+
               >
                 {isLast ? (t.tutorial?.finish ?? "Finish") : (t.tutorial?.next ?? "Next")}
                 {!isLast && <ChevronRight className="h-4 w-4 ml-1" />}

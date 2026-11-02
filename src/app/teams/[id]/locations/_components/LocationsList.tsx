@@ -93,26 +93,26 @@ export function LocationsList({
         {locations.map((location) => (
           <div
             key={location.id}
-            className="bg-white rounded-xl shadow-md border border-gray-100 p-4"
+            className="bg-white rounded-xl shadow-md border border-hairline p-4"
           >
             <div className="flex items-start gap-3 mb-3">
-              <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
-                <Building2 className="h-7 w-7 text-blue-600" />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-raised">
+                <Building2 className="h-7 w-7 text-ink-3" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-bold text-gray-900 mb-1 truncate">
+                <h3 className="text-base font-medium text-ink mb-1 truncate">
                   {location.name}
                 </h3>
                 {location.description && (
-                  <p className="text-sm text-gray-600 line-clamp-2">{location.description}</p>
+                  <p className="text-sm text-ink-2 line-clamp-2">{location.description}</p>
                 )}
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-hairline">
               <button
                 onClick={() => handleEdit(location.id)}
-                className="p-2.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
+                className="p-2.5 text-ink-3 hover:text-brand hover:bg-raised rounded-lg transition-colors duration-150 ease-craft touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
                 aria-label="Edit location"
                 title="Edit location"
               >
@@ -120,7 +120,7 @@ export function LocationsList({
               </button>
               <button
                 onClick={() => handleDeleteClick(location)}
-                className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
+                className="p-2.5 text-ink-3 hover:text-negative hover:bg-raised rounded-lg transition-colors duration-150 ease-craft touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
                 aria-label="Delete location"
                 title="Delete location"
               >
@@ -132,10 +132,10 @@ export function LocationsList({
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden lg:block bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+      <div className="hidden lg:block bg-white rounded-xl sm:rounded-2xl shadow-rest overflow-hidden border border-hairline">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+            <thead className="border-b border-hairline bg-raised">
               <tr>
                 <SortableHeader
                   label={t.locations.name}
@@ -155,24 +155,24 @@ export function LocationsList({
                   sortDescendingLabel={t.common.sortDescending}
                   onSort={onSort}
                 />
-                <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-4 text-right text-xs font-medium text-ink-3">
                   {t.common.actions}
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {locations.map((location) => (
-                <tr key={location.id} className="hover:bg-purple-50/50 transition-colors">
+                <tr key={location.id} className="hover:bg-raised transition-colors">
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
-                        <Building2 className="h-5 w-5 text-blue-600" />
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-raised">
+                        <Building2 className="h-5 w-5 text-ink-3" />
                       </div>
-                      <span className="text-sm font-bold text-gray-900">{location.name}</span>
+                      <span className="text-sm font-medium text-ink">{location.name}</span>
                     </div>
                   </td>
                   <td className="px-6 py-5">
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-ink-2">
                       {location.description || t.common.noDescription}
                     </span>
                   </td>
@@ -180,7 +180,7 @@ export function LocationsList({
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => handleEdit(location.id)}
-                        className="p-2.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all"
+                        className="p-2.5 text-ink-3 hover:text-brand hover:bg-raised rounded-lg transition-colors duration-150 ease-craft"
                         aria-label="Edit location"
                         title="Edit location"
                       >
@@ -188,7 +188,7 @@ export function LocationsList({
                       </button>
                       <button
                         onClick={() => handleDeleteClick(location)}
-                        className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        className="p-2.5 text-ink-3 hover:text-negative hover:bg-raised rounded-lg transition-colors duration-150 ease-craft"
                         aria-label="Delete location"
                         title="Delete location"
                       >

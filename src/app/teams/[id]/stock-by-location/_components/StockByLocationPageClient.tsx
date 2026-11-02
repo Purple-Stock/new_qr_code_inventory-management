@@ -46,7 +46,7 @@ interface StockByLocationPageClientProps {
 }
 
 const LOCATION_ITEM_HEADER_CLASS =
-  "px-4 sm:px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider";
+  "px-4 sm:px-6 py-3 text-left text-xs font-medium text-ink-3";
 
 function LocationItemsTable({
   items,
@@ -72,7 +72,7 @@ function LocationItemsTable({
     <>
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-raised border-b border-hairline">
             <tr>
               <SortableHeader
                 label={t.stockByLocation.item}
@@ -120,25 +120,25 @@ function LocationItemsTable({
             {paginated.items.map((item) => (
               <tr
                 key={`${item.locationId ?? "none"}-${item.id}`}
-                className="hover:bg-purple-50/50 transition-colors"
+                className="hover:bg-raised transition-colors"
               >
                 <td className="px-4 sm:px-6 py-4">
-                  <div className="text-sm font-medium text-gray-900">
+                  <div className="text-sm font-medium text-ink">
                     {item.name || t.items.unnamedItem}
                   </div>
-                  <div className="text-xs text-gray-500 sm:hidden mt-1">
+                  <div className="text-xs text-ink-3 sm:hidden mt-1">
                     {item.sku && `SKU: ${item.sku}`}
                   </div>
                 </td>
-                <td className="px-4 sm:px-6 py-4 text-sm text-gray-600 hidden sm:table-cell">
+                <td className="px-4 sm:px-6 py-4 text-sm text-ink-2 hidden sm:table-cell">
                   {item.sku || "-"}
                 </td>
                 <td className="px-4 sm:px-6 py-4">
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
+                  <span className="font-mono tabular-nums text-sm font-medium text-ink">
                     {item.currentStock || 0}
                   </span>
                 </td>
-                <td className="px-4 sm:px-6 py-4 text-sm text-gray-600 hidden md:table-cell">
+                <td className="px-4 sm:px-6 py-4 text-sm text-ink-2 hidden md:table-cell">
                   {formatPrice(item.price)}
                 </td>
               </tr>
@@ -252,10 +252,10 @@ export default function StockByLocationPageClient({
     <TeamLayout team={team} activeMenuItem="stock-by-location">
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
         <div className="flex-1">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#6B21A8] mb-1 sm:mb-2">
+          <h1 className="text-[28px] font-medium leading-[1.15] text-ink mb-1 sm:mb-2">
             {t.stockByLocation.title}
           </h1>
-          <p className="text-sm sm:text-base md:text-lg text-gray-600">
+          <p className="text-sm sm:text-base md:text-lg text-ink-2">
             {t.stockByLocation.subtitle}
           </p>
         </div>
@@ -263,7 +263,7 @@ export default function StockByLocationPageClient({
           variant="outline"
           onClick={() => setIsTutorialOpen(true)}
           data-tour="tour-stock-by-location-tutorial"
-          className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
+          className="border-hairline text-ink-2 hover:bg-raised h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
         >
           <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
           {t.common.tutorial}
@@ -272,25 +272,25 @@ export default function StockByLocationPageClient({
 
       <div className="mb-4 sm:mb-6" data-tour="tour-stock-by-location-search">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-ink-3" />
           <Input
             type="text"
             placeholder={t.stockByLocation.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 sm:pl-10 h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+            className="pl-9 sm:pl-10 h-11 text-base border-hairline focus:border-brand focus:ring-brand"
           />
         </div>
       </div>
 
       {isLoading ? (
-        <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-8 text-center">
-          <p className="text-gray-500">{t.stockByLocation.loading}</p>
+        <div className="rounded-xl border border-hairline bg-white shadow-rest p-8 text-center">
+          <p className="text-ink-3">{t.stockByLocation.loading}</p>
         </div>
       ) : stockByLocation.length === 0 ? (
-        <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-8 text-center">
-          <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500 text-lg font-medium mb-2">
+        <div className="rounded-xl border border-hairline bg-white shadow-rest p-8 text-center">
+          <Package className="h-12 w-12 text-ink-3 mx-auto mb-4" />
+          <p className="text-ink-3 text-lg font-medium mb-2">
             {searchQuery ? t.stockByLocation.noItemsSearch : t.stockByLocation.noLocations}
           </p>
         </div>
@@ -299,26 +299,26 @@ export default function StockByLocationPageClient({
           {stockByLocation.map((locationStock) => (
             <div
               key={locationStock.location.id}
-              className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden"
+              className="rounded-xl border border-hairline bg-white shadow-rest overflow-hidden"
             >
-              <div className="bg-gradient-to-r from-purple-50 to-purple-100 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+              <div className="border-b border-hairline bg-raised px-4 py-3 sm:px-6 sm:py-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#6B21A8] to-[#7C3AED] rounded-lg sm:rounded-xl flex items-center justify-center shadow-md">
-                      <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white sm:h-12 sm:w-12">
+                      <MapPin className="h-5 w-5 text-ink-3 sm:h-6 sm:w-6" />
                     </div>
                     <div>
-                      <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                      <h2 className="text-lg sm:text-xl font-medium text-ink">
                         {locationStock.location.name}
                       </h2>
                       <div className="flex flex-wrap gap-3 sm:gap-4 mt-1">
-                        <span className="text-xs sm:text-sm text-gray-600">
+                        <span className="text-xs sm:text-sm text-ink-2">
                           {t.stockByLocation.totalItems}:{" "}
-                          <span className="font-semibold text-gray-900">{locationStock.totalItems}</span>
+                          <span className="font-medium text-ink">{locationStock.totalItems}</span>
                         </span>
-                        <span className="text-xs sm:text-sm text-gray-600">
+                        <span className="text-xs sm:text-sm text-ink-2">
                           {t.stockByLocation.totalStock}:{" "}
-                          <span className="font-semibold text-gray-900">{locationStock.totalStock.toFixed(1)}</span>
+                          <span className="font-medium text-ink">{locationStock.totalStock.toFixed(1)}</span>
                         </span>
                       </div>
                     </div>
@@ -327,7 +327,7 @@ export default function StockByLocationPageClient({
               </div>
 
               {locationStock.items.length === 0 ? (
-                <div className="p-8 text-center text-gray-500">
+                <div className="p-8 text-center text-ink-3">
                   {t.stockByLocation.noItems}
                 </div>
               ) : (

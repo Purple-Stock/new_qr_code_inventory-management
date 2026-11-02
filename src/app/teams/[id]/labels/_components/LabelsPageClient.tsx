@@ -10,6 +10,7 @@ import {
   CheckSquare,
   Square,
   X,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -788,10 +789,10 @@ export default function LabelsPageClient({
           {/* Page Header */}
           <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
             <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#6B21A8] mb-1 sm:mb-2">
+              <h1 className="text-[28px] font-medium leading-[1.15] text-ink mb-1 sm:mb-2">
                 {t.labels.title}
               </h1>
-              <p className="text-sm sm:text-base md:text-lg text-gray-600">
+              <p className="text-sm sm:text-base md:text-lg text-ink-2">
                 {t.labels.subtitle}
               </p>
             </div>
@@ -799,7 +800,7 @@ export default function LabelsPageClient({
               variant="outline"
               onClick={() => setIsTutorialOpen(true)}
               data-tour="tour-labels-tutorial"
-              className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
+              className="border-hairline text-ink-2 hover:bg-raised h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
             >
               <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               {t.common.tutorial}
@@ -807,18 +808,18 @@ export default function LabelsPageClient({
           </div>
 
           {/* Settings Panel */}
-	          <div className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6" data-tour="tour-labels-settings">
+	          <div className="mb-4 sm:mb-6 rounded-xl border border-hairline bg-white shadow-rest p-4 sm:p-6" data-tour="tour-labels-settings">
 	            <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
 	              <div>
-	                <h2 className="text-lg font-bold text-gray-900">{t.labels.selectItems}</h2>
-	                <p className="mt-1 text-sm text-gray-600">{t.labels.settingsHelper}</p>
+	                <h2 className="text-lg font-medium text-ink">{t.labels.selectItems}</h2>
+	                <p className="mt-1 text-sm text-ink-2">{t.labels.settingsHelper}</p>
 	              </div>
 	              <div className="flex flex-wrap gap-2">
 	                <Button
 	                  type="button"
 	                  variant="outline"
 	                  onClick={() => setIsPreviewOpen(true)}
-	                  className="border-[#D6BCFA] bg-[#FAF5FF] text-[#6B21A8] hover:bg-[#F3E8FF]"
+	                  className="border-[#D6BCFA] bg-[#FAF5FF] text-brand hover:bg-[#F3E8FF]"
 	                >
 	                  <Eye className="mr-2 h-4 w-4" />
 	                  {t.labels.previewButton}
@@ -827,23 +828,23 @@ export default function LabelsPageClient({
 	            </div>
 
 	            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
-	              <section className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 sm:p-5" data-tour="tour-labels-size">
+	              <section className="rounded-2xl border border-hairline bg-raised/80 p-4 sm:p-5" data-tour="tour-labels-size">
 	                <div className="mb-4">
-	                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+	                  <h3 className="text-sm font-semibold text-ink-3">
 	                    {t.labels.settingsFormatTitle}
 	                  </h3>
-	                  <p className="mt-1 text-sm text-slate-600">{t.labels.settingsFormatDescription}</p>
+	                  <p className="mt-1 text-sm text-ink-2">{t.labels.settingsFormatDescription}</p>
 	                </div>
 	                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(220px,1.1fr)_minmax(140px,0.8fr)_minmax(140px,0.8fr)]">
 	                  <div>
-	                    <Label className="text-sm font-semibold text-gray-700 mb-2 block">
+	                    <Label className="text-sm font-medium text-ink-2 mb-2 block">
 	                      {t.labels.labelSize}
 	                    </Label>
 	                    <select
 	                      aria-label={t.labels.labelSize}
 	                      value={labelSizePreset}
 	                      onChange={(e) => setLabelSizePreset(e.target.value as LabelSizePreset)}
-	                      className="w-full h-11 text-base border border-gray-300 rounded-md px-3 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+	                      className="w-full h-11 text-base border border-hairline rounded-md px-3 focus:border-brand focus:ring-brand"
 	                    >
 	                      <option value="default_10x5">{t.labels.default10x5}</option>
 	                      <option value="zebra_100x150">Zebra 100 x 150 mm</option>
@@ -854,7 +855,7 @@ export default function LabelsPageClient({
 	                    </select>
 	                  </div>
 	                  <div>
-	                    <Label className="text-sm font-semibold text-gray-700 mb-2 block">
+	                    <Label className="text-sm font-medium text-ink-2 mb-2 block">
 	                      {t.labels.widthCm}
 	                    </Label>
 	                    <Input
@@ -862,11 +863,11 @@ export default function LabelsPageClient({
 	                      value={isCustomSize ? customWidthCm : String(normalizedWidthCm)}
 	                      onChange={(e) => setCustomWidthCm(e.target.value)}
 	                      disabled={!isCustomSize}
-	                      className="h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+	                      className="h-11 text-base border-hairline focus:border-brand focus:ring-brand"
 	                    />
 	                  </div>
 	                  <div>
-	                    <Label className="text-sm font-semibold text-gray-700 mb-2 block">
+	                    <Label className="text-sm font-medium text-ink-2 mb-2 block">
 	                      {t.labels.heightCm}
 	                    </Label>
 	                    <Input
@@ -874,19 +875,19 @@ export default function LabelsPageClient({
 	                      value={isCustomSize ? customHeightCm : String(normalizedHeightCm)}
 	                      onChange={(e) => setCustomHeightCm(e.target.value)}
 	                      disabled={!isCustomSize}
-	                      className="h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+	                      className="h-11 text-base border-hairline focus:border-brand focus:ring-brand"
 	                    />
 	                  </div>
 	                </div>
-	                <div className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
-	                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+	                <div className="mt-4 rounded-xl border border-hairline bg-white px-4 py-3">
+	                  <div className="text-xs font-medium text-ink-3">
 	                    {t.labels.previewLabel}
 	                  </div>
-	                  <div className="mt-1 text-base font-semibold text-slate-800">
+	                  <div className="mt-1 text-base font-semibold text-ink">
 	                    {`${normalizedWidthCm} x ${normalizedHeightCm} cm`}
 	                  </div>
 	                  {isCustomSize ? (
-	                    <div className="mt-2 text-xs text-slate-600">
+	                    <div className="mt-2 text-xs text-ink-2">
 	                      <p>{t.labels.customSizeLimits}</p>
 	                      {customDimensionsAdjusted ? (
 	                        <p className="mt-1 text-amber-700">
@@ -900,56 +901,56 @@ export default function LabelsPageClient({
 	                </div>
 	              </section>
 
-	              <section className="rounded-2xl border border-[#E9D5FF] bg-gradient-to-br from-[#FAF5FF] via-white to-[#F8FAFC] p-4 sm:p-5">
+	              <section className="rounded-xl border border-hairline bg-white p-4 sm:p-5">
 	                <div className="mb-4">
-	                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-[#7E22CE]">
+	                  <h3 className="text-sm font-medium text-ink">
 	                    {t.labels.settingsPreviewTitle}
 	                  </h3>
-	                  <p className="mt-1 text-sm text-slate-600">{t.labels.settingsPreviewDescription}</p>
+	                  <p className="mt-1 text-sm text-ink-2">{t.labels.settingsPreviewDescription}</p>
 	                </div>
-	                <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
+	                <div className="rounded-[28px] border border-hairline bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
 	                  {previewItem ? (
-	                    <div className="mx-auto flex min-h-[280px] max-w-[220px] flex-col rounded-[24px] border border-slate-300 bg-white p-4 shadow-inner">
+	                    <div className="mx-auto flex min-h-[280px] max-w-[220px] flex-col rounded-[24px] border border-hairline bg-white p-4 shadow-inner">
 	                      <div className="mb-3 flex items-start justify-between gap-3">
 	                        <div>
-	                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+	                          <p className="text-[10px] font-medium text-ink-3">
 	                            {team.name}
 	                          </p>
-	                          <h4 className="mt-1 text-sm font-semibold text-slate-900">
+	                          <h4 className="mt-1 text-sm font-semibold text-ink">
 	                            {previewItem.name || t.items.unnamedItem}
 	                          </h4>
 	                        </div>
-	                        <div className="rounded-full bg-[#F3E8FF] px-2 py-1 text-[10px] font-semibold text-[#7E22CE]">
+	                        <div className="rounded-md bg-raised px-2 py-1 font-mono text-[10px] font-medium text-ink-3">
 	                          {`${normalizedWidthCm} x ${normalizedHeightCm}`}
 	                        </div>
 	                      </div>
 	                      {includeQRCode && previewItem.barcode ? (
 	                        <div className="flex flex-1 items-center justify-center py-4">
 	                          <div
-	                            className="rounded-2xl border border-slate-200 bg-white p-3 transition-transform"
+	                            className="rounded-2xl border border-hairline bg-white p-3 transition-transform"
 	                            style={previewScaleStyle}
 	                          >
 	                            <QRCodeDisplay value={previewItem.barcode} size={88} />
 	                          </div>
 	                        </div>
 	                      ) : (
-	                        <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-400">
+	                        <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-hairline bg-raised px-4 py-6 text-center text-sm text-ink-3">
 	                          {t.labels.previewNoQr}
 	                        </div>
 	                      )}
-	                      <div className="space-y-1.5 border-t border-slate-200 pt-3 text-xs text-slate-600">
+	                      <div className="space-y-1.5 border-t border-hairline pt-3 text-xs text-ink-2">
 	                        {includeSKU && previewItem.sku ? <p>{`SKU: ${previewItem.sku}`}</p> : null}
 	                        {includeBarcode && previewItem.barcode ? <p>{previewItem.barcode}</p> : null}
 	                        {includeStock && previewItem.currentStock !== null ? (
 	                          <p>{`Stock: ${previewItem.currentStock}`}</p>
 	                        ) : null}
 	                        {includeCompanyInfo && team.companyName ? (
-	                          <p className="pt-1 font-medium text-slate-800">{team.companyName}</p>
+	                          <p className="pt-1 font-medium text-ink">{team.companyName}</p>
 	                        ) : null}
 	                      </div>
 	                    </div>
 	                  ) : (
-	                    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center text-sm text-slate-500">
+	                    <div className="rounded-2xl border border-dashed border-hairline bg-raised px-6 py-12 text-center text-sm text-ink-3">
 	                      {t.labels.previewEmpty}
 	                    </div>
 	                  )}
@@ -958,67 +959,67 @@ export default function LabelsPageClient({
 	            </div>
 
 	            <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-	              <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+	              <section className="rounded-2xl border border-hairline bg-white p-4 sm:p-5">
 	                <div className="mb-4">
-	                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+	                  <h3 className="text-sm font-semibold text-ink-3">
 	                    {t.labels.settingsContentTitle}
 	                  </h3>
-	                  <p className="mt-1 text-sm text-slate-600">{t.labels.settingsContentDescription}</p>
+	                  <p className="mt-1 text-sm text-ink-2">{t.labels.settingsContentDescription}</p>
 	                </div>
 	                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-	                  <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-3 cursor-pointer">
+	                  <label className="flex items-center gap-2 rounded-xl border border-hairline px-3 py-3 cursor-pointer">
 	                    <input
 	                      type="checkbox"
 	                      checked={includeQRCode}
 	                      onChange={(e) => setIncludeQRCode(e.target.checked)}
-	                      className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
+	                      className="w-4 h-4 text-brand border-hairline rounded focus:ring-[#6B21A8]"
 	                    />
-	                    <span className="text-sm text-gray-700">{t.labels.includeQRCode}</span>
+	                    <span className="text-sm text-ink-2">{t.labels.includeQRCode}</span>
 	                  </label>
-	                  <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-3 cursor-pointer">
+	                  <label className="flex items-center gap-2 rounded-xl border border-hairline px-3 py-3 cursor-pointer">
 	                <input
 	                  type="checkbox"
 	                  checked={includeBarcode}
                   onChange={(e) => setIncludeBarcode(e.target.checked)}
-                  className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
+                  className="w-4 h-4 text-brand border-hairline rounded focus:ring-[#6B21A8]"
                 />
-                <span className="text-sm text-gray-700">{t.labels.includeBarcode}</span>
+                <span className="text-sm text-ink-2">{t.labels.includeBarcode}</span>
 	                  </label>
-	                  <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-3 cursor-pointer">
+	                  <label className="flex items-center gap-2 rounded-xl border border-hairline px-3 py-3 cursor-pointer">
 	                <input
 	                  type="checkbox"
 	                  checked={includeItemName}
                   onChange={(e) => setIncludeItemName(e.target.checked)}
-                  className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
+                  className="w-4 h-4 text-brand border-hairline rounded focus:ring-[#6B21A8]"
                 />
-                <span className="text-sm text-gray-700">{t.labels.includeItemName}</span>
+                <span className="text-sm text-ink-2">{t.labels.includeItemName}</span>
 	                  </label>
-	                  <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-3 cursor-pointer">
+	                  <label className="flex items-center gap-2 rounded-xl border border-hairline px-3 py-3 cursor-pointer">
 	                <input
 	                  type="checkbox"
 	                  checked={includeSKU}
                   onChange={(e) => setIncludeSKU(e.target.checked)}
-                  className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
+                  className="w-4 h-4 text-brand border-hairline rounded focus:ring-[#6B21A8]"
                 />
-                <span className="text-sm text-gray-700">{t.labels.includeSKU}</span>
+                <span className="text-sm text-ink-2">{t.labels.includeSKU}</span>
 	                  </label>
-	                  <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-3 cursor-pointer">
+	                  <label className="flex items-center gap-2 rounded-xl border border-hairline px-3 py-3 cursor-pointer">
 	                <input
 	                  type="checkbox"
 	                  checked={includeStock}
                   onChange={(e) => setIncludeStock(e.target.checked)}
-                  className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
+                  className="w-4 h-4 text-brand border-hairline rounded focus:ring-[#6B21A8]"
                 />
-                <span className="text-sm text-gray-700">{t.labels.includeStock}</span>
+                <span className="text-sm text-ink-2">{t.labels.includeStock}</span>
 	                  </label>
-	                  <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-3 cursor-pointer">
+	                  <label className="flex items-center gap-2 rounded-xl border border-hairline px-3 py-3 cursor-pointer">
 	                <input
 	                  type="checkbox"
 	                  checked={includeCompanyInfo}
                   onChange={(e) => setIncludeCompanyInfo(e.target.checked)}
-                  className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
+                  className="w-4 h-4 text-brand border-hairline rounded focus:ring-[#6B21A8]"
                 />
-                <span className="text-sm text-gray-700">{t.labels.includeCompanyInfo}</span>
+                <span className="text-sm text-ink-2">{t.labels.includeCompanyInfo}</span>
 	                  </label>
 	                </div>
 	                {customFieldOptions.length > 0 ? (
@@ -1027,7 +1028,7 @@ export default function LabelsPageClient({
 	                    data-tour="tour-labels-custom-fields"
 	                  >
 	                  {customFieldOptions.map((field) => (
-	                    <label key={field.key} className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-3 cursor-pointer">
+	                    <label key={field.key} className="flex items-center gap-2 rounded-xl border border-hairline px-3 py-3 cursor-pointer">
 	                      <input
 	                        type="checkbox"
 	                        checked={Boolean(includeCustomFieldKeys[field.key])}
@@ -1037,9 +1038,9 @@ export default function LabelsPageClient({
                             [field.key]: e.target.checked,
                           }))
                         }
-                        className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
+                        className="w-4 h-4 text-brand border-hairline rounded focus:ring-[#6B21A8]"
                       />
-	                      <span className="text-sm text-gray-700">
+	                      <span className="text-sm text-ink-2">
 	                        {t.labels.includeCustomField}: {field.label}
 	                      </span>
 	                    </label>
@@ -1048,22 +1049,22 @@ export default function LabelsPageClient({
 	                ) : null}
 	              </section>
 
-	              <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+	              <section className="rounded-2xl border border-hairline bg-white p-4 sm:p-5">
 	                <div className="mb-4">
-	                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+	                  <h3 className="text-sm font-semibold text-ink-3">
 	                    {t.labels.qrSizeLabel}
 	                  </h3>
-	                  <p className="mt-1 text-sm text-slate-600">{t.labels.qrPanelDescription}</p>
+	                  <p className="mt-1 text-sm text-ink-2">{t.labels.qrPanelDescription}</p>
 	                </div>
-	                <div className="rounded-2xl border border-[#E9D5FF] bg-[#FAF5FF] p-4">
-	                  <Label className="text-sm font-semibold text-gray-700 mb-2 block">
+	                <div className="rounded-xl border border-hairline bg-raised p-4">
+	                  <Label className="text-sm font-medium text-ink-2 mb-2 block">
 	                    {t.labels.qrSizeLabel}
 	                  </Label>
 	                  <select
 	                    aria-label={t.labels.qrSizeLabel}
 	                    value={qrSizePreset}
 	                    onChange={(e) => setQrSizePreset(e.target.value as QRSizePreset)}
-	                    className="w-full h-10 text-sm border border-gray-300 rounded-md px-3 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+	                    className="w-full h-10 text-sm border border-hairline rounded-md px-3 focus:border-brand focus:ring-brand"
 	                  >
 	                    <option value="small">{t.labels.small}</option>
 	                    <option value="medium">{t.labels.medium}</option>
@@ -1083,10 +1084,10 @@ export default function LabelsPageClient({
 	                        className="h-10 text-sm"
 	                        aria-label={t.labels.qrScaleLabel}
 	                      />
-	                      <p className="mt-2 text-xs text-gray-500">{t.labels.qrScaleHint}</p>
+	                      <p className="mt-2 text-xs text-ink-3">{t.labels.qrScaleHint}</p>
 	                    </div>
 	                  ) : (
-	                    <p className="mt-3 text-xs text-gray-500">{t.labels.qrSizeHint}</p>
+	                    <p className="mt-3 text-xs text-ink-3">{t.labels.qrSizeHint}</p>
 	                  )}
 	                </div>
 	              </section>
@@ -1096,13 +1097,13 @@ export default function LabelsPageClient({
           {/* Search Bar */}
           <div className="mb-4 sm:mb-6" data-tour="tour-labels-search">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-ink-3" />
               <Input
                 type="text"
                 placeholder={t.labels.searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 sm:pl-10 h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+                className="pl-9 sm:pl-10 h-11 text-base border-hairline focus:border-brand focus:ring-brand"
               />
             </div>
           </div>
@@ -1112,7 +1113,7 @@ export default function LabelsPageClient({
             <Button
               variant="outline"
               onClick={selectAll}
-              className="border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0"
+              className="border-hairline text-ink-2 hover:bg-raised text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0"
             >
               <CheckSquare className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               {t.labels.selectAll}
@@ -1120,7 +1121,7 @@ export default function LabelsPageClient({
             <Button
               variant="outline"
               onClick={deselectAll}
-              className="border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0"
+              className="border-hairline text-ink-2 hover:bg-raised text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0"
             >
               <Square className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               {t.labels.deselectAll}
@@ -1130,7 +1131,7 @@ export default function LabelsPageClient({
 	                type="button"
 	                variant="outline"
 	                onClick={() => setIsPreviewOpen(true)}
-	                className="border-[#D6BCFA] text-[#6B21A8] hover:bg-[#FAF5FF] text-xs sm:text-sm"
+	                className="border-[#D6BCFA] text-brand hover:bg-[#FAF5FF] text-xs sm:text-sm"
 	              >
 	                <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
 	                {t.labels.previewButton}
@@ -1138,11 +1139,11 @@ export default function LabelsPageClient({
 	              <Button
 	                onClick={generatePDF}
 	                disabled={selectedItems.size === 0 || isGenerating}
-                className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#7C3AED] hover:to-[#6B21A8] text-white shadow-lg hover:shadow-xl transition-all text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0"
+                className="text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0"
               >
                 {isGenerating ? (
                   <>
-                    <span className="animate-spin mr-2">⏳</span>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     {t.common.loading}
                   </>
                 ) : (
@@ -1156,12 +1157,12 @@ export default function LabelsPageClient({
           </div>
 
           {/* Items List */}
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden" data-tour="tour-labels-list">
+          <div className="rounded-xl border border-hairline bg-white shadow-rest overflow-hidden" data-tour="tour-labels-list">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+                <thead className="border-b border-hairline bg-raised">
                   <tr>
-                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-12">
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-ink-3 w-12">
                       <input
                         type="checkbox"
                         checked={filteredItems.length > 0 && filteredItems.every((item) => selectedItems.has(item.id))}
@@ -1172,7 +1173,7 @@ export default function LabelsPageClient({
                             deselectFilteredItems();
                           }
                         }}
-                        className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
+                        className="w-4 h-4 text-brand border-hairline rounded focus:ring-[#6B21A8]"
                       />
                     </th>
                     <SortableHeader
@@ -1183,7 +1184,7 @@ export default function LabelsPageClient({
                       sortAscendingLabel={t.common.sortAscending}
                       sortDescendingLabel={t.common.sortDescending}
                       onSort={onSort}
-                      className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"
+                      className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-ink-3"
                     />
                     <SortableHeader
                       label={t.labels.sku}
@@ -1193,7 +1194,7 @@ export default function LabelsPageClient({
                       sortAscendingLabel={t.common.sortAscending}
                       sortDescendingLabel={t.common.sortDescending}
                       onSort={onSort}
-                      className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden sm:table-cell"
+                      className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-ink-3 hidden sm:table-cell"
                     />
                     <SortableHeader
                       label={t.labels.barcode}
@@ -1203,7 +1204,7 @@ export default function LabelsPageClient({
                       sortAscendingLabel={t.common.sortAscending}
                       sortDescendingLabel={t.common.sortDescending}
                       onSort={onSort}
-                      className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden md:table-cell"
+                      className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-ink-3 hidden md:table-cell"
                     />
                     <SortableHeader
                       label={t.labels.location}
@@ -1213,7 +1214,7 @@ export default function LabelsPageClient({
                       sortAscendingLabel={t.common.sortAscending}
                       sortDescendingLabel={t.common.sortDescending}
                       onSort={onSort}
-                      className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden lg:table-cell"
+                      className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-ink-3 hidden lg:table-cell"
                     />
                     <SortableHeader
                       label={t.labels.stock}
@@ -1223,9 +1224,9 @@ export default function LabelsPageClient({
                       sortAscendingLabel={t.common.sortAscending}
                       sortDescendingLabel={t.common.sortDescending}
                       onSort={onSort}
-                      className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden md:table-cell"
+                      className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-ink-3 hidden md:table-cell"
                     />
-                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-ink-3">
                       {t.labels.quantityPerItem}
                     </th>
                   </tr>
@@ -1233,13 +1234,13 @@ export default function LabelsPageClient({
                 <tbody className="bg-white divide-y divide-gray-100">
                   {isLoading ? (
                     <tr>
-                      <td colSpan={7} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
+                      <td colSpan={7} className="px-4 sm:px-6 py-8 text-center text-ink-3 text-sm">
                         {t.common.loading}
                       </td>
                     </tr>
                   ) : filteredItems.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
+                      <td colSpan={7} className="px-4 sm:px-6 py-8 text-center text-ink-3 text-sm">
                         {searchQuery ? t.labels.noItemsSearch : t.labels.noItems}
                       </td>
                     </tr>
@@ -1247,8 +1248,8 @@ export default function LabelsPageClient({
                     paginated.items.map((item) => (
                       <tr
                         key={item.id}
-                        className={`hover:bg-purple-50/50 transition-colors cursor-pointer ${
-                          selectedItems.has(item.id) ? "bg-purple-50" : ""
+                        className={`hover:bg-raised transition-colors cursor-pointer ${
+                          selectedItems.has(item.id) ? "bg-raised" : ""
                         }`}
                         onClick={() => toggleItemSelection(item.id)}
                       >
@@ -1258,7 +1259,7 @@ export default function LabelsPageClient({
                             checked={selectedItems.has(item.id)}
                             onChange={() => toggleItemSelection(item.id)}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-4 h-4 text-[#6B21A8] border-gray-300 rounded focus:ring-[#6B21A8]"
+                            className="w-4 h-4 text-brand border-hairline rounded focus:ring-[#6B21A8]"
                           />
                         </td>
                         <td className="px-4 sm:px-6 py-4">
@@ -1269,11 +1270,11 @@ export default function LabelsPageClient({
                               </div>
                             )}
                             <div>
-                              <div className="text-sm font-medium text-gray-900">
+                              <div className="text-sm font-medium text-ink">
                                 {item.name || t.items.unnamedItem}
                               </div>
                               {item.barcode && (
-                                <div className="text-xs text-gray-500 sm:hidden mt-1">
+                                <div className="text-xs text-ink-3 sm:hidden mt-1">
                                   {t.labels.barcode}: {item.barcode}
                                 </div>
                               )}
@@ -1281,20 +1282,20 @@ export default function LabelsPageClient({
                           </div>
                         </td>
                         <td className="px-4 sm:px-6 py-4 hidden sm:table-cell">
-                          <span className="text-sm text-gray-900">{item.sku || "-"}</span>
+                          <span className="text-sm text-ink">{item.sku || "-"}</span>
                         </td>
                         <td className="px-4 sm:px-6 py-4 hidden md:table-cell">
-                          <span className="text-sm text-gray-900 font-mono">
+                          <span className="text-sm text-ink font-mono">
                             {item.barcode || "-"}
                           </span>
                         </td>
                         <td className="px-4 sm:px-6 py-4 hidden lg:table-cell">
-                          <span className="text-sm text-gray-900">
+                          <span className="text-sm text-ink">
                             {item.locationName || t.stockByLocation.defaultLocation}
                           </span>
                         </td>
                         <td className="px-4 sm:px-6 py-4 hidden md:table-cell">
-                          <span className="text-sm font-semibold text-gray-900">
+                          <span className="text-sm font-medium text-ink">
                             {item.currentStock?.toFixed(1) || "0.0"}
                           </span>
                         </td>
@@ -1330,22 +1331,22 @@ export default function LabelsPageClient({
 
           {/* Summary */}
           {selectedItems.size > 0 && (
-            <div className="mt-4 sm:mt-6 bg-purple-50 rounded-xl sm:rounded-2xl border border-purple-200 p-4 sm:p-6">
+            <div className="mt-4 sm:mt-6 bg-raised rounded-xl border border-hairline p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="text-sm sm:text-base font-semibold text-gray-700">
+              <div className="text-sm sm:text-base font-medium text-ink-2">
                 {t.labels.selectedItemsSummary.replace("{count}", String(selectedItems.size))}
               </div>
-              <div className="text-sm sm:text-base font-semibold text-gray-700">
+              <div className="text-sm sm:text-base font-medium text-ink-2">
                 {t.labels.totalLabelsSummary.replace("{count}", String(totalSelectedLabels))}
               </div>
                 <Button
                   onClick={generatePDF}
                   disabled={isGenerating}
-                  className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] hover:from-[#7C3AED] hover:to-[#6B21A8] text-white shadow-lg hover:shadow-xl transition-all w-full sm:w-auto touch-manipulation min-h-[48px] sm:min-h-0"
+                  className="w-full sm:w-auto touch-manipulation min-h-[48px] sm:min-h-0"
                 >
                   {isGenerating ? (
                     <>
-                      <span className="animate-spin mr-2">⏳</span>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       {t.common.loading}
                     </>
                   ) : (
@@ -1365,36 +1366,36 @@ export default function LabelsPageClient({
 	          />
             {isPreviewOpen ? (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4">
-                <div className="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-[28px] bg-white shadow-2xl">
-                  <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6">
+                <div className="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-[28px] bg-white shadow-float">
+                  <div className="flex items-center justify-between border-b border-hairline px-5 py-4 sm:px-6">
                     <div>
-                      <h2 className="text-xl font-bold text-slate-900">{t.labels.previewModalTitle}</h2>
-                      <p className="mt-1 text-sm text-slate-600">{t.labels.previewModalDescription}</p>
+                      <h2 className="text-xl font-bold text-ink">{t.labels.previewModalTitle}</h2>
+                      <p className="mt-1 text-sm text-ink-2">{t.labels.previewModalDescription}</p>
                     </div>
                     <Button
                       type="button"
                       variant="ghost"
                       onClick={() => setIsPreviewOpen(false)}
-                      className="h-10 w-10 p-0 text-slate-500 hover:bg-slate-100"
+                      className="h-10 w-10 p-0 text-ink-3 hover:bg-raised"
                     >
                       <X className="h-5 w-5" />
                     </Button>
                   </div>
                   <div className="grid gap-6 p-5 sm:grid-cols-[280px_minmax(0,1fr)] sm:p-6">
-                    <div className="rounded-3xl border border-[#E9D5FF] bg-gradient-to-br from-[#FAF5FF] to-white p-5">
-                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7E22CE]">
+                    <div className="rounded-xl border border-hairline bg-white p-5">
+                      <div className="text-xs font-medium text-ink-3">
                         {t.labels.previewLabel}
                       </div>
-                      <div className="mt-2 text-lg font-semibold text-slate-900">
+                      <div className="mt-2 text-lg font-semibold text-ink">
                         {`${normalizedWidthCm} x ${normalizedHeightCm} cm`}
                       </div>
-	                      <div className="mt-5 space-y-4 text-sm text-slate-600">
+	                      <div className="mt-5 space-y-4 text-sm text-ink-2">
 	                        <div>
-	                          <p className="font-medium text-slate-900">{t.labels.qrSizeLabel}</p>
+	                          <p className="font-medium text-ink">{t.labels.qrSizeLabel}</p>
 	                          <p>{getQRSizePresetLabel()}</p>
 	                        </div>
 	                        <div>
-	                          <p className="font-medium text-slate-900">{t.labels.settingsContentTitle}</p>
+	                          <p className="font-medium text-ink">{t.labels.settingsContentTitle}</p>
                           <p>
                             {[
                               includeQRCode ? t.labels.includeQRCode : null,
@@ -1408,27 +1409,27 @@ export default function LabelsPageClient({
 	                          </p>
 	                        </div>
                           <div>
-                            <p className="font-medium text-slate-900">{t.labels.previewScaleTitle}</p>
-                            <div className="mt-2 inline-flex rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-[#6B21A8] shadow-sm">
+                            <p className="font-medium text-ink">{t.labels.previewScaleTitle}</p>
+                            <div className="mt-2 inline-flex rounded-full border border-hairline bg-white px-3 py-2 text-xs font-semibold text-brand shadow-sm">
                               {t.labels.previewScaleReal}
                             </div>
                           </div>
                           <div>
-                            <p className="font-medium text-slate-900">{t.labels.previewScaleGuide}</p>
+                            <p className="font-medium text-ink">{t.labels.previewScaleGuide}</p>
                             <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 shadow-sm">
-                              <span className="block h-1 w-[1cm] rounded-full bg-[#6B21A8]" />
-                              <span className="text-xs font-medium text-slate-600">1 cm</span>
+                              <span className="block h-1 w-[1cm] rounded-full bg-brand" />
+                              <span className="text-xs font-medium text-ink-2">1 cm</span>
                             </div>
-                            <p className="mt-2 text-xs text-slate-500">{t.labels.previewScaleDisclaimer}</p>
+                            <p className="mt-2 text-xs text-ink-3">{t.labels.previewScaleDisclaimer}</p>
                           </div>
 	                      </div>
 	                    </div>
-                    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 sm:p-6">
+                    <div className="rounded-3xl border border-hairline bg-raised p-4 sm:p-6">
                       {previewItem ? (
-                          <div className="flex max-h-[70vh] items-start justify-center overflow-auto rounded-[28px] border border-dashed border-slate-200 bg-white/70 p-4 sm:p-6">
+                          <div className="flex max-h-[70vh] items-start justify-center overflow-auto rounded-[28px] border border-dashed border-hairline bg-white/70 p-4 sm:p-6">
 	                        <div
                             data-testid="label-preview-sheet"
-                            className="flex flex-col rounded-[12px] border border-slate-300 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
+                            className="flex flex-col rounded-[12px] border border-hairline bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
                             style={previewSheetStyle}
                           >
                             <div className="flex flex-1 flex-col">
@@ -1439,28 +1440,28 @@ export default function LabelsPageClient({
 	                              </div>
 	                            </div>
 	                          ) : (
-	                            <div className="flex min-h-[140px] items-center justify-center rounded-[12px] border border-dashed border-slate-200 bg-white px-6 py-8 text-center text-sm text-slate-400">
+	                            <div className="flex min-h-[140px] items-center justify-center rounded-[12px] border border-dashed border-hairline bg-white px-6 py-8 text-center text-sm text-ink-3">
 	                              {t.labels.previewNoQr}
 	                            </div>
 	                          )}
                               {includeItemName && (previewItem.name || t.items.unnamedItem) ? (
                                 <div className="pt-4 text-center">
-                                  <h3 className="text-[20px] font-medium leading-tight text-slate-800">
+                                  <h3 className="text-[20px] font-medium leading-tight text-ink">
                                     {previewItem.name || t.items.unnamedItem}
                                   </h3>
                                 </div>
                               ) : null}
                               {includeSKU && previewItem.sku ? (
-                                <p className="pt-1 text-center text-[15px] text-slate-600">{`SKU: ${previewItem.sku}`}</p>
+                                <p className="pt-1 text-center text-[15px] text-ink-2">{`SKU: ${previewItem.sku}`}</p>
                               ) : null}
                               {includeBarcode && previewItem.barcode ? (
-                                <p className="pt-1 text-center text-[14px] text-slate-600">{previewItem.barcode}</p>
+                                <p className="pt-1 text-center text-[14px] text-ink-2">{previewItem.barcode}</p>
                               ) : null}
                               {includeStock && previewItem.currentStock !== null ? (
-                                <p className="pt-1 text-center text-[14px] text-slate-600">{`Stock: ${previewItem.currentStock}`}</p>
+                                <p className="pt-1 text-center text-[14px] text-ink-2">{`Stock: ${previewItem.currentStock}`}</p>
                               ) : null}
                               {previewCustomFields.length > 0 ? (
-                                <div className="pt-4 text-[14px] text-slate-600">
+                                <div className="pt-4 text-[14px] text-ink-2">
                                   {previewCustomFields.map((field) => (
                                     <p key={field.key} className="leading-snug">{`${field.label}: ${field.value}`}</p>
                                   ))}
@@ -1468,22 +1469,22 @@ export default function LabelsPageClient({
                               ) : null}
                               <div className="mt-auto pt-5">
                                 {includeCompanyInfo && (team.labelLogoUrl || team.companyName || team.labelCompanyInfo) ? (
-                                  <div className="flex items-center gap-3 text-slate-600">
+                                  <div className="flex items-center gap-3 text-ink-2">
                                     {team.labelLogoUrl ? (
                                       <img
                                         src={team.labelLogoUrl}
                                         alt={team.companyName || team.name}
-                                        className="h-16 w-16 rounded-xl border border-slate-200 object-contain bg-white"
+                                        className="h-16 w-16 rounded-xl border border-hairline object-contain bg-white"
                                       />
                                     ) : (
-                                      <div className="h-16 w-16 rounded-xl border border-slate-200 bg-slate-100" />
+                                      <div className="h-16 w-16 rounded-xl border border-hairline bg-raised" />
                                     )}
                                     <div className="min-w-0">
                                       {team.companyName ? (
                                         <p className="text-[14px] font-medium leading-snug text-slate-700">{team.companyName}</p>
                                       ) : null}
                                       {team.labelCompanyInfo ? (
-                                        <p className="text-[13px] leading-snug text-slate-500">{team.labelCompanyInfo}</p>
+                                        <p className="text-[13px] leading-snug text-ink-3">{team.labelCompanyInfo}</p>
                                       ) : null}
                                     </div>
                                   </div>
@@ -1493,7 +1494,7 @@ export default function LabelsPageClient({
 	                        </div>
                           </div>
 	                      ) : (
-	                        <div className="flex min-h-[360px] items-center justify-center rounded-[28px] border border-dashed border-slate-200 bg-white px-6 text-center text-sm text-slate-500">
+	                        <div className="flex min-h-[360px] items-center justify-center rounded-[28px] border border-dashed border-hairline bg-white px-6 text-center text-sm text-ink-3">
 	                          {t.labels.previewEmpty}
                         </div>
                       )}
