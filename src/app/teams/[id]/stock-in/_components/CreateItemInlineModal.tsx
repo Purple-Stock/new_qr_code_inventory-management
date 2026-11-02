@@ -66,23 +66,23 @@ function CreateItemInlineModalContent({
       role="presentation"
     >
       <div
-        className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-xl sm:rounded-2xl shadow-float w-full max-w-4xl max-h-[90vh] overflow-y-auto"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-item-inline-modal-title"
       >
-        <div className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] px-4 sm:px-6 py-4 flex items-center justify-between rounded-t-xl sm:rounded-t-2xl">
+        <div className="flex items-center justify-between border-b border-hairline bg-white px-4 py-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <PackagePlus className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+            <PackagePlus className="h-5 w-5 text-ink-3 sm:h-6 sm:w-6" />
             <div>
               <h2
                 id="create-item-inline-modal-title"
-                className="text-lg sm:text-xl font-bold text-white"
+                className="text-lg sm:text-xl font-medium text-ink"
               >
                 {t.stockIn.createItemModalTitle}
               </h2>
-              <p className="text-xs sm:text-sm text-purple-100">
+              <p className="text-xs sm:text-sm text-ink-3">
                 {t.stockIn.createItemModalDescription}
               </p>
             </div>
@@ -92,7 +92,7 @@ function CreateItemInlineModalContent({
             size="sm"
             onClick={onClose}
             aria-label={t.common.close}
-            className="text-white hover:bg-white/20 h-8 w-8 p-0"
+            className="text-ink-3 hover:bg-raised h-8 w-8 p-0"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -100,7 +100,7 @@ function CreateItemInlineModalContent({
 
         <div className="p-4 sm:p-6">
           {error ? (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="mb-4 rounded-lg border border-hairline bg-red-50 px-4 py-3 text-sm text-red-700">
               {error}
             </div>
           ) : null}

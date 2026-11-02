@@ -838,24 +838,24 @@ export default function SettingsPageClient({
           {/* Header */}
           <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
             <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
+              <h1 className="text-[28px] font-medium leading-[1.15] text-ink mb-1 sm:mb-2">
                 {t.settings.title}
               </h1>
-              <p className="text-sm sm:text-base text-gray-600">{t.settings.subtitle}</p>
+              <p className="text-sm sm:text-base text-ink-2">{t.settings.subtitle}</p>
             </div>
             <Button
               type="button"
               variant="outline"
               onClick={() => setIsTutorialOpen(true)}
               data-tour="tour-settings-tutorial"
-              className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
+              className="border-hairline text-ink-2 hover:bg-raised h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
             >
               <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               {t.common.tutorial}
             </Button>
           </div>
 
-          <div data-tour="tour-settings-tabs" className="mb-4 sm:mb-6 border-b border-gray-200">
+          <div data-tour="tour-settings-tabs" className="mb-4 sm:mb-6 border-b border-hairline">
             <div className="flex gap-2 sm:gap-3 overflow-x-auto">
               {canManageUsers && !billingRequired ? (
                 <button
@@ -863,8 +863,8 @@ export default function SettingsPageClient({
                   onClick={() => handleTabChange("users")}
                   className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                     activeSettingsTab === "users"
-                      ? "border-purple-600 text-purple-700"
-                      : "border-transparent text-gray-600 hover:text-gray-900"
+                      ? "border-brand text-brand"
+                      : "border-transparent text-ink-2 hover:text-ink"
                   }`}
                 >
                   {t.settings.usersPermissionsTab}
@@ -876,8 +876,8 @@ export default function SettingsPageClient({
                 onClick={() => handleTabChange("password")}
                 className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeSettingsTab === "password"
-                    ? "border-purple-600 text-purple-700"
-                    : "border-transparent text-gray-600 hover:text-gray-900"
+                    ? "border-brand text-brand"
+                    : "border-transparent text-ink-2 hover:text-ink"
                 }`}
               >
                 {t.settings.changePasswordTab}
@@ -890,8 +890,8 @@ export default function SettingsPageClient({
                 data-tour="tour-settings-custom-fields-tab"
                 className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeSettingsTab === "customFields"
-                    ? "border-purple-600 text-purple-700"
-                    : "border-transparent text-gray-600 hover:text-gray-900"
+                    ? "border-brand text-brand"
+                    : "border-transparent text-ink-2 hover:text-ink"
                 }`}
               >
                 {t.settings.customFieldsTab}
@@ -903,8 +903,8 @@ export default function SettingsPageClient({
                 onClick={() => handleTabChange("labels")}
                 className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeSettingsTab === "labels"
-                    ? "border-purple-600 text-purple-700"
-                    : "border-transparent text-gray-600 hover:text-gray-900"
+                    ? "border-brand text-brand"
+                    : "border-transparent text-ink-2 hover:text-ink"
                 }`}
               >
                 {t.settings.labelsTab}
@@ -915,8 +915,8 @@ export default function SettingsPageClient({
                 onClick={() => handleTabChange("billing")}
                 className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeSettingsTab === "billing"
-                    ? "border-purple-600 text-purple-700"
-                    : "border-transparent text-gray-600 hover:text-gray-900"
+                    ? "border-brand text-brand"
+                    : "border-transparent text-ink-2 hover:text-ink"
                 }`}
               >
                 Assinatura
@@ -926,17 +926,17 @@ export default function SettingsPageClient({
 
           {isLoading ? (
             <div className="text-center py-12">
-              <p className="text-gray-600">{t.settings.loading}</p>
+              <p className="text-ink-2">{t.settings.loading}</p>
             </div>
           ) : (
             <>
               {activeSettingsTab === "billing" ? (
-                <div data-tour="tour-settings-panel" className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-purple-600" />
+                <div data-tour="tour-settings-panel" className="rounded-xl border border-hairline bg-white shadow-rest p-4 sm:p-6 mt-4 sm:mt-6">
+                  <h2 className="text-lg sm:text-xl font-medium text-ink mb-2 flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-ink-3" />
                     Assinatura do time
                   </h2>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <p className="text-sm text-ink-2 mb-4">
                     Plano Pro: R$ 99 por time/mês.
                   </p>
                   {billingRequired ? (
@@ -944,7 +944,7 @@ export default function SettingsPageClient({
                       Assinatura obrigatória para liberar o acesso ao sistema deste time.
                     </p>
                   ) : null}
-                  <p className="text-sm text-gray-700 mb-4">
+                  <p className="text-sm text-ink-2 mb-4">
                     Status atual:{" "}
                     <span className="font-semibold">
                       {hasStripeSubscription
@@ -964,7 +964,7 @@ export default function SettingsPageClient({
                         type="button"
                         onClick={handleStartCheckout}
                         disabled={isBillingLoading}
-                        className="bg-purple-600 hover:bg-purple-700 text-white"
+
                       >
                         {isBillingLoading ? "Carregando..." : "Assinar plano Pro"}
                       </Button>
@@ -984,14 +984,14 @@ export default function SettingsPageClient({
               ) : null}
 
               {activeSettingsTab === "labels" ? (
-                <div data-tour="tour-settings-panel" className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">
+                <div data-tour="tour-settings-panel" className="rounded-xl border border-hairline bg-white shadow-rest p-4 sm:p-6 mt-4 sm:mt-6">
+                  <h2 className="text-lg sm:text-xl font-medium text-ink mb-1">
                     {t.settings.labelCompanyInfoTitle}
                   </h2>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <p className="text-sm text-ink-2 mb-4">
                     {t.settings.labelCompanyInfoDesc}
                   </p>
-                  <p className="text-xs text-gray-700 mb-2">
+                  <p className="text-xs text-ink-2 mb-2">
                     {t.settings.companyName}
                   </p>
                   <Input
@@ -1007,7 +1007,7 @@ export default function SettingsPageClient({
                     className="max-w-xl"
                   />
                   <div className="mt-4">
-                    <p className="text-xs text-gray-700 mb-2">
+                    <p className="text-xs text-ink-2 mb-2">
                       {t.settings.labelLogoTitle}
                     </p>
                     <Input
@@ -1021,13 +1021,13 @@ export default function SettingsPageClient({
                         <img
                           src={labelLogoUrl}
                           alt={t.settings.labelLogoTitle}
-                          className="h-16 w-16 object-contain rounded border border-gray-200 bg-white"
+                          className="h-16 w-16 object-contain rounded border border-hairline bg-white"
                         />
                         <Button
                           type="button"
                           variant="outline"
                           onClick={() => setLabelLogoUrl("")}
-                          className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                          className="border-hairline text-ink-2 hover:bg-raised"
                         >
                           {t.settings.removeLabelLogo}
                         </Button>
@@ -1038,7 +1038,7 @@ export default function SettingsPageClient({
                     type="button"
                     onClick={handleSaveLabelCompanyInfo}
                     disabled={isLabelCompanyInfoSaving}
-                    className="mt-3 bg-purple-600 hover:bg-purple-700 text-white"
+                    className="mt-3"
                   >
                     {isLabelCompanyInfoSaving ? t.settings.modalSaving : t.settings.saveChanges}
                   </Button>
@@ -1048,18 +1048,18 @@ export default function SettingsPageClient({
               {activeSettingsTab === "customFields" ? (
                 <div
                   data-tour="tour-settings-panel"
-                  className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6"
+                  className="rounded-xl border border-hairline bg-white shadow-rest p-4 sm:p-6 mt-4 sm:mt-6"
                 >
                   <div
-                    className="rounded-lg border border-gray-200 p-4"
+                    className="rounded-lg border border-hairline p-4"
                     data-tour="tour-settings-custom-fields"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
                       <div>
-                        <h3 className="text-sm font-semibold text-gray-900">
+                        <h3 className="text-sm font-medium text-ink">
                           {t.settings.customFieldsTitle}
                         </h3>
-                        <p className="text-xs text-gray-600">
+                        <p className="text-xs text-ink-2">
                           {t.settings.customFieldsSubtitle}
                         </p>
                       </div>
@@ -1067,7 +1067,7 @@ export default function SettingsPageClient({
                         type="button"
                         variant="outline"
                         onClick={addCustomFieldSchemaRow}
-                        className="border-gray-300"
+                        className="border-hairline"
                         disabled={!canManageUsers}
                       >
                         <Plus className="h-4 w-4 mr-1" />
@@ -1083,7 +1083,7 @@ export default function SettingsPageClient({
 
                     <div className="space-y-2">
                       {itemCustomFieldSchema.length === 0 ? (
-                        <p className="text-xs text-gray-500">{t.settings.noCustomFields}</p>
+                        <p className="text-xs text-ink-3">{t.settings.noCustomFields}</p>
                       ) : (
                         itemCustomFieldSchema.map((field, index) => (
                           <div
@@ -1108,7 +1108,7 @@ export default function SettingsPageClient({
                               className="sm:col-span-5 h-9"
                               disabled={!canManageUsers}
                             />
-                            <label className="sm:col-span-2 flex items-center gap-2 text-xs text-gray-700">
+                            <label className="sm:col-span-2 flex items-center gap-2 text-xs text-ink-2">
                               <input
                                 type="checkbox"
                                 checked={field.active}
@@ -1124,7 +1124,7 @@ export default function SettingsPageClient({
                               type="button"
                               variant="outline"
                               onClick={() => removeCustomFieldSchemaRow(index)}
-                              className="sm:col-span-1 border-red-200 text-red-600 hover:bg-red-50 h-9"
+                              className="sm:col-span-1 border-hairline text-negative hover:bg-red-50 h-9"
                               disabled={!canManageUsers}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -1139,7 +1139,7 @@ export default function SettingsPageClient({
                         type="button"
                         onClick={handleSaveCustomFieldSchema}
                         disabled={isCustomSchemaSaving || !canManageUsers}
-                        className="bg-purple-600 hover:bg-purple-700 text-white"
+
                       >
                         {isCustomSchemaSaving ? t.settings.modalSaving : t.settings.saveCustomFieldSchema}
                       </Button>
@@ -1149,11 +1149,11 @@ export default function SettingsPageClient({
               ) : null}
 
               {activeSettingsTab === "users" ? canManageUsers ? (
-                <div data-tour="tour-settings-panel" className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+                <div data-tour="tour-settings-panel" className="rounded-xl border border-hairline bg-white shadow-rest p-4 sm:p-6 mt-4 sm:mt-6">
+                  <h2 className="text-lg sm:text-xl font-medium text-ink mb-2">
                     {t.settings.usersPermissionsTitle}
                   </h2>
-                  <p className="text-sm text-gray-600 mb-4 sm:mb-6">
+                  <p className="text-sm text-ink-2 mb-4 sm:mb-6">
                     {t.settings.usersPermissionsSubtitle}
                   </p>
 
@@ -1161,7 +1161,7 @@ export default function SettingsPageClient({
                     <Button
                       type="button"
                       onClick={() => setIsAddUserModalOpen(true)}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
+
                     >
                       <UserPlus className="h-4 w-4 mr-2" />
                       {t.settings.addUserMultiTeam}
@@ -1169,9 +1169,9 @@ export default function SettingsPageClient({
                   </div>
 
                   {isUsersLoading ? (
-                    <p className="text-sm text-gray-600">{t.settings.loadingUsers}</p>
+                    <p className="text-sm text-ink-2">{t.settings.loadingUsers}</p>
                   ) : managedUsers.length === 0 ? (
-                    <p className="text-sm text-gray-600">{t.settings.noUsersFound}</p>
+                    <p className="text-sm text-ink-2">{t.settings.noUsersFound}</p>
                   ) : (
                     <div className="space-y-3">
                       {managedUsers.map((managedUser) => {
@@ -1184,13 +1184,13 @@ export default function SettingsPageClient({
                         return (
                           <div
                             key={managedUser.userId}
-                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 border border-gray-200 rounded-lg"
+                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 border border-hairline rounded-lg"
                           >
                             <div>
-                              <p className="text-sm font-semibold text-gray-900">
+                              <p className="text-sm font-medium text-ink">
                                 {managedUser.email}
                               </p>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-ink-3">
                                 {t.settings.memberIdLabel}: {managedUser.userId}
                               </p>
                               {isLastAdmin && (
@@ -1205,7 +1205,7 @@ export default function SettingsPageClient({
                                 variant="outline"
                                 onClick={() => openEditUserModal(managedUser)}
                                 disabled={isMemberSaving || managedUser.userId === currentUserId}
-                                className="border-gray-200 text-gray-700 hover:bg-gray-50"
+                                className="border-hairline text-ink-2 hover:bg-raised"
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
@@ -1218,7 +1218,7 @@ export default function SettingsPageClient({
                                   )
                                 }
                                 disabled={isLastAdmin || isMemberSaving}
-                                className="h-10 rounded-md border border-gray-300 px-3 text-sm disabled:bg-gray-100 disabled:text-gray-500"
+                                className="h-10 rounded-md border border-hairline px-3 text-sm disabled:bg-raised disabled:text-ink-3"
                               >
                                 <option value="admin">{t.settings.roleAdmin}</option>
                                 <option value="operator">{t.settings.roleOperator}</option>
@@ -1229,7 +1229,7 @@ export default function SettingsPageClient({
                                 variant="outline"
                                 onClick={() => handleRemoveMember(managedUser.userId)}
                                 disabled={isMemberSaving || isLastAdmin}
-                                className="border-red-200 text-red-600 hover:bg-red-50"
+                                className="border-hairline text-negative hover:bg-red-50"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -1241,21 +1241,21 @@ export default function SettingsPageClient({
                   )}
                 </div>
               ) : (
-                <div data-tour="tour-settings-panel" className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+                <div data-tour="tour-settings-panel" className="rounded-xl border border-hairline bg-white shadow-rest p-4 sm:p-6 mt-4 sm:mt-6">
+                  <h2 className="text-lg sm:text-xl font-medium text-ink mb-2">
                     {t.settings.usersPermissionsTitle}
                   </h2>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-ink-2">
                     {t.settings.noPermissionManageMembers}
                   </p>
                 </div>
               ) : activeSettingsTab === "password" ? (
-                <div data-tour="tour-settings-panel" className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 mt-4 sm:mt-6">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-                    <KeyRound className="h-5 w-5 text-purple-600" />
+                <div data-tour="tour-settings-panel" className="rounded-xl border border-hairline bg-white shadow-rest p-4 sm:p-6 mt-4 sm:mt-6">
+                  <h2 className="text-lg sm:text-xl font-medium text-ink mb-2 flex items-center gap-2">
+                    <KeyRound className="h-5 w-5 text-ink-3" />
                     {t.settings.changePasswordTitle}
                   </h2>
-                  <p className="text-sm text-gray-600 mb-4 sm:mb-6">
+                  <p className="text-sm text-ink-2 mb-4 sm:mb-6">
                     {t.settings.changePasswordSubtitle}
                   </p>
 
@@ -1271,7 +1271,7 @@ export default function SettingsPageClient({
                       <button
                         type="button"
                         onClick={() => setShowCurrentPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink-2"
                         aria-label={
                           showCurrentPassword
                             ? t.settings.hidePassword
@@ -1296,7 +1296,7 @@ export default function SettingsPageClient({
                       <button
                         type="button"
                         onClick={() => setShowNewPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink-2"
                         aria-label={
                           showNewPassword
                             ? t.settings.hidePassword
@@ -1321,7 +1321,7 @@ export default function SettingsPageClient({
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink-2"
                         aria-label={
                           showConfirmPassword
                             ? t.settings.hidePassword
@@ -1339,7 +1339,7 @@ export default function SettingsPageClient({
                       type="button"
                       onClick={handleUpdateCurrentUserPassword}
                       disabled={isPasswordSaving}
-                      className="bg-purple-600 hover:bg-purple-700 text-white w-fit"
+                      className="w-fit"
                     >
                       {isPasswordSaving
                         ? t.settings.updatingPassword
@@ -1367,13 +1367,13 @@ export default function SettingsPageClient({
 
           {isEditUserModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg">
-                <div className="bg-gradient-to-r from-[#6B21A8] to-[#7C3AED] px-6 py-4 rounded-t-xl">
-                  <h2 className="text-lg font-bold text-white">{t.settings.editUserTitle}</h2>
+              <div className="bg-white rounded-xl shadow-float w-full max-w-lg">
+                <div className="rounded-t-xl border-b border-hairline bg-white px-6 py-4">
+                  <h2 className="text-lg font-medium text-ink">{t.settings.editUserTitle}</h2>
                 </div>
                 <div className="p-6 space-y-4">
                   <div>
-                    <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                    <label className="text-sm font-medium text-ink-2 mb-2 block">
                       {t.settings.modalEmail}
                     </label>
                     <Input
@@ -1385,7 +1385,7 @@ export default function SettingsPageClient({
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                    <label className="text-sm font-medium text-ink-2 mb-2 block">
                       {t.settings.newPasswordOptional}
                     </label>
                     <div className="relative">
@@ -1400,7 +1400,7 @@ export default function SettingsPageClient({
                       <button
                         type="button"
                         onClick={() => setShowEditUserPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink-2"
                         aria-label={
                           showEditUserPassword
                             ? t.settings.hidePassword
@@ -1428,7 +1428,7 @@ export default function SettingsPageClient({
                       type="button"
                       onClick={handleUpdateManagedUserInfo}
                       disabled={isMemberSaving}
-                      className="bg-purple-600 hover:bg-purple-700 text-white"
+
                     >
                       {isMemberSaving ? t.settings.modalSaving : t.settings.saveUserChanges}
                     </Button>

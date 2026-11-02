@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { ui } from "@/lib/ui";
 
 interface FormPageShellProps {
   title: string;
@@ -28,40 +29,40 @@ export function FormPageShell({
 }: FormPageShellProps) {
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href={backHref}>
-            <button className="p-2 hover:bg-gray-100 rounded-md transition-colors">
-              <ArrowLeft className="h-5 w-5 text-gray-600" />
-            </button>
+      <div className="mb-8 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Link
+            href={backHref}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-2 hover:bg-raised hover:text-ink"
+          >
+            <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
+          <h1 className={ui.pageTitle}>{title}</h1>
         </div>
         <Button
           type="button"
           variant="outline"
           onClick={onTutorialClick}
           data-tour={tutorialTourId}
-          className="border-gray-300 text-gray-700 hover:bg-gray-50"
         >
-          <Info className="h-4 w-4 mr-2" />
+          <Info className="mr-2 h-4 w-4" strokeWidth={1.5} />
           {tutorialLabel}
         </Button>
       </div>
 
-      {success && (
-        <Alert className="mb-6 border-l-4 border-l-green-500 bg-green-50/50">
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-600 text-sm">{success}</AlertDescription>
+      {success ? (
+        <Alert className="mb-6 border-hairline bg-white">
+          <CheckCircle2 className="h-4 w-4 text-positive" strokeWidth={1.5} />
+          <AlertDescription className="text-sm text-ink-2">{success}</AlertDescription>
         </Alert>
-      )}
+      ) : null}
 
-      {error && (
-        <Alert variant="destructive" className="mb-6 border-l-4 border-l-red-500 bg-red-50/50">
-          <AlertTriangle className="h-4 w-4 text-red-600" />
-          <AlertDescription className="text-red-600 text-sm">{error}</AlertDescription>
+      {error ? (
+        <Alert variant="destructive" className="mb-6 rounded-lg border-hairline bg-red-50">
+          <AlertTriangle className="h-4 w-4" strokeWidth={1.5} />
+          <AlertDescription className="text-sm">{error}</AlertDescription>
         </Alert>
-      )}
+      ) : null}
 
       {children}
     </div>

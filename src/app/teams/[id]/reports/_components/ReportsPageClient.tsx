@@ -1,16 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  TrendingUp,
-  Package,
-  MapPin as MapPinIcon,
-  Activity,
-  AlertTriangle,
-  DollarSign,
-  Calendar,
-  Info,
-} from "lucide-react";
+import { Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/lib/i18n";
@@ -23,7 +14,7 @@ import { useSortedPage } from "@/hooks/useSortedPage";
 import type { ReportStats, Team } from "../_types";
 
 const REPORT_HEADER_CLASS =
-  "px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700";
+  "px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-medium text-ink-2";
 
 interface ReportsPageClientProps {
   teamId: number;
@@ -155,15 +146,11 @@ export default function ReportsPageClient({
   const getTransactionTypeColor = (type: string) => {
     switch (type) {
       case "stock_in":
-        return "bg-green-100 text-green-800 border-green-200";
+        return "bg-raised text-positive border-hairline";
       case "stock_out":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "adjust":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "move":
-        return "bg-blue-100 text-blue-800 border-blue-200";
+        return "bg-raised text-negative border-hairline";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "bg-raised text-ink-2 border-hairline";
     }
   };
 
@@ -182,17 +169,17 @@ export default function ReportsPageClient({
           {/* Header */}
           <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
             <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
+              <h1 className="text-[28px] font-medium leading-[1.15] text-ink mb-1 sm:mb-2">
                 {t.reports.title}
               </h1>
-              <p className="text-sm sm:text-base text-gray-600">{t.reports.subtitle}</p>
+              <p className="text-sm sm:text-base text-ink-2">{t.reports.subtitle}</p>
             </div>
             <Button
               type="button"
               variant="outline"
               onClick={() => setIsTutorialOpen(true)}
               data-tour="tour-reports-tutorial"
-              className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
+              className="border-hairline text-ink-2 hover:bg-raised h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
             >
               <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               {t.common.tutorial}
@@ -200,11 +187,11 @@ export default function ReportsPageClient({
           </div>
 
           {/* Date Range Filter */}
-          <div data-tour="tour-reports-date-filter" className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">{t.reports.dateRange}</h2>
+          <div data-tour="tour-reports-date-filter" className="mb-4 sm:mb-6 rounded-xl border border-hairline bg-white shadow-rest p-4 sm:p-6">
+            <h2 className="text-lg font-medium text-ink mb-4">{t.reports.dateRange}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-ink-2 mb-2">
                   {t.reports.startDate}
                 </label>
                 <Input
@@ -215,7 +202,7 @@ export default function ReportsPageClient({
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-ink-2 mb-2">
                   {t.reports.endDate}
                 </label>
                 <Input
@@ -229,7 +216,7 @@ export default function ReportsPageClient({
                 <Button
                   onClick={clearFilters}
                   variant="outline"
-                  className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
+                  className="flex-1 border-hairline text-ink-2 hover:bg-raised"
                 >
                   {t.reports.clearFilter}
                 </Button>
@@ -239,126 +226,60 @@ export default function ReportsPageClient({
 
           {isLoading ? (
             <div className="text-center py-12">
-              <p className="text-gray-600">{t.reports.loading}</p>
+              <p className="text-ink-2">{t.reports.loading}</p>
             </div>
           ) : stats ? (
             <>
-              {/* Overview Cards */}
-              <div data-tour="tour-reports-overview" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6">
-                <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm sm:text-base font-semibold text-gray-600">
-                      {t.reports.totalItems}
-                    </h3>
-                    <Package className="h-5 w-5 sm:h-6 sm:w-6 text-purple-500" />
-                  </div>
-                  <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.totalItems}</p>
-                </div>
-
-                <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm sm:text-base font-semibold text-gray-600">
-                      {t.reports.totalLocations}
-                    </h3>
-                    <MapPinIcon className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
-                  </div>
-                  <p className="text-2xl sm:text-3xl font-bold text-gray-900">
-                    {stats.totalLocations}
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm sm:text-base font-semibold text-gray-600">
-                      {t.reports.totalTransactions}
-                    </h3>
-                    <Activity className="h-5 w-5 sm:h-6 sm:w-6 text-green-500" />
-                  </div>
-                  <p className="text-2xl sm:text-3xl font-bold text-gray-900">
-                    {stats.totalTransactions}
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm sm:text-base font-semibold text-gray-600">
-                      {t.reports.totalStockValue}
-                    </h3>
-                    <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500" />
-                  </div>
-                  <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+              <div data-tour="tour-reports-overview" className="mb-6">
+                <div className="mb-4 rounded-xl border border-hairline bg-white p-6 shadow-rest">
+                  <p className="text-sm text-ink-3">{t.reports.totalStockValue}</p>
+                  <p className="mt-2 font-mono text-[40px] font-medium tabular-nums leading-none text-ink">
                     {formatPrice(stats.totalStockValue)}
                   </p>
                 </div>
-
-                <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm sm:text-base font-semibold text-gray-600">
-                      {t.reports.lowStockItems}
-                    </h3>
-                    <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500" />
-                  </div>
-                  <p className="text-2xl sm:text-3xl font-bold text-gray-900">
-                    {stats.lowStockItems}
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm sm:text-base font-semibold text-gray-600">
-                      {t.reports.outOfStockItems}
-                    </h3>
-                    <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-red-500" />
-                  </div>
-                  <p className="text-2xl sm:text-3xl font-bold text-gray-900">
-                    {stats.outOfStockItems}
-                  </p>
+                <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-hairline sm:grid-cols-5">
+                  {[
+                    [t.reports.totalItems, stats.totalItems],
+                    [t.reports.totalLocations, stats.totalLocations],
+                    [t.reports.totalTransactions, stats.totalTransactions],
+                    [t.reports.lowStockItems, stats.lowStockItems],
+                    [t.reports.outOfStockItems, stats.outOfStockItems],
+                  ].map(([label, value]) => (
+                    <div key={String(label)} className="border-b border-r border-hairline bg-white px-4 py-4 last:border-r-0 sm:border-b-0">
+                      <p className="text-xs text-ink-3">{label}</p>
+                      <p className="mt-1 font-mono text-xl font-medium tabular-nums text-ink">{value}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Transactions by Type */}
-              <div data-tour="tour-reports-transactions" className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
-                  {t.reports.transactionsByType}
-                </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <p className="text-2xl font-bold text-green-700">
-                      {stats.transactionsByType.stock_in}
-                    </p>
-                    <p className="text-sm text-green-600 mt-1">{t.reports.stockIn}</p>
-                  </div>
-                  <div className="text-center p-4 bg-red-50 rounded-lg">
-                    <p className="text-2xl font-bold text-red-700">
-                      {stats.transactionsByType.stock_out}
-                    </p>
-                    <p className="text-sm text-red-600 mt-1">{t.reports.stockOut}</p>
-                  </div>
-                  <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                    <p className="text-2xl font-bold text-yellow-700">
-                      {stats.transactionsByType.adjust}
-                    </p>
-                    <p className="text-sm text-yellow-600 mt-1">{t.reports.adjust}</p>
-                  </div>
-                  <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <p className="text-2xl font-bold text-blue-700">
-                      {stats.transactionsByType.move}
-                    </p>
-                    <p className="text-sm text-blue-600 mt-1">{t.reports.move}</p>
-                  </div>
+              <div data-tour="tour-reports-transactions" className="mb-6 rounded-xl border border-hairline bg-white p-6 shadow-rest">
+                <h2 className="mb-4 text-base font-medium text-ink">{t.reports.transactionsByType}</h2>
+                <div className="space-y-3">
+                  {[
+                    [t.reports.stockIn, stats.transactionsByType.stock_in, "text-positive"],
+                    [t.reports.stockOut, stats.transactionsByType.stock_out, "text-negative"],
+                    [t.reports.adjust, stats.transactionsByType.adjust, "text-ink"],
+                    [t.reports.move, stats.transactionsByType.move, "text-ink"],
+                  ].map(([label, value, tone]) => (
+                    <div key={String(label)} className="flex items-baseline justify-between gap-4">
+                      <span className="text-sm text-ink-2">{label}</span>
+                      <span className={`font-mono text-base font-medium tabular-nums ${tone}`}>{value}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               {/* Recent Transactions */}
-              <div data-tour="tour-reports-location" className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
+              <div data-tour="tour-reports-location" className="mb-4 sm:mb-6 rounded-xl border border-hairline bg-white shadow-rest p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-medium text-ink mb-4">
                   {t.reports.recentTransactions}
                 </h2>
                 {stats.recentTransactions.length > 0 ? (
                   <>
                     <div className="overflow-x-auto">
                       <table className="w-full">
-                        <thead className="bg-gray-50">
+                        <thead className="bg-raised">
                           <tr>
                             <SortableHeader
                               label={t.reports.date}
@@ -404,8 +325,8 @@ export default function ReportsPageClient({
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                           {recentTable.paginated.items.map((transaction) => (
-                            <tr key={transaction.id} className="hover:bg-gray-50">
-                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                            <tr key={transaction.id} className="hover:bg-raised">
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-ink">
                                 {formatDateTime(transaction.createdAt)}
                               </td>
                               <td className="px-3 sm:px-4 py-2 sm:py-3">
@@ -417,10 +338,10 @@ export default function ReportsPageClient({
                                   {getTransactionTypeLabel(transaction.transactionType)}
                                 </span>
                               </td>
-                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-ink">
                                 {transaction.itemName || "-"}
                               </td>
-                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-ink">
                                 {transaction.quantity.toFixed(1)}
                               </td>
                             </tr>
@@ -439,20 +360,20 @@ export default function ReportsPageClient({
                     />
                   </>
                 ) : (
-                  <p className="text-gray-500 text-center py-8">{t.reports.noData}</p>
+                  <p className="text-ink-3 text-center py-8">{t.reports.noData}</p>
                 )}
               </div>
 
               {/* Top Items by Value */}
-              <div className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
+              <div className="mb-4 sm:mb-6 rounded-xl border border-hairline bg-white shadow-rest p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-medium text-ink mb-4">
                   {t.reports.topItemsByValue}
                 </h2>
                 {stats.topItemsByValue.length > 0 ? (
                   <>
                     <div className="overflow-x-auto">
                       <table className="w-full">
-                        <thead className="bg-gray-50">
+                        <thead className="bg-raised">
                           <tr>
                             <SortableHeader
                               label={t.reports.item}
@@ -508,20 +429,20 @@ export default function ReportsPageClient({
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                           {topItemsTable.paginated.items.map((item) => (
-                            <tr key={item.id} className="hover:bg-gray-50">
-                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                            <tr key={item.id} className="hover:bg-raised">
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-ink">
                                 {item.name || "-"}
                               </td>
-                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-600">
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-ink-2">
                                 {item.sku || "-"}
                               </td>
-                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-ink">
                                 {item.currentStock?.toFixed(1) || "0"}
                               </td>
-                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-ink">
                                 {item.price ? formatPrice(item.price) : "-"}
                               </td>
-                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-gray-900">
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-ink">
                                 {formatPrice(item.totalValue)}
                               </td>
                             </tr>
@@ -540,20 +461,20 @@ export default function ReportsPageClient({
                     />
                   </>
                 ) : (
-                  <p className="text-gray-500 text-center py-8">{t.reports.noData}</p>
+                  <p className="text-ink-3 text-center py-8">{t.reports.noData}</p>
                 )}
               </div>
 
               {/* Stock by Location */}
-              <div className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
+              <div className="mb-4 sm:mb-6 rounded-xl border border-hairline bg-white shadow-rest p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-medium text-ink mb-4">
                   {t.reports.stockByLocation}
                 </h2>
                 {stats.stockByLocation.length > 0 ? (
                   <>
                     <div className="overflow-x-auto">
                       <table className="w-full">
-                        <thead className="bg-gray-50">
+                        <thead className="bg-raised">
                           <tr>
                             <SortableHeader
                               label={t.reports.location}
@@ -599,17 +520,17 @@ export default function ReportsPageClient({
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                           {locationTable.paginated.items.map((location, index) => (
-                            <tr key={location.locationId ?? index} className="hover:bg-gray-50">
-                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                            <tr key={location.locationId ?? index} className="hover:bg-raised">
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-ink">
                                 {location.locationName || t.reports.noLocation}
                               </td>
-                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-ink">
                                 {location.itemCount}
                               </td>
-                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-ink">
                                 {location.totalStock.toFixed(1)}
                               </td>
-                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-gray-900">
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-ink">
                                 {formatPrice(location.totalValue)}
                               </td>
                             </tr>
@@ -628,13 +549,13 @@ export default function ReportsPageClient({
                     />
                   </>
                 ) : (
-                  <p className="text-gray-500 text-center py-8">{t.reports.noData}</p>
+                  <p className="text-ink-3 text-center py-8">{t.reports.noData}</p>
                 )}
               </div>
             </>
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-600">{t.reports.noData}</p>
+              <p className="text-ink-2">{t.reports.noData}</p>
             </div>
           )}
           <TutorialTour

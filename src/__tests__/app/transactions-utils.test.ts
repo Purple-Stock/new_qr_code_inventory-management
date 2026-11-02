@@ -48,23 +48,23 @@ describe("transactions UI utils", () => {
 
   describe("getTransactionTypeColor", () => {
     it("returns style classes for known transaction types", () => {
-      expect(getTransactionTypeColor("stock_in")).toContain("green");
-      expect(getTransactionTypeColor("stock_out")).toContain("red");
-      expect(getTransactionTypeColor("adjust")).toContain("yellow");
-      expect(getTransactionTypeColor("move")).toContain("blue");
+      expect(getTransactionTypeColor("stock_in")).toContain("positive");
+      expect(getTransactionTypeColor("stock_out")).toContain("negative");
+      expect(getTransactionTypeColor("adjust")).toContain("ink-2");
+      expect(getTransactionTypeColor("move")).toContain("ink-2");
     });
 
-    it("returns violet class for inter-team transfer", () => {
+    it("returns brand class for inter-team transfer", () => {
       expect(
         getTransactionTypeColor("stock_out", {
           transactionType: "stock_out",
           destinationKind: "team",
         })
-      ).toContain("violet");
+      ).toContain("brand");
     });
 
-    it("uses gray fallback class for unknown types", () => {
-      expect(getTransactionTypeColor("custom_type")).toContain("gray");
+    it("uses muted fallback class for unknown types", () => {
+      expect(getTransactionTypeColor("custom_type")).toContain("ink-2");
     });
   });
 

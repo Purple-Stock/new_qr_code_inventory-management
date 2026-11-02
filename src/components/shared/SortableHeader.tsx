@@ -20,7 +20,7 @@ export function SortableHeader<K extends string>({
   sortAscendingLabel,
   sortDescendingLabel,
   onSort,
-  className = "px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider",
+  className = "px-6 py-3 text-left text-xs font-medium text-ink-3",
 }: SortableHeaderProps<K>) {
   const isActive = sortKey === column;
   const direction = isActive ? sortDirection : undefined;
@@ -32,7 +32,7 @@ export function SortableHeader<K extends string>({
       <button
         type="button"
         onClick={() => onSort?.(column)}
-        className="inline-flex items-center gap-1 hover:text-[#6B21A8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED] rounded"
+        className="inline-flex items-center gap-1 rounded hover:text-brand"
         aria-label={`${label} ${directionLabel}`}
       >
         {label}
@@ -41,7 +41,7 @@ export function SortableHeader<K extends string>({
         ) : direction === "desc" ? (
           <ArrowDown className="h-3 w-3" aria-hidden="true" />
         ) : (
-          <ArrowUpDown className="h-3 w-3 text-gray-400" aria-hidden="true" />
+          <ArrowUpDown className="h-3 w-3 text-ink-3" aria-hidden="true" />
         )}
       </button>
     </th>

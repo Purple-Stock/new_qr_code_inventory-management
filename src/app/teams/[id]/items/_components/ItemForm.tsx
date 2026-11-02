@@ -76,16 +76,16 @@ export function ItemForm({
   return (
     <form onSubmit={onSubmit} className="space-y-8">
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">
+        <h2 className="text-xl font-medium text-ink mb-6">
           {t.itemForm.itemInformation}
         </h2>
         <div className="space-y-6">
           <div className="space-y-2" data-tour="tour-new-item-name">
-            <Label htmlFor="name" className="text-gray-900">
-              {t.itemForm.nameLabel} <span className="text-red-500">*</span>
+            <Label htmlFor="name" className="text-ink">
+              {t.itemForm.nameLabel} <span className="text-negative">*</span>
             </Label>
             <div className="relative">
-              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-ink-3" />
               <Input
                 id="name"
                 type="text"
@@ -99,7 +99,7 @@ export function ItemForm({
           </div>
 
           <div className="space-y-2" data-tour="tour-new-item-sku">
-            <Label htmlFor="sku" className="text-gray-900">
+            <Label htmlFor="sku" className="text-ink">
               {t.itemForm.skuLabel}
             </Label>
             <div className="flex items-center gap-2">
@@ -116,13 +116,13 @@ export function ItemForm({
               <button
                 type="button"
                 onClick={onGenerateSKU}
-                className="text-sm text-[#6B21A8] hover:underline whitespace-nowrap"
+                className="text-sm text-brand hover:underline whitespace-nowrap"
               >
                 {t.itemForm.generate}
               </button>
               <button
                 type="button"
-                className="p-2 text-gray-400 hover:text-gray-600"
+                className="p-2 text-ink-3 hover:text-ink-2"
               >
                 <QrCode className="h-5 w-5" />
               </button>
@@ -130,8 +130,8 @@ export function ItemForm({
           </div>
 
           <div className="space-y-2" data-tour="tour-new-item-barcode">
-            <Label htmlFor="barcode" className="text-gray-900">
-              {t.itemForm.barcodeLabel} <span className="text-red-500">*</span>
+            <Label htmlFor="barcode" className="text-ink">
+              {t.itemForm.barcodeLabel} <span className="text-negative">*</span>
             </Label>
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
@@ -148,13 +148,13 @@ export function ItemForm({
               <button
                 type="button"
                 onClick={onGenerateBarcode}
-                className="text-sm text-[#6B21A8] hover:underline whitespace-nowrap"
+                className="text-sm text-brand hover:underline whitespace-nowrap"
               >
                 {t.itemForm.generate}
               </button>
               <button
                 type="button"
-                className="p-2 text-gray-400 hover:text-gray-600"
+                className="p-2 text-ink-3 hover:text-ink-2"
               >
                 <QrCode className="h-5 w-5" />
               </button>
@@ -162,7 +162,7 @@ export function ItemForm({
           </div>
 
           <div className="space-y-2" data-tour="tour-new-item-photo">
-            <Label htmlFor="photo" className="text-gray-900">
+            <Label htmlFor="photo" className="text-ink">
               {t.itemForm.photoLabel}
             </Label>
             <Input
@@ -177,12 +177,12 @@ export function ItemForm({
                 <img
                   src={values.photoData}
                   alt="Item preview"
-                  className="h-24 w-24 object-cover rounded-md border border-gray-200"
+                  className="h-24 w-24 object-cover rounded-md border border-hairline"
                 />
                 <button
                   type="button"
                   onClick={() => onValueChange("photoData", "")}
-                  className="mt-2 text-sm text-red-600 hover:underline"
+                  className="mt-2 text-sm text-negative hover:underline"
                 >
                   {t.itemForm.removePhoto}
                 </button>
@@ -195,11 +195,11 @@ export function ItemForm({
             data-tour="tour-new-item-pricing"
           >
             <div className="space-y-2">
-              <Label htmlFor="cost" className="text-gray-900">
+              <Label htmlFor="cost" className="text-ink">
                 {t.itemForm.costLabel}
               </Label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-ink-3" />
                 <Input
                   id="cost"
                   type="text"
@@ -213,11 +213,11 @@ export function ItemForm({
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="price" className="text-gray-900">
+              <Label htmlFor="price" className="text-ink">
                 {t.itemForm.priceLabel}
               </Label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-ink-3" />
                 <Input
                   id="price"
                   type="text"
@@ -241,16 +241,16 @@ export function ItemForm({
         className="bg-white rounded-lg shadow-sm p-6"
         data-tour="tour-new-item-attributes"
       >
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">
+        <h2 className="text-xl font-medium text-ink mb-6">
           {t.itemForm.itemAttributes}
         </h2>
         <div className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="itemType" className="text-gray-900">
+            <Label htmlFor="itemType" className="text-ink">
               {t.itemForm.typeLabel}
             </Label>
             <div className="relative">
-              <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-ink-3" />
               <Input
                 id="itemType"
                 type="text"
@@ -262,11 +262,11 @@ export function ItemForm({
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="brand" className="text-gray-900">
+            <Label htmlFor="brand" className="text-ink">
               {t.itemForm.brandLabel}
             </Label>
             <div className="relative">
-              <Square className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Square className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-ink-3" />
               <Input
                 id="brand"
                 type="text"
@@ -278,7 +278,7 @@ export function ItemForm({
             </div>
           </div>
           <div className="space-y-2" data-tour="tour-new-item-minimum-stock">
-            <Label htmlFor="minimumStock" className="text-gray-900">
+            <Label htmlFor="minimumStock" className="text-ink">
               {t.itemForm.minimumStockLabel}
             </Label>
             <Input
@@ -293,12 +293,12 @@ export function ItemForm({
               }
               className="w-full"
             />
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-ink-3">
               {t.itemForm.minimumStockHelp}
             </p>
           </div>
           <div className="space-y-2" data-tour="tour-new-item-maximum-stock">
-            <Label htmlFor="maximumStock" className="text-gray-900">
+            <Label htmlFor="maximumStock" className="text-ink">
               {t.itemForm.maximumStockLabel}
             </Label>
             <Input
@@ -313,7 +313,7 @@ export function ItemForm({
               }
               className="w-full"
             />
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-ink-3">
               {t.itemForm.maximumStockHelp}
             </p>
           </div>
@@ -325,7 +325,7 @@ export function ItemForm({
           className="bg-white rounded-lg shadow-sm p-6"
           data-tour="tour-new-item-custom-fields"
         >
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+          <h2 className="text-xl font-medium text-ink mb-6">
             {t.itemForm.customFieldsTitle}
           </h2>
           <div className="space-y-4">
@@ -333,7 +333,7 @@ export function ItemForm({
               <div key={field.key} className="space-y-2">
                 <Label
                   htmlFor={`custom-field-${field.key}`}
-                  className="text-gray-900"
+                  className="text-ink"
                 >
                   {field.label}
                 </Label>
@@ -360,7 +360,7 @@ export function ItemForm({
         <Button
           type="submit"
           disabled={isLoading}
-          className="bg-[#6B21A8] hover:bg-[#6B21A8]/90 text-white font-semibold px-8 disabled:opacity-50 disabled:cursor-not-allowed"
+
         >
           {mode === "create"
             ? isLoading
@@ -375,7 +375,7 @@ export function ItemForm({
             <Button
               type="button"
               variant="outline"
-              className="border-gray-300 text-gray-700 hover:bg-gray-50"
+              className="border-hairline text-ink-2 hover:bg-raised"
             >
               {t.common.cancel}
             </Button>
@@ -385,7 +385,7 @@ export function ItemForm({
             type="button"
             variant="outline"
             onClick={onCancel}
-            className="border-gray-300 text-gray-700 hover:bg-gray-50"
+            className="border-hairline text-ink-2 hover:bg-raised"
           >
             {t.common.cancel}
           </Button>

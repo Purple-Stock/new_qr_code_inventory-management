@@ -113,23 +113,23 @@ export function TransactionsPageClient({
       {/* Header */}
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
+          <h1 className="text-[28px] font-medium leading-[1.15] text-ink mb-1 sm:mb-2">
             {t.transactions.title}
           </h1>
-          <p className="text-sm sm:text-base text-gray-600">{t.transactions.subtitle}</p>
+          <p className="text-sm sm:text-base text-ink-2">{t.transactions.subtitle}</p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           <Button
             variant="outline"
             onClick={() => setIsTutorialOpen(true)}
             data-tour="tour-transactions-tutorial"
-            className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0"
+            className="border-hairline text-ink-2 hover:bg-raised h-10 sm:h-11 text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0"
           >
             <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
             {t.common.tutorial}
           </Button>
           <Link href={`/teams/${teamId}/stock-in`} data-tour="tour-transactions-stockin">
-            <Button className="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0">
+            <Button className="text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0">
               <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               {t.transactions.stockIn}
             </Button>
@@ -146,12 +146,12 @@ export function TransactionsPageClient({
         />
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <Label htmlFor="counterpartyTeamFilter" className="text-xs text-gray-600">
+            <Label htmlFor="counterpartyTeamFilter" className="text-xs text-ink-2">
               {t.transactions.counterpartyTeamFilter}
             </Label>
             <select
               id="counterpartyTeamFilter"
-              className="mt-1 h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm"
+              className="mt-1 h-10 w-full rounded-md border border-hairline bg-white px-3 text-sm"
               value={counterpartyTeamId}
               onChange={(e) => setCounterpartyTeamId(e.target.value)}
             >
@@ -163,7 +163,7 @@ export function TransactionsPageClient({
               ))}
             </select>
           </div>
-          <label className="mt-6 flex items-center gap-2 text-sm text-gray-700">
+          <label className="mt-6 flex items-center gap-2 text-sm text-ink-2">
             <input
               type="checkbox"
               checked={interTeamOnly}

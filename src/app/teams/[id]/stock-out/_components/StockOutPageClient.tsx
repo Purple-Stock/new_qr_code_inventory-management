@@ -298,16 +298,16 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
       {/* Page Header */}
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
         <div className="flex-1">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-red-600 mb-1 sm:mb-2">
+          <h1 className="text-[28px] font-medium leading-[1.15] text-ink mb-1 sm:mb-2">
             {t.stockOut.title}
           </h1>
-          <p className="text-sm sm:text-base md:text-lg text-gray-600">{t.stockOut.subtitle}</p>
+          <p className="text-sm sm:text-base md:text-lg text-ink-2">{t.stockOut.subtitle}</p>
         </div>
         <Button
           variant="outline"
           onClick={() => setIsTutorialOpen(true)}
           data-tour="tour-stock-out-tutorial"
-          className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
+          className="border-hairline text-ink-2 hover:bg-raised h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
         >
           <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
           {t.common.tutorial}
@@ -316,13 +316,13 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
 
       {/* Location Section */}
       <div className="mb-4 sm:mb-6" data-tour="tour-stock-out-location">
-        <Label htmlFor="location" className="text-sm font-semibold text-gray-700 mb-2 block">
+        <Label htmlFor="location" className="text-sm font-medium text-ink-2 mb-2 block">
           {t.stockOut.locationRequired}
         </Label>
         <Select value={selectedLocation || undefined} onValueChange={setSelectedLocation}>
           <SelectTrigger
             id="location"
-            className="w-full h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+            className="w-full h-11 text-base border-hairline focus:border-brand focus:ring-brand"
           >
             <SelectValue placeholder={t.stockOut.defaultLocation} />
           </SelectTrigger>
@@ -338,37 +338,37 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
 
       {/* Items Section */}
       <div className="mb-4 sm:mb-6" data-tour="tour-stock-out-items">
-        <Label htmlFor="items" className="text-sm font-semibold text-gray-700 mb-2 block">
+        <Label htmlFor="items" className="text-sm font-medium text-ink-2 mb-2 block">
           {t.stockOut.items}
         </Label>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-ink-3" />
             <Input
               id="items"
               type="text"
               placeholder={t.stockOut.searchItem}
               value={itemSearch}
               onChange={(e) => setItemSearch(e.target.value)}
-              className="pl-9 sm:pl-10 h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+              className="pl-9 sm:pl-10 h-11 text-base border-hairline focus:border-brand focus:ring-brand"
             />
             {hasItemFilters && filteredItems.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+              <div className="absolute z-10 w-full mt-1 bg-white border border-hairline rounded-lg shadow-rest max-h-60 overflow-y-auto">
                 {filteredItems.map((item) => (
                   <button
                     key={itemLocationRowKey(item)}
                     onClick={() => handleAddItem(item)}
-                    className="w-full text-left px-4 py-3 hover:bg-purple-50 transition-colors border-b border-gray-100 last:border-b-0"
+                    className="w-full text-left px-4 py-3 hover:bg-raised transition-colors border-b border-hairline last:border-b-0"
                   >
-                    <div className="font-medium text-gray-900">
+                    <div className="font-medium text-ink">
                       {item.name || t.items.unnamedItem}
                     </div>
-                    {item.sku && <div className="text-xs text-gray-500">SKU: {item.sku}</div>}
+                    {item.sku && <div className="text-xs text-ink-3">SKU: {item.sku}</div>}
                     {item.locationName ? (
-                      <div className="text-xs text-gray-500">{item.locationName}</div>
+                      <div className="text-xs text-ink-3">{item.locationName}</div>
                     ) : null}
                     {item.currentStock !== null && (
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-ink-3">
                         {t.stockOut.currentStockLabel}: {item.currentStock}
                       </div>
                     )}
@@ -381,14 +381,14 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
             type="button"
             variant="outline"
             onClick={() => setItemSearch("")}
-            className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 text-xs sm:text-sm touch-manipulation min-h-[44px] sm:min-h-0"
+            className="border-hairline text-ink-2 hover:bg-raised h-11 text-xs sm:text-sm touch-manipulation min-h-[44px] sm:min-h-0"
           >
             {t.common.clearFilter}
           </Button>
           <Button
             variant="outline"
             onClick={() => setIsScannerOpen(true)}
-            className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 text-xs sm:text-sm touch-manipulation min-h-[44px] sm:min-h-0"
+            className="border-hairline text-ink-2 hover:bg-raised h-11 text-xs sm:text-sm touch-manipulation min-h-[44px] sm:min-h-0"
           >
             <ScanLine className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">{t.stockOut.scanBarcode}</span>
@@ -398,10 +398,10 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
       </div>
 
       {/* Items Table */}
-      <div className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden" data-tour="tour-stock-out-table">
+      <div className="mb-4 sm:mb-6 rounded-xl border border-hairline bg-white shadow-rest overflow-hidden" data-tour="tour-stock-out-table">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+            <thead className="border-b border-hairline bg-raised">
               <tr>
                 <SortableHeader
                   label={t.stockOut.item}
@@ -411,7 +411,7 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
                   sortAscendingLabel={t.common.sortAscending}
                   sortDescendingLabel={t.common.sortDescending}
                   onSort={onSort}
-                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"
+                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-ink-3"
                 />
                 <SortableHeader
                   label={t.stockOut.currentStock}
@@ -421,7 +421,7 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
                   sortAscendingLabel={t.common.sortAscending}
                   sortDescendingLabel={t.common.sortDescending}
                   onSort={onSort}
-                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden sm:table-cell"
+                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-ink-3 hidden sm:table-cell"
                 />
                 <SortableHeader
                   label={t.items.sku}
@@ -431,7 +431,7 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
                   sortAscendingLabel={t.common.sortAscending}
                   sortDescendingLabel={t.common.sortDescending}
                   onSort={onSort}
-                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden md:table-cell"
+                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-ink-3 hidden md:table-cell"
                 />
                 <SortableHeader
                   label={t.stockOut.quantityToRemove}
@@ -441,9 +441,9 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
                   sortAscendingLabel={t.common.sortAscending}
                   sortDescendingLabel={t.common.sortDescending}
                   onSort={onSort}
-                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"
+                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-ink-3"
                 />
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-right text-xs font-medium text-ink-3">
                   {t.common.actions}
                 </th>
               </tr>
@@ -451,7 +451,7 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
             <tbody className="bg-white divide-y divide-gray-100">
               {selectedItems.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
+                  <td colSpan={5} className="px-4 sm:px-6 py-8 text-center text-ink-3 text-sm">
                     {t.stockOut.noItemsSelected}
                   </td>
                 </tr>
@@ -459,25 +459,25 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
                 paginated.items.map((selectedItem) => {
                   const maxStock = selectedItem.item.currentStock ?? 0;
                   return (
-                    <tr key={itemLocationRowKey(selectedItem.item)} className="hover:bg-purple-50/50 transition-colors">
+                    <tr key={itemLocationRowKey(selectedItem.item)} className="hover:bg-raised transition-colors">
                       <td className="px-4 sm:px-6 py-4 sm:py-5">
                         <div>
-                          <div className="text-sm font-bold text-gray-900">
+                          <div className="text-sm font-medium text-ink">
                             {selectedItem.item.name || t.items.unnamedItem}
                           </div>
-                          <div className="text-xs text-gray-500 sm:hidden mt-1">
+                          <div className="text-xs text-ink-3 sm:hidden mt-1">
                             {t.stockOut.currentStockLabel}: {maxStock}
                           </div>
-                          <div className="text-xs text-gray-500 sm:hidden mt-1">
+                          <div className="text-xs text-ink-3 sm:hidden mt-1">
                             {t.items.sku}: {selectedItem.item.sku || "-"}
                           </div>
                         </div>
                       </td>
                       <td className="px-4 sm:px-6 py-4 sm:py-5 hidden sm:table-cell">
-                        <span className="text-sm font-medium text-gray-900">{maxStock}</span>
+                        <span className="text-sm font-medium text-ink">{maxStock}</span>
                       </td>
                       <td className="px-4 sm:px-6 py-4 sm:py-5 hidden md:table-cell">
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-ink">
                           {selectedItem.item.sku || "-"}
                         </span>
                       </td>
@@ -487,7 +487,7 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
                             onClick={() =>
                               handleQuantityChange(selectedItem.item.id, selectedItem.quantity - 1)
                             }
-                            className="p-1.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
+                            className="p-1.5 text-ink-3 hover:text-brand hover:bg-raised rounded-lg transition-colors duration-150 ease-craft touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
                             disabled={selectedItem.quantity <= 1}
                           >
                             <Minus className="h-4 w-4" />
@@ -504,13 +504,13 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
                                 parseDecimalInput(e.target.value)
                               )
                             }
-                            className="w-20 sm:w-24 h-9 sm:h-10 text-center text-sm font-semibold border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+                            className="w-20 sm:w-24 h-9 sm:h-10 text-center text-sm font-semibold border-hairline focus:border-brand focus:ring-brand"
                           />
                           <button
                             onClick={() =>
                               handleQuantityChange(selectedItem.item.id, selectedItem.quantity + 1)
                             }
-                            className="p-1.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
+                            className="p-1.5 text-ink-3 hover:text-brand hover:bg-raised rounded-lg transition-colors duration-150 ease-craft touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
                             disabled={selectedItem.quantity >= maxStock}
                           >
                             <Plus className="h-4 w-4" />
@@ -520,7 +520,7 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
                       <td className="px-4 sm:px-6 py-4 sm:py-5 text-right">
                         <button
                           onClick={() => handleRemoveItem(selectedItem.item.id)}
-                          className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-2 text-ink-3 hover:text-negative hover:bg-raised rounded-lg transition-colors duration-150 ease-craft touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
                           aria-label="Remove item"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -548,7 +548,7 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
 
       {/* Notes Section */}
       <div className="mb-4 sm:mb-6" data-tour="tour-stock-out-notes">
-        <Label htmlFor="notes" className="text-sm font-semibold text-gray-700 mb-2 block">
+        <Label htmlFor="notes" className="text-sm font-medium text-ink-2 mb-2 block">
           {t.stockOut.notes}
         </Label>
         <Textarea
@@ -556,20 +556,21 @@ export function StockOutPageClient({ items, locations, team }: StockOutPageClien
           placeholder={t.stockOut.notesPlaceholder}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="min-h-[100px] text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8] resize-y"
+          className="min-h-[100px] text-base border-hairline focus:border-brand focus:ring-brand resize-y"
           rows={4}
         />
       </div>
 
       {/* Summary and Submit */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-gray-200" data-tour="tour-stock-out-submit">
-        <div className="text-sm sm:text-base font-semibold text-gray-700">
-          {t.stockOut.totalItemsToRemove}: <span className="text-[#6B21A8]">{totalItems}</span>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-hairline" data-tour="tour-stock-out-submit">
+        <div className="text-sm sm:text-base font-medium text-ink-2">
+          {t.stockOut.totalItemsToRemove}: <span className="text-brand">{totalItems}</span>
         </div>
         <Button
+          variant="destructive"
           onClick={handleSubmit}
           disabled={isSubmitting || selectedItems.length === 0 || !selectedLocation}
-          className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white shadow-lg hover:shadow-xl transition-all w-full sm:w-auto touch-manipulation min-h-[48px] sm:min-h-0 px-6 sm:px-8"
+          className="w-full sm:w-auto px-6 sm:px-8"
         >
           {isSubmitting ? t.common.loading : t.stockOut.removeStock}
         </Button>

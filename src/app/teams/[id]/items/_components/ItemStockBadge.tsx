@@ -1,9 +1,9 @@
 import { getItemStockBadgeTone } from "@/lib/item-minimum-stock";
 
 const TONE_CLASS: Record<"out" | "low" | "ok", string> = {
-  out: "bg-red-100 text-red-700",
-  low: "bg-yellow-100 text-yellow-700",
-  ok: "bg-green-100 text-green-700",
+  out: "bg-raised text-negative",
+  low: "bg-raised text-ink-2",
+  ok: "bg-raised text-positive",
 };
 
 export function ItemStockBadge({
@@ -25,7 +25,7 @@ export function ItemStockBadge({
 
   return (
     <span
-      className={`inline-flex items-center rounded-full font-bold ${TONE_CLASS[tone]} ${className}`}
+      className={`inline-flex items-center rounded-md font-mono text-xs font-medium tabular-nums ${TONE_CLASS[tone]} ${className}`}
     >
       {stock}
       {tone === "low" ? (

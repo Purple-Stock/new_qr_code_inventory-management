@@ -33,20 +33,16 @@ export function getTransactionTypeLabel(
 
 export function getTransactionTypeColor(type: string, transaction?: any): string {
   if (transaction && isInterTeamTransfer(transaction)) {
-    return "bg-violet-100 text-violet-800 border-violet-200";
+    return "bg-raised text-brand border-hairline";
   }
 
   switch (type) {
     case "stock_in":
-      return "bg-green-100 text-green-800 border-green-200";
+      return "bg-raised text-positive border-hairline";
     case "stock_out":
-      return "bg-red-100 text-red-800 border-red-200";
-    case "adjust":
-      return "bg-yellow-100 text-yellow-800 border-yellow-200";
-    case "move":
-      return "bg-blue-100 text-blue-800 border-blue-200";
+      return "bg-raised text-negative border-hairline";
     default:
-      return "bg-gray-100 text-gray-800 border-gray-200";
+      return "bg-raised text-ink-2 border-hairline";
   }
 }
 

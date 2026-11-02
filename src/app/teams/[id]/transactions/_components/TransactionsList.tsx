@@ -15,7 +15,7 @@ import type { TransactionWithDetails } from "../_types";
 type TransactionSortKey = "date" | "type" | "item" | "quantity" | "location" | "notes" | "user";
 
 const TRANSACTION_HEADER_CLASS =
-  "px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700";
+  "px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-medium text-ink-2";
 
 interface TransactionsListProps {
   transactions: TransactionWithDetails[];
@@ -90,17 +90,17 @@ export function TransactionsList({
 
   if (transactions.length === 0) {
     return (
-      <div className="text-center py-12 sm:py-20 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 px-4 sm:px-6">
-        <p className="text-gray-500 text-sm sm:text-base">{t.transactions.noTransactions}</p>
+      <div className="text-center py-12 sm:py-20 rounded-xl border border-hairline bg-white shadow-rest px-4 sm:px-6">
+        <p className="text-ink-3 text-sm sm:text-base">{t.transactions.noTransactions}</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+    <div className="bg-white rounded-xl sm:rounded-2xl shadow-rest overflow-hidden border border-hairline">
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+          <thead className="border-b border-hairline bg-raised">
             <tr>
               <SortableHeader
                 label={t.transactions.date}
@@ -172,15 +172,15 @@ export function TransactionsList({
                 onSort={onSort}
                 className={`${TRANSACTION_HEADER_CLASS} hidden lg:table-cell`}
               />
-              <th className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-right text-xs font-semibold text-gray-700">
+              <th className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-right text-xs font-medium text-ink-2">
                 {t.transactions.actions}
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {transactions.map((transaction) => (
-              <tr key={transaction.id} className="hover:bg-gray-50">
-                <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+              <tr key={transaction.id} className="hover:bg-raised">
+                <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm text-ink">
                   {formatDate(transaction.createdAt, language)}
                 </td>
                 <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3">
@@ -208,28 +208,28 @@ export function TransactionsList({
                     </button>
                   )}
                 </td>
-                <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm text-ink">
                   {transaction.item?.name || "-"}
                 </td>
-                <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-gray-900">
+                <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm font-medium text-ink">
                   {formatQuantity(transaction.quantity, transaction.transactionType)}
                 </td>
-                <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm text-gray-600 hidden sm:table-cell">
+                <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm text-ink-2 hidden sm:table-cell">
                   {formatLocation(transaction, t)}
                 </td>
-                <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm text-gray-600 max-w-[240px]">
+                <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm text-ink-2 max-w-[240px]">
                   <span className="block truncate" title={transaction.notes || t.common.noNotes}>
                     {transaction.notes || t.common.noNotes}
                   </span>
                 </td>
-                <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm text-gray-600 hidden lg:table-cell">
+                <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm text-ink-2 hidden lg:table-cell">
                   {transaction.user?.email || "-"}
                 </td>
                 <td className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-right">
                   {canDeleteTransactions ? (
                     <button
                       onClick={() => handleDeleteClick(transaction)}
-                      className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
+                      className="p-2 text-ink-3 hover:text-negative hover:bg-raised rounded-lg transition-colors duration-150 ease-craft touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
                       aria-label="Delete transaction"
                       title="Delete transaction"
                     >
@@ -252,62 +252,62 @@ export function TransactionsList({
         isDeleting={isDeletingTransaction}
       >
         {transactionToDelete ? (
-          <dl className="rounded-xl border border-red-100 bg-red-50/40 p-4 text-sm text-gray-700">
+          <dl className="rounded-xl border border-red-100 bg-red-50/40 p-4 text-sm text-ink-2">
             <div className="grid gap-3 md:grid-cols-2">
               <div className="min-w-0 rounded-lg bg-white/80 p-3 shadow-sm">
-                <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <dt className="text-[11px] font-semibold text-ink-3">
                   {t.transactions.deleteModalType}
                 </dt>
-                <dd className="mt-1 text-base font-semibold text-gray-900 break-words">
+                <dd className="mt-1 text-base font-medium text-ink break-words">
                   {getTransactionTypeLabel(transactionToDelete.transactionType, t, transactionToDelete)}
                 </dd>
               </div>
               <div className="min-w-0 rounded-lg bg-white/80 p-3 shadow-sm">
-                <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <dt className="text-[11px] font-semibold text-ink-3">
                   {t.transactions.deleteModalQuantity}
                 </dt>
-                <dd className="mt-1 text-base font-semibold text-gray-900 break-words">
+                <dd className="mt-1 text-base font-medium text-ink break-words">
                   {formatQuantity(transactionToDelete.quantity, transactionToDelete.transactionType)}
                 </dd>
               </div>
               <div className="min-w-0 rounded-lg bg-white/80 p-3 shadow-sm">
-                <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <dt className="text-[11px] font-semibold text-ink-3">
                   {t.transactions.deleteModalItem}
                 </dt>
-                <dd className="mt-1 text-base font-semibold text-gray-900 break-words">
+                <dd className="mt-1 text-base font-medium text-ink break-words">
                   {transactionToDelete.item?.name || "-"}
                 </dd>
               </div>
               <div className="min-w-0 rounded-lg bg-white/80 p-3 shadow-sm">
-                <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <dt className="text-[11px] font-semibold text-ink-3">
                   {t.transactions.deleteModalLocation}
                 </dt>
-                <dd className="mt-1 text-base font-semibold text-gray-900 break-words">
+                <dd className="mt-1 text-base font-medium text-ink break-words">
                   {formatLocation(transactionToDelete, t)}
                 </dd>
               </div>
               <div className="min-w-0 rounded-lg bg-white/80 p-3 shadow-sm">
-                <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <dt className="text-[11px] font-semibold text-ink-3">
                   {t.transactions.deleteModalDate}
                 </dt>
-                <dd className="mt-1 text-base font-semibold text-gray-900 break-words">
+                <dd className="mt-1 text-base font-medium text-ink break-words">
                   {formatDate(transactionToDelete.createdAt, language)}
                 </dd>
               </div>
               <div className="min-w-0 rounded-lg bg-white/80 p-3 shadow-sm md:col-span-2">
-                <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <dt className="text-[11px] font-semibold text-ink-3">
                   {t.transactions.deleteModalUser}
                 </dt>
-                <dd className="mt-1 text-base font-semibold text-gray-900 break-all">
+                <dd className="mt-1 text-base font-medium text-ink break-all">
                   {transactionToDelete.user?.email || "-"}
                 </dd>
               </div>
             </div>
             <div className="mt-3 rounded-lg bg-white/80 p-3 shadow-sm">
-              <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+              <dt className="text-[11px] font-semibold text-ink-3">
                 {t.transactions.deleteModalNotes}
               </dt>
-              <dd className="mt-1 text-base font-semibold text-gray-900 break-words">
+              <dd className="mt-1 text-base font-medium text-ink break-words">
                 {transactionToDelete.notes || t.common.noNotes}
               </dd>
             </div>

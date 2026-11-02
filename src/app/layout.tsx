@@ -1,19 +1,30 @@
 import type { Metadata, Viewport } from "next"
-import { Inter } from "next/font/google"
+import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster-simple"
 import { I18nProvider } from "@/components/I18nProvider"
 import { buildAppSocialMetadata } from "@/lib/social-meta"
 import Script from "next/script"
 
-const inter = Inter({ subsets: ["latin"] })
+const plexSans = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-sans",
+  display: "swap",
+})
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-mono",
+  display: "swap",
+})
 const faviconSvgDataUrl =
-  "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg transform='translate(16,16) scale(0.12)'%3E%3Cpath fill='%237D3C98' d='M0,-100 L86,-50 L86,50 L0,100 L-86,50 L-86,-50 Z'/%3E%3Cpath fill='white' d='M30,-50 L-15,10 H15 L-10,55 L40,0 H15 Z'/%3E%3C/g%3E%3C/svg%3E"
+  "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg transform='translate(16,16) scale(0.12)'%3E%3Cpath fill='%236B21A8' d='M0,-100 L86,-50 L86,50 L0,100 L-86,50 L-86,-50 Z'/%3E%3Cpath fill='white' d='M30,-50 L-15,10 H15 L-10,55 L40,0 H15 Z'/%3E%3C/g%3E%3C/svg%3E"
 
 export const metadata: Metadata = {
   ...buildAppSocialMetadata(),
-  title: "Purple Stock - Your Inventory Simplified",
-  description: "Inventory management system with QR code support",
+  title: "Purple Stock — Estoque com QR",
+  description: "Estoque com QR no galpão. Entrada, saída e saldo por local.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -70,7 +81,7 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href={faviconSvgDataUrl} type="image/svg+xml" />
       </head>
-      <body className={inter.className} suppressHydrationWarning>
+      <body className={`${plexSans.className} ${plexSans.variable} ${plexMono.variable}`} suppressHydrationWarning>
         <I18nProvider>
         {children}
         </I18nProvider>

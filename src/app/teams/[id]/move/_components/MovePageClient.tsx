@@ -602,10 +602,10 @@ export function MovePageClient({
     <TeamLayout team={team} activeMenuItem="move">
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
         <div className="flex-1">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-blue-600 mb-1 sm:mb-2">
+          <h1 className="text-[28px] font-medium leading-[1.15] text-ink mb-1 sm:mb-2">
             {t.move.title}
           </h1>
-          <p className="text-sm sm:text-base md:text-lg text-gray-600">
+          <p className="text-sm sm:text-base md:text-lg text-ink-2">
             {t.move.subtitle}
           </p>
         </div>
@@ -613,7 +613,7 @@ export function MovePageClient({
           variant="outline"
           onClick={() => setIsTutorialOpen(true)}
           data-tour="tour-move-tutorial"
-          className="border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
+          className="border-hairline text-ink-2 hover:bg-raised h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto touch-manipulation min-h-[40px] sm:min-h-0"
         >
           <Info className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
           {t.common.tutorial}
@@ -621,7 +621,7 @@ export function MovePageClient({
       </div>
 
       <div className="mb-4 sm:mb-6" data-tour="tour-move-locations">
-        <div className="inline-flex bg-gray-100 rounded-lg p-1">
+        <div className="inline-flex bg-raised rounded-lg p-1">
           <button
             type="button"
             onClick={() => {
@@ -629,8 +629,8 @@ export function MovePageClient({
             }}
             className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
               activeTab === "location"
-                ? "bg-white text-[#6B21A8] shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
+                ? "bg-white text-brand shadow-sm"
+                : "text-ink-2 hover:text-ink"
             }`}
           >
             {t.move.tabByLocation}
@@ -645,8 +645,8 @@ export function MovePageClient({
             }}
             className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
               activeTab === "team"
-                ? "bg-white text-[#6B21A8] shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
+                ? "bg-white text-brand shadow-sm"
+                : "text-ink-2 hover:text-ink"
             }`}
           >
             {t.move.tabByTeam}
@@ -661,7 +661,7 @@ export function MovePageClient({
         <div>
           <Label
             htmlFor="sourceLocation"
-            className="text-sm font-semibold text-gray-700 mb-2 block"
+            className="text-sm font-medium text-ink-2 mb-2 block"
           >
             {t.move.sourceLocationRequired}
           </Label>
@@ -671,7 +671,7 @@ export function MovePageClient({
           >
             <SelectTrigger
               id="sourceLocation"
-              className="w-full h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+              className="w-full h-11 text-base border-hairline focus:border-brand focus:ring-brand"
             >
               <SelectValue placeholder={t.move.defaultLocation} />
             </SelectTrigger>
@@ -688,7 +688,7 @@ export function MovePageClient({
           <div>
             <Label
               htmlFor="destinationLocation"
-              className="text-sm font-semibold text-gray-700 mb-2 block"
+              className="text-sm font-medium text-ink-2 mb-2 block"
             >
               {t.move.destinationLocationRequired}
             </Label>
@@ -698,7 +698,7 @@ export function MovePageClient({
             >
               <SelectTrigger
                 id="destinationLocation"
-                className="w-full h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+                className="w-full h-11 text-base border-hairline focus:border-brand focus:ring-brand"
               >
                 <SelectValue placeholder={t.move.defaultLocation} />
               </SelectTrigger>
@@ -715,7 +715,7 @@ export function MovePageClient({
           <div>
             <Label
               htmlFor="destinationTeam"
-              className="text-sm font-semibold text-gray-700 mb-2 block"
+              className="text-sm font-medium text-ink-2 mb-2 block"
             >
               {t.move.destinationTeamRequired}
             </Label>
@@ -725,7 +725,7 @@ export function MovePageClient({
             >
               <SelectTrigger
                 id="destinationTeam"
-                className="w-full h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+                className="w-full h-11 text-base border-hairline focus:border-brand focus:ring-brand"
               >
                 <SelectValue placeholder={t.move.destinationTeamPlaceholder} />
               </SelectTrigger>
@@ -758,7 +758,7 @@ export function MovePageClient({
                 </Button>
                 <Link
                   href="/team_selection"
-                  className="inline-flex text-xs text-[#6B21A8] underline underline-offset-2 hover:text-[#581c87]"
+                  className="inline-flex text-xs text-brand underline underline-offset-2 hover:text-[#581c87]"
                 >
                   {t.move.manageTeamsCta}
                 </Link>
@@ -771,23 +771,23 @@ export function MovePageClient({
       <div className="mb-4 sm:mb-6" data-tour="tour-move-items">
         <Label
           htmlFor="items"
-          className="text-sm font-semibold text-gray-700 mb-2 block"
+          className="text-sm font-medium text-ink-2 mb-2 block"
         >
           {t.move.items}
         </Label>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-ink-3" />
             <Input
               id="items"
               type="text"
               placeholder={t.move.searchItem}
               value={itemSearch}
               onChange={(e) => setItemSearch(e.target.value)}
-              className="pl-9 sm:pl-10 h-11 text-base border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+              className="pl-9 sm:pl-10 h-11 text-base border-hairline focus:border-brand focus:ring-brand"
             />
             {hasItemFilters && filteredItems.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+              <div className="absolute z-10 w-full mt-1 bg-white border border-hairline rounded-lg shadow-rest max-h-60 overflow-y-auto">
                 {filteredItems.map((item) => {
                   const atSource = itemIsAtSourceLocation(
                     item,
@@ -800,17 +800,17 @@ export function MovePageClient({
                       type="button"
                       disabled={!atSource}
                       onClick={() => handleAddItem(item)}
-                      className={`w-full text-left px-4 py-3 transition-colors border-b border-gray-100 last:border-b-0 ${
+                      className={`w-full text-left px-4 py-3 transition-colors border-b border-hairline last:border-b-0 ${
                         atSource
-                          ? "hover:bg-purple-50"
-                          : "bg-amber-50 text-gray-500 cursor-not-allowed"
+                          ? "hover:bg-raised"
+                          : "bg-amber-50 text-ink-3 cursor-not-allowed"
                       }`}
                     >
-                      <div className="font-medium text-gray-900">
+                      <div className="font-medium text-ink">
                         {item.name || t.items.unnamedItem}
                       </div>
                       {item.sku && (
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-ink-3">
                           SKU: {item.sku}
                         </div>
                       )}
@@ -831,14 +831,14 @@ export function MovePageClient({
             type="button"
             variant="outline"
             onClick={() => setItemSearch("")}
-            className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 text-xs sm:text-sm"
+            className="border-hairline text-ink-2 hover:bg-raised h-11 text-xs sm:text-sm"
           >
             {t.common.clearFilter}
           </Button>
           <Button
             variant="outline"
             onClick={() => setIsScannerOpen(true)}
-            className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 text-xs sm:text-sm"
+            className="border-hairline text-ink-2 hover:bg-raised h-11 text-xs sm:text-sm"
           >
             <ScanLine className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">{t.move.scanBarcode}</span>
@@ -848,12 +848,12 @@ export function MovePageClient({
       </div>
 
       <div
-        className="mb-4 sm:mb-6 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden"
+        className="mb-4 sm:mb-6 rounded-xl border border-hairline bg-white shadow-rest overflow-hidden"
         data-tour="tour-move-table"
       >
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+            <thead className="border-b border-hairline bg-raised">
               <tr>
                 <SortableHeader
                   label={t.move.item}
@@ -863,7 +863,7 @@ export function MovePageClient({
                   sortAscendingLabel={t.common.sortAscending}
                   sortDescendingLabel={t.common.sortDescending}
                   onSort={onSort}
-                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"
+                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-ink-3"
                 />
                 <SortableHeader
                   label={t.move.currentStock}
@@ -873,7 +873,7 @@ export function MovePageClient({
                   sortAscendingLabel={t.common.sortAscending}
                   sortDescendingLabel={t.common.sortDescending}
                   onSort={onSort}
-                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden sm:table-cell"
+                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-ink-3 hidden sm:table-cell"
                 />
                 <SortableHeader
                   label={t.items.sku}
@@ -883,7 +883,7 @@ export function MovePageClient({
                   sortAscendingLabel={t.common.sortAscending}
                   sortDescendingLabel={t.common.sortDescending}
                   onSort={onSort}
-                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider hidden md:table-cell"
+                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-ink-3 hidden md:table-cell"
                 />
                 <SortableHeader
                   label={t.move.quantityToMove}
@@ -893,9 +893,9 @@ export function MovePageClient({
                   sortAscendingLabel={t.common.sortAscending}
                   sortDescendingLabel={t.common.sortDescending}
                   onSort={onSort}
-                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"
+                  className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-ink-3"
                 />
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-right text-xs font-medium text-ink-3">
                   {t.common.actions}
                 </th>
               </tr>
@@ -905,7 +905,7 @@ export function MovePageClient({
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm"
+                    className="px-4 sm:px-6 py-8 text-center text-ink-3 text-sm"
                   >
                     {t.move.noItemsSelected}
                   </td>
@@ -916,17 +916,17 @@ export function MovePageClient({
                   return (
                     <tr
                       key={itemLocationRowKey(selectedItem.item)}
-                      className="hover:bg-purple-50/50 transition-colors"
+                      className="hover:bg-raised transition-colors"
                     >
                       <td className="px-4 sm:px-6 py-4 sm:py-5">
-                        <div className="text-sm font-bold text-gray-900">
+                        <div className="text-sm font-medium text-ink">
                           {selectedItem.item.name || t.items.unnamedItem}
                         </div>
                       </td>
-                      <td className="px-4 sm:px-6 py-4 sm:py-5 hidden sm:table-cell text-sm text-gray-900">
+                      <td className="px-4 sm:px-6 py-4 sm:py-5 hidden sm:table-cell text-sm text-ink">
                         {maxStock}
                       </td>
-                      <td className="px-4 sm:px-6 py-4 sm:py-5 hidden md:table-cell text-sm text-gray-900">
+                      <td className="px-4 sm:px-6 py-4 sm:py-5 hidden md:table-cell text-sm text-ink">
                         {selectedItem.item.sku || "-"}
                       </td>
                       <td className="px-4 sm:px-6 py-4 sm:py-5">
@@ -938,7 +938,7 @@ export function MovePageClient({
                                 selectedItem.quantity - 1
                               )
                             }
-                            className="p-1.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all"
+                            className="p-1.5 text-ink-3 hover:text-brand hover:bg-raised rounded-lg transition-colors duration-150 ease-craft"
                             disabled={selectedItem.quantity <= 1}
                           >
                             <Minus className="h-4 w-4" />
@@ -955,7 +955,7 @@ export function MovePageClient({
                                 parseDecimalInput(e.target.value)
                               )
                             }
-                            className="w-24 h-10 text-center border-gray-300"
+                            className="w-24 h-10 text-center border-hairline"
                           />
                           <button
                             onClick={() =>
@@ -964,7 +964,7 @@ export function MovePageClient({
                                 selectedItem.quantity + 1
                               )
                             }
-                            className="p-1.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all"
+                            className="p-1.5 text-ink-3 hover:text-brand hover:bg-raised rounded-lg transition-colors duration-150 ease-craft"
                             disabled={selectedItem.quantity >= maxStock}
                           >
                             <Plus className="h-4 w-4" />
@@ -974,7 +974,7 @@ export function MovePageClient({
                       <td className="px-4 sm:px-6 py-4 sm:py-5 text-right">
                         <button
                           onClick={() => handleRemoveItem(selectedItem.item.id)}
-                          className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          className="p-2 text-ink-3 hover:text-negative hover:bg-raised rounded-lg transition-colors duration-150 ease-craft"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -1002,7 +1002,7 @@ export function MovePageClient({
       <div className="mb-4 sm:mb-6" data-tour="tour-move-notes">
         <Label
           htmlFor="notes"
-          className="text-sm font-semibold text-gray-700 mb-2 block"
+          className="text-sm font-medium text-ink-2 mb-2 block"
         >
           {t.move.notes}
         </Label>
@@ -1011,12 +1011,12 @@ export function MovePageClient({
           placeholder={t.move.notesPlaceholder}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="min-h-[100px] border-gray-300 focus:border-[#6B21A8] focus:ring-[#6B21A8]"
+          className="min-h-[100px] border-hairline focus:border-brand focus:ring-brand"
         />
       </div>
 
       <div
-        className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6"
+        className="rounded-xl border border-hairline bg-white shadow-rest p-4 sm:p-6"
         data-tour="tour-move-submit"
       >
         {activeTab === "team" && (
@@ -1039,8 +1039,8 @@ export function MovePageClient({
         )}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <p className="text-sm text-gray-600">{t.move.totalItemsToMove}</p>
-            <p className="text-2xl font-bold text-gray-900">{totalItems}</p>
+            <p className="text-sm text-ink-2">{t.move.totalItemsToMove}</p>
+            <p className="text-2xl font-medium text-ink">{totalItems}</p>
           </div>
           <Button
             onClick={handleSubmit}
@@ -1049,7 +1049,7 @@ export function MovePageClient({
               selectedItems.length === 0 ||
               isTeamTransferUnavailable
             }
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 h-auto"
+            className="font-semibold px-8 py-3 h-auto"
           >
             {isSubmitting
               ? t.common.loading

@@ -44,14 +44,14 @@ export function DeleteConfirmModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-float w-full max-w-md max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="bg-gradient-to-r from-red-500 to-red-600 px-4 sm:px-6 py-4 flex items-center justify-between rounded-t-xl sm:rounded-t-2xl">
+        <div className="flex items-center justify-between border-b border-hairline bg-white px-4 py-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-              <AlertTriangle className="h-5 w-5 text-white" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-raised">
+              <AlertTriangle className="h-5 w-5 text-ink-3" />
             </div>
-            <h2 className="text-lg sm:text-xl font-bold text-white">
+            <h2 className="text-lg sm:text-xl font-medium text-ink">
               {title || t.common.delete}
             </h2>
           </div>
@@ -59,7 +59,7 @@ export function DeleteConfirmModal({
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="text-white hover:bg-white/20 h-8 w-8 p-0"
+            className="text-ink-3 hover:bg-raised h-8 w-8 p-0"
             disabled={isDeleting}
           >
             <X className="h-4 w-4" />
@@ -70,22 +70,22 @@ export function DeleteConfirmModal({
         <div className="p-4 sm:p-6 space-y-4">
           <div className="flex items-start gap-4">
             <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center">
-                <AlertTriangle className="h-6 w-6 text-red-600" />
+              <div className="w-12 h-12 bg-raised rounded-lg flex items-center justify-center">
+                <AlertTriangle className="h-6 w-6 text-negative" />
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-gray-900 text-base sm:text-lg font-semibold mb-3">
+              <p className="text-ink text-base sm:text-lg font-semibold mb-3">
                 {description || (itemName ? `${t.common.delete} "${itemName}"?` : t.common.delete)}
               </p>
               {itemName && !description && (
-                <div className="bg-gray-50 rounded-lg p-3 mb-4 border border-gray-200">
-                  <p className="text-gray-700 text-sm font-medium">
+                <div className="bg-raised rounded-lg p-3 mb-4 border border-hairline">
+                  <p className="text-ink-2 text-sm font-medium">
                     {itemName}
                   </p>
                 </div>
               )}
-              <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
+              <p className="text-ink-2 text-sm sm:text-base leading-relaxed">
                 {description 
                   ? t.common.cannotBeUndone
                   : t.teamSelection.deleteConfirm
@@ -97,14 +97,14 @@ export function DeleteConfirmModal({
         </div>
 
         {/* Footer */}
-        <div className="px-4 sm:px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+        <div className="px-4 sm:px-6 py-4 border-t border-hairline flex justify-end gap-3">
           {onSecondaryConfirm && secondaryConfirmLabel ? (
             <Button
               type="button"
               variant="outline"
               onClick={onSecondaryConfirm}
               disabled={isDeleting || isSecondaryDeleting}
-              className="border-red-300 text-red-700 hover:bg-red-50"
+              className="border-hairline text-negative hover:bg-raised"
             >
               {isSecondaryDeleting ? t.common.loading : secondaryConfirmLabel}
             </Button>
@@ -114,15 +114,15 @@ export function DeleteConfirmModal({
             variant="ghost"
             onClick={onClose}
             disabled={isDeleting || isSecondaryDeleting}
-            className="text-gray-700 hover:bg-gray-100"
+            className="text-ink-2 hover:bg-raised"
           >
             {t.common.cancel}
           </Button>
           <Button
             type="button"
+            variant="destructive"
             onClick={handleConfirm}
             disabled={isDeleting || isSecondaryDeleting}
-            className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
           >
             {isDeleting ? (
               <>

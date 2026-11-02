@@ -35,7 +35,7 @@ export function TablePager({
       >
         {backLabel}
       </Button>
-      <p className="text-xs sm:text-sm text-gray-600">
+      <p className="text-xs sm:text-sm text-ink-2">
         {`${pageLabel} ${currentPage} ${ofLabel} ${totalPages}`}
       </p>
       <Button

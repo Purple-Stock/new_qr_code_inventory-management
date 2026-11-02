@@ -19,6 +19,16 @@ const config = {
     },
     extend: {
       colors: {
+        canvas: "#fafafa",
+        ink: "#171717",
+        "ink-2": "#525252",
+        "ink-3": "#737373",
+        raised: "#f4f4f5",
+        hairline: "rgba(23,23,23,0.08)",
+        brand: "#6B21A8",
+        "brand-hover": "#5B188F",
+        negative: "#dc2626",
+        positive: "#16a34a",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -52,6 +62,17 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+      },
+      fontFamily: {
+        sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
+      },
+      boxShadow: {
+        rest: "0 1px 2px rgba(0,0,0,0.05)",
+        float: "0 8px 24px rgba(0,0,0,0.06)",
+      },
+      transitionTimingFunction: {
+        craft: "cubic-bezier(0.22, 1, 0.36, 1)",
       },
       borderRadius: {
         lg: "var(--radius)",
