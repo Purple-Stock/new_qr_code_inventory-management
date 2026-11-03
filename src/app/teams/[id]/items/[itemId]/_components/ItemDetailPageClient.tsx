@@ -90,61 +90,49 @@ export default function ItemDetailPageClient({
   return (
     <TeamLayout team={team} activeMenuItem="items">
       <div className="max-w-6xl mx-auto">
-        <div className="bg-white border border-gray-200 rounded-xl px-4 sm:px-6 py-4 mb-6">
+        <div className="bg-white border border-hairline rounded-xl px-4 sm:px-6 py-4 mb-6">
           <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-sm text-ink-2">
               <Link
                 href={`/teams/${teamId}/items`}
-                className="text-[#6B21A8] hover:underline flex items-center gap-1"
+                className="text-brand hover:underline flex items-center gap-1"
               >
                 <ArrowLeft className="h-4 w-4" />
                 {t.items.backToList}
               </Link>
-              <span className="text-gray-400">/</span>
-              <span className="text-gray-900 font-medium truncate">{itemName}</span>
+              <span className="text-ink-3">/</span>
+              <span className="text-ink font-medium truncate">{itemName}</span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Link href={`/teams/${teamId}/stock-in`}>
                 <Button
                   size="sm"
-                  className="bg-green-600 hover:bg-green-700 text-white border-0"
+
                 >
                   <ArrowUpCircle className="h-4 w-4 mr-1" />
                   {t.menu.stockIn}
                 </Button>
               </Link>
               <Link href={`/teams/${teamId}/stock-out`}>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-red-300 text-red-700 hover:bg-red-50"
-                >
+                <Button size="sm" variant="outline" className="text-negative hover:text-negative">
                   <ArrowDownCircle className="h-4 w-4 mr-1" />
                   {t.menu.stockOut}
                 </Button>
               </Link>
               <Link href={`/teams/${teamId}/adjust`}>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-amber-300 text-amber-700 hover:bg-amber-50"
-                >
+                <Button size="sm" variant="outline">
                   <RotateCcw className="h-4 w-4 mr-1" />
                   {t.menu.adjust}
                 </Button>
               </Link>
               <Link href={`/teams/${teamId}/move`}>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-blue-300 text-blue-700 hover:bg-blue-50"
-                >
+                <Button size="sm" variant="outline">
                   <Move className="h-4 w-4 mr-1" />
                   {t.menu.move}
                 </Button>
               </Link>
               <Link href={`/teams/${teamId}/items/${itemId}/edit`}>
-                <Button size="sm" variant="outline" className="border-gray-300">
+                <Button size="sm" variant="outline" className="border-hairline">
                   <Pencil className="h-4 w-4 mr-1" />
                   {t.common.edit}
                 </Button>
@@ -155,86 +143,86 @@ export default function ItemDetailPageClient({
 
         <div className="grid grid-cols-1 lg:grid-cols-3 lg:grid-rows-[auto_1fr] gap-6">
           {/* Overview */}
-          <div className="lg:col-span-2 lg:row-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="lg:col-span-2 lg:row-span-2 bg-white rounded-xl shadow-sm border border-hairline p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Eye className="h-5 w-5 text-gray-500" />
-              <h2 className="text-lg font-semibold text-gray-900">
+              <Eye className="h-5 w-5 text-ink-3" />
+              <h2 className="text-lg font-medium text-ink">
                 {t.reports.overview}
               </h2>
             </div>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-4">
+            <p className="text-xs font-medium text-ink-3 mb-4">
               {t.items.itemInformation}
             </p>
             <div className="grid grid-cols-2 gap-x-8 gap-y-4">
               <div>
-                <p className="text-xs text-gray-500 uppercase mb-0.5">
+                <p className="text-xs text-ink-3 mb-0.5">
                   {t.common.name}
                 </p>
-                <p className="font-medium text-gray-900">{itemName}</p>
+                <p className="font-medium text-ink">{itemName}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 uppercase mb-0.5">
+                <p className="text-xs text-ink-3 mb-0.5">
                   {t.items.sku}
                 </p>
-                <p className="font-medium text-gray-900">
+                <p className="font-medium text-ink">
                   {item.sku || "-"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 uppercase mb-0.5">
+                <p className="text-xs text-ink-3 mb-0.5">
                   {t.items.type}
                 </p>
-                <p className="font-medium text-gray-900">
+                <p className="font-medium text-ink">
                   {item.itemType || "-"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 uppercase mb-0.5">
+                <p className="text-xs text-ink-3 mb-0.5">
                   Barcode
                 </p>
-                <p className="font-mono text-sm text-gray-900">
+                <p className="font-mono text-sm text-ink">
                   {item.barcode || "-"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 uppercase mb-0.5">
+                <p className="text-xs text-ink-3 mb-0.5">
                   {t.items.cost}
                 </p>
-                <p className="font-medium text-gray-900">
+                <p className="font-medium text-ink">
                   {formatPrice(item.cost, language)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 uppercase mb-0.5">
+                <p className="text-xs text-ink-3 mb-0.5">
                   {t.items.price}
                 </p>
-                <p className="font-medium text-gray-900">
+                <p className="font-medium text-ink">
                   {formatPrice(item.price, language)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 uppercase mb-0.5">
+                <p className="text-xs text-ink-3 mb-0.5">
                   Brand
                 </p>
-                <p className="font-medium text-gray-900">
+                <p className="font-medium text-ink">
                   {item.brand || "-"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 uppercase mb-0.5">
+                <p className="text-xs text-ink-3 mb-0.5">
                   Location
                 </p>
-                <p className="font-medium text-gray-900">
+                <p className="font-medium text-ink">
                   {item.locationName || t.reports.noLocation}
                 </p>
               </div>
               <div className="col-span-2">
-                <p className="text-xs text-gray-500 uppercase mb-1">{t.itemForm.tourPhotoTitle}</p>
+                <p className="text-xs text-ink-3 mb-1">{t.itemForm.tourPhotoTitle}</p>
                 {itemPhotoSrc ? (
                   <button
                     type="button"
                     onClick={() => setIsPhotoModalOpen(true)}
-                    className="rounded-lg overflow-hidden border border-gray-200 hover:border-purple-400 transition-colors"
+                    className="rounded-lg overflow-hidden border border-hairline hover:border-brand transition-colors"
                   >
                     <img
                       src={itemPhotoSrc}
@@ -243,37 +231,37 @@ export default function ItemDetailPageClient({
                     />
                   </button>
                 ) : (
-                  <p className="font-medium text-gray-900">-</p>
+                  <p className="font-medium text-ink">-</p>
                 )}
               </div>
               {customFieldEntries.length > 0 ? (
                 <div className="col-span-2 pt-2">
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <p className="text-xs font-medium text-ink-3">
                     {t.itemForm.customFieldsTitle}
                   </p>
                 </div>
               ) : null}
               {customFieldEntries.map(([key, value]) => (
                 <div key={key}>
-                  <p className="text-xs text-gray-500 uppercase mb-0.5">{key}</p>
-                  <p className="font-medium text-gray-900">{value}</p>
+                  <p className="text-xs text-ink-3 mb-0.5">{key}</p>
+                  <p className="font-medium text-ink">{value}</p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Current Status */}
-          <div className="lg:col-start-3 lg:row-start-1 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="lg:col-start-3 lg:row-start-1 bg-white rounded-xl shadow-sm border border-hairline p-6">
+            <h2 className="text-lg font-medium text-ink mb-4">
               {t.items.currentStatus}
             </h2>
             <div className="text-center py-6">
               <p
-                className="text-4xl sm:text-5xl font-bold text-[#6B21A8] mb-1"
+                className="text-4xl sm:text-5xl font-semibold font-mono tabular-nums text-brand mb-1"
               >
                 {item.currentStock ?? 0}
               </p>
-              <p className="text-sm text-gray-500">{t.reports.totalStock}</p>
+              <p className="text-sm text-ink-3">{t.reports.totalStock}</p>
             </div>
             <div className="flex flex-wrap gap-1 mb-4">
               {filters.map((f) => (
@@ -283,8 +271,8 @@ export default function ItemDetailPageClient({
                   onClick={() => setTxFilter(f.value)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                     txFilter === f.value
-                      ? "bg-gray-900 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "bg-ink text-white"
+                      : "bg-raised text-ink-2 hover:bg-white"
                   }`}
                 >
                   {f.label}
@@ -293,14 +281,14 @@ export default function ItemDetailPageClient({
             </div>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {filteredTx.length === 0 ? (
-                <p className="text-sm text-gray-500 py-4 text-center">
+                <p className="text-sm text-ink-3 py-4 text-center">
                   {t.transactions.noTransactions}
                 </p>
               ) : (
                 filteredTx.map((tx) => (
                   <div
                     key={tx.id}
-                    className="flex items-center justify-between gap-2 py-2 px-3 rounded-lg bg-gray-50 border border-gray-100"
+                    className="flex items-center justify-between gap-2 py-2 px-3 rounded-lg bg-raised border border-hairline"
                   >
                     <div className="min-w-0 flex-1">
                       <span
@@ -311,7 +299,7 @@ export default function ItemDetailPageClient({
                       >
                         {getTransactionTypeLabel(tx.transactionType, t, tx)}
                       </span>
-                      <p className="text-xs text-gray-500 mt-0.5 truncate">
+                      <p className="text-xs text-ink-3 mt-0.5 truncate">
                         {formatLocation(tx, t)} ·{" "}
                         {formatDate(tx.createdAt, language)}
                       </p>
@@ -319,8 +307,8 @@ export default function ItemDetailPageClient({
                     <span
                       className={`text-sm font-semibold shrink-0 ${
                         tx.transactionType === "stock_out"
-                          ? "text-red-600"
-                          : "text-green-600"
+                          ? "text-negative"
+                          : "text-positive"
                       }`}
                     >
                       {formatQuantity(tx.quantity, tx.transactionType)}
@@ -332,8 +320,8 @@ export default function ItemDetailPageClient({
           </div>
 
           {/* QR Code */}
-          <div className="lg:col-start-3 lg:row-start-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 w-full">
+          <div className="lg:col-start-3 lg:row-start-2 bg-white rounded-xl shadow-sm border border-hairline p-6 flex flex-col items-center justify-center">
+            <h2 className="text-lg font-medium text-ink mb-4 w-full">
               {t.items.qrCode}
             </h2>
             <QRCodeDisplay
@@ -364,7 +352,7 @@ export default function ItemDetailPageClient({
           <img
             src={itemPhotoSrc}
             alt={itemName}
-            className="max-h-[90vh] max-w-[90vw] rounded-lg shadow-2xl object-contain"
+            className="max-h-[90vh] max-w-[90vw] rounded-lg shadow-float object-contain"
             onClick={(event) => event.stopPropagation()}
           />
         </div>

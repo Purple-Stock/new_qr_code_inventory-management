@@ -25,7 +25,7 @@ vi.mock("@/lib/i18n", () => ({
         languageEnglish: "English",
         languageFrench: "Français",
         languagePortuguese: "Português",
-        appTagline: "Seu inventário simplificado",
+        appTagline: "Estoque com QR no galpão",
         login: {
           instructions: "Digite suas credenciais para acessar sua conta",
           emailLabel: "E-mail",
@@ -40,6 +40,8 @@ vi.mock("@/lib/i18n", () => ({
           unexpectedError: "Ocorreu um erro inesperado. Tente novamente.",
           noAccount: "Não tem uma conta?",
           createAccount: "Criar conta",
+          dontHaveAccount: "Não tem uma conta?",
+          signUpLink: "Criar conta",
         },
       },
     },

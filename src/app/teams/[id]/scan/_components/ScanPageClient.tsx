@@ -15,7 +15,7 @@ import { useSortedPage } from "@/hooks/useSortedPage";
 import { itemLocationRowKey } from "@/lib/stock-by-location-ledger";
 import type { TeamDto } from "@/lib/services/types";
 
-const SCAN_HEADER_CLASS = "px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700";
+const SCAN_HEADER_CLASS = "px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-ink-2";
 
 type LookupItem = {
   id: number;
@@ -228,14 +228,14 @@ export function ScanPageClient({
     <TeamLayout team={team} activeMenuItem="scan">
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
         <div className="flex-1">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#6B21A8] mb-1 sm:mb-2">
+          <h1 className="text-[28px] font-medium leading-[1.15] text-ink mb-1 sm:mb-2">
             {t.scan.title}
           </h1>
-          <p className="text-sm sm:text-base md:text-lg text-gray-600">{t.scan.subtitle}</p>
+          <p className="text-sm sm:text-base md:text-lg text-ink-2">{t.scan.subtitle}</p>
         </div>
         <Button
           variant="outline"
-          className="hidden sm:inline-flex border-gray-300 text-gray-700 hover:bg-gray-50 h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto"
+          className="hidden sm:inline-flex border-hairline text-ink-2 hover:bg-raised h-10 sm:h-11 text-xs sm:text-sm w-full sm:w-auto"
           onClick={() => setIsScannerOpen(true)}
         >
           <ScanLine className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -243,8 +243,8 @@ export function ScanPageClient({
         </Button>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 mb-6 space-y-3">
-        <p className="text-sm text-gray-600">{t.scan.manualLookupHint}</p>
+      <div className="bg-white border border-hairline rounded-xl p-4 sm:p-6 mb-6 space-y-3">
+        <p className="text-sm text-ink-2">{t.scan.manualLookupHint}</p>
         <div className="flex flex-col sm:flex-row gap-2">
           <Input
             value={manualCode}
@@ -258,7 +258,7 @@ export function ScanPageClient({
             }}
           />
           <Button
-            className="h-11 bg-[#6B21A8] hover:bg-[#7C3AED]"
+            className="h-11 bg-brand hover:bg-brand-hover"
             onClick={() => void handleLookup(manualCode)}
             disabled={isLoading}
           >
@@ -269,41 +269,31 @@ export function ScanPageClient({
 
         {scanState !== "idle" ? (
           <div
-            className={`rounded-lg border px-3 py-2 sm:px-4 sm:py-3 transition-all ${
-              scanState === "loading"
-                ? "bg-blue-50 border-blue-200"
-                : scanState === "success"
-                  ? "bg-green-50 border-green-200"
-                  : scanState === "multiple"
-                    ? "bg-amber-50 border-amber-200"
-                    : scanState === "not_found" || scanState === "error"
-                      ? "bg-red-50 border-red-200"
-                      : "bg-gray-50 border-gray-200"
-            }`}
+            className="rounded-lg border border-hairline bg-raised px-3 py-2 sm:px-4 sm:py-3 transition-colors duration-150 ease-craft"
           >
             <div className="flex items-start gap-2 sm:gap-3">
               {scanState === "loading" ? (
-                <div className="h-4 w-4 mt-0.5 rounded-full border-2 border-blue-300 border-t-blue-600 animate-spin" />
+                <div className="h-4 w-4 mt-0.5 rounded-full border-2 border-hairline border-t-brand animate-spin" />
               ) : null}
               {scanState === "success" ? (
-                <CheckCircle2 className="h-4 w-4 mt-0.5 text-green-700" />
+                <CheckCircle2 className="h-4 w-4 mt-0.5 text-positive" />
               ) : null}
               {scanState === "multiple" ? (
-                <Layers3 className="h-4 w-4 mt-0.5 text-amber-700" />
+                <Layers3 className="h-4 w-4 mt-0.5 text-ink-2" />
               ) : null}
               {scanState === "not_found" || scanState === "error" ? (
-                <AlertCircle className="h-4 w-4 mt-0.5 text-red-700" />
+                <AlertCircle className="h-4 w-4 mt-0.5 text-negative" />
               ) : null}
               <div className="min-w-0">
                 <p
                   className={`text-xs sm:text-sm font-semibold ${
                     scanState === "loading"
-                      ? "text-blue-800"
+                      ? "text-ink-2"
                       : scanState === "success"
-                        ? "text-green-800"
+                        ? "text-positive"
                         : scanState === "multiple"
-                          ? "text-amber-800"
-                          : "text-red-800"
+                          ? "text-ink"
+                          : "text-negative"
                   }`}
                 >
                   {scanState === "loading"
@@ -314,9 +304,9 @@ export function ScanPageClient({
                         ? t.scan.multipleItemsFound
                         : t.common.error}
                 </p>
-                <p className="text-xs sm:text-sm text-gray-700 break-words">{scanMessage}</p>
+                <p className="text-xs sm:text-sm text-ink-2 break-words">{scanMessage}</p>
                 {lastCode ? (
-                  <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5">
+                  <p className="text-[11px] sm:text-xs text-ink-3 mt-0.5">
                     QR: <span className="font-mono">{lastCode}</span>
                   </p>
                 ) : null}
@@ -326,14 +316,14 @@ export function ScanPageClient({
         ) : null}
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+      <div className="bg-white border border-hairline rounded-xl p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Info className="h-4 w-4 text-gray-500" />
-          <h2 className="text-base sm:text-lg font-semibold text-gray-900">{t.scan.resultsTitle}</h2>
+          <Info className="h-4 w-4 text-ink-3" />
+          <h2 className="text-base sm:text-lg font-medium text-ink">{t.scan.resultsTitle}</h2>
         </div>
 
         {multipleResults.length === 0 ? (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-ink-3">
             {lastCode ? t.scan.noMultipleResults : t.scan.resultsEmptyHint}
           </p>
         ) : (
@@ -341,7 +331,7 @@ export function ScanPageClient({
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 text-sm">
                 <thead>
-                  <tr className="text-left text-gray-600">
+                  <tr className="text-left text-ink-2">
                     <SortableHeader
                       label={t.items.item}
                       column="name"
@@ -387,15 +377,15 @@ export function ScanPageClient({
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {paginated.items.map((item) => (
-                    <tr key={itemLocationRowKey(item)} className="hover:bg-gray-50">
-                      <td className="px-3 py-2 text-gray-900">{item.name || t.items.unnamedItem}</td>
-                      <td className="px-3 py-2 text-gray-700">{item.sku || "-"}</td>
-                      <td className="px-3 py-2 text-gray-700">{item.currentStock ?? 0}</td>
-                      <td className="px-3 py-2 text-gray-700">{item.locationName || t.reports.noLocation}</td>
+                    <tr key={itemLocationRowKey(item)} className="hover:bg-raised">
+                      <td className="px-3 py-2 text-ink">{item.name || t.items.unnamedItem}</td>
+                      <td className="px-3 py-2 text-ink-2">{item.sku || "-"}</td>
+                      <td className="px-3 py-2 text-ink-2">{item.currentStock ?? 0}</td>
+                      <td className="px-3 py-2 text-ink-2">{item.locationName || t.reports.noLocation}</td>
                       <td className="px-3 py-2">
                         <Button
                           variant="outline"
-                          className="border-gray-300"
+                          className="border-hairline"
                           onClick={() => setSummaryItem(item)}
                         >
                           {t.scan.openSummary}
@@ -429,15 +419,15 @@ export function ScanPageClient({
       {isLoading ? (
         <div className="fixed inset-0 z-50 bg-white/85 backdrop-blur-[1px] flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
-            <div className="h-10 w-10 rounded-full border-4 border-[#C4B5FD] border-t-[#6B21A8] animate-spin" />
-            <p className="text-sm font-medium text-gray-700">{t.common.loading}</p>
+            <div className="h-8 w-8 rounded-full border-2 border-hairline border-t-brand" />
+            <p className="text-sm font-medium text-ink-2">{t.common.loading}</p>
           </div>
         </div>
       ) : null}
 
       <Button
         onClick={() => setIsScannerOpen(true)}
-        className="sm:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-40 h-20 w-20 rounded-full p-0 bg-[#6B21A8] hover:bg-[#7C3AED] shadow-xl border-2 border-white"
+        className="fixed bottom-5 left-1/2 z-40 h-16 w-16 -translate-x-1/2 rounded-full border border-hairline bg-brand p-0 text-white shadow-float hover:bg-brand-hover sm:hidden"
         aria-label={t.scan.openScanner}
         title={t.scan.openScanner}
       >
@@ -446,9 +436,9 @@ export function ScanPageClient({
 
       {summaryItem ? (
         <div className="fixed inset-0 z-50 bg-black/50 p-4 flex items-center justify-center">
-          <div className="w-full max-w-xl max-h-[85vh] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col">
-            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">{t.scan.summaryTitle}</h3>
+          <div className="w-full max-w-xl max-h-[85vh] bg-white rounded-xl shadow-float overflow-hidden flex flex-col">
+            <div className="px-4 py-3 border-b border-hairline flex items-center justify-between">
+              <h3 className="text-lg font-medium text-ink">{t.scan.summaryTitle}</h3>
               <Button
                 variant="ghost"
                 size="sm"
@@ -465,45 +455,45 @@ export function ScanPageClient({
                   <img
                     src={summaryItem.photoData}
                     alt={summaryItem.name || t.items.unnamedItem}
-                    className="w-full h-40 object-cover rounded-lg border border-gray-200"
+                    className="w-full h-40 object-cover rounded-lg border border-hairline"
                   />
                 ) : (
-                  <div className="w-full h-40 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-xs text-gray-500 text-center px-2">
+                  <div className="w-full h-40 rounded-lg border border-dashed border-hairline bg-raised flex items-center justify-center text-xs text-ink-3 text-center px-2">
                     {t.scan.noPhoto}
                   </div>
                 )}
               </div>
               <div className="space-y-3">
                 <div>
-                  <p className="text-xs uppercase text-gray-500">{t.items.item}</p>
-                  <p className="font-medium text-gray-900">{summaryItem.name || t.items.unnamedItem}</p>
+                  <p className="text-xs text-ink-3">{t.items.item}</p>
+                  <p className="font-medium text-ink">{summaryItem.name || t.items.unnamedItem}</p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase text-gray-500">{t.items.sku}</p>
-                  <p className="font-medium text-gray-900">{summaryItem.sku || "-"}</p>
+                  <p className="text-xs text-ink-3">{t.items.sku}</p>
+                  <p className="font-medium text-ink">{summaryItem.sku || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase text-gray-500">{t.labels.barcode}</p>
-                  <p className="font-mono text-sm text-gray-900">{summaryItem.barcode || "-"}</p>
+                  <p className="text-xs text-ink-3">{t.labels.barcode}</p>
+                  <p className="font-mono text-sm text-ink">{summaryItem.barcode || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase text-gray-500">{t.items.stock}</p>
-                  <p className="font-medium text-gray-900">{summaryItem.currentStock ?? 0}</p>
+                  <p className="text-xs text-ink-3">{t.items.stock}</p>
+                  <p className="font-medium text-ink">{summaryItem.currentStock ?? 0}</p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase text-gray-500">{t.locations.title}</p>
-                  <p className="font-medium text-gray-900">{summaryItem.locationName || t.reports.noLocation}</p>
+                  <p className="text-xs text-ink-3">{t.locations.title}</p>
+                  <p className="font-medium text-ink">{summaryItem.locationName || t.reports.noLocation}</p>
                 </div>
                 {summaryCustomFields.length > 0 ? (
                   <div>
-                    <p className="text-xs uppercase text-gray-500">{t.itemForm.customFieldsTitle}</p>
+                    <p className="text-xs text-ink-3">{t.itemForm.customFieldsTitle}</p>
                     <div className="mt-2 space-y-2">
                       {summaryCustomFields.map(([key, value]) => (
-                        <div key={key} className="rounded-md border border-gray-200 px-3 py-2">
-                          <p className="text-[11px] uppercase tracking-wide text-gray-500">
+                        <div key={key} className="rounded-md border border-hairline px-3 py-2">
+                          <p className="text-[11px] text-ink-3">
                             {customFieldLabelByKey.get(key) ?? key}
                           </p>
-                          <p className="text-sm font-medium text-gray-900 break-words">{value}</p>
+                          <p className="text-sm font-medium text-ink break-words">{value}</p>
                         </div>
                       ))}
                     </div>

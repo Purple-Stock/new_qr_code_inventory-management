@@ -11,8 +11,8 @@ interface QRCodeDisplayProps {
 export function QRCodeDisplay({ value, size = 64, className = "" }: QRCodeDisplayProps) {
   if (!value) {
     return (
-      <div className={`bg-gray-100 rounded flex items-center justify-center ${className}`} style={{ width: size, height: size }}>
-        <span className="text-xs text-gray-400">No code</span>
+      <div className={`bg-raised rounded flex items-center justify-center ${className}`} style={{ width: size, height: size }}>
+        <span className="text-xs text-ink-3">No code</span>
       </div>
     );
   }

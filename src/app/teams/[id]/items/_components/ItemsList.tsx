@@ -217,7 +217,7 @@ export function ItemsList({
           <div
             key={itemLocationRowKey(item)}
             data-testid={`item-row-${item.locationId ?? "none"}-${item.id}`}
-            className="bg-white rounded-xl shadow-md border border-gray-100 p-4"
+            className="bg-white rounded-xl shadow-md border border-hairline p-4"
           >
             <div className="flex items-start gap-3 mb-3">
               <div className="flex-shrink-0">
@@ -238,23 +238,23 @@ export function ItemsList({
                 <Link
                   href={`/teams/${teamId}/items/${item.id}`}
                   prefetch={false}
-                  className="text-base font-bold text-gray-900 mb-1 truncate block hover:text-[#6B21A8] hover:underline transition-colors"
+                  className="text-base font-medium text-ink mb-1 truncate block hover:text-brand hover:underline transition-colors"
                 >
                   {item.name || t.items.unnamedItem}
                 </Link>
                 {item.sku && (
-                  <p className="text-xs text-gray-500 mb-1">SKU: {item.sku}</p>
+                  <p className="text-xs text-ink-3 mb-1">SKU: {item.sku}</p>
                 )}
                 {item.barcode && (
-                  <p className="text-xs text-gray-500 font-mono bg-gray-50 px-2 py-1 rounded inline-block">
+                  <p className="text-xs text-ink-3 font-mono bg-raised px-2 py-1 rounded inline-block">
                     {item.barcode}
                   </p>
                 )}
               </div>
             </div>
-            
+
             <div className="flex flex-wrap items-center gap-2 mb-3">
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-raised text-ink-2">
                 {item.itemType || t.items.typeFallback}
               </span>
               <ItemStockBadge
@@ -263,22 +263,22 @@ export function ItemsList({
                 lowStockLabel={t.items.lowStockBadge}
                 className="px-2.5 py-1 text-xs"
               />
-              <span className="text-sm font-bold text-gray-900">
+              <span className="text-sm font-medium text-ink">
                 {formatPrice(item.price)}
               </span>
             </div>
 
             {item.locationName && (
-              <div className="text-xs text-gray-500 mb-3 flex items-center gap-1">
+              <div className="text-xs text-ink-3 mb-3 flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
                 {item.locationName}
               </div>
             )}
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-hairline">
               <Link
                 href={`/teams/${teamId}/items/${item.id}/edit`}
-                className="p-2.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
+                className="p-2.5 text-ink-3 hover:text-brand hover:bg-raised rounded-lg transition-colors duration-150 ease-craft touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center"
                 aria-label="Edit item"
                 title="Edit item"
               >
@@ -288,7 +288,7 @@ export function ItemsList({
                 type="button"
                 onClick={() => handleCopyItem(item)}
                 disabled={copyingId === item.id}
-                className="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2.5 text-ink-3 hover:text-brand hover:bg-raised rounded-lg transition-colors duration-150 ease-craft touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Copy item"
                 title="Copy item"
               >
@@ -302,7 +302,7 @@ export function ItemsList({
                 type="button"
                 onClick={() => handleDeleteClick(item)}
                 disabled={deletingId === item.id}
-                className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2.5 text-ink-3 hover:text-negative hover:bg-raised rounded-lg transition-colors duration-150 ease-craft touch-manipulation min-w-[40px] min-h-[40px] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Delete item"
                 title="Delete item"
               >
@@ -318,15 +318,15 @@ export function ItemsList({
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden lg:block bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+      <div className="hidden lg:block bg-white rounded-xl sm:rounded-2xl shadow-rest overflow-hidden border border-hairline">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+            <thead className="border-b border-hairline bg-raised">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-medium text-ink-3">
                   {t.items.photo}
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-medium text-ink-3">
                   {t.items.qrCode}
                 </th>
                 {(
@@ -349,7 +349,7 @@ export function ItemsList({
                     onSort={onSort}
                   />
                 ))}
-                <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-4 text-right text-xs font-medium text-ink-3">
                   {t.common.actions}
                 </th>
               </tr>
@@ -359,7 +359,7 @@ export function ItemsList({
                 <tr
                   key={itemLocationRowKey(item)}
                   data-testid={`item-row-${item.locationId ?? "none"}-${item.id}`}
-                  className="hover:bg-purple-50/50 transition-colors"
+                  className="hover:bg-raised transition-colors"
                 >
                   <td className="px-6 py-5 whitespace-nowrap">
                     <ItemListPhoto
@@ -380,17 +380,17 @@ export function ItemsList({
                       <Link
                         href={`/teams/${teamId}/items/${item.id}`}
                         prefetch={false}
-                        className="text-sm font-bold text-gray-900 mb-1 block hover:text-[#6B21A8] hover:underline transition-colors"
+                        className="text-sm font-medium text-ink mb-1 block hover:text-brand hover:underline transition-colors"
                       >
                         {item.name || t.items.unnamedItem}
                       </Link>
                       {item.barcode && (
-                        <div className="text-xs text-gray-500 font-mono bg-gray-50 px-2 py-1 rounded inline-block">
+                        <div className="text-xs text-ink-3 font-mono bg-raised px-2 py-1 rounded inline-block">
                           {item.barcode}
                         </div>
                       )}
                       {item.locationName && (
-                        <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                        <div className="text-xs text-ink-3 mt-1 flex items-center gap-1">
                           <MapPin className="h-3 w-3" />
                           {item.locationName}
                         </div>
@@ -398,14 +398,14 @@ export function ItemsList({
                     </div>
                   </td>
                   <td className="px-6 py-5 whitespace-nowrap">
-                    <span className="text-sm font-medium text-gray-900">
+                    <span className="text-sm font-medium text-ink">
                       {item.sku || (
-                        <span className="text-gray-400 italic">-</span>
+                        <span className="text-ink-3 italic">-</span>
                       )}
                     </span>
                   </td>
                   <td className="px-6 py-5 whitespace-nowrap">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                    <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-raised text-ink-2">
                       {item.itemType || t.items.typeFallback}
                     </span>
                   </td>
@@ -418,7 +418,7 @@ export function ItemsList({
                     />
                   </td>
                   <td className="px-6 py-5 whitespace-nowrap">
-                    <span className="text-sm font-bold text-gray-900">
+                    <span className="text-sm font-medium text-ink">
                       {formatPrice(item.price)}
                     </span>
                   </td>
@@ -426,7 +426,7 @@ export function ItemsList({
                     <div className="flex items-center justify-end gap-1">
                       <Link
                         href={`/teams/${teamId}/items/${item.id}/edit`}
-                        className="p-2.5 text-gray-500 hover:text-[#6B21A8] hover:bg-purple-50 rounded-lg transition-all"
+                        className="p-2.5 text-ink-3 hover:text-brand hover:bg-raised rounded-lg transition-colors duration-150 ease-craft"
                         aria-label="Edit item"
                         title="Edit item"
                       >
@@ -436,7 +436,7 @@ export function ItemsList({
                         type="button"
                         onClick={() => handleCopyItem(item)}
                         disabled={copyingId === item.id}
-                        className="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-2.5 text-ink-3 hover:text-brand hover:bg-raised rounded-lg transition-colors duration-150 ease-craft disabled:opacity-50 disabled:cursor-not-allowed"
                         aria-label="Copy item"
                         title="Copy item"
                       >
@@ -450,7 +450,7 @@ export function ItemsList({
                         type="button"
                         onClick={() => handleDeleteClick(item)}
                         disabled={deletingId === item.id}
-                        className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-2.5 text-ink-3 hover:text-negative hover:bg-raised rounded-lg transition-colors duration-150 ease-craft disabled:opacity-50 disabled:cursor-not-allowed"
                         aria-label="Delete item"
                         title="Delete item"
                       >

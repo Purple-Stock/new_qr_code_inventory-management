@@ -34,7 +34,7 @@ describe("app social metadata", () => {
   it("uses an app-exclusive Portuguese title and description", () => {
     expect(APP_OG_TITLE).toBe("Purple Stock — App");
     expect(APP_OG_DESCRIPTION).toBe(
-      "Seu inventário simplificado. Entrada, saída e transferência com QR Code."
+      "Estoque com QR no galpão. Entrada, saída e saldo por local."
     );
     expect(APP_OG_TITLE).not.toContain("Your Inventory Simplified");
     expect(APP_OG_DESCRIPTION).not.toContain(

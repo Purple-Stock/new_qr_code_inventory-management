@@ -33,11 +33,11 @@ export function LocationForm({
     <form onSubmit={onSubmit} className="space-y-6">
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="space-y-2 mb-6" data-tour="tour-location-name">
-          <Label htmlFor="name" className="text-gray-900">
-            {t.locationForm.nameLabel} <span className="text-red-500">*</span>
+          <Label htmlFor="name" className="text-ink">
+            {t.locationForm.nameLabel} <span className="text-negative">*</span>
           </Label>
           <div className="relative">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-ink-3" />
             <Input
               id="name"
               type="text"
@@ -52,11 +52,11 @@ export function LocationForm({
         </div>
 
         <div className="space-y-2" data-tour="tour-location-description">
-          <Label htmlFor="description" className="text-gray-900">
+          <Label htmlFor="description" className="text-ink">
             {t.locationForm.descriptionLabel}
           </Label>
           <div className="relative">
-            <FileText className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+            <FileText className="absolute left-3 top-3 h-5 w-5 text-ink-3" />
             <textarea
               id="description"
               placeholder={t.locationForm.descriptionPlaceholder}
@@ -73,7 +73,7 @@ export function LocationForm({
         <Button
           type="submit"
           disabled={isLoading}
-          className="bg-[#6B21A8] hover:bg-[#6B21A8]/90 text-white font-semibold px-8 disabled:opacity-50 disabled:cursor-not-allowed"
+
         >
           {mode === "create"
             ? isLoading
@@ -87,7 +87,7 @@ export function LocationForm({
           <Button
             type="button"
             variant="outline"
-            className="border-gray-300 text-gray-700 hover:bg-gray-50"
+            className="border-hairline text-ink-2 hover:bg-raised"
           >
             {t.common.cancel}
           </Button>

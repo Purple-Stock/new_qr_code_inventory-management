@@ -143,7 +143,7 @@ DATABASE_PATH=/opt/purple-stock-app/data/purple.db
 
 Produção: `app.purplestock.com.br` (slug `purple-stock-app`). Staging: `staging.purplestock.com.br`.
 
-O boot do Cleat aplica migrações pendentes (`.cleat_deploy/start.sh` → `scripts/apply-sqlite-migrations.mjs`) antes do `next start`. Sem isso, um `SELECT` em coluna nova (ex.: `users.phone`) derruba login e signup.
+O boot do Cleat aplica migrações pendentes (`.cleat_deploy/start.sh` → `scripts/apply-sqlite-migrations.mjs`) e dropa leftover `.next/server/route-cache` / `.next/cache` antes do `next start`. Sem as migrações, um `SELECT` em coluna nova (ex.: `users.phone`) derruba login e signup. Sem o drop, o overlay do Cleat reaparece HTML prerender antigo (Next 16 route-cache).
 
 ### Variáveis de banco
 

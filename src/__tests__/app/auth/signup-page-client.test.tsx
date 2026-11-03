@@ -26,7 +26,7 @@ vi.mock("@/lib/i18n", () => ({
         languageEnglish: "English",
         languageFrench: "Français",
         languagePortuguese: "Português",
-        appTagline: "Seu inventário simplificado",
+        appTagline: "Estoque com QR no galpão",
         signup: {
           instructions: "Digite seus dados para criar sua conta",
           companyNameLabel: "Nome da empresa",

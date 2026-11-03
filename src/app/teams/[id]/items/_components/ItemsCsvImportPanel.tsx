@@ -182,8 +182,9 @@ export function ItemsCsvImportPanel({ teamId, labels }: ItemsCsvImportPanelProps
     <div className="w-full sm:w-auto">
       <Button
         type="button"
+        variant="outline"
         onClick={() => setIsOpen(true)}
-        className="w-full sm:w-auto bg-gradient-to-r from-sky-600 to-cyan-600 text-white shadow-lg shadow-sky-600/20 hover:from-sky-700 hover:to-cyan-700 hover:shadow-xl hover:shadow-sky-600/30 h-10 sm:h-11 text-xs sm:text-sm touch-manipulation min-h-[40px] sm:min-h-0"
+        className="h-10 w-full text-xs sm:h-11 sm:w-auto sm:text-sm"
       >
         <FileUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
         {labels.openButton}
@@ -196,24 +197,24 @@ export function ItemsCsvImportPanel({ teamId, labels }: ItemsCsvImportPanelProps
           role="presentation"
         >
           <div
-            className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl"
+            className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-[28px] bg-white shadow-float"
             onClick={(event) => event.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="items-csv-import-modal-title"
           >
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6">
+            <div className="flex items-center justify-between border-b border-hairline px-5 py-4 sm:px-6">
               <div>
-                <h2 id="items-csv-import-modal-title" className="text-xl font-bold text-slate-900">
+                <h2 id="items-csv-import-modal-title" className="text-xl font-medium text-ink">
                   {labels.title}
                 </h2>
-                <p className="mt-1 text-sm text-slate-600">{labels.description}</p>
+                <p className="mt-1 text-sm text-ink-2">{labels.description}</p>
               </div>
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setIsOpen(false)}
-                className="h-10 w-10 p-0 text-slate-500 hover:bg-slate-100"
+                className="h-10 w-10 p-0 text-ink-3 hover:bg-raised"
                 aria-label={labels.closeButton}
               >
                 <X className="h-5 w-5" />
@@ -227,7 +228,7 @@ export function ItemsCsvImportPanel({ teamId, labels }: ItemsCsvImportPanelProps
                     type="button"
                     variant="outline"
                     onClick={handleDownloadTemplate}
-                    className="border-slate-300"
+                    className="border-hairline"
                   >
                     <Download className="mr-2 h-4 w-4" />
                     {labels.downloadTemplate}
@@ -242,7 +243,6 @@ export function ItemsCsvImportPanel({ teamId, labels }: ItemsCsvImportPanelProps
                     type="button"
                     onClick={handlePreview}
                     disabled={isPreviewing || !csvContent.trim()}
-                    className="bg-slate-900 text-white hover:bg-slate-800"
                   >
                     {isPreviewing ? (
                       <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -255,7 +255,7 @@ export function ItemsCsvImportPanel({ teamId, labels }: ItemsCsvImportPanelProps
                     type="button"
                     onClick={handleImport}
                     disabled={isImporting || !canImport}
-                    className="bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-700 hover:to-green-700"
+
                   >
                     {isImporting ? (
                       <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -265,7 +265,7 @@ export function ItemsCsvImportPanel({ teamId, labels }: ItemsCsvImportPanelProps
                     {isImporting ? labels.importing : labels.importButton}
                   </Button>
                   {fileName ? (
-                    <span className="text-sm text-slate-600">
+                    <span className="text-sm text-ink-2">
                       {labels.selectedFile}: {fileName}
                     </span>
                   ) : null}
@@ -274,27 +274,27 @@ export function ItemsCsvImportPanel({ teamId, labels }: ItemsCsvImportPanelProps
                 {preview ? (
                   <div className="space-y-4">
                     <div className="grid gap-3 sm:grid-cols-3">
-                      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                      <div className="rounded-xl border border-hairline bg-raised p-4">
+                        <p className="text-xs font-medium text-ink-3">
                           {labels.totalRows}
                         </p>
-                        <p className="mt-2 text-2xl font-semibold text-slate-900">
+                        <p className="mt-2 text-2xl font-semibold text-ink">
                           {preview.summary.totalRows}
                         </p>
                       </div>
-                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-                        <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">
+                      <div className="rounded-xl border border-hairline bg-white p-4">
+                        <p className="text-xs font-medium text-positive">
                           {labels.validRows}
                         </p>
-                        <p className="mt-2 text-2xl font-semibold text-emerald-900">
+                        <p className="mt-2 text-2xl font-semibold font-mono tabular-nums text-positive">
                           {preview.summary.validRows}
                         </p>
                       </div>
-                      <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
-                        <p className="text-xs font-medium uppercase tracking-wide text-rose-700">
+                      <div className="rounded-xl border border-hairline bg-white p-4">
+                        <p className="text-xs font-medium text-negative">
                           {labels.invalidRows}
                         </p>
-                        <p className="mt-2 text-2xl font-semibold text-rose-900">
+                        <p className="mt-2 text-2xl font-semibold font-mono tabular-nums text-negative">
                           {preview.summary.invalidRows}
                         </p>
                       </div>
@@ -312,21 +312,17 @@ export function ItemsCsvImportPanel({ teamId, labels }: ItemsCsvImportPanelProps
                       {preview.rows.map((row) => (
                         <div
                           key={`${row.line}-${row.status}`}
-                          className={`rounded-xl border p-4 ${
-                            row.status === "valid"
-                              ? "border-emerald-200 bg-emerald-50"
-                              : "border-rose-200 bg-rose-50"
-                          }`}
+                          className="rounded-xl border border-hairline bg-white p-4"
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="text-sm font-semibold text-slate-900">
+                            <div className="text-sm font-semibold text-ink">
                               {labels.line} {row.line}
                             </div>
                             <span
-                              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                              className={`rounded-md px-2.5 py-1 text-xs font-medium ${
                                 row.status === "valid"
-                                  ? "bg-emerald-600 text-white"
-                                  : "bg-rose-600 text-white"
+                                  ? "bg-raised text-positive"
+                                  : "bg-raised text-negative"
                               }`}
                             >
                               {row.status === "valid" ? labels.validBadge : labels.invalidBadge}
@@ -334,7 +330,7 @@ export function ItemsCsvImportPanel({ teamId, labels }: ItemsCsvImportPanelProps
                           </div>
 
                           {row.item ? (
-                            <div className="mt-3 grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
+                            <div className="mt-3 grid gap-2 text-sm text-ink-2 sm:grid-cols-2">
                               <div>
                                 <strong>Name:</strong> {row.item.name ?? "-"}
                               </div>
@@ -362,7 +358,7 @@ export function ItemsCsvImportPanel({ teamId, labels }: ItemsCsvImportPanelProps
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-500">{labels.noPreviewYet}</p>
+                  <p className="text-sm text-ink-3">{labels.noPreviewYet}</p>
                 )}
               </div>
             </div>

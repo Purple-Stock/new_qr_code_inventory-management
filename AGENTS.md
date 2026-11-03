@@ -90,7 +90,7 @@ Local `next dev` uses Turbopack. `next dev --webpack` on this Next 16 tree never
 
 - Schema: `src/db/schema.ts`
 - Migrations: `src/db/migrations/*.sql` + `npm run db:migrate`
-- Client init: `src/db/client.ts`. Cleat boot runs `scripts/apply-sqlite-migrations.mjs` from `.cleat_deploy/start.sh` before `next start`.
+- Client init: `src/db/client.ts`. Cleat boot runs `scripts/apply-sqlite-migrations.mjs` from `.cleat_deploy/start.sh`, then drops leftover `.next/server/route-cache` and `.next/cache` (overlay keeps those dots), then `next start`.
 - Local SQLite only (`DATABASE_PATH` or `file:` `DATABASE_URL`). Remote libsql/Turso URLs are rejected.
 
 ## Env (billing)
